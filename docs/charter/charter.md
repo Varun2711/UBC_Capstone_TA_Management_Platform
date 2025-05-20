@@ -86,8 +86,8 @@ This system will bring clarity and coordination to a process that’s often time
 #### Code repository conventions (e.g., Git branching model, commit messages)
 
 
-- main represents stable version of the codebase
-- development is the most up-to-date version of the codebase which feature branches are to be merged into
+- Main represents stable version of the codebase
+- Development is the most up-to-date version of the codebase which feature branches are to be merged into
 - Protect main and development branches to ensure no accidental pushes with required 2 PR reviews and passing tests
 - Branch off of development
 - Use feature branches
