@@ -1,18 +1,7 @@
-# Capstone Team Charter Development Guide
-
-## Purpose of the Team Charter
-
-The team charter is a foundational document that sets clear expectations for how your team will operate throughout the capstone project. It defines your shared goals, norms, and working agreements. A well-crafted charter promotes alignment, accountability, and collaboration—critical to your success over two terms.
-
-> **When to create it:**  
-> Your team must collaboratively draft the charter by the end of the day on Tuesday, May 20th. It can evolve over time but should reflect shared agreement at the start.
-
----
-
-## What to Include in Your Team Charter
+# Capstone Team Charter 
 
 ### 1. Team Name and Members
-- Team name: We <3 PHP
+- Team name: We Love PHP
 - Members:
     - Naman Arora   36863082
     - Devstutya Pandey 58218041
@@ -34,10 +23,10 @@ This system will bring clarity and coordination to a process that’s often time
 
 ### 3. Team Goals
 #### Academic goals
-Achieve 85% and above on the project. 
-Have a deployable project.
-Deliver a functional web application fulfilling all of the requirements.
-Learn and apply different aspects of test driven development.
+- Achieve 85% and above on the project. 
+- Have a deployable project.
+- Deliver a functional web application fulfilling all of the requirements.
+- Learn and apply different aspects of test driven development.
 
 
 #### Communication Goals 
@@ -137,20 +126,20 @@ Hear people out/give each side a chance to explain.
 
 
 #### Process for handling unresponsive or underperforming members
-Follow a “3 strikes” sort of model
-1st time: approach the person directly
-2nd time: discuss at team meeting
-3rd time: involve instructor
-Focus on preventing this from having to happen in the first place
-If something comes up requiring you to be offline for a time, COMMUNICATE that with the team ahead of time so no one’s left wondering
-If you’re stuck on something, COMMUNICATE so that you can get help; otherwise, it could look like you’re just slacking/procrastinating/etc.
-Remember we’re all human, we all want to do well, and we all want the project to be the best that it can be
+- Follow a “3 strikes” sort of model
+   - 1st time: approach the person directly
+   - 2nd time: discuss at team meeting
+   - 3rd time: involve instructor
+- Focus on preventing this from having to happen in the first place
+- If something comes up requiring you to be offline for a time, COMMUNICATE that with the team ahead of time so no one’s left wondering
+- If you’re stuck on something, COMMUNICATE so that you can get help; otherwise, it could look like you’re just slacking/procrastinating/etc.
+- Remember we’re all human, we all want to do well, and we all want the project to be the best that it can be
 
 
 ### 7. Decision-Making Process
 
-- How decisions will be made (e.g., consensus, majority vote, rotating lead)
-Consensus decision making whereby group members develop and agree to support a decision in the best interest of the whole. Focus on reaching an acceptable resolution, one that can be supported, even if not the "favourite" of each individual
+- Consensus decision making whereby group members develop and agree to support a decision in the best interest of the whole. 
+- Focus on reaching an acceptable resolution, one that can be supported, even if not the "favourite" of each individual
 
 
 ### 8. Accountability and Commitment
@@ -182,8 +171,3 @@ Consensus decision making whereby group members develop and agree to support a d
 
 ---
 
-## Tips for Success
-- Be honest and realistic—this document is for your benefit.
-- Keep it flexible. Roles and norms can evolve, but communicate changes clearly.
-- Use this charter when conflicts arise or when the team needs to refocus.
-- Refer back to it during your end-of-term reflection or evaluations.
