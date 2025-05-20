@@ -98,7 +98,7 @@ Learn and apply different aspects of test driven development.
 
 
 - Main represents stable version of the codebase
-- development is the most up-to-date version of the codebase which feature branches are to be merged into
+- Development is the most up-to-date version of the codebase which feature branches are to be merged into
 - Protect main and development branches to ensure no accidental pushes with required 2 PR reviews and passing tests
 - Branch off of development
 - Use feature branches
