@@ -360,18 +360,18 @@ Use the table below to help line up everyone’s strengths and areas of improvem
 For **experience** provide a description of a previous project that would be similar to the technical difficulty of this project’s proposal.  None, if nothing
 For **good At**, list of skills relevant to the project that you think you are good at and can contribute to the project.  These could be soft skills, such as communication, planning, project management, and presentation.  Consider different aspects: design, coding, testing, and documentation. It is not just about the code.  You can be good at multiple things. List them all! It doesn’t mean you have to do it all.  Don’t ever leave this blank! Everyone is good at something!
 
-|  Category  | Shan Richards | Reyhan Reginald | Team Member 3 | Team Member 4 | Team Member 5 | Team Member 6 | 
+|  Category  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Team Member 4 | Team Member 5 | Team Member 6 | 
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
-|  **Experience**  | Fullstack development| Canvas clone done for COSC 310.  |  |  |  |  | 
-|  **Good At**  | Design and Analysis | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  |  |  |  |  | 
-|  **Expect to learn**  | React,...  | Node.js as little experience. Microservices. | It may not be technical skills. You may be a good coder but never worked with people in a team. Maybe you built a web- site but not used a framework. | It may also be a theoretical concept you already learned but never applied in practice. | Think about different project aspects: design, data security, web security, IDE tools, inte- gration testing, CICD, etc. There will be something. | Don’t ever leave this blank! We are all learning. | 
+|  **Experience**  | Fullstack development| Canvas clone done for COSC 310.  | Canvas Clone done for 310. |  |  |  | 
+|  **Good At**  | Design and Analysis | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  | Fullstack development, React (Next.js), Testing (unit+end to end)  |  |  |  | 
+|  **Expect to learn**  | React,...  | Node.js as little experience. Microservices. | Reverse Proxy Implementation, Deployment (via Azure, if time permits) | It may also be a theoretical concept you already learned but never applied in practice. | Think about different project aspects: design, data security, web security, IDE tools, inte- gration testing, CICD, etc. There will be something. | Don’t ever leave this blank! We are all learning. | 
 
 Use this opportunity to discuss with your team who **may** do what in the project. Make use of everyone’s skill set and discuss each person’s role and responsibilities by considering how everyone will contribute.  Remember to identify project work (some examples are listed below at the top of the table) and course deliverables (the bottom half of the table). You might want to change the rows depending on what suits your project and team.  Understand that no one person will own a single task.  Recall that this is just an incomplete example.  Please explain how things are assigned in the caption below the table, or put the explanation into a separate paragraph so the reader understands why things are done this way and how to interpret your table.   Please note that this is just an example table and that you will need to complete this in more detail.
 
 |  Category of Work/Features  | Shan Richards | Reyhan Reginald | Team Member 3 | Team Member 4 | Team Member 5 | Team Member 6 | 
 | ------------- | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
 |  **Project Management: Kanban Board Maintenance**  |   |  | :heavy_check_mark:  |  |  |  | 
-|  **System Architecture Design**  | ✅ | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark:  |  |  | 
+|  **System Architecture Design**  | ✅ |:heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark:  |  |  | 
 |  **User Interface Design**  |   | :heavy_check_mark: |  |  |  |  | 
 |  **CSS Development**  |  |  |  |  |  | :heavy_check_mark:  | 
 |  **Backend Dev**  |✅    |✅  |  |  |  |  | 
