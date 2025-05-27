@@ -25,20 +25,19 @@ The purpose of this software is to streamline the process of TA allocation and m
 This platform will support the management and allocation of Teaching Assistant (TA) positions.
 
 
-**Students** can create an account and apply to open TA positions. They can track the status of their applications and accept/decline offers for TA positions. Upon acceptance, their assigned TA schedule will be visible in a calendar.
+**Students** can create an account and apply to open TA positions. They can see the status of their applications and accept/decline offers for TA positions. Upon acceptance, their assigned TA schedule will be visible in a calendar.
 
-**Instructors** can create an account and submit TA requests for the courses they are teaching (indicating the number of TAs needed, preferred skills, or other criteria), and view the final list of TAs allocated to their courses.
+**Instructors** can create an account and submit TA requests for the courses they are teaching (indicating preferred skills or other criteria), and view the final list of TAs allocated to their courses.
 
-**TA Coordinators and Staff (Admin Users)** can receive and review TA requests from instructors, post open TA positions, manage the allocation of TAs to courses.
+**TA Coordinators and Staff (Admin Users)** can receive and review TA requests from instructors, post open TA positions, allocate TAs to courses.
 
 
 ### System Boundaries
 
 The system will not :  
 - Include automated TA matching or optimization algorithms (e.g., no automatic balancing or best-fit recommendation engine).  
-- Include an interview management system (if instructors want to interview applicants, this would be managed outside the platform; the system assumes that final TA assignments are handled/administered by coordinators).  
+- Include an interview management system (if TA coordinators  want to interview applicants, this would be managed outside the platform; the system assumes that final TA assignments are handled/administered by coordinators).  
 - Manage payroll, contracts, or other HR functions.  
-- Handle communication channels beyond basic status updates and notifications within the system (i.e., no integrated email or chat for negotiations or detailed discussions).
 - Integrate with pre-existing UBCO information systems.
 - Include the ability for Instructors to select or interview preferred Teaching Assistants for their courses. 
 
@@ -65,14 +64,17 @@ The system will not :
 
 Three pimrary users were identified for the system and proto-personas were created for each.
 
-- Students
+- Students: This user group includes both graduate and undergraduate students who interact directly with the system by applying for available TA positions.
+  
   ![Student Profile: Mei Guo](Student_Profile_Mei_Guo.png)
- ![Student Profile: Ben Jackson](Student_Profile_Ben_Jackson.png)
-- Instructor
+
+- Instructors: This user group includes faculty members responsible for teaching courses who use the system to submit TA requests and to view TAs allocated to their courses.  
    ![Instructor Profile: Dr. Fatma Ozturk](Instructor_Profile_Dr_Fatma_Ozturk.png)
-- TA Coordinators & Staff
+
+- TA Coordinators & Staff: This user group includes administrative staff and TA coordinators who manage course listings, post open TA positions, and oversee the assignment of TAs each term.
+  
    ![TA Coordinator Profile: Dr. Jeff Obi](TA_Coordinator_Dr_Jeff_Obi.png)
-   ![TA Coordinator Profile: Ravi Mehta](TA_Coordinator_Staff_Ravi_Mehta.png)
+  
 
 
 ### Envisioned Usage
@@ -132,10 +134,9 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 - System will allow students to create a profile containing personal details.
 - System will allow students to apply for open TA positions.
 - System will only allow the student to submit one application per TA position.
-- System will allow TA/Student users to accept or decline an offer for a TA position.
-- System will allow TA/Student users to accept or decline an offer for a TA position.
-- System will notify TA/Student users if they receive an offer from a TA coordinator.
-- System will provide a calendar view for TAs to view their schedule.
+- System will allow studens to accept or decline an offer for a TA position.
+- System will notify students if they receive an offer from a TA coordinator.
+- System will provide a calendar view for students to view their TA schedule.
 
 #### Instructor Functionality
 
@@ -147,7 +148,7 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 #### Administrator (Admin) Functionality
 
 - System will allow TA coordinator users to offer positions to TA/Student users.
-- System will allow the TA coordinator to create, update, delete and archive job openings. 
+- System will allow the TA coordinator to create, update, delete and archive TA job postings. 
 - System will allow the TA coordinator to set deadlines for TA applications.
 - System will allow the TA cordinatator to view historical TA assignments for different courses.
 - System will allow the TA coordinator to export system data (specifics to be decided).
@@ -278,7 +279,7 @@ CSS and Tailwind styling: both as needed to allow flexibility/customization but 
 
 
 ### Backend
-Nodejs: 
+Django: 
 Docker: because portability, scalability, quicker deployment and dev env setup, no more saying “works on my machine”, works really well with microservices, industry standard technology
 
 
@@ -360,9 +361,9 @@ For **good At**, list of skills relevant to the project that you think you are g
 
 |  Category  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Team Member 4 | Team Member 5 | Team Member 6 | 
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
-|  **Experience**  | Fullstack development| Canvas clone done for COSC 310.  | Canvas Clone done for 310. |  |  |  | 
-|  **Good At**  | Design and Analysis | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  | Fullstack development, React (Next.js), Testing (unit+end to end)  |  |  |  | 
-|  **Expect to learn**  | React,...  | Node.js as little experience. Microservices. | Reverse Proxy Implementation | It may also be a theoretical concept you already learned but never applied in practice. | Think about different project aspects: design, data security, web security, IDE tools, inte- gration testing, CICD, etc. There will be something. | Don’t ever leave this blank! We are all learning. | 
+|  **Experience**  | Goodreads clone for a web dev course; Live nation clone for 310| Canvas clone done for COSC 310.  | Canvas Clone done for 310. |  |  |  | 
+|  **Good At**  | System Design and Analysis, Full stack development | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  | Fullstack development, React (Next.js), Testing (unit+end to end)  |  |  |  | 
+|  **Expect to learn**  | React | Node.js as little experience. Microservices. | Reverse Proxy Implementation | It may also be a theoretical concept you already learned but never applied in practice. |  |  | 
 
 Use this opportunity to discuss with your team who **may** do what in the project. Make use of everyone’s skill set and discuss each person’s role and responsibilities by considering how everyone will contribute.  Remember to identify project work (some examples are listed below at the top of the table) and course deliverables (the bottom half of the table). You might want to change the rows depending on what suits your project and team.  Understand that no one person will own a single task.  Recall that this is just an incomplete example.  Please explain how things are assigned in the caption below the table, or put the explanation into a separate paragraph so the reader understands why things are done this way and how to interpret your table.   Please note that this is just an example table and that you will need to complete this in more detail.
 
