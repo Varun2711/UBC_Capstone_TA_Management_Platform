@@ -364,22 +364,22 @@ For **good At**, list of skills relevant to the project that you think you are g
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
 |  **Experience**  | Fullstack development| Canvas clone done for COSC 310.  | Canvas Clone done for 310. |  |  |  | 
 |  **Good At**  | Design and Analysis | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  | Fullstack development, React (Next.js), Testing (unit+end to end)  |  |  |  | 
-|  **Expect to learn**  | React,...  | Node.js as little experience. Microservices. | Reverse Proxy Implementation, Deployment (via Azure, if time permits) | It may also be a theoretical concept you already learned but never applied in practice. | Think about different project aspects: design, data security, web security, IDE tools, inte- gration testing, CICD, etc. There will be something. | Don’t ever leave this blank! We are all learning. | 
+|  **Expect to learn**  | React,...  | Node.js as little experience. Microservices. | Reverse Proxy Implementation | It may also be a theoretical concept you already learned but never applied in practice. | Think about different project aspects: design, data security, web security, IDE tools, inte- gration testing, CICD, etc. There will be something. | Don’t ever leave this blank! We are all learning. | 
 
 Use this opportunity to discuss with your team who **may** do what in the project. Make use of everyone’s skill set and discuss each person’s role and responsibilities by considering how everyone will contribute.  Remember to identify project work (some examples are listed below at the top of the table) and course deliverables (the bottom half of the table). You might want to change the rows depending on what suits your project and team.  Understand that no one person will own a single task.  Recall that this is just an incomplete example.  Please explain how things are assigned in the caption below the table, or put the explanation into a separate paragraph so the reader understands why things are done this way and how to interpret your table.   Please note that this is just an example table and that you will need to complete this in more detail.
 
-|  Category of Work/Features  | Shan Richards | Reyhan Reginald | Team Member 3 | Team Member 4 | Team Member 5 | Team Member 6 | 
+|  Category of Work/Features  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Team Member 4 | Team Member 5 | Team Member 6 | 
 | ------------- | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
-|  **Project Management: Kanban Board Maintenance**  |   |  | :heavy_check_mark:  |  |  |  | 
-|  **System Architecture Design**  | ✅ |:heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark:  |  |  | 
-|  **User Interface Design**  |   | :heavy_check_mark: |  |  |  |  | 
-|  **CSS Development**  |  |  |  |  |  | :heavy_check_mark:  | 
-|  **Backend Dev**  |✅    |✅  |  |  |  |  | 
+|  **Project Management: Kanban Board Maintenance**  |   |  | ✅  |  |  |  | 
+|  **System Architecture Design**  | ✅ |:heavy_check_mark: | ✅  | :heavy_check_mark:  |  |  | 
+|  **User Interface Design**  |   | :heavy_check_mark: | ✅ |  |  |  | 
+|  **CSS Development**  |  |  |  ✅|  |  | :heavy_check_mark:  | 
+|  **Backend Dev**  |✅    |✅  | ✅ |  |  |  | 
 |  **Feature 2**  |  |  |  |  |  |  | 
 |  **...**  |  |  |  |  |  |  | 
-|  **Database setup**  |  | ✅ | :heavy_check_mark:  | :heavy_check_mark:  |  |  | 
-|  **Presentation Preparation**  | ✅ | ✅ |  | :heavy_check_mark:  |  |  | 
-|  **Design Video Creation**  |  | :heavy_check_mark:  | :heavy_check_mark:  |  |  |  | 
+|  **Database setup**  |  | ✅ | ✅  | :heavy_check_mark:  |  |  | 
+|  **Presentation Preparation**  | ✅ | ✅ |✅  | :heavy_check_mark:  |  |  | 
+|  **Design Video Creation**  |  | :heavy_check_mark:  | ✅  |  |  |  | 
 |  **Design Video Editing**  |  | :heavy_check_mark:  |  |  |  |  | 
-|  **Design Report**  | ✅  |  ✅|  |  |  |  | 
-  **Final Team Report**  |  ✅ | ✅  |  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: | 
+|  **Design Report**  | ✅  |  ✅| ✅ |  |  |  | 
+  **Final Team Report**  |  ✅ | ✅  |  ✅|  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: | 
