@@ -1,4 +1,4 @@
-# Project Proposal for #1: TA Allocation and Management System
+# Project Plan for TA Allocation and Management System
 
 **Team Number:** 2
 
@@ -79,20 +79,18 @@ Three pimrary users were identified for the system and proto-personas were creat
 
 ##### Student Scenario
 
-Jill is an undergraduate student who hopes to TA a CMPS course next school year. She creates an account and then logs in using her credentials. Then, she begins her application, adding the required personal information and uploading documents like her resume and unofficial transcript. She chooses her preferred courses to TA and submits her application. After that, she navigates to her profile page and sees that her application has been successfully submitted, so she logs out. Some days later, Jill is curious about the status of her TA application, so she logs into her account. After navigating to her profile page, she sees that she has an offer. She reviews the details of her assignment and then checks her planner to verify that it will work with her schedule. Seeing that it does, she decides to accept the offer.
+Jill is an undergraduate student who hopes to TA a CMPS course next school year. She creates an account and then logs in using her credentials. Then, she begins her application, adding the required personal information and uploading documents like her resume, her availability and other documents. She chooses to apply to a few courses she thinks she is a good fit to and submits her application. After that, she navigates to her profile page and sees that her application has been successfully submitted, so she logs out. Some days later, Jill is curious about the status of her TA application, so she logs into her account. After navigating to her profile page, she sees that she has an offer. She reviews the details of her assignment and then checks her planner to verify that it will work with her schedule. Seeing that it does, she decides to accept the offer.
 
 ##### Instructor Scenario
 
-Dr. Ngyen, a computer science professor, logs into the system prior to the start of a new academic year. He navigates to his profile and updates his courses to reflect what he will be teaching in each term. Next, he indicates the number of TAs and type (undergraduate or graduate) he requires for each course. Then he logs out for the day. A week later, Dr. Ngyen logs back in and navigates to his profile, where he sees that his requested TA positions have been filled. He exports the allocation details for each course, which have the names and contact information of everyone, and logs out. With this information, Dr. Ngyen drafts an email to schedule onboarding meetings with his newly appointed TAs.
+Dr. Nguyen, a computer science professor, logs into the system prior to the start of a new academic year. He navigates to his profile and updates his courses to reflect what he will be teaching in each term. He then uses the system to communicate his TA requirements for each course, including preferences such as the desired number of TAs and whether they should be undergraduate or graduate students. The system logs his input for consideration during the allocation process. After entering his information, Dr. Nguyen logs out for the day.
+
+A week later, Dr. Nguyen logs back in and navigates to his profile, where he sees the finalized TA allocations for his courses. He can view and export the details, which include the names and contact information of the assigned TAs. After retrieving the information he needs, he logs out. With this information, Dr. Nguyen drafts an email to schedule onboarding meetings with his newly appointed TAs.
+
 
 ##### TA coordinator/Admin: 
 
 Dr. Mavis, a statistics professor who oversees TA appointments within her department, logs into the system to get a head start on TA planning. First, she uploads the finalized list of courses and corresponding lab sections for the upcoming school year. Then she navigates to her profile and edits her courses to reflect what she will be teaching this year. For each course, she indicates how many and what type (undergraduate vs. graduate) of TAs she requires. She then logs out to catch up on some emails. Some weeks later, the day after the application deadline, Dr. Mavis logs back into the system. Today she aims to complete all assignments for first year computer science courses. She navigates to her Admin view and sees that a number of professors have made TA requests. She views them one by one to get a sense of the department’s needs. Then she navigates to the Student Applications and … Once she has finished appointing TAs for the time being, she logs out of the system and will return tomorrow to continue making appointments and monitoring student responses.
-
-
-
-
-
 
 
 ### Requirements:
@@ -101,6 +99,7 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 ##### Login & Registration
 - System will enable users (Students, Instructors, and TA Coordinators) to create accounts using an email and a password.
 - System will be able to authenticate users when they log in using their email and password.
+- System will allow authenticated users to logout.
 - System will allow users (Students, Instructors, and TA Coordinators) to reset their password.
 
 ##### File Processing for Previous TA
@@ -118,25 +117,36 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 - System will allow TA/Student users to update their availability for both terms.
 - System will allow TA/Student users to update their transcripts.
 - System will accept and store resume documents from TA/Student users (should accept .docx, .pdf, .doc, etc.).
-- System will be able to accept documents pertaining to transcript data (format to be decided).
 - System will allow TA/Student users to update all of their documents.
+- The system will enforce document size (<50 MB) to ensure data consistency.
+- The system will allow students to download a PDF summary of their TA appointment history.
 
 ##### TA/Student Functionality
 - System will allow students to complete their profiles with their names, UBCO student number, degree program, year of study, department, preferred name (optional), major program of study, minor programs, and undergrad/grad status.
-- System will allow students to apply for open TA positions that they are eligible for.
+- System will allow students to apply for open TA positions.
 - System will only allow the student to submit one application per open TA position.
 - System will allow TA/Student users to accept or decline an offer for a TA position.
 - System will notify TA/Student users if they receive an offer from an admin.
 <!-- System will track hours worked for TAs (commented out as in original) -->
 - System will provide a calendar view for TAs to view their schedule.
+- The system will allow students to withdraw applications before they are offered a position.
 
-##### Instructor and Admin Functionality
-- System will allow admin and instructor users to export data (specifics to be decided at a later date).
-- System will allow admin users to offer positions to TA/Student users.
+#### Instructor Functionality
+- System will allow instructors to submit TA requirements/preferences (e.g., number of TAs, type, skills).
 - System will notify the instructor if a TA/Student has been hired for their class.
-- System will allow the instructor to assign a hired TA/Student a duty (class help, exam invigilation, labs, etc.).
-- System will allow the administrator to create job openings.
-- System will allow the administrator to update job openings.
+- System will allow instructors to assign a hired TA/Student a duty (class help, exam invigilation, labs, etc.). (?)
+- System will allow instructors to export data relevant to their courses or assigned TAs (specific formats to be decided).
+
+#### Administrator (Admin) Functionality
+- System will allow admin users to offer positions to TA/Student users.
+- System will allow administrators to create job openings.
+- System will allow administrators to update job openings.
+- System will allow administrators to set deadlines for TA applications.
+- System will allow administrators to view historical TA assignments for different courses.
+- System will allow administrators to export system data (specifics to be decided).
+- System will allow administrators to assign instructors to courses.
+- System will allow administrators to manage appointment changes (e.g., reassign or revoke TA assignments).
+- System will allow administrators to send system-generated notifications or bulk communications to instructors and TAs.
 
 ##### Instructor and Admin Dashboards
 - System will allow instructors to see all of their courses.
@@ -149,7 +159,7 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 #### Non-functional Requirements:
 
 - System will have a responsive UI that fits all desktop/laptop screens and resolutions.
-- System will have a simple and easy-to-use UI (think iPhone, not Galaxy S series).
+- System will have a simple and easy-to-use UI.
 - System will encrypt all personal data prior to storing (student numbers, names, passwords, etc.).
 - System will be written to prevent all injection attacks.
 - System must work on any environment and operating system.
@@ -183,7 +193,7 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 21. Students will receive an email confirmation when their application status changes.
 22. Students will be able to accept/decline an appointment once offered.
 23. Students will be able to download a PDF summary of their appointment history
-24. Students will be able to visualize their current appointments on a calendar
+24. Students will be able to visualize their current appointments on a calendar.
 
 
 ##### Instructors 
@@ -262,12 +272,7 @@ The system will be implemented as a web-based application with a focus on modula
   
 ## Tech Stack
 
-For each choice you make, provide a short justification based on the current trends in the industry. For example, don’t choose an outdated technology because you learned it in a course. Also, don’t choose a technology because one of the team members knows it well. You need to make choices that are good for the project and that meet the client’s needs, otherwise, you will be asked to change those choices.  Consider risk analysis.
-
-
 ### Frontend
-
-
 React: because reusable components, flexible, in-demand, lots of documentation/community support, overall team familiarity (Next.js vs Vite)
 JavaScript
 HTML: As it’s necessary for the foundation
@@ -275,16 +280,14 @@ CSS and Tailwind styling: both as needed to allow flexibility/customization but 
 
 
 ### Backend
-
-
-Nodejs: because we want to go to hell and disobey Scott
+Nodejs: 
 Docker: because portability, scalability, quicker deployment and dev env setup, no more saying “works on my machine”, works really well with microservices, industry standard technology
 
 
 ### Database
 
 
-PostgreSQL or MyS	QL: because it’s relational
+PostgreSQL or MySQL: because it’s relational db.
 
 
 ## High-level risks
@@ -319,7 +322,6 @@ Mitigation: Select familiar technologies where possible. Conduct early prototypi
 
 
 ## Assumptions and constraints
-What assumptions is the project team making and what are the constraints for the project?
 
 ### Assumptions:
 - The TA Allocation and Management System is being developed as a stand-alone system, with no need to integrate with any existing UBCO systems.
@@ -358,26 +360,26 @@ Use the table below to help line up everyone’s strengths and areas of improvem
 For **experience** provide a description of a previous project that would be similar to the technical difficulty of this project’s proposal.  None, if nothing
 For **good At**, list of skills relevant to the project that you think you are good at and can contribute to the project.  These could be soft skills, such as communication, planning, project management, and presentation.  Consider different aspects: design, coding, testing, and documentation. It is not just about the code.  You can be good at multiple things. List them all! It doesn’t mean you have to do it all.  Don’t ever leave this blank! Everyone is good at something!
 
-|  Category  | Shan Richards | Team Member 2 | Team Member 3 | Team Member 4 | Team Member 5 | Team Member 6 | 
+|  Category  | Shan Richards | Reyhan Reginald | Team Member 3 | Team Member 4 | Team Member 5 | Team Member 6 | 
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
-|  **Experience**  | Fullstack development|  |  |  |  |  | 
-|  **Good At**  | Design and Analysis |  |  |  |  |  | 
-|  **Expect to learn**  | React,...  | | It may not be technical skills. You may be a good coder but never worked with people in a team. Maybe you built a web- site but not used a framework. | It may also be a theoretical concept you already learned but never applied in practice. | Think about different project aspects: design, data security, web security, IDE tools, inte- gration testing, CICD, etc. There will be something. | Don’t ever leave this blank! We are all learning. | 
+|  **Experience**  | Fullstack development| Canvas clone done for COSC 310.  |  |  |  |  | 
+|  **Good At**  | Design and Analysis | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  |  |  |  |  | 
+|  **Expect to learn**  | React,...  | Node.js as little experience. Microservices. | It may not be technical skills. You may be a good coder but never worked with people in a team. Maybe you built a web- site but not used a framework. | It may also be a theoretical concept you already learned but never applied in practice. | Think about different project aspects: design, data security, web security, IDE tools, inte- gration testing, CICD, etc. There will be something. | Don’t ever leave this blank! We are all learning. | 
 
 Use this opportunity to discuss with your team who **may** do what in the project. Make use of everyone’s skill set and discuss each person’s role and responsibilities by considering how everyone will contribute.  Remember to identify project work (some examples are listed below at the top of the table) and course deliverables (the bottom half of the table). You might want to change the rows depending on what suits your project and team.  Understand that no one person will own a single task.  Recall that this is just an incomplete example.  Please explain how things are assigned in the caption below the table, or put the explanation into a separate paragraph so the reader understands why things are done this way and how to interpret your table.   Please note that this is just an example table and that you will need to complete this in more detail.
 
-|  Category of Work/Features  | Shan Richards | Team Member 2 | Team Member 3 | Team Member 4 | Team Member 5 | Team Member 6 | 
+|  Category of Work/Features  | Shan Richards | Reyhan Reginald | Team Member 3 | Team Member 4 | Team Member 5 | Team Member 6 | 
 | ------------- | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
 |  **Project Management: Kanban Board Maintenance**  |   |  | :heavy_check_mark:  |  |  |  | 
-|  **System Architecture Designt**  | ✅ | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark:  |  |  | 
+|  **System Architecture Design**  | ✅ | :heavy_check_mark:  | :heavy_check_mark:  | :heavy_check_mark:  |  |  | 
 |  **User Interface Design**  |   | :heavy_check_mark: |  |  |  |  | 
 |  **CSS Development**  |  |  |  |  |  | :heavy_check_mark:  | 
-|  **Backend Dev**  |✅    |  |  |  |  |  | 
+|  **Backend Dev**  |✅    |✅  |  |  |  |  | 
 |  **Feature 2**  |  |  |  |  |  |  | 
 |  **...**  |  |  |  |  |  |  | 
-|  **Database setup**  |  |  | :heavy_check_mark:  | :heavy_check_mark:  |  |  | 
-|  **Presentation Preparation**  | ✅ |  |  | :heavy_check_mark:  |  |  | 
+|  **Database setup**  |  | ✅ | :heavy_check_mark:  | :heavy_check_mark:  |  |  | 
+|  **Presentation Preparation**  | ✅ | ✅ |  | :heavy_check_mark:  |  |  | 
 |  **Design Video Creation**  |  | :heavy_check_mark:  | :heavy_check_mark:  |  |  |  | 
 |  **Design Video Editing**  |  | :heavy_check_mark:  |  |  |  |  | 
-|  **Design Report**  | ✅  |  |  |  |  |  | 
-  **Final Team Report**  |  ✅ |  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: | 
+|  **Design Report**  | ✅  |  ✅|  |  |  |  | 
+  **Final Team Report**  |  ✅ | ✅  |  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: | 
