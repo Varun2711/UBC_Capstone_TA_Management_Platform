@@ -96,64 +96,73 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 ### Requirements:
 
 #### Functional Requirements:
+
 ##### Login & Registration
-- System will enable users (Students, Instructors, and TA Coordinators) to create accounts using an email and a password.
-- System will be able to authenticate users when they log in using their email and password.
+
+- System will enable users (Students, Instructors, and TA Coordinators) to create an account using an email, password, and required personal information.
+- System will perform data validation as required during account creation (Ex: student number must be 8 digit number)
+- System will authenticate users when they login with their email and password.
 - System will allow authenticated users to logout.
 - System will allow users (Students, Instructors, and TA Coordinators) to reset their password.
 
 ##### File Processing for Previous TA
-- System will be able to receive files containing previous TA appointments (file format will be specified at a later date, but assume CSV ← Instructor's advice).
-- System will be able to process files it receives and securely store the data.
+
+- System will be able to receive, validate, and process files containing previous TA appointments (CSV format, specifics TBD at later date).
+- System will securely store data it receives from CSV files.
+- System will report/log errors related to file uploads or invalid data when they occur.
 
 ##### Content Access
-- System will only let authenticated users access content pertaining to scheduling, allocation, and management.
-- System will let all users access information on available positions.
-- System will allow authenticated TA/Student users to access web forms for job applications.
+
+- System will allow all users (including not logged-in) to access information on available positions.
+- System will allow only authenticated users to access content pertaining to scheduling, allocation, and management. Specifically,
+   - System will allow only authenticated TA/Student users to access web forms for job applications.
+   - System will allow only authenticated Instructors (and the Coordinator) to access TA appointment information for their assigned courses.
 
 ##### TA/Student Dashboards and Data Modification
+
 - System will provide role-specific dashboards for authenticated users.
-- System will allow TA/Student users to create their availability for both terms.
-- System will allow TA/Student users to update their availability for both terms.
-- System will allow TA/Student users to update their transcripts.
-- System will accept and store resume documents from TA/Student users (should accept .docx, .pdf, .doc, etc.).
-- System will allow TA/Student users to update all of their documents.
-- The system will enforce document size (<50 MB) to ensure data consistency.
-- The system will allow students to download a PDF summary of their TA appointment history.
+- System will allow TA/Student users to input their academic term availability.
+- System will allow TA/Student users to update their academic term availability before the application deadline.
+- System will allow TA/Student users to upload supporting documents, namely resume and transcript.
+- System will allow TA/Student users to update (reupload) their supporting documents.
+- System will store TA/Student users' personal information and supporting documents
+- System will enforce document size to ensure data consistency.
 
 ##### TA/Student Functionality
-- System will allow students to complete their profiles with their names, UBCO student number, degree program, year of study, department, preferred name (optional), major program of study, minor programs, and undergrad/grad status.
+- System will allow students to create a profile containing personal details.
 - System will allow students to apply for open TA positions.
-- System will only allow the student to submit one application per open TA position.
+- System will only allow the student to submit one application per TA position.
 - System will allow TA/Student users to accept or decline an offer for a TA position.
-- System will notify TA/Student users if they receive an offer from an admin.
-<!-- System will track hours worked for TAs (commented out as in original) -->
+- System will allow TA/Student users to accept or decline an offer for a TA position.
+- System will notify TA/Student users if they receive an offer from a TA coordinator.
 - System will provide a calendar view for TAs to view their schedule.
-- The system will allow students to withdraw applications before they are offered a position.
 
 #### Instructor Functionality
-- System will allow instructors to submit TA requirements/preferences (e.g., number of TAs, type, skills).
-- System will notify the instructor if a TA/Student has been hired for their class.
-- System will allow instructors to assign a hired TA/Student a duty (class help, exam invigilation, labs, etc.). (?)
+
+- System will allow instructors to communicate TA preferences to the TA coordinator.
+- System will notify the instructor when TAs have been hired for their class.
 - System will allow instructors to export data relevant to their courses or assigned TAs (specific formats to be decided).
+- System will allow instructors to view assigned TAs for each course. 
 
 #### Administrator (Admin) Functionality
-- System will allow admin users to offer positions to TA/Student users.
-- System will allow administrators to create job openings.
-- System will allow administrators to update job openings.
-- System will allow administrators to set deadlines for TA applications.
-- System will allow administrators to view historical TA assignments for different courses.
-- System will allow administrators to export system data (specifics to be decided).
-- System will allow administrators to assign instructors to courses.
-- System will allow administrators to manage appointment changes (e.g., reassign or revoke TA assignments).
+
+- System will allow TA coordinator users to offer positions to TA/Student users.
+- System will allow the TA coordinator to create, update, delete and archive job openings. 
+- System will allow the TA coordinator to set deadlines for TA applications.
+- System will allow the TA cordinatator to view historical TA assignments for different courses.
+- System will allow the TA coordinator to export system data (specifics to be decided).
+- System will allow the TA coordinator to assign instructors to courses.
+- System will allow the TA coordinator to manage appointment changes (e.g., reassign or revoke TA assignments).
 - System will allow administrators to send system-generated notifications or bulk communications to instructors and TAs.
+- System will provide the Admin with a filtered view of applicants by availability for each course.
 
 ##### Instructor and Admin Dashboards
+
 - System will allow instructors to see all of their courses.
-- System will provide instructors with a hierarchical view of their courses and assigned TAs, similar to an organizational chart.
-- System will allow instructors to see the availability of their TAs.
-- System will provide access to the catalogue of courses for the admin.
-- System will provide visualizations of TA allocations for the instructor.
+- System will provide instructors with a visualization of their courses and assigned TAs.
+- System will allow instructors to view the availability of their allocated TAs.
+- System will provide access to the catalogue of courses for the Admin/Coordinator.
+- System will provide visualizations of TA allocations for the Instructor.
 
 
 #### Non-functional Requirements:
@@ -161,114 +170,103 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 - System will have a responsive UI that fits all desktop/laptop screens and resolutions.
 - System will have a simple and easy-to-use UI.
 - System will encrypt all personal data prior to storing (student numbers, names, passwords, etc.).
-- System will be written to prevent all injection attacks.
+- System will be written to prevent injection attacks.
 - System must work on any environment and operating system.
 - System must follow a modular architecture to allow for future expansion to other departments.
-- System will incorporate data privacy protections aligned with institutional and legal standards.
+- System will incorporate data privacy protections aligned with UBC standards.
+- System will enforce document size to ensure data consistency.
 
 
 #### User Requirements:
 
-##### Students 
-1. Students will be able to create an account using email
-2. Students will be able to log in using email and password
-3. Students will be able to reset their password in case they forget.
-4. Students will be able to complete their profile with full name, Student Number, Degree Program, Year of Study, Department, Preferred Name (Optional), Major Program of Study, Minor programs, if they are a undergrad/grad student
-5. Students will be able to upload their resume, transcripts and cover letter(optional)
-6. Students will be able to update their profile at any time
-7. Students will be able to delete their profile/ account.
-8. Students will be able to delete and reupload documents if needed
-9. Students will be able to indicate the courses which they have previously TA’d (if any) and which term - (not sure most prolly the Admin uploading the past records of previous TAs.)
-10. Students will be able to give preferences if applying for multiple courses
-11. Students will be able to enter their availability using a calendar interface
-12. Students will be able to modify their availability using the calendar interface.
-13. Students will be able to indicate how many hours per week they are available to work
-14. Students will be able to see the available TA positions for the upcoming term
-15. Students will be able to filter/search TA positions by course code, instructor or department
-16. Students will be able to see full posting details (instructor name, workload type, number of TA needed)
-17. Students will be able to apply for open TA positions using existing profile and documents.
-18. Student will be able to cancel/withdraw an application for a TA position.
-19. Students will be notified when application is successfully submitted.
-20. Students will be able to see the status of all their applications (Pending, Accepted, Rejected)
-21. Students will receive an email confirmation when their application status changes.
-22. Students will be able to accept/decline an appointment once offered.
-23. Students will be able to download a PDF summary of their appointment history
-24. Students will be able to visualize their current appointments on a calendar.
+##### Students
+
+1. Students will be able to create an account using email and password.
+2. Students will be able to login using email and password.
+3. Students will be able to reset their password in the case that they forget.
+4. Students will be able to create/fill out their profile with personal details.
+5. Students will be able to upload their resume and transcript.
+6. Students will be able to update their profile at any time.
+7. Students will be able to delete and reupload documents if needed.
+9. Students will be able to input their availability using a calendar interface.
+10. Students will be able to modify their availability using the calendar interface.
+11. Students will be able to indicate how many hours per week they are available to work.
+12. Students will be able to view available TA positions for the upcoming term.
+13. Students will be able to apply for open TA positions using their existing profile and documents.
+14. Students will be notified when an application is successfully submitted.
+15. Students will be able to view the status of their application.
+16. Students will be able to accept/decline an appointment once offered.
 
 
-##### Instructors 
+##### Instructors
 
-1. Instructors will be able to login using their credentials
-2. Instructors will be able to reset their password if they forget
-3. Instructors will have a personalized dashboard showing courses they are assigned to teach
-4. Instructors will be able to view/edit their profile (name, title, contact info)
-5. Instructors will be able to submit a TA request for each course they teach - indicating the number of TAs required,TA Type(Undergrad, Grad), Needed Skills, Needed Courses
-6. Instructors will be able to edit TA request up to a defined deadline.
+1. Instructors will be able to login using their credentials.
+2. Instructors will be able to reset their password in the case that they forget.
+3. Instructors will have a personalized dashboard showing courses they are assigned to teach.
+4. Instructors will be able to view/edit their profile information.
+5. Instructors will be able to indicate preferred qualifications, such as skillsets, for each of their courses.
 7. Instructors will be able to view the list of TAs assigned to each of their courses after appointments are made by the TA Coordinator.
-8. Instructors will be able to view TA profiles, including their contact information
+8. Instructors will be able to view the profiles and contact information of their allocated TAs.
 
-##### TA Coordinators & Staff 
-1.  TA Coordinators will be able to login using their credentials
-2. TA Coordinators will be able to reset their passwords in case they forget
-3. TA Coordinators will have access to an admin dashboard with full management capabilities
-4. TA Coordinators will be able to upload or manually add the list of courses offered in the upcoming term including - course code, instructor, term (Fall, Winter, Summer), Lab Tutorial/Sections                            
-5. TA Coordinators will be able to assign instructors to each course
-6.TA Coordinators will be able to view submitted 
-7. TA requests from Instructors.
-8.  TA Coordinators will be able to create and post TA job openings for specific courses.
-9.  TA Coordinators will be able to update the details of posted positions, including - number of TAs required, Required Qualifications, Application Deadline
-10. TA Coordinators will be able to archive or remove postings once filled =
-11. TA Coordinators will be able to view all student applications for each TA position
-12. For each application they can view - Full Student Profile, Uploaded Documents (Resume, Transcript, Optional Cover Letter) , Course Preferences, Availability Calendar, Previous TA Experience
-13. TA Coordinators will be able to appoint selected students to specific TA roles
-14. TA Coordinators will be able to manage changes to an appointment (reassigning or revoking an appointment)
-15. TA Coordinators will be able to upload CSV files of previous TA appointments to seed data into the system 
+##### TA Coordinators
+
+1. TA Coordinators will be able to login using their credentials.
+2. TA Coordinators will be able to reset their passwords in the case that they forget.
+3. TA Coordinators will have access to an admin dashboard with full TA management capabilities.
+4. TA Coordinators will be able to select or manually add the list of courses offered in the upcoming term.
+5. TA Coordinators will be able to assign instructors to courses.
+6. TA Coordinators will be able to create and post TA positions.
+7. TA Coordinators will be able to view student applications (profiles) for each TA position.
+8. TA Coordinators will be able to appoint students to specific TA roles.
+9. TA Coordinators will be able to make changes to an appointment (reassigning or revoking an appointment).
+10. TA Coordinators will be able to upload CSV files containing previous TA appointments to initialize data in the system.
 
 
 #### Technical Requirements:
-The system will be implemented as a web-based application with a focus on modularity, scalability, and maintainability. The problem will be solved technologically through a full-stack approach using modern web technologies and development practices.
 
+##### Frontend Requirements:
 
-**Frontend Requirements:**
-- Built using **React** (via **Next.js**) to enable reusable components and fast development with routing and SSR/SSG capabilities.
+- Built using **React** to enable reusable components and fast development with routing and SSR/SSG capabilities.
 - Developed using **JavaScript**, **HTML**, and **CSS**, with **Tailwind CSS** for styling to ensure a responsive and visually clean UI that is also quick to implement.
-- Interfaces for three primary user roles: **Students**, **Instructors**, and **Administrators**, each with clearly defined access permissions and features.
+- Interfaces for 2 primary user roles: **Students** and **Administrators**, each with clearly defined access permissions and features.
+- Interface for 1 secondary user role: **Instructor** each with clearly defined access permissions and features.
 - Frontend must consume backend data via **RESTful API** calls, handling auth tokens and session states securely.
-**Backend Requirements:**
-- Implemented using **Node.js**, offering an asynchronous, scalable runtime ideal for handling multiple requests across user types.
+
+##### Backend Requirements:
+  
+- The backend will be built using Python and the Django framework, which provides a robust, scalable, and secure environment for rapid development.
 - RESTful API design following best practices (versioning, clear endpoint structure, HTTP methods).
 - **Authentication and Authorization** will be required to restrict access based on roles; likely implemented using **JWT** (JSON Web Tokens).
 - **Docker** will be used to containerize the application, ensuring consistency across development and production environments. This simplifies deployment, onboarding new developers, and scaling the application.
 
+##### Database Requirements:
 
-**Database Requirements:**
-- Use of a **relational database** (either **PostgreSQL** or **MySQL**) to store normalized data such as:
-- User profiles (students, instructors, admins)
-- TA applications and assignments
-- Course details and department data
+- Use of a **relational database** (**PostgreSQL**) to store normalized data such as:
+   - User profiles (students, instructors, TA coordinators)
+   - TA applications and assignments
+   - Course details and department data
 - Structured relationships will support efficient querying, data integrity, and role-based access.
 
 
-**Security & Compliance:**
+##### Security & Compliance:
+
 - Use of **secure authentication mechanisms** (e.g., hashed passwords, HTTPS for communication).
-- Proper data validation and sanitization to prevent common web vulnerabilities (e.g., SQL injection, XSS).
+- Proper data validation and sanitization to prevent common web vulnerabilities.
 - Role-based access control to prevent privilege escalation.
 
 
-**DevOps & CI/CD:**
-- Code managed via **GitHub*, with a strict PR review policy (all PRs reviewed by at least 2 team members).
+##### DevOps & CI/CD:
+
+- Code managed via **GitHub*, with a strict PR review policy (all PRs reviewed by at least 2 team members, neither of whom are the PR owner/author).
 - Use of **CI/CD pipelines** for automatic testing, building, and deploying.
-- **Container orchestration** support (if needed later) to deploy microservices efficiently.
+- **Container orchestration** support to deploy microservices efficiently.
 
 
-**Other Notes:**
-- System must be complete, stable, and deployed by **August 2025**.
-- MVP version must be finalized and merged by **June 27, 2025**.
+##### Other Notes:
+
+- System must be complete and stable by **August 2025**.
+- MVP version must be finalized and merged by **June 27, 2025** (goal).
 - All features must be tested and reviewed thoroughly before merging.
-
-
- 
-
   
 ## Tech Stack
 
