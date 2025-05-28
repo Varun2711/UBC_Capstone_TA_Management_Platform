@@ -66,14 +66,14 @@ Three pimrary users were identified for the system and proto-personas were creat
 
 - Students: This user group includes both graduate and undergraduate students who interact directly with the system by applying for available TA positions.
   
-  ![Student Profile: Mei Guo](Student_Profile_Mei_Guo.png)
+  ![Student Profile: Mei Guo](protopersonas\Student_Profile_Mei_Guo.png)
 
 - Instructors: This user group includes faculty members responsible for teaching courses who use the system to submit TA requests and to view TAs allocated to their courses.  
-   ![Instructor Profile: Dr. Fatma Ozturk](Instructor_Profile_Dr_Fatma_Ozturk.png)
+   ![Instructor Profile: Dr. Fatma Ozturk](protopersonas\Instructor_Profile_Dr_Fatma_Ozturk.png)
 
 - TA Coordinators & Staff: This user group includes administrative staff and TA coordinators who manage course listings, post open TA positions, and oversee the assignment of TAs each term.
   
-   ![TA Coordinator Profile: Dr. Jeff Obi](TA_Coordinator_Dr_Jeff_Obi.png)
+   ![TA Coordinator Profile: Dr. Jeff Obi](protopersonas\TA_Coordinator_Dr_Jeff_Obi.png)
   
 
 
@@ -134,7 +134,7 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 - System will allow students to create a profile containing personal details.
 - System will allow students to apply for open TA positions.
 - System will only allow the student to submit one application per TA position.
-- System will allow studens to accept or decline an offer for a TA position.
+- System will allow students to accept or decline an offer for a TA position.
 - System will notify students if they receive an offer from a TA coordinator.
 - System will provide a calendar view for students to view their TA schedule.
 
@@ -272,21 +272,18 @@ Dr. Mavis, a statistics professor who oversees TA appointments within her depart
 ## Tech Stack
 
 ### Frontend
-React: because reusable components, flexible, in-demand, lots of documentation/community support, overall team familiarity (Next.js vs Vite)
+React: because reusable components, flexible, in-demand, lots of documentation/community support, overall team familiarity (Next.js or Vite)
 JavaScript
 HTML: As it’s necessary for the foundation
 CSS and Tailwind styling: both as needed to allow flexibility/customization but also faster/less frustrating
 
 
 ### Backend
-Django: 
-Docker: because portability, scalability, quicker deployment and dev env setup, no more saying “works on my machine”, works really well with microservices, industry standard technology
-
+Python and Django Framework (DRF - Django REST framework for APIs)
+Docker: because portability, scalability, quicker deployment and dev env setup.
 
 ### Database
-
-
-PostgreSQL or MySQL: because it’s relational db.
+PostgreSQL as it's a relational db.
 
 
 ## High-level risks
@@ -359,26 +356,31 @@ Use the table below to help line up everyone’s strengths and areas of improvem
 For **experience** provide a description of a previous project that would be similar to the technical difficulty of this project’s proposal.  None, if nothing
 For **good At**, list of skills relevant to the project that you think you are good at and can contribute to the project.  These could be soft skills, such as communication, planning, project management, and presentation.  Consider different aspects: design, coding, testing, and documentation. It is not just about the code.  You can be good at multiple things. List them all! It doesn’t mean you have to do it all.  Don’t ever leave this blank! Everyone is good at something!
 
-|  Category  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Team Member 4 | Team Member 5 | Team Member 6 | 
-| ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
-|  **Experience**  | Goodreads clone for a web dev course; Live nation clone for 310| Canvas clone done for COSC 310.  | Canvas Clone done for 310. |  |  |  | 
-|  **Good At**  | System Design and Analysis, Full stack development | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  | Fullstack development, React (Next.js), Testing (unit+end to end)  |  |  |  | 
-|  **Expect to learn**  | React | Node.js as little experience. Microservices. | Reverse Proxy Implementation | It may also be a theoretical concept you already learned but never applied in practice. |  |  | 
+|  Category  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Naman Arora | Aadil Shaji | Team Member 6 | Varun Patel |
+| ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------ |
+|  **Experience**  | Goodreads clone for web dev course; Live nation clone for 310;  | Canvas clone done for COSC 310, Hackathon projects mainly based on Python, Research Work done with Django  | Canvas Clone done for 310. | Flashcard Study App for COSC 310 | Discord Clone done for 310 |  | Earthquake monitoring dashboard for COSC 310 |
+|  **Good At**  | Design and Analysis | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  | Fullstack development, React (Next.js), Testing (unit+end to end)  | Requirements Gathering, Frontend Development, Backend Development , Integration, Docker, Documentation | Backend Development, Testing, Design, and Requirements Gathering |  | Backend development, Python, React, Testing, Docker |
+|  **Expect to learn**  | React  | Limited experience in React, Microservices, Advanced items in Django, automation testing. | Reverse Proxy Implementation | Integration Testing, Web Security, PostgreSQL, data security, Django Framework| Django, PostgreSQL, and Microservices | | Web & Data security, End 2 End testing, more comprehensive devops practices | 
 
-Use this opportunity to discuss with your team who **may** do what in the project. Make use of everyone’s skill set and discuss each person’s role and responsibilities by considering how everyone will contribute.  Remember to identify project work (some examples are listed below at the top of the table) and course deliverables (the bottom half of the table). You might want to change the rows depending on what suits your project and team.  Understand that no one person will own a single task.  Recall that this is just an incomplete example.  Please explain how things are assigned in the caption below the table, or put the explanation into a separate paragraph so the reader understands why things are done this way and how to interpret your table.   Please note that this is just an example table and that you will need to complete this in more detail.
+<br>
+<br>
+<br>
 
-|  Category of Work/Features  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Team Member 4 | Team Member 5 | Team Member 6 | 
-| ------------- | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
-|  **Project Management: Kanban Board Maintenance**  |   |  | ✅  |  |  |  | 
-|  **System Architecture Design**  | ✅ |:heavy_check_mark: | ✅  | :heavy_check_mark:  |  |  | 
-|  **User Interface Design**  |   | :heavy_check_mark: | ✅ |  |  |  | 
-|  **CSS Development**  |  |  |  ✅|  |  | :heavy_check_mark:  | 
-|  **Backend Dev**  |✅    |✅  | ✅ |  |  |  | 
-|  **Feature 2**  |  |  |  |  |  |  | 
-|  **...**  |  |  |  |  |  |  | 
-|  **Database setup**  |  | ✅ | ✅  | :heavy_check_mark:  |  |  | 
-|  **Presentation Preparation**  | ✅ | ✅ |✅  | :heavy_check_mark:  |  |  | 
-|  **Design Video Creation**  |  | :heavy_check_mark:  | ✅  |  |  |  | 
-|  **Design Video Editing**  |  | :heavy_check_mark:  |  |  |  |  | 
-|  **Design Report**  | ✅  |  ✅| ✅ |  |  |  | 
-  **Final Team Report**  |  ✅ | ✅  |  ✅|  :heavy_check_mark: |  :heavy_check_mark: |  :heavy_check_mark: | 
+
+
+|  Category of Work/Features  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Naman Arora | Aadil Shaji | Ariana Rice | Varun Patel |
+| ------------- | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | 
+|  **Project Management: Kanban Board Maintenance**  |   | ✅  | ✅  | ✅ | ✅ |  | ✅ |
+|  **System Architecture Design**  | ✅ |✅ | ✅  | ✅  | ✅ |  | ✅|
+|  **User Interface Design**  |   | ✅| | | | | ✅ |
+|  **CSS Development**  |  |  |  ✅|  |  |   | ✅ |
+|  **Backend Dev**  |✅    |✅  | ✅ | ✅ | ✅ |  | ✅|
+|  **Database setup**  |  | ✅ | ✅  | ✅  | ✅ |  | ✅ |
+|  **Presentation Preparation**  | ✅ | ✅ |✅  | ✅   | ✅ |  |  |
+|  **Design Video Creation**  |  |✅  | ✅  |  | ✅ |  |  |
+|  **Design Video Editing**  |  | ✅   |  |  |  |  |  |
+|  **Design Report**  | ✅  |  ✅| ✅ | ✅ |✅  |  | ✅ |
+  **Final Team Report**  |  ✅ | ✅  |  ✅|  ✅|  ✅  |  ✅  | ✅ |
+
+Features are to be decided and built on in the later stages of the project.
+
