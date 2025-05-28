@@ -274,18 +274,18 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 ## Tech Stack
 
 ### Frontend
-React: because reusable components, flexible, in-demand, lots of documentation/community support, overall team familiarity (Next.js or Vite)
-JavaScript
-HTML: As it’s necessary for the foundation
-CSS and Tailwind styling: both as needed to allow flexibility/customization but also faster/less frustrating
+- React: because reusable components, flexible, in-demand, lots of documentation/community support, overall team familiarity (Next.js or Vite)
+- JavaScript
+- HTML: As it’s necessary for the foundation
+- CSS and Tailwind styling: both as needed to allow flexibility/customization but also faster/less frustrating
 
 
 ### Backend
-Python and Django Framework (DRF - Django REST framework for APIs)
-Docker: because portability, scalability, quicker deployment and dev env setup.
+- Python and Django Framework (DRF - Django REST framework for APIs)
+- Docker: because portability, scalability, quicker deployment and dev env setup.
 
 ### Database
-PostgreSQL as it's a relational db.
+- PostgreSQL as it's a relational db.
 
 
 ## High-level risks
@@ -358,11 +358,11 @@ Use the table below to help line up everyone’s strengths and areas of improvem
 For **experience** provide a description of a previous project that would be similar to the technical difficulty of this project’s proposal.  None, if nothing
 For **good At**, list of skills relevant to the project that you think you are good at and can contribute to the project.  These could be soft skills, such as communication, planning, project management, and presentation.  Consider different aspects: design, coding, testing, and documentation. It is not just about the code.  You can be good at multiple things. List them all! It doesn’t mean you have to do it all.  Don’t ever leave this blank! Everyone is good at something!
 
-|  Category  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Naman Arora | Aadil Shaji | Team Member 6 | Varun Patel |
+|  Category  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Naman Arora | Aadil Shaji | Ariana Rice | Varun Patel |
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------ |
-|  **Experience**  | Goodreads clone for web dev course; Live nation clone for 310;  | Canvas clone done for COSC 310, Hackathon projects mainly based on Python, Research Work done with Django  | Canvas Clone done for 310. | Flashcard Study App for COSC 310 | Discord Clone done for 310 |  | Earthquake monitoring dashboard for COSC 310 |
-|  **Good At**  | Design and Analysis | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  | Fullstack development, React (Next.js), Testing (unit+end to end)  | Requirements Gathering, Frontend Development, Backend Development , Integration, Docker, Documentation | Backend Development, Testing, Design, and Requirements Gathering |  | Backend development, Python, React, Testing, Docker |
-|  **Expect to learn**  | React  | Limited experience in React, Microservices, Advanced items in Django, automation testing. | Reverse Proxy Implementation | Integration Testing, Web Security, PostgreSQL, data security, Django Framework| Django, PostgreSQL, and Microservices | | Web & Data security, End 2 End testing, more comprehensive devops practices | 
+|  **Experience**  | Goodreads clone for web dev course; Live nation clone for 310;  | Canvas clone done for COSC 310, Hackathon projects mainly based on Python, Research Work done with Django  | Canvas Clone done for 310. | Flashcard Study App for COSC 310 | Discord Clone done for 310 | Web Frontend Internship, Goat Sweaters eCommerce Store | Earthquake monitoring dashboard for COSC 310 |
+|  **Good At**  | Design and Analysis | Backend Development, Integration, REST APIs, Docker, Some testing experience, Communication, Planning  | Fullstack development, React (Next.js), Testing (unit+end to end)  | Requirements Gathering, Frontend Development, Backend Development , Integration, Docker, Documentation | Backend Development, Testing, Design, and Requirements Gathering | Frontend, UI Design, Requirements, Planning, Presentations or Public Speaking, Docker | Backend development, Python, React, Testing, Docker |
+|  **Expect to learn**  | React  | Limited experience in React, Microservices, Advanced items in Django, automation testing. | Reverse Proxy Implementation | Integration Testing, Web Security, PostgreSQL, data security, Django Framework| Django, PostgreSQL, and Microservices | React, Routing, Microservices, Automated Testing | Web & Data security, End 2 End testing, more comprehensive devops practices | 
 
 <br>
 <br>
@@ -372,16 +372,16 @@ For **good At**, list of skills relevant to the project that you think you are g
 
 |  Category of Work/Features  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Naman Arora | Aadil Shaji | Ariana Rice | Varun Patel |
 | ------------- | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | 
-|  **Project Management: Kanban Board Maintenance**  |   | ✅  | ✅  | ✅ | ✅ |  | ✅ |
+|  **Project Management: Kanban Board Maintenance**  |   | ✅  | ✅  | ✅ | ✅ | ✅ | ✅ |
 |  **System Architecture Design**  | ✅ |✅ | ✅  | ✅  | ✅ |  | ✅|
-|  **User Interface Design**  |   | ✅| | | | | ✅ |
-|  **CSS Development**  |  |  |  ✅|  |  |   | ✅ |
-|  **Backend Dev**  |✅    |✅  | ✅ | ✅ | ✅ |  | ✅|
+|  **User Interface Design**  |   | ✅| | | |✅ | ✅ |
+|  **CSS Development**  |  |  |  ✅|  |  | ✅| ✅ |
+|  **Backend Dev**  |✅    |✅  | ✅ | ✅ | ✅ | ✅ | ✅|
 |  **Database setup**  |  | ✅ | ✅  | ✅  | ✅ |  | ✅ |
-|  **Presentation Preparation**  | ✅ | ✅ |✅  | ✅   | ✅ |  |  |
-|  **Design Video Creation**  |  |✅  | ✅  |  | ✅ |  |  |
-|  **Design Video Editing**  |  | ✅   |  |  |  |  |  |
-|  **Design Report**  | ✅  |  ✅| ✅ | ✅ |✅  |  | ✅ |
+|  **Presentation Preparation**  | ✅ | ✅ |✅  | ✅   | ✅ | ✅ |  |
+|  **Design Video Creation**  |  |✅  | ✅  |  | ✅ | ✅ |  |
+|  **Design Video Editing**  |  | ✅   |  |  |  | ✅ |  |
+|  **Design Report**  | ✅  |  ✅| ✅ | ✅ |✅  | ✅ | ✅ |
   **Final Team Report**  |  ✅ | ✅  |  ✅|  ✅|  ✅  |  ✅  | ✅ |
 
 Features are to be decided and built on in the later stages of the project.
