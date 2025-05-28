@@ -29,7 +29,7 @@ This platform will support the management and allocation of Teaching Assistant (
 
 **Instructors** are assigned the courses they are teaching, they can then submit any skill/qualification preferences they have for each. Once allocation is complete, they can view the details and export them for easy access.
 
-**TA Coordinators and Staff (Admin Users)** can input/upload course offerings and the TA requirements for each. They can view instructor preferences and student profiles, as well as allocate TAs to courses. They can also visualize assignment details and import/export data as TBD by client.
+**TA Coordinators (Admin Users)** can input/upload course offerings and the TA requirements for each. They can view instructor preferences and student profiles, as well as allocate TAs to courses. They can also visualize assignment details and import/export data as TBD by client.
 
 
 ### System Boundaries
@@ -42,6 +42,10 @@ The system will not :
 - Include the ability for Instructors to select or interview preferred Teaching Assistants for their courses. 
 
 ### Measurable project objectives and related success criteria (scope of project)
+
+- Complete Final Web Application by August 2025
+  - Success Criteria: At least 95% of the identified functional requirements are fully implemented, tested, and approved by the client by the project deadline.
+  - Measured By: Final client feedback, user testing reports, and issue tracking metrics.
 
 - Maintain Rigorous Pull Request (PR) Review Process
   - Success Criteria: 100% of merged PRs must be reviewed by at least two other team members (authors may not review their own code).
@@ -68,7 +72,7 @@ Three primary users were identified for the system and proto-personas were creat
    ![image](https://github.com/user-attachments/assets/cc16651b-4d15-424d-b56c-171149e78a2d)
 
 
-- TA Coordinators & Staff: This user group includes administrative staff and TA coordinators who manage course listings, TA positions, and oversee the assignment of TAs each term.
+- TA Coordinators: This user group includes administrative staff and TA coordinators who manage course listings, TA positions, and oversee the assignment of TAs each term.
   
    ![image](https://github.com/user-attachments/assets/2b8fb2db-2a56-4b72-9fee-5ff24ab0c5fe)
 
@@ -85,7 +89,7 @@ A few weeks later, Jill receives an email that she has been offered a TA positio
 
 ##### Instructor Scenario
 
-Dr. Nguyen, a computer science professor, logs into the system prior to the start of a new academic year. He navigates to his profile and updates his courses to reflect what he will be teaching in each term. For his more technical courses, he notes a few key qualities/skills that he would prefer for those TAs to possess. He skips this step for the courses he is less particular about. Dr. Nguyen then logs out for the day.
+Dr. Nguyen, a computer science professor, logs into the system prior to the start of a new academic year. He navigates to his profile and review what courses he will be teaching in each term. For his more technical courses, he notes a few key qualities/skills that he would prefer for those TAs to possess and lets the TA  cordinator know. He skips this step for the courses he is less particular about. Dr. Nguyen then logs out for the day.
 
 A week later, Dr. Nguyen receives an email informing him that TA allocation is complete for his Computer Programming I course. He logs into the system and navigates to his profile to view the specifics. Feeling pleased, he exports the information, which includes his TA's names and email addresses, and logs out. With their contact information at the ready, Dr. Nguyen begins drafting an email to his newly appointed TAs to schedule an onboarding meeting.
 
@@ -150,7 +154,7 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 - System will allow TA coordinator users to offer positions to TA/Student users.
 - System will allow the TA coordinator to create, update, delete and archive TA job postings. 
 - System will allow the TA coordinator to set deadlines for TA applications.
-- System will allow the TA cordinatator to view historical TA assignments for different courses.
+- System will allow the TA coordinator to view historical TA assignments for different courses.
 - System will allow the TA coordinator to export system data (specifics to be decided).
 - System will allow the TA coordinator to assign instructors to courses.
 - System will allow the TA coordinator to manage appointment changes (e.g., reassign or revoke TA assignments).
@@ -189,14 +193,14 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 5. Students will be able to upload their resume and transcript.
 6. Students will be able to update their profile at any time.
 7. Students will be able to delete and reupload documents if needed.
-9. Students will be able to input their availability using a calendar interface.
-10. Students will be able to modify their availability using the calendar interface.
-11. Students will be able to indicate how many hours per week they are available to work.
-12. Students will be able to view available TA positions for the upcoming term.
-13. Students will be able to apply for open TA positions using their existing profile and documents.
-14. Students will be notified when an application is successfully submitted.
-15. Students will be able to view the status of their application.
-16. Students will be able to accept/decline an appointment once offered.
+8. Students will be able to input their availability using a calendar interface.
+9. Students will be able to modify their availability using the calendar interface.
+10. Students will be able to indicate how many hours per week they are available to work.
+11. Students will be able to view available TA positions for the upcoming term.
+12. Students will be able to apply for open TA positions using their existing profile and documents.
+13. Students will be notified when an application is successfully submitted.
+14. Students will be able to view the status of their application.
+15. Students will be able to accept/decline an appointment once offered.
 
 
 ##### Instructors
@@ -206,8 +210,8 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 3. Instructors will have a personalized dashboard showing courses they are assigned to teach.
 4. Instructors will be able to view/edit their profile information.
 5. Instructors will be able to indicate preferred qualifications, such as skillsets, for each of their courses.
-7. Instructors will be able to view the list of TAs assigned to each of their courses after appointments are made by the TA Coordinator.
-8. Instructors will be able to view the profiles and contact information of their allocated TAs.
+6. Instructors will be able to view the list of TAs assigned to each of their courses after appointments are made by the TA Coordinator.
+7. Instructors will be able to view the profiles and contact information of their allocated TAs.
 
 ##### TA Coordinators
 
@@ -216,11 +220,12 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 3. TA Coordinators will have access to an admin dashboard with full TA management capabilities.
 4. TA Coordinators will be able to select or manually add the list of courses offered in the upcoming term.
 5. TA Coordinators will be able to assign instructors to courses.
-6. TA Coordinators will be able to create and post TA positions.
-7. TA Coordinators will be able to view student applications (profiles) for each TA position.
-8. TA Coordinators will be able to appoint students to specific TA roles.
-9. TA Coordinators will be able to make changes to an appointment (reassigning or revoking an appointment).
-10. TA Coordinators will be able to upload CSV files containing previous TA appointments to initialize data in the system.
+6. TA Coordinators will be able to create TA positions.
+7. TA Coordinators will be able to post TA positions.
+8. TA Coordinators will be able to view student applications (profiles) for each TA position.
+9. TA Coordinators will be able to appoint students to specific TA roles.
+10. TA Coordinators will be able to make changes to an appointment (reassigning or revoking an appointment).
+11. TA Coordinators will be able to upload CSV files containing previous TA appointments to initialize data in the system.
 
 
 #### Technical Requirements:
@@ -235,7 +240,7 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 
 ##### Backend Requirements:
   
-- The backend will be built using Python and the Django framework, which provides a robust, scalable, and secure environment for rapid development.
+- The backend will be built using **Python** and the **Django framework**, which provides a robust, scalable, and secure environment for rapid development.
 - RESTful API design following best practices (versioning, clear endpoint structure, HTTP methods).
 - **Authentication and Authorization** will be required to restrict access based on roles; likely implemented using **JWT** (JSON Web Tokens).
 - **Docker** will be used to containerize the application, ensuring consistency across development and production environments. This simplifies deployment, onboarding new developers, and scaling the application.
@@ -258,7 +263,7 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 
 ##### DevOps & CI/CD:
 
-- Code managed via **GitHub*, with a strict PR review policy (all PRs reviewed by at least 2 team members, neither of whom are the PR owner/author).
+- Code managed via **GitHub**, with a strict PR review policy (all PRs reviewed by at least 2 team members, neither of whom are the PR owner/author).
 - Use of **CI/CD pipelines** for automatic testing, building, and deploying.
 - **Container orchestration** support to deploy microservices efficiently.
 
@@ -272,23 +277,21 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 ## Tech Stack
 
 ### Frontend
-- React: because reusable components, flexible, in-demand, lots of documentation/community support, overall team familiarity (Next.js or Vite)
+- React: because of reusable components, flexible, in-demand, lots of documentation/community support, overall team familiarity (Next.js or Vite)
 - JavaScript
-- HTML: As it’s necessary for the foundation
-- CSS and Tailwind styling: both as needed to allow flexibility/customization but also faster/less frustrating
+- HTML: As it’s necessary for the foundation.
+- CSS and Tailwind styling: both as needed to allow flexibility/customization but also faster.
 
 
 ### Backend
 - Python and Django Framework (DRF - Django REST framework for APIs)
-- Docker: because portability, scalability, quicker deployment and dev env setup.
+- Docker: because of portability, scalability, quicker deployment and dev env setup.
 
 ### Database
-- PostgreSQL as it's a relational db.
+- PostgreSQL as our data is relational.
 
 
 ## High-level risks
-Describe and analyze any risks identified or associated with the project. 
-
 
 - Scope Creep/Feature Overload
   - Description:Attempting to implement too many features beyond the core scope.
@@ -306,7 +309,7 @@ Describe and analyze any risks identified or associated with the project.
   - Mitigation: Regularly track progress using tools like GitHub Projects and Clockify. Assign a team member to monitor timeline adherence.
   
 - Technical Challenges/Integration Issues
-Description: Unexpected difficulties in integrating frontend/backend, authentication systems, or deployment environments.
+Description: Unexpected difficulties in integrating frontend/backend, authentication systems, or containerising environments.
 Impact: Time-consuming debugging and delays in delivering a functional system.
 Mitigation: Select familiar technologies where possible. Conduct early prototyping of critical components. Pair programming or code reviews can catch integration issues early.
 
@@ -350,11 +353,9 @@ Mitigation: Select familiar technologies where possible. Conduct early prototypi
 | August 8th  |  Final project submission and group presentions - Feature set #2: Details to follow |
 
 ## Teamwork Planning and Anticipated Hurdles
-Based on the teamwork icebreaker survey, talk about the different types of work involved in a software development project. Start thinking about what you are good at as a way to get to know your teammates better. At the same time, know your limits so you can identify which areas you need to learn more about. These will be different for everyone. But in the end, you all have strengths and you all have areas where you can improve. Think about what those are, and think about how you can contribute to the team project. Nobody is expected to know everything, and you will be expected to learn (just some things, not everything).
+
 Use the table below to help line up everyone’s strengths and areas of improvement together. The table should give the reader some context and explanation about the values in your table.
 
-For **experience** provide a description of a previous project that would be similar to the technical difficulty of this project’s proposal.  None, if nothing
-For **good At**, list of skills relevant to the project that you think you are good at and can contribute to the project.  These could be soft skills, such as communication, planning, project management, and presentation.  Consider different aspects: design, coding, testing, and documentation. It is not just about the code.  You can be good at multiple things. List them all! It doesn’t mean you have to do it all.  Don’t ever leave this blank! Everyone is good at something!
 
 |  Category  | Shan Richards | Reyhan Reginald | Devstutya Pandey | Naman Arora | Aadil Shaji | Ariana Rice | Varun Patel |
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------ |
