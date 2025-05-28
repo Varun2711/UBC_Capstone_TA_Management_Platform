@@ -27,9 +27,9 @@ This platform will support the management and allocation of Teaching Assistant (
 
 **Students** can create an account and apply to open TA positions. They can see the status of their applications and accept/decline offers for TA positions. Upon acceptance, their assigned TA schedule will be visible in a calendar.
 
-**Instructors** can create an account and submit TA requests for the courses they are teaching (indicating preferred skills or other criteria), and view the final list of TAs allocated to their courses.
+**Instructors** can create an account and select the courses they are teaching, along with any skill/qualification preferences they have for each. Once allocation is complete, they can view the details and export them for easy access.
 
-**TA Coordinators and Staff (Admin Users)** can receive and review TA requests from instructors, post open TA positions, allocate TAs to courses.
+**TA Coordinators and Staff (Admin Users)** can input/upload course offerings and the TA requirements for each. They can view instructor preferences and student profiles, as well as allocate TAs to courses. They can also visualize assignment details and import/export data as TBD by client.
 
 
 ### System Boundaries
@@ -62,16 +62,16 @@ The system will not :
 
 ### Users Groups:
 
-Three pimrary users were identified for the system and proto-personas were created for each.
+Three primary users were identified for the system and proto-personas were created for each.
 
 - Students: This user group includes both graduate and undergraduate students who interact directly with the system by applying for available TA positions.
   
   ![Student Profile: Mei Guo](protopersonas\Student_Profile_Mei_Guo.png)
 
-- Instructors: This user group includes faculty members responsible for teaching courses who use the system to submit TA requests and to view TAs allocated to their courses.  
+- Instructors: This user group includes faculty members responsible for teaching courses who use the system to submit TA preferences and view TAs allocated to their courses.  
    ![Instructor Profile: Dr. Fatma Ozturk](protopersonas\Instructor_Profile_Dr_Fatma_Ozturk.png)
 
-- TA Coordinators & Staff: This user group includes administrative staff and TA coordinators who manage course listings, post open TA positions, and oversee the assignment of TAs each term.
+- TA Coordinators & Staff: This user group includes administrative staff and TA coordinators who manage course listings, TA positions, and oversee the assignment of TAs each term.
   
    ![TA Coordinator Profile: Dr. Jeff Obi](protopersonas\TA_Coordinator_Dr_Jeff_Obi.png)
   
@@ -81,19 +81,21 @@ Three pimrary users were identified for the system and proto-personas were creat
 
 ##### Student Scenario
 
-Jill is an undergraduate student who hopes to TA a CMPS course next school year. She creates an account and then logs in using her credentials. Then, she begins her application, adding the required personal information and uploading documents like her resume, her availability and other documents. She chooses to apply to a few courses she thinks she is a good fit to and submits her application. After that, she navigates to her profile page and sees that her application has been successfully submitted, so she logs out. Some days later, Jill is curious about the status of her TA application, so she logs into her account. After navigating to her profile page, she sees that she has an offer. She reviews the details of her assignment and then checks her planner to verify that it will work with her schedule. Seeing that it does, she decides to accept the offer.
+Jill is an undergraduate student who hopes to TA a CMPS course next school year. She creates an account and then logs in using her credentials. Then, she begins her application, adding the required personal information and uploading documents like her resume and transcript. She also provides her availability and preferred number of hours for each term. Next, she browses the courses which have open positions and indicates the ones that are of interest to her. Satisfied, she submits her application. After that, she navigates to her profile page and sees that her application was successfully submitted, so she logs out. 
+
+A few weeks later, Jill receives an email that she has been offered a TA position, so she logs into her account. After navigating to her profile page, she sees that there is, indeed, an offer. She reviews the details of her assignment and then checks her planner to verify that it will work with her schedule. Seeing that it does, she decides to accept the offer. She excitedly awaits further instructions from the professor.
 
 ##### Instructor Scenario
 
-Dr. Nguyen, a computer science professor, logs into the system prior to the start of a new academic year. He navigates to his profile and updates his courses to reflect what he will be teaching in each term. He then uses the system to communicate his TA requirements for each course, including preferences such as the desired number of TAs and whether they should be undergraduate or graduate students. The system logs his input for consideration during the allocation process. After entering his information, Dr. Nguyen logs out for the day.
+Dr. Nguyen, a computer science professor, logs into the system prior to the start of a new academic year. He navigates to his profile and updates his courses to reflect what he will be teaching in each term. For his more technical courses, he notes a few key qualities/skills that he would prefer for those TAs to possess. He skips this step for the courses he is less particular about. Dr. Nguyen then logs out for the day.
 
-A week later, Dr. Nguyen logs back in and navigates to his profile, where he sees the finalized TA allocations for his courses. He can view and export the details, which include the names and contact information of the assigned TAs. After retrieving the information he needs, he logs out. With this information, Dr. Nguyen drafts an email to schedule onboarding meetings with his newly appointed TAs.
+A week later, Dr. Nguyen receives an email informing him that TA allocation is complete for his Computer Programming I course. He logs into the system and navigates to his profile to view the specifics. Feeling pleased, he exports the information, which includes his TA's names and email addresses, and logs out. With their contact information at the ready, Dr. Nguyen begins drafting an email to his newly appointed TAs to schedule an onboarding meeting.
 
+##### TA Coordinator/Admin Scenario: 
 
-##### TA coordinator/Admin: 
+Dr. Mavis, a statistics professor who oversees TA appointments within her department, logs into the system to get a start on TA planning. First, she uploads the finalized list of courses and their TA requirements for the upcoming school year. Then she imports a batch of spreadsheets containing details of last year's TA appointments. Finally, she sets the application timeframe (i.e. when applications open/are due) for this year. She then logs out for the day, excited for applications to begin trickling in.
 
-Dr. Mavis, a statistics professor who oversees TA appointments within her department, logs into the system to get a head start on TA planning. First, she uploads the finalized list of courses and corresponding lab sections for the upcoming school year. Then she navigates to her profile and edits her courses to reflect what she will be teaching this year. For each course, she indicates how many and what type (undergraduate vs. graduate) of TAs she requires. She then logs out to catch up on some emails. Some weeks later, the day after the application deadline, Dr. Mavis logs back into the system. Today she aims to complete all assignments for first year computer science courses. She navigates to her Admin view and sees that a number of professors have made TA requests. She views them one by one to get a sense of the department’s needs. Then she navigates to the Student Applications and … Once she has finished appointing TAs for the time being, she logs out of the system and will return tomorrow to continue making appointments and monitoring student responses.
-
+On the day that TA applications are due, Dr. Mavis logs back into the system, with a plan to tackle TA allocations for Computer Programming I. She navigates to the course and sees that the Instructor has noted a few preferred skills. Bearing these in mind, she begins reviewing candidate resumes and transcripts one by one. When she finds a potential match, she allocates that student to the course. Occassionally, Dr. Mavis is notified by the system that she has assigned a student too many hours or that there's a schedule conflict, so she adjusts her allocation in response. Once all TA positions have been filled, with no system alerts, and to Dr. Mavis' satisfaction, she submits the allocation, notifying the professor and newly-appointed TAs. Then Dr. Mavis logs out, eager to return bright and early tomorrow to continue allocating TAs and monitoring offer responses.
 
 ### Requirements:
 
