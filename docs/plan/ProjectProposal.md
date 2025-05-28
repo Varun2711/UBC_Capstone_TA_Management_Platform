@@ -43,11 +43,6 @@ The system will not :
 
 ### Measurable project objectives and related success criteria (scope of project)
 
-- Deploy Final Web Application by August 2025
-  - Success Criteria: At least 95% of the identified functional requirements are fully implemented, tested, and approved by the client by the project deadline.
-  - Measured By: Final client feedback, user testing reports, and issue tracking metrics.
-
-
 - Maintain Rigorous Pull Request (PR) Review Process
   - Success Criteria: 100% of merged PRs must be reviewed by at least two other team members (authors may not review their own code).
   - Measured By: Git commit history and PR review logs showing comments, approvals, and feedback iterations.
@@ -66,14 +61,17 @@ Three primary users were identified for the system and proto-personas were creat
 
 - Students: This user group includes both graduate and undergraduate students who interact directly with the system by applying for available TA positions.
   
-  ![Student Profile: Mei Guo](protopersonas\Student_Profile_Mei_Guo.png)
+  ![image](https://github.com/user-attachments/assets/d71fc7b1-64d1-4b06-bca3-2d63f0fbcc76)
+
 
 - Instructors: This user group includes faculty members responsible for teaching courses who use the system to submit TA preferences and view TAs allocated to their courses.  
-   ![Instructor Profile: Dr. Fatma Ozturk](protopersonas\Instructor_Profile_Dr_Fatma_Ozturk.png)
+   ![image](https://github.com/user-attachments/assets/cc16651b-4d15-424d-b56c-171149e78a2d)
+
 
 - TA Coordinators & Staff: This user group includes administrative staff and TA coordinators who manage course listings, TA positions, and oversee the assignment of TAs each term.
   
-   ![TA Coordinator Profile: Dr. Jeff Obi](protopersonas\TA_Coordinator_Dr_Jeff_Obi.png)
+   ![image](https://github.com/user-attachments/assets/2b8fb2db-2a56-4b72-9fee-5ff24ab0c5fe)
+
   
 
 
