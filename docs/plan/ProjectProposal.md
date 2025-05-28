@@ -27,7 +27,7 @@ This platform will support the management and allocation of Teaching Assistant (
 
 **Students** can create an account and apply to open TA positions. They can see the status of their applications and accept/decline offers for TA positions. Upon acceptance, their assigned TA schedule will be visible in a calendar.
 
-**Instructors** can create an account and select the courses they are teaching, along with any skill/qualification preferences they have for each. Once allocation is complete, they can view the details and export them for easy access.
+**Instructors** are assigned the courses they are teaching, they can then submit any skill/qualification preferences they have for each. Once allocation is complete, they can view the details and export them for easy access.
 
 **TA Coordinators and Staff (Admin Users)** can input/upload course offerings and the TA requirements for each. They can view instructor preferences and student profiles, as well as allocate TAs to courses. They can also visualize assignment details and import/export data as TBD by client.
 
@@ -101,7 +101,7 @@ On the day that TA applications are due, Dr. Mavis logs back into the system, wi
 
 ##### Login & Registration
 
-- System will enable users (Students, Instructors, and TA Coordinators) to create an account using an email, password, and required personal information.
+- System will enable students to create an account using an email, password, and required personal information.
 - System will perform data validation as required during account creation (Ex: student number must be 8 digit number)
 - System will authenticate users when they login with their email and password.
 - System will allow authenticated users to logout.
