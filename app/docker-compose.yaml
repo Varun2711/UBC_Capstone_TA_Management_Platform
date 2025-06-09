@@ -10,6 +10,7 @@ services:
       - PYTHONUNBUFFERED=1
     env_file:
       - .env
+#do not start the backend service until the database is healthy
     depends_on:
       db:
         condition: service_healthy
@@ -22,6 +23,9 @@ services:
       - "5173:5173"
     command: npm run dev -- --host
 
+# postgres database service
+# This service uses the official postgres image and sets up a database with the specified user and password.
+# The credentials are stored in the env file
   db:
     container_name: app_database
     image: postgres:latest 
@@ -34,6 +38,7 @@ services:
         - db_data:/var/lib/postgresql/data
     ports:
         - "5432:5432"
+# Healthcheck to ensure the database is ready before other services depend on it
     healthcheck:
         test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
         interval: 10s
@@ -41,6 +46,10 @@ services:
         start_period: 30s
         timeout: 10s
 
+#pdgadmin service for managing the database, optional use
+# This service uses the official pgAdmin image and sets up a web interface for managing the PostgreSQL database.
+# To access pgAdmin, navigate to http://localhost:5050 in your web browser.
+# You can log in with the credentials specified below.
   pgadmin:
       container_name: app_pgadmin
       image: dpage/pgadmin4:latest
