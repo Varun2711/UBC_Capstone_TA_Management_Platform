@@ -25,6 +25,9 @@ function App() {
     <div>
       <h1>TA Management Platform</h1>
       <p>{message}</p>
+      <h1 class="text-3xl font-bold underline">
+  Checking Tailwind
+</h1>
     </div>
   );
 }
