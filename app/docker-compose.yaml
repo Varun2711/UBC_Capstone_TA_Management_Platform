@@ -1,0 +1,20 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend/simpleapi
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env.development
+  
+  frontend:
+    build:
+      context: ./frontend/ta-management
+    ports:
+      - "5173:5173"
+    command: npm run dev -- --host
