@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "./components/scheduler-sidebar"
+import { AppSidebar } from "../components/scheduler-sidebar"
 
 export default function TASchedulerDashboard() {
   const [searchQuery, setSearchQuery] = useState("")

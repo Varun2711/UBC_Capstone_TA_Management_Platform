@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import TASchedulerDashboard from "./Scheduler_Dashboard";
+import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
 function App() {
   // define a message state variable
   const [message, setMessage] = useState("");
