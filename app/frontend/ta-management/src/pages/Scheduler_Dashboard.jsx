@@ -1,20 +1,6 @@
-"use client"
 
 import { useState } from "react"
-import {
-  Users,
-  BookOpen,
-  UserCheck,
-  FileText,
-  Upload,
-  Plus,
-  Search,
-  Bell,
-  Calendar,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react"
+import { BookOpen, UserCheck, FileText, Search, Bell, CheckCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -60,64 +46,6 @@ export default function TASchedulerDashboard() {
     },
   ]
 
-  const recentActivity = [
-    {
-      action: "New application received",
-      course: "CS 101 - Introduction to Programming",
-      student: "Sarah Johnson",
-      time: "2 hours ago",
-      status: "pending",
-    },
-    {
-      action: "TA appointed",
-      course: "CS 201 - Data Structures",
-      student: "Michael Chen",
-      time: "4 hours ago",
-      status: "completed",
-    },
-    {
-      action: "Position posted",
-      course: "CS 301 - Algorithms",
-      student: "System",
-      time: "1 day ago",
-      status: "active",
-    },
-    {
-      action: "Course updated",
-      course: "CS 401 - Software Engineering",
-      student: "Dr. Smith",
-      time: "2 days ago",
-      status: "completed",
-    },
-  ]
-
-  const quickActions = [
-    {
-      title: "Add New Course",
-      description: "Create or import courses for the upcoming term",
-      icon: BookOpen,
-      action: "add-course",
-    },
-    {
-      title: "Create TA Position",
-      description: "Define new TA roles and requirements",
-      icon: Plus,
-      action: "create-position",
-    },
-    {
-      title: "Review Applications",
-      description: "View and process student applications",
-      icon: FileText,
-      action: "review-apps",
-    },
-    {
-      title: "Upload CSV Data",
-      description: "Import previous TA appointment data",
-      icon: Upload,
-      action: "upload-csv",
-    },
-  ]
-
   const upcomingTasks = [
     {
       task: "Review pending applications",
@@ -156,7 +84,7 @@ export default function TASchedulerDashboard() {
           </Breadcrumb>
 
           <div className="ml-auto flex items-center space-x-4">
-            {/* Search */}
+            {/* Search
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -165,7 +93,7 @@ export default function TASchedulerDashboard() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 w-64"
               />
-            </div>
+            </div> */}
 
             {/* Notifications */}
             <Button variant="ghost" size="icon">
@@ -198,33 +126,9 @@ export default function TASchedulerDashboard() {
             ))}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            {/* Quick Actions */}
-            <Card className="col-span-full lg:col-span-4">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common tasks and management functions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {quickActions.map((action, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                    >
-                      <action.icon className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <h3 className="font-medium text-gray-900">{action.title}</h3>
-                        <p className="text-sm text-gray-500 mt-1">{action.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {/* Upcoming Tasks */}
-            <Card className="col-span-full lg:col-span-3">
+            <Card className="col-span-full md:col-span-1">
               <CardHeader>
                 <CardTitle>Upcoming Tasks</CardTitle>
                 <CardDescription>Items that need your attention</CardDescription>
@@ -232,13 +136,51 @@ export default function TASchedulerDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {upcomingTasks.map((task, index) => (
-                    <div key={index} className="flex items-center justify-between space-x-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{task.task}</p>
-                        <p className="text-xs text-gray-500">{task.dueDate}</p>
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 pr-2">
+                          <p className="text-sm font-medium text-gray-900">{task.task}</p>
+                          <p className="text-xs text-gray-500">{task.dueDate}</p>
+                        </div>
+                        <Badge
+                          variant={task.priority === "high" ? "destructive" : "secondary"}
+                          className="flex-shrink-0"
+                        >
+                          {task.count}
+                        </Badge>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={task.priority === "high" ? "destructive" : "secondary"}>{task.count}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Department Overview */}
+            <Card className="col-span-full md:col-span-1 lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Department Overview</CardTitle>
+                <CardDescription>TA distribution and workload by department</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {[
+                    { dept: "Computer Science", tas: 18, positions: 22, percentage: 82 },
+                    { dept: "Mathematics", tas: 12, positions: 15, percentage: 80 },
+                    { dept: "Physics", tas: 8, positions: 10, percentage: 80 },
+                    { dept: "Engineering", tas: 4, positions: 6, percentage: 67 },
+                  ].map((dept, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">{dept.dept}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {dept.tas} of {dept.positions} positions filled
+                          </p>
+                        </div>
+                        <Badge variant="outline">{dept.percentage}%</Badge>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${dept.percentage}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -247,73 +189,35 @@ export default function TASchedulerDashboard() {
             </Card>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            {/* Recent Activity */}
-            <Card className="col-span-full lg:col-span-4">
+          <div className="grid gap-4 md:grid-cols-1">
+            {/* System Status */}
+            <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest updates and actions in the system</CardDescription>
+                <CardTitle>System Status & Management Tools</CardTitle>
+                <CardDescription>Current system information and quick management access</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        {activity.status === "pending" && <Clock className="h-4 w-4 text-yellow-500 mt-1" />}
-                        {activity.status === "completed" && <CheckCircle className="h-4 w-4 text-green-500 mt-1" />}
-                        {activity.status === "active" && <AlertCircle className="h-4 w-4 text-blue-500 mt-1" />}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">System Information</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Application Period</span>
+                        <Badge variant="secondary">Open</Badge>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-sm text-gray-500 truncate">{activity.course}</p>
-                        {activity.student !== "System" && (
-                          <p className="text-xs text-gray-400">by {activity.student}</p>
-                        )}
-                        <p className="text-xs text-gray-400">{activity.time}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Current Term</span>
+                        <span className="text-sm font-medium">Fall 2024</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Active Users</span>
+                        <span className="text-sm font-medium">127</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Data Last Updated</span>
+                        <span className="text-sm text-gray-500">2 min ago</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* System Status */}
-            <Card className="col-span-full lg:col-span-3">
-              <CardHeader>
-                <CardTitle>System Status</CardTitle>
-                <CardDescription>Current system information</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Application Period</span>
-                    <Badge variant="secondary">Open</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Current Term</span>
-                    <span className="text-sm font-medium">Fall 2024</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Active Users</span>
-                    <span className="text-sm font-medium">127</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Data Last Updated</span>
-                    <span className="text-sm text-gray-500">2 min ago</span>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t">
-                  <h4 className="text-sm font-medium mb-3">Management Tools</h4>
-                  <div className="space-y-2">
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Users className="mr-2 h-4 w-4" />
-                      Manage Instructors
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Schedule Overview
-                    </Button>
                   </div>
                 </div>
               </CardContent>
