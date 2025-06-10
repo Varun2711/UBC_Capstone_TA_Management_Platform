@@ -44,17 +44,26 @@ class Student(models.Model):
     password = models.CharField(max_length=255)
     email = models.EmailField()
 
+    def __str__(self):
+        return f"{self.name}"
+
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
     email = models.EmailField()
 
+    def __str__(self):
+        return f"{self.name}"
+
 class Course(models.Model):
     course_number = models.CharField(max_length=10, primary_key=True)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=255)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.course_number}"
 
 class CourseOffering(models.Model):
     course_offering_id = models.AutoField(primary_key=True)
@@ -69,12 +78,18 @@ class CourseOffering(models.Model):
     class Meta:
         unique_together = ('course', 'section_number', 'term_number', 'year_offered')
 
+    def __str__(self):
+        return f"{self.course} - {self.section_number} ({self.term_number} {self.year_offered})"
+
 class LabSection(models.Model):
     lab_section_id = models.AutoField(primary_key=True)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
     section_number = models.CharField(max_length=5)
     day = models.CharField(max_length=10)
     time = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"{self.course_offering} - Lab {self.section_number} ({self.day} {self.time})"
 
 class InstructorRequest(models.Model):
     request_id = models.AutoField(primary_key=True)
@@ -89,10 +104,13 @@ class JobPosting(models.Model):
     description = models.TextField(null=True, blank=True)
     post_date = models.DateField()
     deadline_date = models.DateField()
-    department = models.CharField(max_length=50)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
     faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE)
     requirements = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.department} ({self.post_date})"
 
 class JobPostingCourseOffering(models.Model):
     posting = models.ForeignKey(JobPosting, on_delete=models.CASCADE)

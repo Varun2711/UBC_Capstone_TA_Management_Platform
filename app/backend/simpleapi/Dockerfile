@@ -25,10 +25,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # copy all files in to the container
 COPY . /app/
 
+# make entrypoint executable
+RUN chmod +x /app/entrypoint.sh
+
 # export the port
 EXPOSE 8000
 
 # execute run command
 #CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD ["./entrypoint.sh"]
+#CMD ["./entrypoint.sh"]
+# run entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
 

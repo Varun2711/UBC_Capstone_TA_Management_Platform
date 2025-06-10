@@ -10,6 +10,8 @@ services:
       - PYTHONUNBUFFERED=1
     env_file:
       - .env
+    volumes:
+      - ./backend/simpleapi:/app
 #do not start the backend service until the database is healthy
     depends_on:
       db:
