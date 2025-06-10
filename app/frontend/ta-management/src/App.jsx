@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-
+import TASchedulerDashboard from "./Scheduler_Dashboard";
 function App() {
   // define a message state variable
   const [message, setMessage] = useState("");
@@ -22,13 +22,7 @@ function App() {
   }, []);
 
   return (
-    <div>
-      <h1>TA Management Platform</h1>
-      <p>{message}</p>
-      <h1 class="text-3xl font-bold underline">
-  Checking Tailwind
-</h1>
-    </div>
+    <TASchedulerDashboard />
   );
 }
 export default App;
