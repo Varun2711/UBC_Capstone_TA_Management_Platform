@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import {Route, Routes} from "react-router-dom";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
 function App() {
   // define a message state variable
@@ -22,6 +23,12 @@ function App() {
   }, []);
 
   return (
+    // React Router setup, commented out for now
+    // <Routes>
+    //   <Route path="/" element={<LandingPage/>} />
+    //   <Route path="/Login" element={<Login/>} />
+    //   <Route path="/TASchedulerDashboard" element={<TASchedulerDashboard/>} />
+    // </Routes>
     <TASchedulerDashboard />
   );
 }
