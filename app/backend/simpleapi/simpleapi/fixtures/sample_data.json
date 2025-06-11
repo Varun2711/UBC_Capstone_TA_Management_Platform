@@ -53,6 +53,46 @@
   }
 },
 {
+  "model": "myapp.department",
+  "pk": 5,
+  "fields": {
+    "name": "Computer Science",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 6,
+  "fields": {
+    "name": "Mathematics",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 7,
+  "fields": {
+    "name": "Data Science",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 8,
+  "fields": {
+    "name": "Physics",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 9,
+  "fields": {
+    "name": "Statistics",
+    "faculty": 1
+  }
+},
+{
   "model": "myapp.tascheduler",
   "pk": 1,
   "fields": {
@@ -146,7 +186,7 @@
   "fields": {
     "title": "Introduction to Computer Science",
     "description": "An introductory course in computer science.",
-    "department": 2
+    "department": 5
   }
 },
 {
@@ -155,7 +195,7 @@
   "fields": {
     "title": "Data Science Fundamentals",
     "description": "An introduction to data science concepts.",
-    "department": 2
+    "department": 7
   }
 },
 {
@@ -164,7 +204,7 @@
   "fields": {
     "title": "Calculus I",
     "description": "An introduction to calculus.",
-    "department": 2
+    "department": 6
   }
 },
 {
@@ -173,7 +213,7 @@
   "fields": {
     "title": "Physics I",
     "description": "An introduction to classical physics.",
-    "department": 2
+    "department": 8
   }
 },
 {
