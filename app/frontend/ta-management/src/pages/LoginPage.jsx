@@ -1,7 +1,8 @@
+import React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function loginPage() {
+export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -19,24 +20,22 @@ export default function loginPage() {
   };
 
   return (
-    <div style={styles.container}>
+    <div>
       <h2>Login Page</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          style={styles.input}
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
         />
-        <button type="submit" style={styles.button}>
+        <button type="submit">
           Login
         </button>
       </form>

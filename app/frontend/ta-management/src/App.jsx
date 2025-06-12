@@ -27,13 +27,13 @@ function App() {
   return (
     // React Router setup, commented out for now
     // Initial test to check router functionlity below
-    // <Routes>
-    //   <Route path="/" element={<TASchedulerDashboard />} />
-    //   <Route path="/login" element={<LoginPage />} />
-    //   <Route path="/dashboard" element={<MockDashboard />} />
-    //   {/* Add more routes if needed */}
-    // </Routes>
-    <TASchedulerDashboard />
+    <Routes>
+      <Route path="/" element={<TASchedulerDashboard />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/dashboard" element={<MockDashboard />} />
+      {/* Add more routes if needed */}
+    </Routes>
+    // <TASchedulerDashboard />
   );
 }
 export default App;
