@@ -186,7 +186,22 @@
   "fields": {
     "title": "Introduction to Computer Science",
     "description": "An introductory course in computer science.",
-    "department": 5
+    "department": 5,
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
+  }
+},
+{
+  "model": "myapp.course",
+  "pk": "COSC124",
+  "fields": {
+    "title": "Computer Science for Business",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor i",
+    "department": 5,
+    "is_active": false,
+    "created_at": "2025-06-13T00:04:16.918Z",
+    "updated_at": "2025-06-13T00:04:16.918Z"
   }
 },
 {
@@ -195,7 +210,10 @@
   "fields": {
     "title": "Data Science Fundamentals",
     "description": "An introduction to data science concepts.",
-    "department": 7
+    "department": 7,
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
   }
 },
 {
@@ -204,7 +222,10 @@
   "fields": {
     "title": "Calculus I",
     "description": "An introduction to calculus.",
-    "department": 6
+    "department": 6,
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
   }
 },
 {
@@ -213,7 +234,10 @@
   "fields": {
     "title": "Physics I",
     "description": "An introduction to classical physics.",
-    "department": 8
+    "department": 8,
+    "is_active": true,
+    "created_at": null,
+    "updated_at": "2025-06-13T00:03:28.476Z"
   }
 },
 {
@@ -296,7 +320,103 @@
     "department": 2,
     "faculty": 1,
     "created_by": 1,
-    "requirements": "All applicants must be 3rd year standing or above."
+    "requirements": "All applicants must be 3rd year standing or above.",
+    "status": "archived"
+  }
+},
+{
+  "model": "myapp.jobposting",
+  "pk": 2,
+  "fields": {
+    "title": "Computer Science Teaching Assistants",
+    "description": "Applications for computer science TA positions are now open. Please apply before the dealine.",
+    "post_date": "2025-06-12",
+    "deadline_date": "2025-07-31",
+    "department": 5,
+    "faculty": 1,
+    "created_by": 1,
+    "requirements": "Applicants must have at least 3rd year standing.",
+    "status": "draft"
+  }
+},
+{
+  "model": "myapp.jobposting",
+  "pk": 3,
+  "fields": {
+    "title": "Mathematics Teaching Assistants",
+    "description": "Applications for Math TAs are now open. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "post_date": "2025-06-12",
+    "deadline_date": "2025-07-31",
+    "department": 6,
+    "faculty": 1,
+    "created_by": 2,
+    "requirements": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "status": "open"
+  }
+},
+{
+  "model": "myapp.jobposting",
+  "pk": 4,
+  "fields": {
+    "title": "Physics TA",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "post_date": "2025-06-12",
+    "deadline_date": "2025-07-31",
+    "department": 8,
+    "faculty": 1,
+    "created_by": 1,
+    "requirements": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "status": "open"
+  }
+},
+{
+  "model": "myapp.jobpostingquestion",
+  "pk": 1,
+  "fields": {
+    "posting": 4,
+    "question_text": "Briefly describe your personal strengths and weaknesses."
+  }
+},
+{
+  "model": "myapp.jobpostingquestion",
+  "pk": 2,
+  "fields": {
+    "posting": 3,
+    "question_text": "Briefly describe a previous job experiences and the lessons you learned on the job."
+  }
+},
+{
+  "model": "myapp.jobpostingquestion",
+  "pk": 3,
+  "fields": {
+    "posting": 2,
+    "question_text": "Briefly describe the qualities that make you a suitable candidate for the role."
+  }
+},
+{
+  "model": "myapp.jobpostingquestion",
+  "pk": 4,
+  "fields": {
+    "posting": 4,
+    "question_text": "Who is your biggest role-model and why?"
+  }
+},
+{
+  "model": "myapp.jobpostingquestion",
+  "pk": 5,
+  "fields": {
+    "posting": 3,
+    "question_text": "Describe a challenge you had to overcome."
+  }
+},
+{
+  "model": "myapp.instructorrequest",
+  "pk": 1,
+  "fields": {
+    "instructor": 1,
+    "course_offering": 2,
+    "request_date": "2025-06-13",
+    "request_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
   }
 }
 ]

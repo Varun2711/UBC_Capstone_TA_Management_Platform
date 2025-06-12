@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 class Faculty(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -54,6 +55,9 @@ class Course(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=255)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.course_number}"
@@ -86,12 +90,22 @@ class LabSection(models.Model):
 
 class InstructorRequest(models.Model):
     request_id = models.AutoField(primary_key=True)
-    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
+    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True)
+    course_offering = models.ForeignKey(CourseOffering, on_delete=models.SET_NULL, null=True, blank=True)
     request_date = models.DateField()
     request_description = models.TextField()
 
+
+
 class JobPosting(models.Model):
+    status_choices = {
+        ('open', 'Open'),
+        ('closed', 'Closed'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'),
+        ('draft', 'Draft'),
+        ('archived', 'Archived'),
+    }
     posting_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
@@ -99,11 +113,29 @@ class JobPosting(models.Model):
     deadline_date = models.DateField()
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
     faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True)
     requirements = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=status_choices, default='draft')
+     
 
     def __str__(self):
         return f"{self.title} - {self.department} ({self.post_date})"
+    
+    def is_expired(self):        
+        return self.deadline_date < timezone.now().date()
+    
+
+class JobPostingQuestion(models.Model):
+    question_id = models.AutoField(primary_key=True)
+    posting = models.ForeignKey(JobPosting, on_delete=models.CASCADE, related_name='posting_questions')
+    question_text = models.TextField()
+
+    class Meta:
+        unique_together = ('posting', 'question_text')
+
+    def __str__(self):
+        return f"Question for {self.posting.title}: {self.question_text}"
+
 
 class JobPostingCourseOffering(models.Model):
     posting = models.ForeignKey(JobPosting, on_delete=models.CASCADE)
@@ -113,39 +145,73 @@ class JobPostingCourseOffering(models.Model):
         unique_together = ('posting', 'course_offering')
 
 class Application(models.Model):
+    status_choices = {
+        ('submitted', 'Submitted'),
+        ('under_review', 'Under Review'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('withdrawn', 'Withdrawn'),
+        ('archived', 'Archived'),
+        ('draft', 'Draft'),
+    }
     application_id = models.AutoField(primary_key=True)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
     posting = models.ForeignKey(JobPosting, on_delete=models.CASCADE)
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=20, choices=status_choices, default='draft')
 
 class ApplicationQuestionResponse(models.Model):
     response_id = models.AutoField(primary_key=True)
-    application = models.ForeignKey(Application, on_delete=models.CASCADE)
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='question_responses')
     question = models.TextField()
     answer = models.TextField()
 
 class ApplicationSelectedCourses(models.Model):
-    application = models.ForeignKey(Application, on_delete=models.CASCADE)
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='selected_courses')
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('application', 'course_offering')
 
 class Offer(models.Model):
+    requiredhours_choices ={
+        ('1', '6 hours'),
+        ('2', '12 hours') 
+    }
+
+    role_choices= {
+        ('rta', 'Regular TA'),
+        ('tac', 'TA Captain'),
+    }
+
     offer_id = models.AutoField(primary_key=True)
     application = models.ForeignKey(Application, on_delete=models.CASCADE)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    lab_section = models.ForeignKey(LabSection, on_delete=models.SET_NULL, null=True, blank=True)
+    required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
+    role = models.CharField(max_length=3, choices=role_choices, default='rta')
     offer_date = models.DateField()
     status = models.CharField(max_length=50)
     notes = models.TextField(null=True, blank=True)
     created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created')
 
 class Assignment(models.Model):
+    role_choices= {
+        ('rta', 'Regular TA'),
+        ('tac', 'TA Captain'),
+    }
+    requiredhours_choices ={
+        ('1', '6 hours'),
+        ('2', '12 hours'),
+    }
+    
     assignment_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
+    offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, null=True, blank=True)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
     lab_section = models.ForeignKey(LabSection, on_delete=models.SET_NULL, null=True, blank=True)
+    required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
+    role = models.CharField(max_length=3, choices=role_choices, default='rta')
     assigned_date = models.DateField()
     assigned_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_made')
     notes = models.TextField(null=True, blank=True)
