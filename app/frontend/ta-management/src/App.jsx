@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {Route, Routes} from "react-router-dom";
-import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
 import LoginPage from "./pages/LoginPage";
 import MockDashboard from "./pages/MockDashboard";
 function App() {
@@ -28,7 +27,7 @@ function App() {
     // React Router setup, commented out for now
     // Initial test to check router functionlity below
     <Routes>
-      <Route path="/" element={<TASchedulerDashboard />} />
+      <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/dashboard" element={<MockDashboard />} />
       {/* Add more routes if needed */}
