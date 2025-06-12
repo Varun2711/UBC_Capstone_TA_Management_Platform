@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import {Route, Routes} from "react-router-dom";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
+import LoginPage from "./pages/LoginPage";
+import MockDashboard from "./pages/MockDashboard";
 function App() {
   // define a message state variable
   const [message, setMessage] = useState("");
@@ -24,10 +26,12 @@ function App() {
 
   return (
     // React Router setup, commented out for now
+    // Initial test to check router functionlity below
     // <Routes>
-    //   <Route path="/" element={<LandingPage/>} />
-    //   <Route path="/Login" element={<Login/>} />
-    //   <Route path="/TASchedulerDashboard" element={<TASchedulerDashboard/>} />
+    //   <Route path="/" element={<TASchedulerDashboard />} />
+    //   <Route path="/login" element={<LoginPage />} />
+    //   <Route path="/dashboard" element={<MockDashboard />} />
+    //   {/* Add more routes if needed */}
     // </Routes>
     <TASchedulerDashboard />
   );
