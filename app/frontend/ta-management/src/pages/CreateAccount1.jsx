@@ -25,7 +25,7 @@ export default function CreateAccount1() {
   const handleNext = (e) => {
     e.preventDefault()
     // Store form data in localStorage or context
-    localStorage.setItem("createAccountStep1", JSON.stringify(formData))
+    localStorage.setItem("createAccount1", JSON.stringify(formData))
     navigate("/create-account/step2")
   }
 
@@ -75,7 +75,7 @@ export default function CreateAccount1() {
             <Input
               id="ubcStudentNumber"
               name="ubcStudentNumber"
-              type="text"
+              type="number"
               value={formData.ubcStudentNumber}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

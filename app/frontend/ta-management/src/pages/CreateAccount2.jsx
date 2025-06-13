@@ -14,15 +14,19 @@ export default function CreateAccount2() {
     minorProgram: "",
   })
 
+  const [Error, setError] = useState("")
+
   useEffect(() => {
     // Check if step 1 data exists
-    const step1Data = localStorage.getItem("createAccountStep1")
+    const step1Data = localStorage.getItem("createAccount1")
     if (!step1Data) {
       navigate("/create-account/step1")
     }
   }, [navigate])
 
   const handleSelectChange = (name, value) => {
+    // clear any previous error
+    setError("")
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -31,7 +35,16 @@ export default function CreateAccount2() {
 
   const handleNext = (e) => {
     e.preventDefault()
-    localStorage.setItem("createAccountStep2", JSON.stringify(formData))
+
+    // Check if major and minor are the same (and both are selected)
+    if (formData.majorProgram && formData.minorProgram && formData.majorProgram === formData.minorProgram) {
+      setError("Major and minor programs cannot be the same")
+      return
+    }
+
+    setError("")
+    // Store form data in localStorage or context
+    localStorage.setItem("createAccount2", JSON.stringify(formData))
     navigate("/create-account/step3")
   }
 

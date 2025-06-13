@@ -19,8 +19,8 @@ export default function CreateAccount3() {
 
   useEffect(() => {
     // Check if previous steps data exists
-    const step1Data = localStorage.getItem("createAccountStep1")
-    const step2Data = localStorage.getItem("createAccountStep2")
+    const step1Data = localStorage.getItem("createAccount1")
+    const step2Data = localStorage.getItem("createAccount2")
     if (!step1Data || !step2Data) {
       navigate("/create-account/step1")
     }
@@ -51,8 +51,8 @@ export default function CreateAccount3() {
     }
 
     // Combine all form data
-    const step1Data = JSON.parse(localStorage.getItem("createAccountStep1"))
-    const step2Data = JSON.parse(localStorage.getItem("createAccountStep2"))
+    const step1Data = JSON.parse(localStorage.getItem("createAccount1"))
+    const step2Data = JSON.parse(localStorage.getItem("createAccount2"))
 
     const completeFormData = {
       ...step1Data,
@@ -63,8 +63,8 @@ export default function CreateAccount3() {
     console.log("Account creation completed:", completeFormData)
 
     // Clear localStorage
-    localStorage.removeItem("createAccountStep1")
-    localStorage.removeItem("createAccountStep2")
+    localStorage.removeItem("createAccount1")
+    localStorage.removeItem("createAccount2")
 
     // Navigate to success page or login
     navigate("/login")

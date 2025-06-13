@@ -84,7 +84,7 @@ describe("LoginPage", () => {
     // Check if email and password inputs have the required attribute
     const emailInput = screen.getByLabelText(/email address/i)
     const passwordInput = screen.getByLabelText(/password/i)
-q
+
     expect(emailInput).toHaveAttribute("required")
     expect(passwordInput).toHaveAttribute("required")
   })
