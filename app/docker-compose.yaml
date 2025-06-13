@@ -3,14 +3,20 @@ version: '3.9'
 services:
   backend:
     build:
-      context: ./backend/simpleapi
-    command: python manage.py runserver 0.0.0.0:8000
+      context: ./backend/simpleapi    
     ports:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
     env_file:
-      - .env.development
+      - .env
+    volumes:
+      - ./backend/simpleapi:/app
+#do not start the backend service until the database is healthy
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
   
   frontend:
     build:
@@ -18,3 +24,48 @@ services:
     ports:
       - "5173:5173"
     command: npm run dev -- --host
+
+# postgres database service
+# This service uses the official postgres image and sets up a database with the specified user and password.
+# The credentials are stored in the env file
+  db:
+    container_name: app_database
+    image: postgres:latest 
+    restart: unless-stopped
+    environment:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        POSTGRES_DB: ${POSTGRES_DB}      
+    volumes:           
+        - db_data:/var/lib/postgresql/data
+    ports:
+        - "5432:5432"
+# Healthcheck to ensure the database is ready before other services depend on it
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+        interval: 10s
+        retries: 5
+        start_period: 30s
+        timeout: 10s
+
+#pdgadmin service for managing the database, optional use
+# This service uses the official pgAdmin image and sets up a web interface for managing the PostgreSQL database.
+# To access pgAdmin, navigate to http://localhost:5050 in your web browser.
+# You can log in with the credentials specified below.
+  pgadmin:
+      container_name: app_pgadmin
+      image: dpage/pgadmin4:latest
+      restart: unless-stopped
+      environment:
+        PGADMIN_DEFAULT_EMAIL: capstone@domain.com
+        PGADMIN_DEFAULT_PASSWORD: capstone     
+      ports:
+        - "5050:80"
+      depends_on:
+        - db
+      volumes:
+        - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  db_data:
+  pgadmin_data:  
