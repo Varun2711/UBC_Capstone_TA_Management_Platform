@@ -1,12 +1,18 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth import get_user_model
+import jwt
+from django.conf import settings
 
 from .models import Student, Instructor, TAScheduler
 from .serializers import LoginSerializer, TokenSerializer, StudentRegistrationSerializer
+
+# Get Django's default User model
+User = get_user_model()
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -33,8 +39,6 @@ def login_view(request):
         elif user_type == 'instructor':
             try:
                 user = Instructor.objects.get(email=email)
-                # Note: In a real app, instructors would also have passwords
-                # This is simplified for the example
                 user_id = user.employee_number
             except Instructor.DoesNotExist:
                 return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -48,15 +52,34 @@ def login_view(request):
         else:
             return Response({'error': 'Invalid user type'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Generate token with user info embedded
-        refresh = RefreshToken()
+        # Create or get a Django User for JWT compatibility
+        django_user, created = User.objects.get_or_create(
+            username=email,
+            defaults={
+                'email': email,
+                'first_name': user.name,
+                'is_active': True,
+            }
+        )
+        
+        # Generate standard refresh token
+        refresh = RefreshToken.for_user(django_user)
+        
+        # Add custom claims to BOTH refresh and access tokens
         refresh['user_id'] = user_id
         refresh['user_type'] = user_type
         refresh['email'] = email
         refresh['name'] = user.name
         
+        # Get the access token and add the same claims
+        access = refresh.access_token
+        access['user_id'] = user_id
+        access['user_type'] = user_type
+        access['email'] = email
+        access['name'] = user.name
+        
         response_data = {
-            'access': str(refresh.access_token),
+            'access': str(access),
             'refresh': str(refresh),
             'user_id': user_id,
             'user_type': user_type,
@@ -99,8 +122,15 @@ def token_refresh_view(request):
         email = refresh.get('email')
         name = refresh.get('name')
         
+        # Create new access token and add custom claims
+        new_access = refresh.access_token
+        new_access['user_id'] = user_id
+        new_access['user_type'] = user_type
+        new_access['email'] = email
+        new_access['name'] = name
+        
         response_data = {
-            'access': str(refresh.access_token),
+            'access': str(new_access),
             'refresh': str(refresh),
             'user_id': user_id,
             'user_type': user_type,
@@ -112,18 +142,37 @@ def token_refresh_view(request):
         return Response({"error": "Invalid or expired refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def validate_token_view(request):
-    """Validate the current token - if request reaches here, token is valid"""
-    # Get the token payload
-    token = request.auth
+    """Validate the current token"""
+    # Get token from Authorization header
+    auth_header = request.META.get('HTTP_AUTHORIZATION')
+    
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return Response({"error": "Authorization header missing or invalid", "valid": False}, status=401)
+    
+    token = auth_header.split(' ')[1]
     
     try:
+        # Decode the token manually using the same secret
+        decoded = jwt.decode(
+            token, 
+            settings.SECRET_KEY, 
+            algorithms=["HS256"]
+        )
+
         # Extract user info from token claims
-        user_id = token.payload.get('user_id', '')
-        user_type = token.payload.get('user_type', '')
-        email = token.payload.get('email', '')
-        name = token.payload.get('name', '')
+        user_id = decoded.get('user_id')
+        user_type = decoded.get('user_type')
+        email = decoded.get('email')
+        name = decoded.get('name')
+        
+        # Check if we have the required user data
+        if not user_id or not user_type:
+            return Response({
+                "error": "Token is missing required user information",
+                "valid": False
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({
             "valid": True,
@@ -132,17 +181,9 @@ def validate_token_view(request):
             "email": email,
             "name": name
         })
-    except (AttributeError, KeyError):
-        # Print debugging info
-        print(f"Token validation failed. Token: {token}")
-        print(f"Token type: {type(token)}")
-        if hasattr(token, 'payload'):
-            print(f"Token payload: {token.payload}")
-        
-        # Try accessing token directly
-        return Response({
-            "valid": True,
-            "message": "Token is valid but user data could not be extracted",
-            "token_data": str(token)
-        })
-    
+    except jwt.ExpiredSignatureError:
+        return Response({"error": "Token has expired", "valid": False}, status=401)
+    except jwt.InvalidTokenError as e:
+        return Response({"error": f"Invalid token: {str(e)}", "valid": False}, status=401)
+    except Exception as e:
+        return Response({"error": f"Token validation failed: {str(e)}", "valid": False}, status=500)
