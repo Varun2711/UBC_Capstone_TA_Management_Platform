@@ -3,6 +3,8 @@ import {Route, Routes} from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import MockDashboard from "./pages/MockDashboard";
 import CreateAccount1 from "./pages/CreateAccount1";
+import CreateAccount2 from "./pages/CreateAccount2";
+import CreateAccount3 from "./pages/CreateAccount3";
 
 function App() {
   // define a message state variable
@@ -33,8 +35,8 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/MockDashboard" element={<MockDashboard />} />
       <Route path="/create-account/step1" element={<CreateAccount1 />} />
-      {/* <Route path="/create-account/step2" element={<CreateAccount2 />} />
-      <Route path="/create-account/step3" element={<CreateAccount3 />} /> */}
+      <Route path="/create-account/step2" element={<CreateAccount2 />} />
+      <Route path="/create-account/step3" element={<CreateAccount3 />} />
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />
