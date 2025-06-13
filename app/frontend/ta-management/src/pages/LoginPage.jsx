@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const navigate = useNavigate()
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
@@ -19,6 +20,7 @@ export default function LoginPage() {
     e.preventDefault()
     // Add your login logic here
     console.log("Login form submitted")
+    navigate("/MockDashboard") // Redirect to dashboard after login
   }
 
   return (

@@ -29,7 +29,7 @@ function App() {
     <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/dashboard" element={<MockDashboard />} />
+      <Route path="/MockDashboard" element={<MockDashboard />} />
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />
