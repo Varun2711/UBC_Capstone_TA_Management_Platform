@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth import get_user_model
 import jwt
 from django.conf import settings
+from django.http import JsonResponse
 
 from .models import Student, Instructor, TAScheduler
 from .serializers import LoginSerializer, TokenSerializer, StudentRegistrationSerializer
@@ -187,3 +188,19 @@ def validate_token_view(request):
         return Response({"error": f"Invalid token: {str(e)}", "valid": False}, status=401)
     except Exception as e:
         return Response({"error": f"Token validation failed: {str(e)}", "valid": False}, status=500)
+    
+# Add this function to your existing views.py
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request):
+    """Service status and available endpoints"""
+    return JsonResponse({
+        'status': 'Auth Service is running',
+        'available_endpoints': {
+            'login': '/api/auth/login/',
+            'register': '/api/auth/register/',
+            'validate': '/api/auth/validate/',
+            'token_refresh': '/api/auth/token/refresh/',
+            'logout': '/api/auth/logout/',
+        }
+    })
