@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
+import StudentDashboard from "./pages/Student_Dashboard";
+
 function App() {
   // define a message state variable
   const [message, setMessage] = useState("");
@@ -21,8 +23,9 @@ function App() {
       });
   }, []);
 
-  return (
-    <TASchedulerDashboard />
-  );
+  //return <TASchedulerDashboard /> ;
+  
+  // Uncomment the line below to switch to the Student Dashboard and comment the above return statement
+  return <StudentDashboard />;
 }
 export default App;
