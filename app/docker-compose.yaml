@@ -17,6 +17,22 @@ services:
       db:
         condition: service_healthy
         restart: true
+
+  user-profile-service:
+    build:
+      context: ./backend/user-profile-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    volumes:
+      - ./backend/user-profile-service:/app
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
   
   frontend:
     build:

@@ -1,0 +1,11 @@
+"""
+ASGI config for user_profile project.
+"""
+
+import os
+
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'user_profile.settings')
+
+application = get_asgi_application()
