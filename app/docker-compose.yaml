@@ -34,6 +34,22 @@ services:
         condition: service_healthy
         restart: true
   
+  auth-service:
+    build:
+      context: ./backend/auth-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    volumes:
+      - ./backend/auth-service:/app
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+  
   frontend:
     build:
       context: ./frontend/ta-management
