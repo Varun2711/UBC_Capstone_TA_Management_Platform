@@ -7,16 +7,16 @@ def api_root(request):
     return JsonResponse({
         'status': 'Auth Service is running',
         'available_endpoints': {
-            'api': '/api/',
-            'admin': '/admin/',
             'login': '/api/auth/login/',
             'register': '/api/auth/register/',
+            'validate': '/api/auth/validate/',
             'token_refresh': '/api/auth/token/refresh/',
+            'logout': '/api/auth/logout/',
         }
     })
 
 urlpatterns = [
     path('', api_root, name='api-root'),
     path('admin/', admin.site.urls),
-    path('api/', include('api.urls')),
+    path('api/auth/', include('api.urls')),
 ]
