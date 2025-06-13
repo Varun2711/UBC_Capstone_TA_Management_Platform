@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+# Add src directory to Python path
+export PYTHONPATH=$PYTHONPATH:/app/src
+
 echo "Making migrations for user profile service..."
 python manage.py makemigrations --noinput
 
