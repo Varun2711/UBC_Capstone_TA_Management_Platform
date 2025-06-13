@@ -1,6 +1,8 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from django.http import JsonResponse
 
 from .models import Student, Instructor, TAScheduler
 from .serializers import StudentSerializer, InstructorSerializer, TASchedulerSerializer
@@ -229,3 +231,20 @@ def find_user(request):
         
         # If we get here, no user was found
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+# Add this function to your existing views.py
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request):
+    """Service status and available endpoints"""
+    return JsonResponse({
+        'status': 'User Profile Service is running',
+        'available_endpoints': {
+            'api': '/api/',
+            'admin': '/admin/',
+            'students': '/api/students/',
+            'instructors': '/api/instructors/',
+            'schedulers': '/api/schedulers/',
+            'find_user': '/api/find-user/'
+        }
+    })

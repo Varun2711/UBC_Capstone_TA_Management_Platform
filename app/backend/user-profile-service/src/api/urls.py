@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import StudentViewSet, InstructorViewSet, TASchedulerViewSet, find_user
+from .views import StudentViewSet, InstructorViewSet, TASchedulerViewSet, find_user, api_root
 
 router = DefaultRouter()
 router.register(r'students', StudentViewSet)
