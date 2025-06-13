@@ -91,7 +91,7 @@ describe("CreateAccount2", () => {
 
     fireEvent.click(nextButton)
 
-    const savedData = JSON.parse(localStorage.getItem("createAccountStep2"))
+    const savedData = JSON.parse(localStorage.getItem("createAccount2"))
     expect(savedData.degreeProgram).toBe("Bachelor of Science")
     expect(savedData.yearOfDegree).toBe("3rd Year")
     expect(savedData.majorProgram).toBe("Computer Science")

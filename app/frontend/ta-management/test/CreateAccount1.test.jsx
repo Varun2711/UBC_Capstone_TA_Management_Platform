@@ -72,7 +72,7 @@ describe("CreateAccount1", () => {
 
     fireEvent.click(nextButton)
 
-    const savedData = JSON.parse(localStorage.getItem("createAccountStep1"))
+    const savedData = JSON.parse(localStorage.getItem("createAccount1"))
     expect(savedData).toEqual({
       firstName: "John",
       lastName: "Doe",

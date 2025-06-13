@@ -67,6 +67,15 @@ export default function CreateAccount2() {
         </div>
 
         <form className="space-y-6" onSubmit={handleNext} role="form">
+          {Error && (
+            <div
+              className="text-red-600 text-sm font-medium"
+              role="alert"
+              data-testid="error-message"
+            >
+              {Error}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="degreeProgram" className="text-sm font-medium text-gray-700">
               Degree program *
