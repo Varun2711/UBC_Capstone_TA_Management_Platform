@@ -92,7 +92,7 @@ export default function CreateAccount1() {
             </Button>            
           </div>
           <div className="text-center mt-4">
-            <Link to="/login" className="text-black hover:underline">
+            <Link to="/login" className="text-sm text-gray-600 hover:text-gray-900 underline">
               Already have an account? Log in
             </Link>
           </div>
