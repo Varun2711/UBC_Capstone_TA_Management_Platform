@@ -189,7 +189,6 @@ def validate_token_view(request):
     except Exception as e:
         return Response({"error": f"Token validation failed: {str(e)}", "valid": False}, status=500)
     
-# Add this function to your existing views.py
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def api_root(request):

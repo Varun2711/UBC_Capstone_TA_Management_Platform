@@ -132,8 +132,8 @@ class TASchedulerViewSet(viewsets.ModelViewSet):
         )
     
 #shared endpoint to find users across all types
-
 @api_view(['GET'])
+@permission_classes([AllowAny])  # Add this decorator
 def find_user(request):
     """Find a user across all user types by email, student_number, or employee_number"""
     email = request.query_params.get('email')
@@ -141,98 +141,83 @@ def find_user(request):
     employee_number = request.query_params.get('employee_number')
     user_type = request.query_params.get('type')  # Optional filter
     
-    # First check for utility modules
-    try:
-        # These functions should be in your utils module
-        from utils.profile_utils import get_user_by_id, get_user_by_email
-        from utils.response_utils import success_response, error_response
-        from utils.logging_utils import log_user_activity
-        
-        has_utils = True
-    except ImportError:
-        has_utils = False
+    # Search by email (most common case)
+    if email:
+        user, found_type = get_user_by_email(email)
+        if user:
+            # Filter by type if specified
+            if user_type and found_type != user_type:
+                return Response(
+                    error_response(f"User found but is {found_type}, not {user_type}"),
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Serialize based on user type
+            if found_type == 'student':
+                serializer = StudentSerializer(user)
+            elif found_type == 'instructor':
+                serializer = InstructorSerializer(user)
+            elif found_type == 'scheduler':
+                serializer = TASchedulerSerializer(user)
+            
+            log_user_activity(found_type, getattr(user, 'student_number', getattr(user, 'employee_number', 'unknown')), 'profile_searched')
+            
+            return Response(success_response({
+                "user": serializer.data,
+                "type": found_type
+            }))
     
-    # If utils are available, use the more advanced search
-    if has_utils:
-        # [... your original function implementation ...]
-        pass
+    # Search by student number
+    if student_number:
+        user = get_user_by_id(student_number, 'student')
+        if user:
+            if user_type and user_type != 'student':
+                return Response(
+                    error_response(f"User found but is student, not {user_type}"),
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            log_user_activity('student', student_number, 'profile_searched')
+            return Response(success_response({
+                "user": StudentSerializer(user).data,
+                "type": "student"
+            }))
     
-    # Simpler implementation without utilities
-    else:
-        response_data = {"user": None, "type": None}
-        
-        # Check by student number
-        if student_number and (user_type == 'student' or user_type is None):
-            try:
-                student = Student.objects.get(student_number=student_number)
-                return Response({
-                    "user": StudentSerializer(student).data,
-                    "type": "student"
-                })
-            except Student.DoesNotExist:
-                pass
-                
-        # Check by employee number - instructor
-        if employee_number and (user_type == 'instructor' or user_type is None):
-            try:
-                instructor = Instructor.objects.get(employee_number=employee_number)
-                return Response({
-                    "user": InstructorSerializer(instructor).data,
+    # Search by employee number
+    if employee_number:
+        # Try instructor first
+        if user_type == 'instructor' or user_type is None:
+            user = get_user_by_id(employee_number, 'instructor')
+            if user:
+                log_user_activity('instructor', employee_number, 'profile_searched')
+                return Response(success_response({
+                    "user": InstructorSerializer(user).data,
                     "type": "instructor"
-                })
-            except Instructor.DoesNotExist:
-                pass
-                
-        # Check by employee number - scheduler
-        if employee_number and (user_type == 'scheduler' or user_type is None):
-            try:
-                scheduler = TAScheduler.objects.get(employee_number=employee_number)
-                return Response({
-                    "user": TASchedulerSerializer(scheduler).data,
-                    "type": "scheduler"
-                })
-            except TAScheduler.DoesNotExist:
-                pass
-                
-        # Check by email
-        if email:
-            # Try student first
-            if user_type == 'student' or user_type is None:
-                try:
-                    student = Student.objects.get(email=email)
-                    return Response({
-                        "user": StudentSerializer(student).data,
-                        "type": "student"
-                    })
-                except Student.DoesNotExist:
-                    pass
-            
-            # Try instructor
-            if user_type == 'instructor' or user_type is None:
-                try:
-                    instructor = Instructor.objects.get(email=email)
-                    return Response({
-                        "user": InstructorSerializer(instructor).data,
-                        "type": "instructor"
-                    })
-                except Instructor.DoesNotExist:
-                    pass
-            
-            # Try scheduler
-            if user_type == 'scheduler' or user_type is None:
-                try:
-                    scheduler = TAScheduler.objects.get(email=email)
-                    return Response({
-                        "user": TASchedulerSerializer(scheduler).data,
-                        "type": "scheduler"
-                    })
-                except TAScheduler.DoesNotExist:
-                    pass
+                }))
         
-        # If we get here, no user was found
-        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        # Try scheduler
+        if user_type == 'scheduler' or user_type is None:
+            user = get_user_by_id(employee_number, 'scheduler')
+            if user:
+                log_user_activity('scheduler', employee_number, 'profile_searched')
+                return Response(success_response({
+                    "user": TASchedulerSerializer(user).data,  
+                    "type": "scheduler"
+                }))
     
-# Add this function to your existing views.py
+    # No parameters provided
+    if not email and not student_number and not employee_number:
+        return Response(
+            error_response("Please provide email, student_number, or employee_number parameter"),
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # User not found
+    return Response(
+        error_response("User not found"),
+        status=status.HTTP_404_NOT_FOUND
+    )
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def api_root(request):
