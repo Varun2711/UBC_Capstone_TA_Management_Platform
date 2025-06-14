@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {Route, Routes} from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import MockDashboard from "./pages/MockDashboard";
+import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
 function App() {
   // define a message state variable
   const [message, setMessage] = useState("");
@@ -30,6 +31,7 @@ function App() {
       <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/dashboard" element={<MockDashboard />} />
+      <Route path="/TAdashboard" element={< TASchedulerDashboard/>} />
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />
