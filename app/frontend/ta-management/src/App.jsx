@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import {Route, Routes} from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import MockDashboard from "./pages/MockDashboard";
+import { LandingPage } from "./pages/LandingPage";
+
 function App() {
   // define a message state variable
   const [message, setMessage] = useState("");
@@ -27,7 +29,7 @@ function App() {
     // React Router setup, commented out for now
     // Initial test to check router functionlity below
     <Routes>
-      <Route path="/" element={<LoginPage />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/dashboard" element={<MockDashboard />} />
       {/* Add more routes if needed */}
