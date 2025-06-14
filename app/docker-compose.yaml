@@ -16,6 +16,8 @@ services:
       db:
         condition: service_healthy
         restart: true
+    networks:
+      - app-networks
 
   user-profile-service:
     build:
@@ -32,6 +34,8 @@ services:
       db:
         condition: service_healthy
         restart: true
+    networks:
+      - app-networks
   
   auth-service:
     build:
