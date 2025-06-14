@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -22,7 +21,7 @@ export function LandingPage() {
 
             <div className="flex gap-4">
                 <Button variant="default" onClick = { () => navigate("/login") }>Login</Button>
-                <Button variant="secondary" onClick = { () => navigate("/register") }>Create An Account</Button>
+                <Button variant="secondary" onClick = { () => navigate("/create-account/step1") }>Create An Account</Button>
             </div>
 
             {/* Important Dates Section */}
