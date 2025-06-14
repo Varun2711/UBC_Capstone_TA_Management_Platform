@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
@@ -89,7 +89,12 @@ export default function CreateAccount1() {
               className="px-8 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-md transition duration-200"
             >
               Next
-            </Button>
+            </Button>            
+          </div>
+          <div className="text-center mt-4">
+            <Link to="/login" className="text-black hover:underline">
+              Already have an account? Log in
+            </Link>
           </div>
         </form>
       </div>
