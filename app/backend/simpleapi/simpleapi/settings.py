@@ -30,7 +30,12 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# add hosts to allow program to interact with nginx reverse proxy
+ALLOWED_HOSTS = [
+    "localhost",
+    "backend",
+    "nginx"
+]
 
 
 # Application definition
