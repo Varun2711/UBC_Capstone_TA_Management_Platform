@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-
+import { Route, Routes } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import MockDashboard from "./pages/MockDashboard";
 function App() {
   // define a message state variable
   const [message, setMessage] = useState("");
-  const message_url = "http://localhost:8000/api/hello";
+  const message_url = "/api/hello"; // update the api call to have a relative address instead of a direct address
   // make an api call with fetch
   useEffect(() => {
     fetch(message_url)
@@ -17,15 +19,22 @@ function App() {
         setMessage(data.message);
       })
       .catch((error) => {
-        throw new Error(`error occurred ${error}`);
+        console.log(`error has occurred ${error}`);
       });
   }, []);
 
   return (
-    <div>
-      <h1>TA Management Platform</h1>
-      <p>{message}</p>
-    </div>
+    // React Router setup, commented out for now
+    // Initial test to check router functionlity below
+    <Routes>
+      {/*The following message is just for testing purposes*/}
+      {console.log(message)}
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/dashboard" element={<MockDashboard />} />
+      {/* Add more routes if needed */}
+    </Routes>
+    // <TASchedulerDashboard />
   );
 }
 export default App;
