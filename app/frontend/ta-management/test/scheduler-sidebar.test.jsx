@@ -3,6 +3,7 @@ import { render, screen, within, fireEvent, waitFor } from '@testing-library/rea
 import { AppSidebar } from '@/components/scheduler-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import React from 'react';
+import userEvent from '@testing-library/user-event'
 
 // Mock the useIsMobile hook
 vi.mock('@/hooks/use-mobile', () => ({
@@ -103,23 +104,6 @@ describe('AppSidebar', () => {
     });
   });
 
-  // it('renders the dropdown menu in the footer with correct items', async () => {
-  //   renderSidebar();
-
-  //   const dropdownTrigger = screen.getByTestId('more-vertical-icon').closest('button');
-  //   expect(dropdownTrigger).toBeInTheDocument();
-
-  //   // Simulate clicking the dropdown trigger
-  //   fireEvent.click(dropdownTrigger);
-
-  //   // Wait for dropdown content to appear
-  //   await waitFor(() => {
-  //     const dropdownContent = screen.getByRole('menu');
-  //     expect(within(dropdownContent).getByText('My Account')).toBeInTheDocument();
-  //     expect(within(dropdownContent).getByText('My Profile')).toBeInTheDocument();
-  //     expect(within(dropdownContent).getByText('Logout')).toBeInTheDocument();
-  //   }, { timeout: 2000 });
-  // });
 
   it('has correct accessibility attributes', () => {
     renderSidebar();
@@ -156,41 +140,31 @@ describe('AppSidebar', () => {
     expect(avatarFallback).toHaveClass('bg-muted');
   });
 
-  // it('toggles sidebar state when using keyboard shortcut', () => {
-  //   const toggleSidebar = vi.fn();
-  //   vi.mock('@/components/ui/sidebar', async (importOriginal) => {
-  //     const actual = await importOriginal();
-  //     return {
-  //       ...actual,
-  //       useSidebar: vi.fn(() => ({
-  //         state: 'expanded',
-  //         open: true,
-  //         setOpen: vi.fn(),
-  //         isMobile: false,
-  //         openMobile: false,
-  //         setOpenMobile: vi.fn(),
-  //         toggleSidebar,
-  //       })),
-  //     };
-  //   });
+  it('renders the dropdown menu in the footer with correct items', async () => {
+    renderSidebar();
 
-  //   renderSidebar();
+    const dropdownTrigger = screen.getByRole('button');
+    await userEvent.click(dropdownTrigger)
+    
+    const myAccountHeading = await screen.findByText("My Account");
+    const MyProfileButton = await screen.findByText("My Profile");
+    const logoutButton = await screen.findByText("Logout")
 
-  //   // Simulate Ctrl + b keyboard shortcut
-  //   fireEvent.keyDown(window, { key: 'b', ctrlKey: true });
+    expect(myAccountHeading).toBeInTheDocument()
+    expect(MyProfileButton).toBeInTheDocument()
+    expect(logoutButton).toBeInTheDocument()
 
-  //   expect(toggleSidebar).toHaveBeenCalled();
-  // });
 
-//   it('renders correctly in mobile view', () => {
-//     // Mock mobile view
-//     vi.mocked(require('@/hooks/use-mobile').useIsMobile).mockReturnValue(true);
 
-//     renderSidebar();
 
-//     // Check if Sheet component is rendered for mobile
-//     const sheetContent = screen.getByText('TA Scheduler').closest('[data-sidebar="sidebar"]');
-//     expect(sheetContent).toHaveAttribute('data-mobile', 'true');
-//     expect(sheetContent).toHaveStyle({ '--sidebar-width': '18rem' });
-//   });
+
+
+
+
+
+
+  });
+
+
+
 });
