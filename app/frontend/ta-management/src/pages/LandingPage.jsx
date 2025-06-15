@@ -26,7 +26,7 @@ export function LandingPage() {
 
             {/* Important Dates Section */}
 
-            <Card className="w-2/3">
+            <Card className="w-fit">
                 <CardHeader>
                     <CardTitle> Active Application Period: Winter 2025 </CardTitle>
                     <CardDescription> Positions available for Term 1: September - December, and Term 2: January - April </CardDescription>
