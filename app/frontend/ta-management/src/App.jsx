@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import MockDashboard from "./pages/MockDashboard";
-
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
+import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
@@ -34,9 +34,7 @@ function App() {
     // React Router setup, commented out for now
     // Initial test to check router functionlity below
     <Routes>
-      {/*The following message is just for testing purposes*/}
-      {console.log(message)}
-      <Route path="/" element={<LoginPage />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
 
       <Route path="/TAdashboard" element={< TASchedulerDashboard/>} />
