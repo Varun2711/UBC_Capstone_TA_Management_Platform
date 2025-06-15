@@ -1,10 +1,23 @@
 import { LandingPage} from '../src/pages/LandingPage'
 import LoginPage from '../src/pages/LoginPage'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 
+const mockNavigate = vi.fn()
+
+// Mock react-router-dom's useNavigate to use our mockNavigate
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom")
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
+// utility fn. to render landing page wrapped in memory router
+// memory router used to simulate routing in a test environment
 const renderLandingPage = () => {
     return render(
         <MemoryRouter>
@@ -14,55 +27,49 @@ const renderLandingPage = () => {
 }
 
 describe('LandingPage', () => {
-    it('renders the page heading', () => {
+    //reset mocks and clear local storage at start of each test
+    beforeEach(() => {
+        vi.clearAllMocks()
+        localStorage.clear()
+    })
+
+    it('renders the landing page correctly', () => {
         renderLandingPage()
+
+        // headings
+        expect(screen.getByRole('heading', { name: /department of computer science, mathematics, physics and statistics/i })).toBeInTheDocument()
         expect(screen.getByRole('heading', { name: /ta application portal/i })).toBeInTheDocument()
-    })
 
-    it('renders a login button', () => {
-        renderLandingPage()
+        // buttons
         expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument() // i is regex for case insensitive matching
+        expect(screen.getByRole('button', { name: /create an account/i })).toBeInTheDocument()
+
+        // current application period info
+        expect(screen.getByText(/active application period/i)).toBeInTheDocument()
+        expect(screen.getByText(/positions available for/i)).toBeInTheDocument()
+        expect(screen.getByText(/open date/i)).toBeInTheDocument()
+        expect(screen.getByText(/close date/i)).toBeInTheDocument()
     })
 
-    it('renders a create account button', () => {
-        renderLandingPage()
-        expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
-    })
-})
-
-// these are hardcoded for now, eventually will be dynamically generated values
-describe('Important dates section', () => {
-    it('displays that applications are open', () => {
-        renderLandingPage()
-        expect(screen.getByText(/applications are open/i)).toBeInTheDocument()
-    })
-
-    it('displays the closing date', () => {
-        renderLandingPage()
-        expect(screen.getByText(/closing date: April 30, 2025/i)).toBeInTheDocument()
-    })
-})
-
-describe('Navigation', () => {
     it('navigates to /login on login button clicked', async () => {
-        render(
-            <MemoryRouter initialEntries={["/"]}>
-                <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                </Routes>
-            </MemoryRouter>
-        )
-
-        const loginBtn = screen.getByRole('button', {name: /login/i })
+        renderLandingPage()
 
         const user = userEvent.setup()
+
+        const loginBtn = screen.getByRole('button', {name: /login/i })
         await user.click(loginBtn)
-        expect(await screen.getByText("Login Page")).toBeInTheDocument()
+
+        expect(mockNavigate).toHaveBeenCalledWith("/login")
     })
 
-    // it('navigates to /register on create account button clicked', async () => {
-    //     // todo once register page implemented
-    // })
-    
+    it('navigates to /register on create account button clicked', async () => {
+        renderLandingPage()
+
+        const user = userEvent.setup()
+
+        const createAccBtn = screen.getByRole('button', {name: /create an account/i })
+        await user.click(createAccBtn)
+
+        expect(mockNavigate).toHaveBeenCalledWith("/create-account/step1")
+    })
 })
