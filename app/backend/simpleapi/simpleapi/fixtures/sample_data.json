@@ -1,0 +1,302 @@
+[
+{
+  "model": "myapp.faculty",
+  "pk": 1,
+  "fields": {
+    "name": "Irving K Barber Faculty of Science"
+  }
+},
+{
+  "model": "myapp.faculty",
+  "pk": 2,
+  "fields": {
+    "name": "School of Engineering"
+  }
+},
+{
+  "model": "myapp.faculty",
+  "pk": 3,
+  "fields": {
+    "name": "College of Graduate Studies"
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 1,
+  "fields": {
+    "name": "Biology",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 2,
+  "fields": {
+    "name": "CMPS",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 3,
+  "fields": {
+    "name": "Chemistry",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 4,
+  "fields": {
+    "name": "Earth, Environmental and Geographic Sciences",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 5,
+  "fields": {
+    "name": "Computer Science",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 6,
+  "fields": {
+    "name": "Mathematics",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 7,
+  "fields": {
+    "name": "Data Science",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 8,
+  "fields": {
+    "name": "Physics",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.department",
+  "pk": 9,
+  "fields": {
+    "name": "Statistics",
+    "faculty": 1
+  }
+},
+{
+  "model": "myapp.tascheduler",
+  "pk": 1,
+  "fields": {
+    "employee_number": "E002",
+    "name": "Bob Smith",
+    "email": "bmsmith@ubco.com",
+    "department": 2
+  }
+},
+{
+  "model": "myapp.tascheduler",
+  "pk": 2,
+  "fields": {
+    "employee_number": "E004",
+    "name": "Annie Smith",
+    "email": "ansmith@ubco.com",
+    "department": 2
+  }
+},
+{
+  "model": "myapp.instructor",
+  "pk": 1,
+  "fields": {
+    "employee_number": "E101",
+    "name": "Dr Charlie Brown",
+    "faculty": 1,
+    "email": "cbrown@ubco.com"
+  }
+},
+{
+  "model": "myapp.instructor",
+  "pk": 2,
+  "fields": {
+    "employee_number": "E102",
+    "name": "Dr. Mary White",
+    "faculty": 1,
+    "email": "mwhite@ubco.com"
+  }
+},
+{
+  "model": "myapp.student",
+  "pk": 1,
+  "fields": {
+    "student_number": "11112222",
+    "name": "Alice Smith",
+    "phone": null,
+    "program": "Computer Science",
+    "year_standing": 3,
+    "study_level": "Undergraduate",
+    "department": 2,
+    "sin": null,
+    "password": "password123",
+    "email": "asmith@capstone.ca"
+  }
+},
+{
+  "model": "myapp.student",
+  "pk": 2,
+  "fields": {
+    "student_number": "44332211",
+    "name": "Bob Brown",
+    "phone": null,
+    "program": "Physics",
+    "year_standing": 2,
+    "study_level": "Undergraduate",
+    "department": 2,
+    "sin": null,
+    "password": "password123",
+    "email": "bbrown@capstone.ca"
+  }
+},
+{
+  "model": "myapp.student",
+  "pk": 3,
+  "fields": {
+    "student_number": "87654321",
+    "name": "Jane Johnson",
+    "phone": null,
+    "program": "Mathematics",
+    "year_standing": null,
+    "study_level": "Graduate",
+    "department": 2,
+    "sin": null,
+    "password": "password123",
+    "email": "jjohnson@capstone.ca"
+  }
+},
+{
+  "model": "myapp.course",
+  "pk": "COSC101",
+  "fields": {
+    "title": "Introduction to Computer Science",
+    "description": "An introductory course in computer science.",
+    "department": 5
+  }
+},
+{
+  "model": "myapp.course",
+  "pk": "DATA101",
+  "fields": {
+    "title": "Data Science Fundamentals",
+    "description": "An introduction to data science concepts.",
+    "department": 7
+  }
+},
+{
+  "model": "myapp.course",
+  "pk": "MATH101",
+  "fields": {
+    "title": "Calculus I",
+    "description": "An introduction to calculus.",
+    "department": 6
+  }
+},
+{
+  "model": "myapp.course",
+  "pk": "PHYS101",
+  "fields": {
+    "title": "Physics I",
+    "description": "An introduction to classical physics.",
+    "department": 8
+  }
+},
+{
+  "model": "myapp.courseoffering",
+  "pk": 1,
+  "fields": {
+    "course": "COSC101",
+    "section_number": "001",
+    "term_number": "Winter Term 1",
+    "year_offered": 2024,
+    "instructor": 1,
+    "day": "MWF",
+    "time": "09:00-10:00"
+  }
+},
+{
+  "model": "myapp.courseoffering",
+  "pk": 2,
+  "fields": {
+    "course": "MATH101",
+    "section_number": "001",
+    "term_number": "Winter Term 1",
+    "year_offered": 2024,
+    "instructor": 2,
+    "day": "MW",
+    "time": "10:00 - 11:30"
+  }
+},
+{
+  "model": "myapp.courseoffering",
+  "pk": 3,
+  "fields": {
+    "course": "MATH101",
+    "section_number": "001",
+    "term_number": "Summer Term 1",
+    "year_offered": 2025,
+    "instructor": 1,
+    "day": "MW",
+    "time": "09:00-10:00"
+  }
+},
+{
+  "model": "myapp.labsection",
+  "pk": 1,
+  "fields": {
+    "course_offering": 1,
+    "section_number": "L01",
+    "day": "M",
+    "time": "10:00 - 11:00"
+  }
+},
+{
+  "model": "myapp.labsection",
+  "pk": 2,
+  "fields": {
+    "course_offering": 2,
+    "section_number": "L01",
+    "day": "W",
+    "time": "10:00 - 11:00"
+  }
+},
+{
+  "model": "myapp.labsection",
+  "pk": 3,
+  "fields": {
+    "course_offering": 3,
+    "section_number": "L01",
+    "day": "F",
+    "time": "10:00 - 11:00"
+  }
+},
+{
+  "model": "myapp.jobposting",
+  "pk": 1,
+  "fields": {
+    "title": "CMPS Teaching Assistants",
+    "description": "Applications are now open for teaching assistants for Computer Science, Mathematics, Physics, Statistics and Data Science (CMPS).",
+    "post_date": "2025-06-10",
+    "deadline_date": "2025-06-30",
+    "department": 2,
+    "faculty": 1,
+    "created_by": 1,
+    "requirements": "All applicants must be 3rd year standing or above."
+  }
+}
+]
