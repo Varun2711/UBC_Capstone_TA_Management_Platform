@@ -61,7 +61,7 @@ describe('LandingPage', () => {
         expect(mockNavigate).toHaveBeenCalledWith("/login")
     })
 
-    it('navigates to /register on create account button clicked', async () => {
+    it('navigates to /create-account/step1 on create account button clicked', async () => {
         renderLandingPage()
 
         const user = userEvent.setup()
