@@ -107,19 +107,14 @@ const openPositions = [
 
 const upcomingDeadlines = [
   {
-    course: "CS 102 - Programming Fundamentals",
-    deadline: "2024-02-01",
-    daysLeft: 5,
+    course: "Winter Session 2025-2026 TA Applications",
+    deadline: "2024-04-30",
+    daysLeft: 39,
   },
   {
-    course: "CS 250 - Computer Organization",
-    deadline: "2024-02-05",
+    course: "Summer Session 2025 TA Applications",
+    deadline: "2024-03-31",
     daysLeft: 9,
-  },
-  {
-    course: "CS 350 - Software Engineering",
-    deadline: "2024-02-10",
-    daysLeft: 14,
   },
 ]
 
