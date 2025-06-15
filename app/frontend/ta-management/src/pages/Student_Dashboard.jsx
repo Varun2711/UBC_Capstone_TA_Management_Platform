@@ -158,7 +158,7 @@ function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
           <GraduationCap className="h-6 w-6" />
-          <span className="font-semibold">TA Scheduler</span>
+          <span className="font-semibold">Student</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
