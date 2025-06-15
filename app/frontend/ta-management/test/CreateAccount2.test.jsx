@@ -137,7 +137,7 @@ describe("CreateAccount2", () => {
 
     await user.click(nextButton)
 
-    const savedData = JSON.parse(localStorage.getItem("createAccountStep2"))
+    const savedData = JSON.parse(localStorage.getItem("createAccount2"))
     expect(savedData.degreeProgram).toBe("BSc or BA")
     expect(savedData.yearOfDegreeStart).toBe("2023")
     expect(savedData.majorProgram).toBe("Computer Science")
@@ -164,7 +164,7 @@ describe("CreateAccount2", () => {
 
     await user.click(nextButton)
 
-    const savedData = JSON.parse(localStorage.getItem("createAccountStep2"))
+    const savedData = JSON.parse(localStorage.getItem("createAccount2"))
     expect(savedData.degreeProgram).toBe("Other (please specify)")
     expect(savedData.otherDegreeProgram).toBe("Bachelor of Fine Arts")
     expect(savedData.yearOfDegreeStart).toBe("2022")
