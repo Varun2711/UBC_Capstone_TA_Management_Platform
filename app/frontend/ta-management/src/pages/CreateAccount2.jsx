@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 
-export default function CreateAccountStep2() {
+export default function CreateAccount2() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     degreeProgram: "",
@@ -21,7 +21,7 @@ export default function CreateAccountStep2() {
 
   useEffect(() => {
     // Check if step 1 data exists
-    const step1Data = localStorage.getItem("createAccountStep1")
+    const step1Data = localStorage.getItem("createAccount1")
     if (!step1Data) {
       navigate("/create-account/step1")
     }
@@ -84,7 +84,7 @@ export default function CreateAccountStep2() {
     }
 
     setError("")
-    localStorage.setItem("createAccountStep2", JSON.stringify(formData))
+    localStorage.setItem("createAccount2", JSON.stringify(formData))
     navigate("/create-account/step3")
   }
 
