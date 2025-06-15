@@ -25,7 +25,8 @@ it("filters TA positions when a search term is entered", () => {
   const input = screen.getByPlaceholderText("Search positions...")
 
   fireEvent.change(input, { target: { value: "CS 250" } })
-  expect(screen.getAllByText("CS 250 - Computer Organization").length).toBeGreaterThanOrEqual(1)    
+  expect(screen.getAllByText("CS 250 - Computer Organization").length).toBeGreaterThanOrEqual(1) 
+  fireEvent.change(input, { target: { value: "CS 102" } })
   expect(screen.getAllByText("CS 102 - Programming Fundamentals").length).toBeGreaterThanOrEqual(1)    
 
 })
