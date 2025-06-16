@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react"
-import StudentDashboard from "./Student_Dashboard"
+import StudentDashboard from "@/pages/Student_Dashboard"
+import userEvent from "@testing-library/user-event"
 import { describe, it, expect } from "vitest"
 
 it("renders the welcome message with the student's name", () => {
@@ -20,14 +21,16 @@ it("shows all available TA positions initially", () => {
   expect(screen.getAllByText("CS 350 - Software Engineering").length).toBeGreaterThanOrEqual(1)
 })
 
-it("filters TA positions when a search term is entered", () => {
+it("filters TA positions when a search term is entered", async () => {
   render(<StudentDashboard />)
   const input = screen.getByPlaceholderText("Search positions...")
 
-  fireEvent.change(input, { target: { value: "CS 250" } })
-  expect(screen.getAllByText("CS 250 - Computer Organization").length).toBeGreaterThanOrEqual(1) 
-  fireEvent.change(input, { target: { value: "CS 102" } })
-  expect(screen.getAllByText("CS 102 - Programming Fundamentals").length).toBeGreaterThanOrEqual(1)    
+  await userEvent.clear(input)
+  await userEvent.type(input, "CS 250")
+  expect(screen.getAllByText("CS 250 - Computer Organization").length).toBeGreaterThanOrEqual(1)
+  await userEvent.clear(input)
+  await userEvent.type(input, "CS 102")
+  expect(screen.getAllByText("CS 102 - Programming Fundamentals").length).toBeGreaterThanOrEqual(1)
 
 })
 
