@@ -45,6 +45,7 @@ function App() {
       <Route path="/create-account/step2" element={<CreateAccount2 />} />
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/student-dashboard" element={<StudentDashboard />} />
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />

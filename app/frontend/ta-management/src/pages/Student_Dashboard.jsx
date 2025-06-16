@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { AppSidebar } from "../components/student-dashboard-sidebar"
+
 
 // Mock data
 const studentProfile = {
@@ -152,6 +154,7 @@ const sidebarItems = [
   },
 ]
 
+/*
 function AppSidebar() {
   return (
     <Sidebar>
@@ -195,6 +198,8 @@ function AppSidebar() {
     </Sidebar>
   )
 }
+*/
+
 
 function getStatusBadge(status) {
   switch (status) {
