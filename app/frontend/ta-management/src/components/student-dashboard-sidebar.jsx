@@ -92,7 +92,7 @@ export function AppSidebar(props) {
                 <SidebarMenuButton className="bg-background text-foreground hover:bg-muted">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src="././assets/react.svg" alt="Admin" />
-                    <AvatarFallback>AD</AvatarFallback>
+                    <AvatarFallback>SJ</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">Sarah Johnson</span>

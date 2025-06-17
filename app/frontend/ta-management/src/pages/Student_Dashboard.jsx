@@ -44,7 +44,7 @@ import { AppSidebar } from "../components/student-dashboard-sidebar"
 // Mock data
 const studentProfile = {
   name: "Sarah Johnson",
-  email: "sarah.johnson@university.edu",
+  email: "sarahj@mail.com",
   studentId: "SJ2024001",
   major: "Computer Science",
   year: "Graduate Student",
@@ -180,10 +180,6 @@ export default function StudentDashboard() {
               <Button variant="ghost" size="icon">
                 <Bell className="h-4 w-4" />
               </Button>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={studentProfile.avatar || "/placeholder.svg"} alt={studentProfile.name} />
-                <AvatarFallback>SJ</AvatarFallback>
-              </Avatar>
             </div>
           </header>
 
