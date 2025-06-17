@@ -13,6 +13,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+
   // server configuration to allow for interaction with nginx reverse proxy
   server: {
     host: true,
