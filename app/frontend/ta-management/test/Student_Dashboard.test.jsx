@@ -14,31 +14,11 @@ it("displays the correct number of total applications", () => {
   expect(elements.length).toBeGreaterThanOrEqual(1) // 3 total applications
 })
 
-it("shows all available TA positions initially", () => {
-  render(<StudentDashboard />)
-  expect(screen.getAllByText("CS 102 - Programming Fundamentals").length).toBeGreaterThanOrEqual(1)
-  expect(screen.getAllByText("CS 250 - Computer Organization").length).toBeGreaterThanOrEqual(1)
-  expect(screen.getAllByText("CS 350 - Software Engineering").length).toBeGreaterThanOrEqual(1)
-})
-
-it("filters TA positions when a search term is entered", async () => {
-  render(<StudentDashboard />)
-  const input = screen.getByPlaceholderText("Search positions...")
-
-  await userEvent.clear(input)
-  await userEvent.type(input, "CS 250")
-  expect(screen.getAllByText("CS 250 - Computer Organization").length).toBeGreaterThanOrEqual(1)
-  await userEvent.clear(input)
-  await userEvent.type(input, "CS 102")
-  expect(screen.getAllByText("CS 102 - Programming Fundamentals").length).toBeGreaterThanOrEqual(1)
-
-})
 
 it("displays status badges correctly for applications", () => {
   render(<StudentDashboard />)
 
   expect(screen.getAllByText("Accepted").length).toBeGreaterThanOrEqual(1)    
-  expect(screen.getAllByText("Rejected").length).toBeGreaterThanOrEqual(1)    
   expect(screen.getAllByText("Under Review").length).toBeGreaterThanOrEqual(1)    
 
 

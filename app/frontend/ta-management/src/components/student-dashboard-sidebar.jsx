@@ -38,11 +38,6 @@ const navigationItems = [
     url: "#",
   },
   {
-    title: "Available Positions",
-    icon: BookOpen,
-    url: "#",
-  },
-  {
     title: "Schedule",
     icon: Calendar,
     url: "#",

@@ -56,7 +56,7 @@ const studentProfile = {
 const submittedApplications = [
   {
     id: 1,
-    course: "CS 101 - Introduction to Programming",
+    academicPeriod: "2025-2026 Winter Session TA Application",
     professor: "Dr. Smith",
     status: "Under Review",
     appliedDate: "2024-01-15",
@@ -64,19 +64,11 @@ const submittedApplications = [
   },
   {
     id: 2,
-    course: "CS 201 - Data Structures",
+    academicPeriod: "2025 Summer Session TA Application",
     professor: "Dr. Johnson",
     status: "Accepted",
     appliedDate: "2024-01-10",
     deadline: "2024-01-15",
-  },
-  {
-    id: 3,
-    course: "CS 301 - Algorithms",
-    professor: "Dr. Brown",
-    status: "Rejected",
-    appliedDate: "2024-01-05",
-    deadline: "2024-01-10",
   },
 ]
 
@@ -154,53 +146,6 @@ const sidebarItems = [
   },
 ]
 
-/*
-function AppSidebar() {
-  return (
-    <Sidebar>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <GraduationCap className="h-6 w-6" />
-          <span className="font-semibold">Student</span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={item.isActive}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <div className="flex items-center gap-2 p-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={studentProfile.avatar || "/placeholder.svg"} alt={studentProfile.name} />
-            <AvatarFallback>SJ</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">{studentProfile.name}</span>
-            <span className="text-xs text-muted-foreground">{studentProfile.major}</span>
-          </div>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
-  )
-}
-*/
-
-
 function getStatusBadge(status) {
   switch (status) {
     case "Accepted":
@@ -229,11 +174,8 @@ export default function StudentDashboard() {
         <AppSidebar />
         <div className="flex-1">
           {/* Header */}
-          <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
+          <header className="flex h-16 items-center justify-between border-b bg-background px-6">
             <SidebarTrigger />
-            <div className="flex-1">
-              <h1 className="text-lg font-semibold">Student Dashboard</h1>
-            </div>
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon">
                 <Bell className="h-4 w-4" />
@@ -331,9 +273,6 @@ export default function StudentDashboard() {
                       <span className="text-sm">GPA: {studentProfile.gpa}</span>
                     </div>
                   </div>
-                  <Button className="w-full" variant="outline">
-                    Edit Profile
-                  </Button>
                 </CardContent>
               </Card>
 
@@ -371,8 +310,7 @@ export default function StudentDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Professor</TableHead>
+                      <TableHead>Academic Period</TableHead>
                       <TableHead>Applied Date</TableHead>
                       <TableHead>Deadline</TableHead>
                       <TableHead>Status</TableHead>
@@ -381,65 +319,10 @@ export default function StudentDashboard() {
                   <TableBody>
                     {submittedApplications.map((application) => (
                       <TableRow key={application.id}>
-                        <TableCell className="font-medium">{application.course}</TableCell>
-                        <TableCell>{application.professor}</TableCell>
+                        <TableCell className="font-medium">{application.academicPeriod}</TableCell>
                         <TableCell>{application.appliedDate}</TableCell>
                         <TableCell>{application.deadline}</TableCell>
                         <TableCell>{getStatusBadge(application.status)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Available Positions */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Available TA Positions</CardTitle>
-                    <CardDescription>Open positions you can apply for</CardDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search positions..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8 w-64"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Professor</TableHead>
-                      <TableHead>Hours/Week</TableHead>
-                      <TableHead>Deadline</TableHead>
-                      <TableHead>Requirements</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOpenPositions.map((position) => (
-                      <TableRow key={position.id}>
-                        <TableCell className="font-medium">{position.course}</TableCell>
-                        <TableCell>{position.professor}</TableCell>
-                        <TableCell>{position.hours}</TableCell>
-                        <TableCell>{position.deadline}</TableCell>
-                        <TableCell className="max-w-xs truncate">{position.requirements}</TableCell>
-                        <TableCell>
-                          <Button size="sm">
-                            <Plus className="h-4 w-4 mr-1" />
-                            Apply
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
