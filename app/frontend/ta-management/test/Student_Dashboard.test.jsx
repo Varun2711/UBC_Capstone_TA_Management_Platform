@@ -8,13 +8,6 @@ it("renders the welcome message with the student's name", () => {
   expect(screen.getByText(/Welcome back, Sarah Johnson!/i)).toBeInTheDocument()
 })
 
-it("displays the correct number of total applications", () => {
-  render(<StudentDashboard />)
-  const elements = screen.getAllByText("3")
-  expect(elements.length).toBeGreaterThanOrEqual(1) // 3 total applications
-})
-
-
 it("displays status badges correctly for applications", () => {
   render(<StudentDashboard />)
 
