@@ -120,5 +120,22 @@ describe('UserProfile Component', () => {
     expect(screen.getByTestId('map-pin-icon')).toBeInTheDocument();
   });
 
-  
+  it('disables buttons during saving', async () => {
+    // Enter edit mode
+    await user.click(screen.getByText('Edit Profile'));
+
+    // Click Save
+    const saveButton = screen.getByText('Save Changes');
+    const cancelButton = screen.getByText('Cancel');
+    await user.click(saveButton);
+
+    // Check disabled state
+    expect(saveButton).toBeDisabled();
+    expect(cancelButton).toBeDisabled();
+
+    // Wait for save to complete
+    await waitFor(() => {
+      expect(saveButton).toBeDisabled();
+    });
+  });
 });
