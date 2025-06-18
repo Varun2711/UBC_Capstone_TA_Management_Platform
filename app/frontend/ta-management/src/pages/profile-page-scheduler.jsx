@@ -148,6 +148,130 @@ export default function UserProfile() {
               </CardContent>
             </Card>
 
+            {/* Personal Information */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+                <CardDescription>Your basic personal details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    {isEditing ? (
+                      <Input
+                        id="firstName"
+                        value={userData.firstName}
+                        onChange={(e) => handleInputChange("firstName", e.target.value)}
+                      />
+                    ) : (
+                      <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.firstName}</div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    {isEditing ? (
+                      <Input
+                        id="lastName"
+                        value={userData.lastName}
+                        onChange={(e) => handleInputChange("lastName", e.target.value)}
+                      />
+                    ) : (
+                      <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.lastName}</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  {isEditing ? (
+                    <Input
+                      id="email"
+                      type="email"
+                      value={userData.email}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                    />
+                  ) : (
+                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.email}</div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  {isEditing ? (
+                    <Input
+                      id="phone"
+                      value={userData.phone}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                    />
+                  ) : (
+                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.phone}</div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  {isEditing ? (
+                    <Input
+                      id="address"
+                      value={userData.address}
+                      onChange={(e) => handleInputChange("address", e.target.value)}
+                    />
+                  ) : (
+                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.address}</div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    {isEditing ? (
+                      <Input
+                        id="dateOfBirth"
+                        type="date"
+                        value={userData.dateOfBirth}
+                        onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                      />
+                    ) : (
+                      <div className="px-3 py-2 border rounded-md bg-muted/50">
+                        {new Date(userData.dateOfBirth).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="employeeId">Employee ID</Label>
+                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.employeeId}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    {isEditing ? (
+                      <Input
+                        id="department"
+                        value={userData.department}
+                        onChange={(e) => handleInputChange("department", e.target.value)}
+                      />
+                    ) : (
+                      <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.department}</div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="position">Position</Label>
+                    {isEditing ? (
+                      <Input
+                        id="position"
+                        value={userData.position}
+                        onChange={(e) => handleInputChange("position", e.target.value)}
+                      />
+                    ) : (
+                      <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.position}</div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </main>
       </SidebarInset>
