@@ -89,5 +89,23 @@ describe('UserProfile Component', () => {
     expect(screen.getByText('Edit Profile')).toBeInTheDocument();
   });
 
-  
+  it('handles Save button click and shows loading state', async () => {
+    // Enter edit mode
+    await user.click(screen.getByText('Edit Profile'));
+
+    // Click Save
+    const saveButton = screen.getByText('Save Changes');
+    await user.click(saveButton);
+
+    // Check loading state
+    expect(screen.getByText('Saving...')).toBeInTheDocument();
+    expect(saveButton).toBeDisabled();
+
+    // Wait for save to complete (simulated API call)
+    await waitFor(() => {
+      expect(screen.queryByText('Saving...')).not.toBeInTheDocument();
+      expect(screen.getByText('Edit Profile')).toBeInTheDocument();
+    });
+  });
+
 });
