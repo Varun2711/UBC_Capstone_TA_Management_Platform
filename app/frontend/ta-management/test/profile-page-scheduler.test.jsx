@@ -108,4 +108,17 @@ describe('UserProfile Component', () => {
     });
   });
 
+  it('renders sidebar trigger and notification bell', () => {
+    expect(screen.getByRole('button', { name: /toggle sidebar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /notifications/i })).toBeInTheDocument();
+    expect(screen.getByTestId('bell-icon')).toBeInTheDocument();
+  });
+
+  it('displays contact information with icons', () => {
+    expect(screen.getByTestId('mail-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('phone-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('map-pin-icon')).toBeInTheDocument();
+  });
+
+  
 });
