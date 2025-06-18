@@ -71,4 +71,23 @@ describe('UserProfile Component', () => {
     expect(screen.getByText('Save Changes')).toBeInTheDocument();
   });
 
+  it('shows Cancel and Save buttons in edit mode and handles Cancel correctly', async () => {
+    // Enter edit mode
+    await user.click(screen.getByText('Edit Profile'));
+
+    // Verify Cancel and Save buttons
+    const cancelButton = screen.getByText('Cancel');
+    const saveButton = screen.getByText('Save Changes');
+    expect(cancelButton).toBeInTheDocument();
+    expect(saveButton).toBeInTheDocument();
+
+    // Click Cancel
+    await user.click(cancelButton);
+
+    // Verify back to view mode
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    expect(screen.getByText('Edit Profile')).toBeInTheDocument();
+  });
+
+  
 });
