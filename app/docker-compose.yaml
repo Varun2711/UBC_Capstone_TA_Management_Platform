@@ -120,7 +120,7 @@ services:
     build:
       context: ./nginx
     ports:
-      - "8080:80"
+      - "80:80"
     # set app-networks as the current network
     networks:
       - app-networks
@@ -128,7 +128,7 @@ services:
     depends_on:
       - frontend
       - backend
-      - pgadmin
+      - user-profile-service
 
 volumes:
   db_data:
