@@ -93,7 +93,7 @@ export default function UserProfile() {
                 </Button>
               </div>
             )}
-            <Button variant="ghost" size="icon" >
+            <Button variant="ghost" size="icon" aria-label="Notifications">
               <Bell className="h-5 w-5" />
             </Button>
           </div>
@@ -278,3 +278,4 @@ export default function UserProfile() {
     </SidebarProvider>
   )
 }
+
