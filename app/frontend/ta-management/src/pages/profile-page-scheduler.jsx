@@ -99,6 +99,57 @@ export default function UserProfile() {
           </div>
         </header>
 
+        {/* Main Content */}
+        <main className="flex-1 space-y-6 p-4 md:p-8">
+          {/* Header Section */}
+          <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-2">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">User Profile</h1>
+              <p className="text-muted-foreground">Manage your personal information</p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3 md:items-start">
+            {/* Profile Overview */}
+            <Card className="md:col-span-1">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src="/placeholder.svg?height=96&width=96" alt="Profile" />
+                    <AvatarFallback className="text-lg">
+                      {userData.firstName[0]}
+                      {userData.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                <CardTitle className="text-xl">
+                  {userData.firstName} {userData.lastName}
+                </CardTitle>
+                <CardDescription>
+                  {userData.department} • {userData.position}
+                </CardDescription>
+                <div className="flex justify-center mt-2">
+                  <Badge variant="secondary">Teaching Assistant</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2 text-sm">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span>{userData.email}</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{userData.phone}</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs">{userData.address}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+          </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )
