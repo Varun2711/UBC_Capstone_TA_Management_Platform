@@ -20,7 +20,7 @@ export default function LoginPage() {
     e.preventDefault()
     // Add your login logic here
     console.log("Login form submitted")
-    navigate("/MockDashboard") // Redirect to dashboard after login
+    navigate("/TAdashboard") // Redirect to dashboard after login
   }
 
   return (

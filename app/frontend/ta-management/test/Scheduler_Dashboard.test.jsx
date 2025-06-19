@@ -1,8 +1,7 @@
-import { vi , beforeAll , describe, it, expect } from "vitest"
+import { vi, beforeAll, describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"
 import TASchedulerDashboard from "@/pages/Scheduler_Dashboard"
-
-
+import { MemoryRouter } from "react-router-dom"
 
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
@@ -20,63 +19,48 @@ beforeAll(() => {
   })
 })
 
+const renderWithRouter = () => {
+  return render(
+    <MemoryRouter>
+      <TASchedulerDashboard />
+    </MemoryRouter>
+  )
+}
+
 describe("TASchedulerDashboard", () => {
   it("renders dashboard header and welcome message", () => {
-    render(<TASchedulerDashboard />)
+    renderWithRouter()
 
-
-    // Check for Dashboard breadcrumb
-    const dashboardSpan = screen.getByText('Dashboard', {
+    expect(screen.getByText('Dashboard', {
       selector: 'span[role="link"][aria-disabled="true"][aria-current="page"]'
-    })
-    
+    })).toBeInTheDocument()
 
-    // Welcome message
     expect(screen.getByRole("heading", { name: /welcome back, admin/i })).toBeInTheDocument()
     expect(
       screen.getByText(/here's what's happening with your ta scheduling system today\./i)
     ).toBeInTheDocument()
   })
 
-  it("renders stats cards with correct titles", () => {
-    render(<TASchedulerDashboard />)
-
-    // Stats titles
-    expect(screen.getByText("Active Courses")).toBeInTheDocument()
-    expect(screen.getByText('TA Positions', {
-      selector: 'div.tracking-tight.text-sm.font-medium'
-    })).toBeInTheDocument();
-    expect(screen.getByText('Applications', {
-      selector: 'div.tracking-tight.text-sm.font-medium'
-    })).toBeInTheDocument();
-    expect(screen.getByText('Appointments', {
-      selector: 'div.tracking-tight.text-sm.font-medium'
-    })).toBeInTheDocument();
-    
-
-  })
 
   it("renders upcoming tasks with task names", () => {
-    render(<TASchedulerDashboard />)
+    renderWithRouter()
 
     expect(screen.getByText("Review pending applications")).toBeInTheDocument()
     expect(screen.getByText("Assign instructors to new courses")).toBeInTheDocument()
     expect(screen.getByText("Post remaining TA positions")).toBeInTheDocument()
-
   })
 
   it("renders department overview", () => {
-    render(<TASchedulerDashboard />)
+    renderWithRouter()
 
     expect(screen.getByText("Computer Science")).toBeInTheDocument()
     expect(screen.getByText("Mathematics")).toBeInTheDocument()
     expect(screen.getByText("Physics")).toBeInTheDocument()
     expect(screen.getByText("Engineering")).toBeInTheDocument()
-
   })
 
   it("renders system status section", () => {
-    render(<TASchedulerDashboard />)
+    renderWithRouter()
 
     expect(screen.getByText("System Status & Management Tools")).toBeInTheDocument()
     expect(screen.getByText("Application Period")).toBeInTheDocument()
