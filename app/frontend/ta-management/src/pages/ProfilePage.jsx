@@ -53,11 +53,10 @@ const studentProfile = {
   gpa: "3.85",
   phone: "+1 (555) 123-4567",
   avatar: "/placeholder.svg?height=120&width=120",
-  address: "123 University Ave, College Town, ST 12345",
-  emergencyContact: {
-    name: "John Johnson",
-    relationship: "Father",
-    phone: "+1 (555) 987-6543",
+  coursePreference: {
+    first: "COSC 111",
+    second: "MATH 101",
+    third: "COSC 121",
   },
   academicInfo: {
     expectedGraduation: "May 2025",
@@ -249,18 +248,6 @@ export default function ProfilePage() {
                         <p className="text-sm">{profile.phone}</p>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Address</Label>
-                      {isEditing ? (
-                        <Input
-                          id="address"
-                          value={profile.address}
-                          onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                        />
-                      ) : (
-                        <p className="text-sm">{profile.address}</p>
-                      )}
-                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -391,73 +378,24 @@ export default function ProfilePage() {
               </Card>
             </div>
 
-            {/* References */}
+            {/* Course Preference */}
             <Card>
               <CardHeader>
-                <CardTitle>References</CardTitle>
-                <CardDescription>Academic and professional references</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {profile.references.map((ref, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <h4 className="font-medium">{ref.name}</h4>
-                      <p className="text-sm text-muted-foreground">{ref.title}</p>
-                      <p className="text-sm text-muted-foreground">{ref.department}</p>
-                      <div className="mt-2 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3 w-3" />
-                          <span className="text-xs">{ref.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3 w-3" />
-                          <span className="text-xs">{ref.phone}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Personal Statement */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Statement</CardTitle>
-                <CardDescription>Tell us about yourself and your teaching philosophy</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isEditing ? (
-                  <Textarea
-                    value={profile.personalStatement}
-                    onChange={(e) => setProfile({ ...profile, personalStatement: e.target.value })}
-                    rows={6}
-                    placeholder="Write about your teaching experience, philosophy, and what makes you a great TA candidate..."
-                  />
-                ) : (
-                  <p className="text-sm leading-relaxed">{profile.personalStatement}</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Emergency Contact */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Emergency Contact</CardTitle>
+                <CardTitle>Course Preference</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Name</Label>
-                    <p className="text-sm font-medium">{profile.emergencyContact.name}</p>
+                    <Label>First Preference</Label>
+                    <p className="text-sm font-medium">{profile.coursePreference.first}</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Relationship</Label>
-                    <p className="text-sm">{profile.emergencyContact.relationship}</p>
+                    <Label>Second Preference</Label>
+                    <p className="text-sm">{profile.coursePreference.second}</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Phone</Label>
-                    <p className="text-sm">{profile.emergencyContact.phone}</p>
+                    <Label>Third Preference</Label>
+                    <p className="text-sm">{profile.coursePreference.third}</p>
                   </div>
                 </div>
               </CardContent>
