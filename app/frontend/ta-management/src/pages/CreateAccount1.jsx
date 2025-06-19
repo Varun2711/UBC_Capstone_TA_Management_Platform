@@ -14,8 +14,11 @@ export default function CreateAccount1() {
     ubcStudentNumber: "",
   })
 
+  const [error, setError] = useState("") // ADDED: Error state for validation
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
+    setError("") // Reset error on input change
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -24,6 +27,16 @@ export default function CreateAccount1() {
 
   const handleNext = (e) => {
     e.preventDefault()
+
+    //Validate UBC student number is exactly 8 digits
+    const studentNumber = formData.ubcStudentNumber.trim()
+    if (!/^\d{8}$/.test(studentNumber)) {
+      setError("UBC student number must be exactly 8 digits")
+      return
+    }
+
+    setError("") // Clear error before proceeding
+
     // Store form data in localStorage or context
     localStorage.setItem("createAccount1", JSON.stringify(formData))
     navigate("/create-account/step2")
@@ -38,6 +51,10 @@ export default function CreateAccount1() {
         </div>
 
         <form className="space-y-6" onSubmit={handleNext} role="form">
+          {/* ADDED: Error message display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">{error}</div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
               First name *
@@ -70,7 +87,8 @@ export default function CreateAccount1() {
 
           <div className="space-y-2">
             <Label htmlFor="ubcStudentNumber" className="text-sm font-medium text-gray-700">
-              UBC student number *
+              UBC student number * {/* ADDED: Helper text */}
+              <span className="text-xs text-gray-500 block mt-1">Must be exactly 8 digits</span>
             </Label>
             <Input
               id="ubcStudentNumber"

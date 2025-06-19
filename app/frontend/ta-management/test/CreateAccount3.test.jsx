@@ -153,7 +153,7 @@ describe("CreateAccount3", () => {
     )
 
     // Verify navigation to login page
-    expect(mockNavigate).toHaveBeenCalledWith("/login")
+    expect(mockNavigate).toHaveBeenCalledWith("/student-dashboard")
   })
 
   // Test navigation to step 2 when "Prev" button is clicked

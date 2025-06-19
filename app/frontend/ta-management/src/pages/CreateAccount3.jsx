@@ -67,7 +67,7 @@ export default function CreateAccount3() {
     localStorage.removeItem("createAccount2")
 
     // Navigate to success page or login
-    navigate("/login")
+    navigate("/student-dashboard")
   }
 
   const handlePrev = () => {
