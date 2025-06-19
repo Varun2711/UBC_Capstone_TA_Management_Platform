@@ -129,6 +129,7 @@ services:
       - frontend
       - backend
       - user-profile-service
+      - auth-service
 
 volumes:
   db_data:
