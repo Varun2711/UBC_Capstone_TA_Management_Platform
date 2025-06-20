@@ -49,6 +49,7 @@ const studentProfile = {
   email: "sarah.johnson@university.edu",
   studentId: "SJ2024001",
   major: "Computer Science",
+  minor: "Data Science",
   year: "Graduate Student",
   gpa: "3.85",
   phone: "+1 (555) 123-4567",
@@ -59,7 +60,8 @@ const studentProfile = {
     third: "COSC 121",
   },
   academicInfo: {
-    expectedGraduation: "May 2025",
+    yearStanding: "4th Year",
+    expectedGraduation: "May 2026",
     credits: "45/60",
     advisor: "Dr. Emily Chen",
     concentration: "Software Engineering",
@@ -277,16 +279,12 @@ export default function ProfilePage() {
                     <p className="text-sm">{profile.academicInfo.expectedGraduation}</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Credits Completed</Label>
-                    <p className="text-sm">{profile.academicInfo.credits}</p>
+                    <Label>Year Standing</Label>
+                    <p className="text-sm">{profile.academicInfo.yearStanding}</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Academic Advisor</Label>
-                    <p className="text-sm">{profile.academicInfo.advisor}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Concentration</Label>
-                    <p className="text-sm">{profile.academicInfo.concentration}</p>
+                    <Label>Minor (Optional)</Label>
+                    <p className="text-sm">{profile.minor}</p>
                   </div>
                 </div>
               </CardContent>
