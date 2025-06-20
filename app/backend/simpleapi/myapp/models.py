@@ -4,6 +4,10 @@ from django.utils import timezone
 class Faculty(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
+    class Meta:
+        managed = False
+        db_table = 'myapp_faculty'
+
     def __str__(self):
         return self.name
 
@@ -11,6 +15,10 @@ class Faculty(models.Model):
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='departments')
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_department'
 
     def __str__(self):
         return self.name
