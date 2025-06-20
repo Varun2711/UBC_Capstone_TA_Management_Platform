@@ -63,7 +63,6 @@ const studentProfile = {
     yearStanding: "4th Year",
     expectedGraduation: "May 2026",
     credits: "45/60",
-    advisor: "Dr. Emily Chen",
     concentration: "Software Engineering",
   },
   experience: [
@@ -104,24 +103,6 @@ const studentProfile = {
     preferredDays: ["Monday", "Wednesday", "Friday"],
     timePreference: "Morning",
   },
-  references: [
-    {
-      name: "Dr. Michael Smith",
-      title: "Professor",
-      department: "Computer Science",
-      email: "m.smith@university.edu",
-      phone: "+1 (555) 111-2222",
-    },
-    {
-      name: "Dr. Jennifer Brown",
-      title: "Research Supervisor",
-      department: "Computer Science",
-      email: "j.brown@university.edu",
-      phone: "+1 (555) 333-4444",
-    },
-  ],
-  personalStatement:
-    "I am a dedicated graduate student with a passion for teaching and helping others learn computer science concepts. My experience as a TA has taught me the importance of patience, clear communication, and adapting teaching methods to different learning styles. I am committed to creating an inclusive and supportive learning environment for all students.",
 }
 
 export default function ProfilePage() {
