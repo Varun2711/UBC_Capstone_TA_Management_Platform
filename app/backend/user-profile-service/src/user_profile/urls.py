@@ -5,6 +5,5 @@ from api.views import api_root
 
 urlpatterns = [
     path('', api_root, name='api-root'),  # Root URL handler
-    path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
 ]

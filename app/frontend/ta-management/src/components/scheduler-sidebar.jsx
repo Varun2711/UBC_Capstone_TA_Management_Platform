@@ -1,7 +1,7 @@
 
 
 import { BookOpen, Calendar, FileText, Home, Settings, Upload, UserCheck, Plus, CheckCircle, User, MoreVerticalIcon } from "lucide-react"
-
+import { useNavigate } from "react-router-dom"
 import {
   Sidebar,
   SidebarContent,
@@ -80,7 +80,10 @@ const systemItems = [
   },
 ]
 
+
 export function AppSidebar(props) {
+  // Using useNavigate from react-router-dom to handle navigation
+  const navigate = useNavigate();
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -172,7 +175,7 @@ export function AppSidebar(props) {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem> <button>My Profile</button></DropdownMenuItem>
-                <DropdownMenuItem><button>Logout </button></DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/")}><button>Logout </button></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

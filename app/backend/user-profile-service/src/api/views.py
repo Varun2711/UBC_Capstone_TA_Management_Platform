@@ -225,11 +225,9 @@ def api_root(request):
     return JsonResponse({
         'status': 'User Profile Service is running',
         'available_endpoints': {
-            'api': '/api/',
-            'admin': '/admin/',
-            'students': '/api/students/',
-            'instructors': '/api/instructors/',
-            'schedulers': '/api/schedulers/',
-            'find_user': '/api/find-user/'
+            'students': '/api/profile/students/',
+            'instructors': '/api/profile/instructors/',
+            'schedulers': '/api/profile/schedulers/',
+            'find_user': '/api/profile/find-user/'
         }
     })

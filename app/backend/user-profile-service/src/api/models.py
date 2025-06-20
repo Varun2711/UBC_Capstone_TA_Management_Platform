@@ -9,8 +9,8 @@ class Faculty(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
-        # This tells Django these are existing tables, don't try to create them
-        managed = False
+        
+        managed = True
         db_table = 'myapp_faculty'
 
 class Department(models.Model):
@@ -18,7 +18,7 @@ class Department(models.Model):
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='departments')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_department'
 
 class Student(models.Model):
@@ -34,7 +34,7 @@ class Student(models.Model):
     email = models.EmailField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_student'
 
 class Instructor(models.Model):
@@ -44,7 +44,7 @@ class Instructor(models.Model):
     email = models.EmailField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_instructor'
 
 class TAScheduler(models.Model):
@@ -54,5 +54,5 @@ class TAScheduler(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_tascheduler'
