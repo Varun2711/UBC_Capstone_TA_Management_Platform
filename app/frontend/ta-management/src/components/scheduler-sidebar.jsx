@@ -30,7 +30,6 @@ const navigationItems = [
     title: "Dashboard",
     url: "#",
     icon: Home,
-    isActive: true,
   },
   {
     title: "Course Management",
@@ -81,9 +80,9 @@ const systemItems = [
 ]
 
 
-export function AppSidebar(props) {
-  // Using useNavigate from react-router-dom to handle navigation
+export function AppSidebar({ activePage, ...props }) {
   const navigate = useNavigate();
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -105,7 +104,7 @@ export function AppSidebar(props) {
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={item.isActive}>
+                  <SidebarMenuButton asChild isActive={activePage === item.title}>
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -123,7 +122,7 @@ export function AppSidebar(props) {
             <SidebarMenu>
               {quickActions.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={activePage === item.title}>
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -141,7 +140,7 @@ export function AppSidebar(props) {
             <SidebarMenu>
               {systemItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={activePage === item.title}>
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -158,7 +157,7 @@ export function AppSidebar(props) {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild className = "h-10">
+              <DropdownMenuTrigger asChild className="h-10">
                 <SidebarMenuButton className="bg-background text-foreground hover:bg-muted">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src="././assets/react.svg" alt="Admin" />
@@ -174,8 +173,8 @@ export function AppSidebar(props) {
               <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem> <button>My Profile</button></DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/")}><button>Logout </button></DropdownMenuItem>
+                <DropdownMenuItem><button>My Profile</button></DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/")}><button>Logout</button></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
@@ -184,3 +183,5 @@ export function AppSidebar(props) {
     </Sidebar>
   )
 }
+
+
