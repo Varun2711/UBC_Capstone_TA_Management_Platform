@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Mail, Phone, MapPin, Edit, Save, X, Bell } from "lucide-react"
+import { Mail, Edit, Save, X, Bell } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,12 +23,8 @@ export default function UserProfile() {
     firstName: "John",
     lastName: "Smith",
     email: "john.smith@university.edu",
-    phone: "+1 (555) 123-4567",
-    address: "123 University Ave, Campus City, ST 12345",
-    dateOfBirth: "1995-08-15",
-    employeeId: "EMP123456789",
+    employeeNumber: "EMP123456789",
     department: "Computer Science",
-    position: "Teaching Assistant",
   })
 
   // Editable user data
@@ -125,25 +121,14 @@ export default function UserProfile() {
                 <CardTitle className="text-xl">
                   {userData.firstName} {userData.lastName}
                 </CardTitle>
-                <CardDescription>
-                  {userData.department} • {userData.position}
-                </CardDescription>
                 <div className="flex justify-center mt-2">
-                  <Badge variant="secondary">Teaching Assistant</Badge>
+                  <Badge variant="secondary">{userData.department}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-2 text-sm">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <span>{userData.email}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{userData.phone}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs">{userData.address}</span>
                 </div>
               </CardContent>
             </Card>
@@ -196,78 +181,14 @@ export default function UserProfile() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  {isEditing ? (
-                    <Input
-                      id="phone"
-                      value={userData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                    />
-                  ) : (
-                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.phone}</div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  {isEditing ? (
-                    <Input
-                      id="address"
-                      value={userData.address}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
-                    />
-                  ) : (
-                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.address}</div>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                    {isEditing ? (
-                      <Input
-                        id="dateOfBirth"
-                        type="date"
-                        value={userData.dateOfBirth}
-                        onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                      />
-                    ) : (
-                      <div className="px-3 py-2 border rounded-md bg-muted/50">
-                        {new Date(userData.dateOfBirth).toLocaleDateString()}
-                      </div>
-                    )}
+                    <Label htmlFor="employeeNumber">Employee Number</Label>
+                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.employeeNumber}</div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="employeeId">Employee ID</Label>
-                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.employeeId}</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
-                    {isEditing ? (
-                      <Input
-                        id="department"
-                        value={userData.department}
-                        onChange={(e) => handleInputChange("department", e.target.value)}
-                      />
-                    ) : (
-                      <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.department}</div>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="position">Position</Label>
-                    {isEditing ? (
-                      <Input
-                        id="position"
-                        value={userData.position}
-                        onChange={(e) => handleInputChange("position", e.target.value)}
-                      />
-                    ) : (
-                      <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.position}</div>
-                    )}
+                    <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.department}</div>
                   </div>
                 </div>
               </CardContent>
@@ -278,4 +199,3 @@ export default function UserProfile() {
     </SidebarProvider>
   )
 }
-
