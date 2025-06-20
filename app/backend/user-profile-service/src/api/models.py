@@ -34,7 +34,7 @@ class Student(models.Model):
     email = models.EmailField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_student'
 
 class Instructor(models.Model):
@@ -44,7 +44,7 @@ class Instructor(models.Model):
     email = models.EmailField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_instructor'
 
 class TAScheduler(models.Model):
@@ -54,5 +54,5 @@ class TAScheduler(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_tascheduler'
