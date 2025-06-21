@@ -71,20 +71,20 @@ const studentProfile = {
   experience: [
     {
       title: "Teaching Assistant",
-      course: "CS 101 - Introduction to Programming",
+      course: "CS 111 - Introduction to Programming",
       semester: "Fall 2023",
       professor: "Dr. Smith",
       description: "Assisted with lab sessions, graded assignments, and held office hours for 30+ students.",
     },
     {
-      title: "Research Assistant",
-      department: "Computer Science Department",
-      duration: "Summer 2023",
-      supervisor: "Dr. Brown",
-      description: "Conducted research on machine learning algorithms and published findings in conference paper.",
+      title: "Teaching Assistant",
+      course: "MATH 101 - Introduction to Calculus",
+      semester: "Summer 2023",
+      professor: "Dr. Brown",
+      description: "Assisted with lecture sessions, and graded midterms and exams.",
     },
   ],
-  skills: [
+  technicalSkills: [
     "Python",
     "Java",
     "JavaScript",
@@ -95,6 +95,14 @@ const studentProfile = {
     "Linux",
     "Machine Learning",
     "Data Structures",
+  ],
+  softSkills: [
+    "Communication",
+    "Teamwork",
+    "Problem Solving",
+    "Time Management",
+    "Adaptability",
+    "Critical Thinking",
   ],
   availability: {
     maxHours: "20",
@@ -282,9 +290,9 @@ export default function ProfilePage() {
                       <div className="space-y-1">
                         <h4 className="font-medium">{exp.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {exp.course || exp.department} • {exp.semester || exp.duration}
+                          {exp.course} • {exp.semester}
                         </p>
-                        <p className="text-sm text-muted-foreground">Supervisor: {exp.professor || exp.supervisor}</p>
+                        <p className="text-sm text-muted-foreground">Supervisor: {exp.professor}</p>
                         <p className="text-sm mt-2">{exp.description}</p>
                       </div>
                     </div>
@@ -304,7 +312,22 @@ export default function ProfilePage() {
                     <div>
                       <Label className="text-sm font-medium">Technical Skills</Label>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {profile.skills.map((skill, index) => (
+                        {profile.technicalSkills.map((skill, index) => (
+                          <Badge key={index} variant="secondary">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <Separator/>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Soft Skills</Label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {profile.softSkills.map((skill, index) => (
                           <Badge key={index} variant="secondary">
                             {skill}
                           </Badge>
