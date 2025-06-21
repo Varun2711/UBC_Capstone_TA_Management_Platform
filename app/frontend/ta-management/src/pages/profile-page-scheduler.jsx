@@ -17,6 +17,7 @@ import { AppSidebar } from "@/components/scheduler-sidebar"
 export default function UserProfile() {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState({})
 
   // Original user data
   const [originalUserData] = useState({
@@ -30,16 +31,44 @@ export default function UserProfile() {
   // Editable user data
   const [userData, setUserData] = useState({ ...originalUserData })
 
+  const validateField = (field, value) => {
+    let error = null
+    if (field === "firstName" || field === "lastName") {
+      if (!value || value.trim().length < 2) {
+        error = `${field === "firstName" ? "First" : "Last"} name must be at least 2 characters`
+      }
+    } else if (field === "email") {
+      if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+        error = "Invalid email address"
+      }
+    }
+    return error
+  }
+
+  const validateForm = () => {
+    const newErrors = {}
+    const fields = ["firstName", "lastName", "email"]
+    fields.forEach((field) => {
+      const error = validateField(field, userData[field])
+      if (error) newErrors[field] = error
+    })
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleEdit = () => {
     setIsEditing(true)
+    setErrors({})
   }
 
   const handleCancel = () => {
     setUserData({ ...originalUserData })
+    setErrors({})
     setIsEditing(false)
   }
 
   const handleSave = async () => {
+    if (!validateForm()) return
     setIsSaving(true)
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -53,6 +82,20 @@ export default function UserProfile() {
       ...prev,
       [field]: value,
     }))
+    // Validate field in real-time
+    const error = validateField(field, value)
+    setErrors((prev) => ({
+      ...prev,
+      [field]: error,
+    }))
+  }
+
+  const isFormValid = () => {
+    return (
+      userData.firstName.trim().length >= 2 &&
+      userData.lastName.trim().length >= 2 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email.trim())
+    )
   }
 
   return (
@@ -83,7 +126,7 @@ export default function UserProfile() {
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                <Button size="sm" onClick={handleSave} disabled={isSaving || !isFormValid()}>
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? "Saving..." : "Save Changes"}
                 </Button>
@@ -144,11 +187,17 @@ export default function UserProfile() {
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
                     {isEditing ? (
-                      <Input
-                        id="firstName"
-                        value={userData.firstName}
-                        onChange={(e) => handleInputChange("firstName", e.target.value)}
-                      />
+                      <div>
+                        <Input
+                          id="firstName"
+                          value={userData.firstName}
+                          onChange={(e) => handleInputChange("firstName", e.target.value)}
+                          className={errors.firstName ? "border-destructive" : ""}
+                        />
+                        {errors.firstName && (
+                          <p className="text-destructive text-sm mt-1">{errors.firstName}</p>
+                        )}
+                      </div>
                     ) : (
                       <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.firstName}</div>
                     )}
@@ -156,11 +205,17 @@ export default function UserProfile() {
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     {isEditing ? (
-                      <Input
-                        id="lastName"
-                        value={userData.lastName}
-                        onChange={(e) => handleInputChange("lastName", e.target.value)}
-                      />
+                      <div>
+                        <Input
+                          id="lastName"
+                          value={userData.lastName}
+                          onChange={(e) => handleInputChange("lastName", e.target.value)}
+                          className={errors.lastName ? "border-destructive" : ""}
+                        />
+                        {errors.lastName && (
+                          <p className="text-destructive text-sm mt-1">{errors.lastName}</p>
+                        )}
+                      </div>
                     ) : (
                       <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.lastName}</div>
                     )}
@@ -170,12 +225,18 @@ export default function UserProfile() {
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   {isEditing ? (
-                    <Input
-                      id="email"
-                      type="email"
-                      value={userData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                    />
+                    <div>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={userData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        className={errors.email ? "border-destructive" : ""}
+                      />
+                      {errors.email && (
+                        <p className="text-destructive text-sm mt-1">{errors.email}</p>
+                      )}
+                    </div>
                   ) : (
                     <div className="px-3 py-2 border rounded-md bg-muted/50">{userData.email}</div>
                   )}
