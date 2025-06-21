@@ -54,11 +54,14 @@ const studentProfile = {
   gpa: "3.85",
   phone: "+1 (555) 123-4567",
   avatar: "/placeholder.svg?height=120&width=120",
-  coursePreference: {
-    first: "COSC 111",
-    second: "MATH 101",
-    third: "COSC 121",
-  },
+  coursePreference: [
+    "COSC 111",
+    "MATH 101",
+    "COSC 121",
+    "DATA 101",
+    "STAT 121",
+    "PHYS 111"
+  ],
   academicInfo: {
     yearStanding: "4th Year",
     expectedGraduation: "May 2026",
@@ -92,11 +95,6 @@ const studentProfile = {
     "Linux",
     "Machine Learning",
     "Data Structures",
-  ],
-  languages: [
-    { language: "English", proficiency: "Native" },
-    { language: "Spanish", proficiency: "Conversational" },
-    { language: "Mandarin", proficiency: "Basic" },
   ],
   availability: {
     maxHours: "20",
@@ -313,18 +311,6 @@ export default function ProfilePage() {
                         ))}
                       </div>
                     </div>
-                    <Separator />
-                    <div>
-                      <Label className="text-sm font-medium">Languages</Label>
-                      <div className="space-y-2 mt-2">
-                        {profile.languages.map((lang, index) => (
-                          <div key={index} className="flex justify-between items-center">
-                            <span className="text-sm">{lang.language}</span>
-                            <Badge variant="outline">{lang.proficiency}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -363,18 +349,13 @@ export default function ProfilePage() {
                 <CardTitle>Course Preference</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>First Preference</Label>
-                    <p className="text-sm font-medium">{profile.coursePreference.first}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Second Preference</Label>
-                    <p className="text-sm">{profile.coursePreference.second}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Third Preference</Label>
-                    <p className="text-sm">{profile.coursePreference.third}</p>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {profile.coursePreference.map((course, index) => (
+                      <Badge key={index} variant="secondary">
+                        {course}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               </CardContent>
