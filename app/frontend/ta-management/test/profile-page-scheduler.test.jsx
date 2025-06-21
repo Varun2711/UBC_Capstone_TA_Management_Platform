@@ -130,4 +130,94 @@ describe('UserProfile Component', () => {
       expect(saveButton).toBeDisabled();
     });
   });
+
+  it('shows error message when typing a single letter in first name', async () => {
+    await user.click(screen.getByText('Edit Profile'));
+
+    const firstNameInput = screen.getByLabelText('First Name');
+    await user.clear(firstNameInput);
+    await user.type(firstNameInput, 'J');
+
+    expect(screen.getByText('First name must be at least 2 characters')).toBeInTheDocument();
+    expect(firstNameInput).toHaveClass('border-destructive');
+    expect(screen.getByText('Save Changes')).toBeDisabled();
+  });
+
+  it('shows error message when typing a single letter in last name', async () => {
+    await user.click(screen.getByText('Edit Profile'));
+
+    const lastNameInput = screen.getByLabelText('Last Name');
+    await user.clear(lastNameInput);
+    await user.type(lastNameInput, 'S');
+
+    expect(screen.getByText('Last name must be at least 2 characters')).toBeInTheDocument();
+    expect(lastNameInput).toHaveClass('border-destructive');
+    expect(screen.getByText('Save Changes')).toBeDisabled();
+  });
+
+
+  it('shows error message for invalid email', async () => {
+    await user.click(screen.getByText('Edit Profile'));
+
+    const emailInput = screen.getByLabelText('Email Address');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'invalid');
+
+    expect(screen.getByText('Invalid email address')).toBeInTheDocument();
+    expect(emailInput).toHaveClass('border-destructive');
+    expect(screen.getByText('Save Changes')).toBeDisabled();
+  });
+
+
+  it('clears error message when correcting first name', async () => {
+    await user.click(screen.getByText('Edit Profile'));
+
+    const firstNameInput = screen.getByLabelText('First Name');
+    await user.clear(firstNameInput);
+    await user.type(firstNameInput, 'J');
+
+    expect(screen.getByText('First name must be at least 2 characters')).toBeInTheDocument();
+
+    await user.type(firstNameInput, 'o');
+
+    expect(screen.queryByText('First name must be at least 2 characters')).not.toBeInTheDocument();
+    expect(firstNameInput).not.toHaveClass('border-destructive');
+  });
+  it('enables Save button when all fields are valid', async () => {
+    await user.click(screen.getByText('Edit Profile'));
+
+    const firstNameInput = screen.getByLabelText('First Name');
+    const lastNameInput = screen.getByLabelText('Last Name');
+    const emailInput = screen.getByLabelText('Email Address');
+
+    await user.clear(firstNameInput);
+    await user.clear(lastNameInput);
+    await user.clear(emailInput);
+
+    await user.type(firstNameInput, 'Jane');
+    await user.type(lastNameInput, 'Doe');
+    await user.type(emailInput, 'jane.doe@university.edu');
+
+    expect(screen.queryByText('First name must be at least 2 characters')).not.toBeInTheDocument();
+    expect(screen.queryByText('Last name must be at least 2 characters')).not.toBeInTheDocument();
+    expect(screen.queryByText('Invalid email address')).not.toBeInTheDocument();
+    expect(screen.getByText('Save Changes')).not.toBeDisabled();
+  });
+
+  it('prevents saving with invalid input', async () => {
+    await user.click(screen.getByText('Edit Profile'));
+
+    const firstNameInput = screen.getByLabelText('First Name');
+    await user.clear(firstNameInput);
+    await user.type(firstNameInput, 'J');
+
+    const saveButton = screen.getByText('Save Changes');
+    await user.click(saveButton);
+
+    // Verify no saving occurs (no loading state)
+    expect(screen.queryByText('Saving...')).not.toBeInTheDocument();
+    expect(screen.getByText('First name must be at least 2 characters')).toBeInTheDocument();
+  });
+
+
 });
