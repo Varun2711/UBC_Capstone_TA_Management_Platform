@@ -7,25 +7,49 @@ import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { login } from "@/api/auth"
 
 export default function LoginPage() {
+  // state handling
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loginError, setLoginError] = useState("")
+
   const navigate = useNavigate()
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Add your login logic here
-    console.log("Login form submitted")
-    navigate("/TAdashboard") // Redirect to dashboard after login
+
+    // on login form submission, attempt to login
+    try {
+      const response = await login(email, password)
+      localStorage.setItem('accessToken', response.access)
+      localStorage.setItem('refreshToken', response.refresh)
+
+      // todo navigate to particular dashboard depending on user_type
+      navigate("/student-dashboard")
+      console.log("Login form submitted")
+    } catch (error) {
+      // if anything goes wrong with login, set the error state (this is used in the return to conditionally display error text)
+      setLoginError("Login Failed. You have entered an invalid email address or password. Please try again.")
+    } finally {
+      
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
+          {loginError && (
+            <div role="alert" className="text-red-600 text-sm">
+              {loginError}
+            </div>
+          )}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-8">Login</h1>
         </div>
@@ -38,6 +62,11 @@ export default function LoginPage() {
             <Input
               id="email"
               type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setLoginError("") // clear error when user starts typing
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -51,6 +80,11 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  setLoginError("") // clear error when user starts typing
+                }}
                 className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
