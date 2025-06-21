@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import UserProfile from '@/pages/profile-page-scheduler';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { MapPin, PanelLeft } from 'lucide-react';
+import { MemoryRouter } from 'react-router-dom';
 
 // Mock the sidebar component to avoid testing its internal implementation
 vi.mock('@/components/scheduler-sidebar', () => ({
@@ -29,9 +30,13 @@ describe('UserProfile Component', () => {
   // Render User Profile Component before each test
   beforeEach(() => {
     render(
-      <SidebarProvider>
+      <MemoryRouter>
+        <SidebarProvider>
         <UserProfile />
       </SidebarProvider>
+      </MemoryRouter>
+      
+      
     );
   });
 
