@@ -13,8 +13,6 @@ vi.mock('@/components/scheduler-sidebar', () => ({
 
 vi.mock('lucide-react', () => ({
   Mail : () => <svg data-testid = "mail-icon" />,
-  Phone : () => <svg data-testid = "phone-icon" />,
-  MapPin : () => <svg data-testid = "map-pin-icon" />,
   Edit : () => <svg data-testid = "edit-icon" />,
   Save : () => <svg data-testid = "save-icon" />,
   X : () => < svg data-testid = 'x-icon' />,
@@ -49,12 +47,8 @@ describe('UserProfile Component', () => {
     expect(screen.getByText('First Name')).toBeInTheDocument();
     expect(screen.getByText('Last Name')).toBeInTheDocument();
     expect(screen.getByText('Email Address')).toBeInTheDocument();
-    expect(screen.getByText('Phone Number')).toBeInTheDocument();
-    expect(screen.getByText('Address')).toBeInTheDocument();
-    expect(screen.getByText('Date of Birth')).toBeInTheDocument();
-    expect(screen.getByText('Employee ID')).toBeInTheDocument();
+    expect(screen.getByText('Employee Number')).toBeInTheDocument();
     expect(screen.getByText('Department')).toBeInTheDocument();
-    expect(screen.getByText('Position')).toBeInTheDocument();
   });
 
   it('starts in view mode and switches to edit mode when Edit Profile is clicked', async () => {
@@ -66,7 +60,7 @@ describe('UserProfile Component', () => {
     await user.click(screen.getByText('Edit Profile'));
 
     // Check edit mode (input fields should appear)
-    expect(screen.getAllByRole('textbox')).toHaveLength(7); // First Name, Last Name, Email, Phone, Address, Department, Position
+    expect(screen.getAllByRole('textbox')).toHaveLength(3); // First Name, Last Name, Email
     expect(screen.getByText('Cancel')).toBeInTheDocument();
     expect(screen.getByText('Save Changes')).toBeInTheDocument();
   });
@@ -116,8 +110,6 @@ describe('UserProfile Component', () => {
 
   it('displays contact information with icons', () => {
     expect(screen.getByTestId('mail-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('phone-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('map-pin-icon')).toBeInTheDocument();
   });
 
   it('disables buttons during saving', async () => {
