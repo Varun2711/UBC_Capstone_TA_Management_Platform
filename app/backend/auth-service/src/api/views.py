@@ -14,6 +14,42 @@ from .serializers import LoginSerializer, TokenSerializer, StudentRegistrationSe
 
 # Get Django's default User model
 User = get_user_model()
+ 
+# Helper function for login
+def find_user_by_email(email, password):
+    '''
+    This function programmatically determines user_type by going through
+    each User table in attempt to find the user by email 
+    '''
+    try:
+        student = Student.objects.get(email = email)
+        if check_password(password, student.password):
+            return student, "student", student.student_number
+        else:
+            return None, None, None
+    except Student.DoesNotExist:
+        pass
+
+    try:
+        instructor = Instructor.objects.get(email = email)
+        if check_password(password, instructor.password):
+            return instructor, "instructor", instructor.employee_number
+        else:
+            return None, None, None
+    except Instructor.DoesNotExist:
+        pass
+
+    try:
+        ta_scheduler = TAScheduler.objects.get(email = email)
+        if check_password(password, ta_scheduler.password):
+            return ta_scheduler, "scheduler", ta_scheduler.employee_number
+        else:
+            return None, None, None
+    except TAScheduler.DoesNotExist:
+        pass
+
+    return None, None, None # if not found in student, instructor, or ta scheduler, user does not exist
+        
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -22,12 +58,41 @@ def login_view(request):
     if serializer.is_valid():
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
-        user_type = serializer.validated_data['user_type']
+        user, user_type, user_id = find_user_by_email(email, password)
         
-        user = None
-        user_id = None
+        if not user:
+            return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
         
+        # Create django user
+        django_user, created = User.objects.get_or_create(username = email, defaults={"email":email, "first_name": user.name, "is_active": True})
+        
+        # Generate refresh token
+        refresh = RefreshToken.for_user(django_user)
+
+        refresh["user_id"] = user_id
+        refresh["user_type"] = user_type
+        refresh["email"] = email
+        refresh["name"] = user.name
+
+        # Generate access token
+        access = refresh.access_token
+
+        access["user_id"] = user_id
+        access["user_type"] = user_type
+        access["email"] = email
+        access["name"] = user.name
+
+        response_data = {"access": str(access),
+                         "refresh": str(refresh),
+                         "user_id": user_id,
+                         "user_type": user_type,
+                         "name": user.name}
+        
+        return Response(TokenSerializer(response_data).data)
+
         # Try to authenticate based on user_type
+        # todo: delete once i am done with; need to steal the error handling from here
+        # and add to find_user_by_email
         if user_type == 'student':
             try:
                 user = Student.objects.get(email=email)

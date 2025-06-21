@@ -42,6 +42,7 @@ class Instructor(models.Model):
     name = models.CharField(max_length=100)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
     email = models.EmailField()
+    password = models.CharField(max_length=255)
 
     class Meta:
         managed = True
@@ -52,6 +53,7 @@ class TAScheduler(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=100)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
+    password = models.CharField(max_length=255)
 
     class Meta:
         managed = True

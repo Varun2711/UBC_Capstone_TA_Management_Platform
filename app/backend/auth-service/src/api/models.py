@@ -21,7 +21,8 @@ class Instructor(models.Model):
     name = models.CharField(max_length=100)
     faculty = models.IntegerField() 
     email = models.EmailField()
-    
+    password = models.CharField(max_length=255)
+
     class Meta:
         managed = False
         db_table = 'myapp_instructor'
@@ -31,7 +32,8 @@ class TAScheduler(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=100)
     department = models.IntegerField() 
-    
+    password = models.CharField(max_length=255)
+
     class Meta:
         managed = False
         db_table = 'myapp_tascheduler'

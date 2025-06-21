@@ -30,6 +30,7 @@ export default function LoginPage() {
       const response = await login(email, password)
       localStorage.setItem('accessToken', response.access)
       localStorage.setItem('refreshToken', response.refresh)
+      console.log("user_type: " + response.user_type) // for testing, todo: delete
 
       // todo navigate to particular dashboard depending on user_type
       navigate("/student-dashboard")

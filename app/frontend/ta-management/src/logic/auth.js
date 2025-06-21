@@ -10,8 +10,7 @@ const API_URL = 'http://localhost:8080/api'
 export const login = async (email, password) => {
     const response = await axios.post(`${API_URL}/auth/login/`, {
         email,
-        password,
-        user_type: 'student'
+        password
     })
 
     return response.data
