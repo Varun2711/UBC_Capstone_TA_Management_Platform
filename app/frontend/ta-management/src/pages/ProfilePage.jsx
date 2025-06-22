@@ -177,31 +177,29 @@ export default function ProfilePage() {
                 <h2 className="text-2xl font-bold">My Profile</h2>
                 <p className="text-muted-foreground">Manage your personal information and TA application details</p>
               </div>
-              <div className="flex gap-2">
+            </div>
+
+            {/* Profile Picture and Basic Info */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Basic Information</CardTitle>
                 {isEditing ? (
-                  <>
+                  <div className="flex gap-2">
                     <Button onClick={handleSave} className="gap-2">
                       <Save className="h-4 w-4" />
-                      Save Changes
+                      Save
                     </Button>
                     <Button onClick={handleCancel} variant="outline" className="gap-2">
                       <X className="h-4 w-4" />
                       Cancel
                     </Button>
-                  </>
+                  </div>
                 ) : (
                   <Button onClick={() => setIsEditing(true)} className="gap-2">
                     <Edit className="h-4 w-4" />
                     Edit Profile
                   </Button>
                 )}
-              </div>
-            </div>
-
-            {/* Profile Picture and Basic Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-start gap-6">
@@ -287,6 +285,7 @@ export default function ProfilePage() {
                         setIsEditingAcademic(false)
                       }}
                     >
+                      <Save className="h-4 w-4" />
                       Save
                     </Button>
                     <Button
@@ -417,6 +416,7 @@ export default function ProfilePage() {
                         setIsEditingExperience(false)
                       }}
                     >
+                      <Save className="h-4 w-4" />
                       Save
                     </Button>
                     <Button
@@ -557,6 +557,7 @@ export default function ProfilePage() {
                             setSkillsEdit(false)
                           }}
                         >
+                          <Save className="h-4 w-4" />
                           Save
                         </Button>
                         <Button
