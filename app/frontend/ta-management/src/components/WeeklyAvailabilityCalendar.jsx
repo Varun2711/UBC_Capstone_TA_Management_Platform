@@ -1,4 +1,6 @@
 import React, { useState } from "react"
+import "./WeeklyAvailabilityCalendar.css"
+
 
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 const startHour = 8
@@ -37,7 +39,7 @@ const WeeklyAvailabilityCalendar = () => {
       <table className="border-collapse w-full text-center text-sm">
         <thead>
           <tr>
-            <th className="border p-2 w-20 text-left">Time</th>
+            <th className="border p-2 w-20 text-center align-middle">Time</th>
             {days.map((day) => (
               <th key={day} className="border p-2">{day}</th>
             ))}
