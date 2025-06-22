@@ -41,7 +41,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "../components/student-dashboard-sidebar"
-
+import WeeklyAvailabilityCalendar from "../components/WeeklyAvailabilityCalendar"
 
 // Mock data
 const studentProfile = {
@@ -110,6 +110,7 @@ const studentProfile = {
     timePreference: "Morning",
   },
 }
+
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -338,7 +339,7 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
 
-              {/* Availability */}
+              {/*
               <Card>
                 <CardHeader>
                   <CardTitle>Availability</CardTitle>
@@ -364,6 +365,16 @@ export default function ProfilePage() {
                   </div>
                 </CardContent>
               </Card>
+              */}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Availability</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <WeeklyAvailabilityCalendar />
+                </CardContent>
+              </Card>
             </div>
 
             {/* Course Preference */}
@@ -380,7 +391,7 @@ export default function ProfilePage() {
                       </Badge>
                     ))}
                   </div>
-                </div>
+              </div>
               </CardContent>
             </Card>
           </main>
