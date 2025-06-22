@@ -1,12 +1,11 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import "./WeeklyAvailabilityCalendar.css"
-
 
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 const startHour = 8
 const endHour = 21
 
-// Generate 30-minute slots from each hour (e.g., 08:00 and 08:30)
+// Generate time slots per hour
 const generateTimeSlots = () => {
   const slots = []
   for (let hour = startHour; hour < endHour; hour++) {
@@ -15,8 +14,17 @@ const generateTimeSlots = () => {
   return slots
 }
 
-const WeeklyAvailabilityCalendar = () => {
-  const [selectedSlots, setSelectedSlots] = useState(new Set())
+const WeeklyAvailabilityCalendar = ({
+  editable = false,
+  availability = [],
+  setAvailability = () => {},
+}) => {
+  const [selectedSlots, setSelectedSlots] = useState(new Set(availability))
+
+  // Sync internal state with incoming props when availability updates externally
+  useEffect(() => {
+    setSelectedSlots(new Set(availability))
+  }, [availability])
 
   const toggleSlot = (day, hour, half) => {
     const key = `${day}-${hour}-${half}`
@@ -27,6 +35,7 @@ const WeeklyAvailabilityCalendar = () => {
       updated.add(key)
     }
     setSelectedSlots(updated)
+    setAvailability(Array.from(updated)) // Sync to parent
   }
 
   const isSelected = (day, hour, half) =>
@@ -48,25 +57,25 @@ const WeeklyAvailabilityCalendar = () => {
         <tbody>
           {timeSlots.map((hour) => (
             <tr key={hour} className="h-10">
-              <td className="border p-2">{hour}</td>
+              <td className="border p-2 text-center align-middle">{hour}</td>
               {days.map((day) => {
                 const hourNum = parseInt(hour.split(":")[0])
                 return (
                   <td key={day} className="border p-0">
                     <div className="flex flex-col h-full">
-                      {/* Top Half - :00 to :30 */}
+                      {/* Top Half (first 30 minutes) */}
                       <div
                         className={`h-5 cursor-pointer ${
                           isSelected(day, hourNum, "top") ? "bg-blue-400" : "hover:bg-blue-100"
                         } border-b`}
-                        onClick={() => toggleSlot(day, hourNum, "top")}
+                        onClick={() => editable && toggleSlot(day, hourNum, "top")}
                       />
-                      {/* Bottom Half - :30 to :00 */}
+                      {/* Bottom Half (next 30 minutes) */}
                       <div
                         className={`h-5 cursor-pointer ${
                           isSelected(day, hourNum, "bottom") ? "bg-blue-400" : "hover:bg-blue-100"
                         }`}
-                        onClick={() => toggleSlot(day, hourNum, "bottom")}
+                        onClick={() => editable && toggleSlot(day, hourNum, "bottom")}
                       />
                     </div>
                   </td>

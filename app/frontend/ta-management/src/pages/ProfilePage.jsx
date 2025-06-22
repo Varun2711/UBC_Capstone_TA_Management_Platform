@@ -132,7 +132,9 @@ export default function ProfilePage() {
   const [isEditingExperience, setIsEditingExperience] = useState(false)
   const [editedExperience, setEditedExperience] = useState([...profile.experience])
 
-
+  // State for availability editing
+  const [isEditingAvailability, setIsEditingAvailability] = useState(false)
+  const [availabilityData, setAvailabilityData] = useState([]) // Initialize as needed
 
   const handleSave = () => {
     // Here you would typically save to a backend
@@ -302,7 +304,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <Button size="sm" onClick={() => setIsEditingAcademic(true)}>
-                    Edit
+                    Edit Academic Information
                   </Button>
                 )}
               </CardHeader>
@@ -426,7 +428,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <Button size="sm" onClick={() => setIsEditingExperience(true)}>
-                    Edit
+                    Edit Experience
                   </Button>
                 )}
               </CardHeader>
@@ -569,7 +571,7 @@ export default function ProfilePage() {
                       </div>
                     ) : (
                       <Button size="sm" onClick={() => setSkillsEdit(true)}>
-                        Edit
+                        Edit Skills
                       </Button>
                     )}
                   </CardHeader>
@@ -640,7 +642,7 @@ export default function ProfilePage() {
 
                 {/* Course Preference */}
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Course Preference</CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -660,11 +662,41 @@ export default function ProfilePage() {
               <div>
                 {/* Availability Calendar */}
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Availability</CardTitle>
+                    <div className="flex gap-2 mt-2">
+                      {isEditingAvailability ? (
+                        <>
+                          <Button onClick={() => setIsEditingAvailability(false)} className="gap-2">
+                            <Save className="h-4 w-4" />
+                            Save
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setIsEditingAvailability(false)
+                              setAvailabilityData([]) // or reset to original data if available
+                            }}
+                            variant="outline"
+                            className="gap-2"
+                          >
+                            <X className="h-4 w-4" />
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <Button onClick={() => setIsEditingAvailability(true)} className="gap-2">
+                          <Edit className="h-4 w-4" />
+                          Edit Availability
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <WeeklyAvailabilityCalendar />
+                    <WeeklyAvailabilityCalendar
+                      editable={isEditingAvailability}
+                      availability={availabilityData}
+                      setAvailability={setAvailabilityData}
+                    />
                   </CardContent>
                 </Card>
               </div>
