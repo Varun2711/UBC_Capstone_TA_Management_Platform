@@ -1,10 +1,7 @@
-# These are just references to the existing database tables
-
+import uuid
 from django.db import models
-
-# User profile related models from your existing database
-# We're not creating new tables, just defining the structure to match the existing ones
-
+from django.contrib.auth.models import User
+# all models related to user profiles, including students, instructors, and TA schedulers
 class Faculty(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
@@ -58,3 +55,83 @@ class TAScheduler(models.Model):
     class Meta:
         managed = True
         db_table = 'myapp_tascheduler'
+
+class StudentProfile(models.Model):
+    """ Extended profile for authenticated users """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
+    student_record = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='profile', null=True, blank=True)
+    gpa = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
+    expected_graduation = models.DateField(null=True, blank=True)
+    minor = models.CharField(max_length=100, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'profiles_studentprofile'
+
+class StudentExperience(models.Model):
+    EXPERIENCE_TYPES = [
+        ('teaching', 'Teaching Assistant'),
+        ('research', 'Research Assistant'),
+        ('internship', 'Internship'),
+        ('work', 'Work Experience'),
+        ('volunteer', 'Volunteer'),
+        ('other', 'Other'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
+    experience_type = models.CharField(max_length=20, choices=EXPERIENCE_TYPES)
+    position_title = models.CharField(max_length=100)
+    organization = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-start_date']
+        db_table = 'profiles_studentexperience'
+
+class StudentSkill(models.Model):
+    SKILL_TYPES = [
+        ('technical', 'Technical'),
+        ('soft', 'Soft Skills'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills')
+    skill_type = models.CharField(max_length=20, choices=SKILL_TYPES)
+    name = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['student', 'name']
+        ordering = ['skill_type', 'name']
+        db_table = 'profiles_studentskill'
+
+class StudentAvailability(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student = models.OneToOneField(User, on_delete=models.CASCADE, related_name='availability')
+    availability_grid = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'profiles_studentavailability'
+
+class StudentCoursePreference(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_preferences')
+    course_code = models.CharField(max_length=20)
+    preference_rank = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['student', 'course_code']
+        ordering = ['preference_rank']
+        db_table = 'profiles_studentcoursepreference'
