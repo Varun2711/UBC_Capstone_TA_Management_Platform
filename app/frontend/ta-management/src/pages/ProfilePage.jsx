@@ -128,6 +128,11 @@ export default function ProfilePage() {
     academicInfo: { ...profile.academicInfo }
   })
 
+  // State for experience editing
+  const [isEditingExperience, setIsEditingExperience] = useState(false)
+  const [editedExperience, setEditedExperience] = useState([...profile.experience])
+
+
 
   const handleSave = () => {
     // Here you would typically save to a backend
@@ -393,27 +398,138 @@ export default function ProfilePage() {
 
             {/* Experience */}
             <Card>
-              <CardHeader>
-                <CardTitle>Experience</CardTitle>
-                <CardDescription>Your teaching and work experience</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Experience</CardTitle>
+                </div>
+                {isEditingExperience ? (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setProfile({ ...profile, experience: editedExperience })
+                        setIsEditingExperience(false)
+                      }}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditedExperience([...profile.experience])
+                        setIsEditingExperience(false)
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button size="sm" onClick={() => setIsEditingExperience(true)}>
+                    Edit
+                  </Button>
+                )}
               </CardHeader>
+
               <CardContent className="space-y-4">
-                {profile.experience.map((exp, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between">
+                {editedExperience.map((exp, index) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-2">
+                    <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <h4 className="font-medium">{exp.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {exp.course} • {exp.semester}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Supervisor: {exp.professor}</p>
-                        <p className="text-sm mt-2">{exp.description}</p>
+                        <Label>Title</Label>
+                        {isEditingExperience ? (
+                          <Input
+                            value={exp.title}
+                            onChange={(e) =>
+                              setEditedExperience((prev) => {
+                                const newExp = [...prev]
+                                newExp[index].title = e.target.value
+                                return newExp
+                              })
+                            }
+                          />
+                        ) : (
+                          <p className="text-sm font-medium">{exp.title}</p>
+                        )}
                       </div>
+
+                      <div className="space-y-1">
+                        <Label>Course</Label>
+                        {isEditingExperience ? (
+                          <Input
+                            value={exp.course}
+                            onChange={(e) =>
+                              setEditedExperience((prev) => {
+                                const newExp = [...prev]
+                                newExp[index].course = e.target.value
+                                return newExp
+                              })
+                            }
+                          />
+                        ) : (
+                          <p className="text-sm">{exp.course}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label>Semester</Label>
+                        {isEditingExperience ? (
+                          <Input
+                            value={exp.semester}
+                            onChange={(e) =>
+                              setEditedExperience((prev) => {
+                                const newExp = [...prev]
+                                newExp[index].semester = e.target.value
+                                return newExp
+                              })
+                            }
+                          />
+                        ) : (
+                          <p className="text-sm text-muted-foreground">{exp.semester}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label>Professor</Label>
+                        {isEditingExperience ? (
+                          <Input
+                            value={exp.professor}
+                            onChange={(e) =>
+                              setEditedExperience((prev) => {
+                                const newExp = [...prev]
+                                newExp[index].professor = e.target.value
+                                return newExp
+                              })
+                            }
+                          />
+                        ) : (
+                          <p className="text-sm text-muted-foreground">{exp.professor}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label>Description</Label>
+                      {isEditingExperience ? (
+                        <Textarea
+                          value={exp.description}
+                          onChange={(e) =>
+                            setEditedExperience((prev) => {
+                              const newExp = [...prev]
+                              newExp[index].description = e.target.value
+                              return newExp
+                            })
+                          }
+                        />
+                      ) : (
+                        <p className="text-sm mt-2">{exp.description}</p>
+                      )}
                     </div>
                   </div>
                 ))}
               </CardContent>
             </Card>
+
 
             <div className="grid gap-6 lg:grid-cols-3">
 
