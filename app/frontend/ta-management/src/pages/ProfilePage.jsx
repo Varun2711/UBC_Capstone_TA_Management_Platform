@@ -118,6 +118,17 @@ export default function ProfilePage() {
     softSkills: [...profile.softSkills]
   })
 
+  // State for academic information editing
+  const [isEditingAcademic, setIsEditingAcademic] = useState(false)
+  const [editedAcademicInfo, setEditedAcademicInfo] = useState({
+    major: profile.major,
+    minor: profile.minor,
+    year: profile.year,
+    gpa: profile.gpa,
+    academicInfo: { ...profile.academicInfo }
+  })
+
+
   const handleSave = () => {
     // Here you would typically save to a backend
     setIsEditing(false)
@@ -247,38 +258,138 @@ export default function ProfilePage() {
 
             {/* Academic Information */}
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Academic Information</CardTitle>
+                {isEditingAcademic ? (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setProfile({
+                          ...profile,
+                          major: editedAcademicInfo.major,
+                          minor: editedAcademicInfo.minor,
+                          year: editedAcademicInfo.year,
+                          gpa: editedAcademicInfo.gpa,
+                          academicInfo: { ...editedAcademicInfo.academicInfo }
+                        })
+                        setIsEditingAcademic(false)
+                      }}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditedAcademicInfo({
+                          major: profile.major,
+                          minor: profile.minor,
+                          year: profile.year,
+                          gpa: profile.gpa,
+                          academicInfo: { ...profile.academicInfo }
+                        })
+                        setIsEditingAcademic(false)
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button size="sm" onClick={() => setIsEditingAcademic(true)}>
+                    Edit
+                  </Button>
+                )}
               </CardHeader>
+
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label>Major</Label>
-                    <p className="text-sm font-medium">{profile.major}</p>
+                    {isEditingAcademic ? (
+                      <Input
+                        value={editedAcademicInfo.major}
+                        onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, major: e.target.value })}
+                      />
+                    ) : (
+                      <p className="text-sm font-medium">{profile.major}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Academic Level</Label>
-                    <p className="text-sm">{profile.year}</p>
+                    {isEditingAcademic ? (
+                      <Input
+                        value={editedAcademicInfo.year}
+                        onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, year: e.target.value })}
+                      />
+                    ) : (
+                      <p className="text-sm">{profile.year}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>GPA</Label>
-                    <p className="text-sm font-medium">{profile.gpa}</p>
+                    {isEditingAcademic ? (
+                      <Input
+                        value={editedAcademicInfo.gpa}
+                        onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, gpa: e.target.value })}
+                      />
+                    ) : (
+                      <p className="text-sm font-medium">{profile.gpa}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Expected Graduation</Label>
-                    <p className="text-sm">{profile.academicInfo.expectedGraduation}</p>
+                    {isEditingAcademic ? (
+                      <Input
+                        value={editedAcademicInfo.academicInfo.expectedGraduation}
+                        onChange={(e) =>
+                          setEditedAcademicInfo({
+                            ...editedAcademicInfo,
+                            academicInfo: {
+                              ...editedAcademicInfo.academicInfo,
+                              expectedGraduation: e.target.value
+                            }
+                          })
+                        }
+                      />
+                    ) : (
+                      <p className="text-sm">{profile.academicInfo.expectedGraduation}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Year Standing</Label>
-                    <p className="text-sm">{profile.academicInfo.yearStanding}</p>
+                    {isEditingAcademic ? (
+                      <Input
+                        value={editedAcademicInfo.academicInfo.yearStanding}
+                        onChange={(e) =>
+                          setEditedAcademicInfo({
+                            ...editedAcademicInfo,
+                            academicInfo: {
+                              ...editedAcademicInfo.academicInfo,
+                              yearStanding: e.target.value
+                            }
+                          })
+                        }
+                      />
+                    ) : (
+                      <p className="text-sm">{profile.academicInfo.yearStanding}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Minor (Optional)</Label>
-                    <p className="text-sm">{profile.minor}</p>
+                    {isEditingAcademic ? (
+                      <Input
+                        value={editedAcademicInfo.minor}
+                        onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, minor: e.target.value })}
+                      />
+                    ) : (
+                      <p className="text-sm">{profile.minor}</p>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
+
 
             {/* Experience */}
             <Card>
