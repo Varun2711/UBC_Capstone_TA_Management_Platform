@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import DocumentField from "../src/components/application-form/DocumentField";
+import DocumentField from "@/components/application-form/DocumentField";
 
 const mockSetFile = vi.fn();
 

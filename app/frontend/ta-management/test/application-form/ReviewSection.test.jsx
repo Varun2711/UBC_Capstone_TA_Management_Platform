@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import ReviewSection from "../src/components/application-form/ReviewSection";
+import ReviewSection from "@/components/application-form/ReviewSection";
 
 // Mock student data
 const mockStudent = {
@@ -36,6 +36,9 @@ const mockSelections = {
     rank2: "MATH",
     rank3: "PHYS",
   },
+
+  resume: "resume.pdf",
+  transcript: "transcript.pdf",
 };
 
 const renderReviewSection = (
@@ -73,7 +76,7 @@ describe("ReviewSection", () => {
     renderReviewSection();
 
     expect(screen.getByText("Canadian Citizen")).toBeInTheDocument();
-    expect(screen.getByText("Yes")).toBeInTheDocument(); // Multiple Yes answers
+    expect(screen.getAllByText("Yes")).toHaveLength(2); // Multiple Yes answers
     expect(screen.getByText("No")).toBeInTheDocument();
     expect(
       screen.getByText("Undergraduate Teaching Assistant")
@@ -93,8 +96,8 @@ describe("ReviewSection", () => {
   it("displays supporting documents", () => {
     renderReviewSection();
 
-    expect(screen.getByText("resume.pdf")).toBeInTheDocument();
-    expect(screen.getByText("transcript.pdf")).toBeInTheDocument();
+    expect(screen.getByText(/resume\.pdf/)).toBeInTheDocument();
+    expect(screen.getByText(/transcript\.pdf/)).toBeInTheDocument();
   });
 
   it("shows 'Not uploaded' for missing documents", () => {
@@ -105,7 +108,7 @@ describe("ReviewSection", () => {
     };
     renderReviewSection(studentWithoutDocs);
 
-    expect(screen.getAllByText("Not uploaded")).toHaveLength(2);
+    expect(screen.getAllByText(/Not uploaded/)).toHaveLength(2);
   });
 
   it("shows international student note when applicable", () => {
