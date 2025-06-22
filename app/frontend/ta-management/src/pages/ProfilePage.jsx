@@ -297,71 +297,76 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Skills */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Skills & Qualifications</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-sm font-medium">Technical Skills</Label>
+            <div className="grid gap-6 lg:grid-cols-3">
+
+              <div className="space-y-6 col-span-2">
+                {/* Skills */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Skills & Qualifications</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium">Technical Skills</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {profile.technicalSkills.map((skill, index) => (
+                            <Badge key={index} variant="secondary">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <Separator/>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium">Soft Skills</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {profile.softSkills.map((skill, index) => (
+                            <Badge key={index} variant="secondary">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Course Preference */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Course Preference</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {profile.technicalSkills.map((skill, index) => (
+                        {profile.coursePreference.map((course, index) => (
                           <Badge key={index} variant="secondary">
-                            {skill}
+                            {course}
                           </Badge>
                         ))}
                       </div>
-                    </div>
                   </div>
-                </CardContent>
-                <Separator/>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-sm font-medium">Soft Skills</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {profile.softSkills.map((skill, index) => (
-                          <Badge key={index} variant="secondary">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Availability Calendar */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Availability</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <WeeklyAvailabilityCalendar />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Course Preference */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Course Preference</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {profile.coursePreference.map((course, index) => (
-                      <Badge key={index} variant="secondary">
-                        {course}
-                      </Badge>
-                    ))}
-                  </div>
+                  </CardContent>
+                </Card>
               </div>
-              </CardContent>
-            </Card>
+
+              <div>
+                {/* Availability Calendar */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Availability</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <WeeklyAvailabilityCalendar />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </main>
         </div>
       </div>
