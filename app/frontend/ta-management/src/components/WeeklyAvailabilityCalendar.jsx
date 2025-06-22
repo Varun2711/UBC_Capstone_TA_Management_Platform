@@ -1,82 +1,81 @@
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import clsx from "clsx"
+import React, { useState } from "react"
 
-const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 const startHour = 8
 const endHour = 21
-const slotDurationMinutes = 30
 
-function generateTimeSlots() {
+// Generate 30-minute slots from each hour (e.g., 08:00 and 08:30)
+const generateTimeSlots = () => {
   const slots = []
   for (let hour = startHour; hour < endHour; hour++) {
     slots.push(`${hour.toString().padStart(2, "0")}:00`)
-    slots.push(`${hour.toString().padStart(2, "0")}:30`)
   }
   return slots
 }
 
-const timeSlots = generateTimeSlots()
-
-export default function WeeklyAvailabilityCalendar() {
+const WeeklyAvailabilityCalendar = () => {
   const [selectedSlots, setSelectedSlots] = useState(new Set())
 
-  const toggleSlot = (day, time) => {
-    const key = `${day}-${time}`
-    const newSelected = new Set(selectedSlots)
-    if (newSelected.has(key)) {
-      newSelected.delete(key)
+  const toggleSlot = (day, hour, half) => {
+    const key = `${day}-${hour}-${half}`
+    const updated = new Set(selectedSlots)
+    if (updated.has(key)) {
+      updated.delete(key)
     } else {
-      newSelected.add(key)
+      updated.add(key)
     }
-    setSelectedSlots(newSelected)
+    setSelectedSlots(updated)
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Weekly Availability</CardTitle>
-        <Label>Select your available time slots</Label>
-      </CardHeader>
-      <CardContent className="overflow-auto">
-        <div className="grid grid-cols-[80px_repeat(5,minmax(0,1fr))]">
-          {/* Header Row */}
-          <div></div>
-          {daysOfWeek.map((day) => (
-            <div key={day} className="text-center font-medium border-b py-2">
-              {day}
-            </div>
-          ))}
+  const isSelected = (day, hour, half) =>
+    selectedSlots.has(`${day}-${hour}-${half}`)
 
-          {/* Time slots */}
-          {timeSlots.map((time) => (
-            <>
-              <div
-                key={time + "-label"}
-                className="text-right pr-2 border-r py-1 text-sm text-muted-foreground"
-              >
-                {time}
-              </div>
-              {daysOfWeek.map((day) => {
-                const slotKey = `${day}-${time}`
-                const isSelected = selectedSlots.has(slotKey)
+  const timeSlots = generateTimeSlots()
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="border-collapse w-full text-center text-sm">
+        <thead>
+          <tr>
+            <th className="border p-2 w-20 text-left">Time</th>
+            {days.map((day) => (
+              <th key={day} className="border p-2">{day}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {timeSlots.map((hour) => (
+            <tr key={hour} className="h-10">
+              <td className="border p-2">{hour}</td>
+              {days.map((day) => {
+                const hourNum = parseInt(hour.split(":")[0])
                 return (
-                  <div
-                    key={slotKey}
-                    className={clsx(
-                      "h-8 border cursor-pointer hover:bg-gray-300",
-                      isSelected ? "bg-blue-500" : "bg-gray-100"
-                    )}
-                    onClick={() => toggleSlot(day, time)}
-                    title={`${day}, ${time}`}
-                  ></div>
+                  <td key={day} className="border p-0">
+                    <div className="flex flex-col h-full">
+                      {/* Top Half - :00 to :30 */}
+                      <div
+                        className={`h-5 cursor-pointer ${
+                          isSelected(day, hourNum, "top") ? "bg-blue-400" : "hover:bg-blue-100"
+                        } border-b`}
+                        onClick={() => toggleSlot(day, hourNum, "top")}
+                      />
+                      {/* Bottom Half - :30 to :00 */}
+                      <div
+                        className={`h-5 cursor-pointer ${
+                          isSelected(day, hourNum, "bottom") ? "bg-blue-400" : "hover:bg-blue-100"
+                        }`}
+                        onClick={() => toggleSlot(day, hourNum, "bottom")}
+                      />
+                    </div>
+                  </td>
                 )
               })}
-            </>
+            </tr>
           ))}
-        </div>
-      </CardContent>
-    </Card>
+        </tbody>
+      </table>
+    </div>
   )
 }
+
+export default WeeklyAvailabilityCalendar
