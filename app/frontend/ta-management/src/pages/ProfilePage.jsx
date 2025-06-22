@@ -136,6 +136,10 @@ export default function ProfilePage() {
   const [isEditingAvailability, setIsEditingAvailability] = useState(false)
   const [availabilityData, setAvailabilityData] = useState([]) // Initialize as needed
 
+  // State for course preference editing
+  const [isEditingCourses, setIsEditingCourses] = useState(false)
+  const [coursePreference, setCoursePreference] = useState(profile.coursePreference)
+
   const handleSave = () => {
     // Here you would typically save to a backend
     setIsEditing(false)
@@ -644,19 +648,84 @@ export default function ProfilePage() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Course Preference</CardTitle>
+                    <div className="flex gap-2 mt-2">
+                      {isEditingCourses ? (
+                        <>
+                          <Button
+                            onClick={() => {
+                              setIsEditingCourses(false)
+                              // Optionally save to backend here
+                            }}
+                            className="gap-2"
+                          >
+                            <Save className="h-4 w-4" />
+                            Save
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setIsEditingCourses(false)
+                              setCoursePreference(profile.coursePreference) // Reset to original
+                            }}
+                            variant="outline"
+                            className="gap-2"
+                          >
+                            <X className="h-4 w-4" />
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <Button onClick={() => setIsEditingCourses(true)} className="gap-2">
+                          <Edit className="h-4 w-4" />
+                          Edit Preferences
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
+
                   <CardContent>
-                    <div className="space-y-4">
+                    {isEditingCourses ? (
+                      <div className="space-y-4">
+                        {coursePreference.map((course, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={course}
+                              onChange={(e) => {
+                                const updated = [...coursePreference]
+                                updated[index] = e.target.value
+                                setCoursePreference(updated)
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const updated = coursePreference.filter((_, i) => i !== index)
+                                setCoursePreference(updated)
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          onClick={() => setCoursePreference([...coursePreference, ""])}
+                          variant="outline"
+                        >
+                          + Add Course
+                        </Button>
+                      </div>
+                    ) : (
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {profile.coursePreference.map((course, index) => (
+                        {coursePreference.map((course, index) => (
                           <Badge key={index} variant="secondary">
                             {course}
                           </Badge>
                         ))}
                       </div>
-                  </div>
+                    )}
                   </CardContent>
                 </Card>
+
               </div>
 
               <div>
