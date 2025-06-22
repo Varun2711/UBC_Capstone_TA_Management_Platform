@@ -111,6 +111,13 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [profile, setProfile] = useState(studentProfile)
 
+  // State for skills editing
+  const [skillsEdit, setSkillsEdit] = useState(false)
+  const [editedSkills, setEditedSkills] = useState({
+    technicalSkills: [...profile.technicalSkills],
+    softSkills: [...profile.softSkills]
+  })
+
   const handleSave = () => {
     // Here you would typically save to a backend
     setIsEditing(false)
@@ -300,41 +307,109 @@ export default function ProfilePage() {
             <div className="grid gap-6 lg:grid-cols-3">
 
               <div className="space-y-6 col-span-2">
-                {/* Skills */}
+                {/* Skills and Qualifications */}
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Skills & Qualifications</CardTitle>
+                    {skillsEdit ? (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setProfile((prev) => ({
+                              ...prev,
+                              technicalSkills: editedSkills.technicalSkills,
+                              softSkills: editedSkills.softSkills,
+                            }))
+                            setSkillsEdit(false)
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditedSkills({
+                              technicalSkills: [...profile.technicalSkills],
+                              softSkills: [...profile.softSkills],
+                            })
+                            setSkillsEdit(false)
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" onClick={() => setSkillsEdit(true)}>
+                        Edit
+                      </Button>
+                    )}
                   </CardHeader>
+
                   <CardContent>
                     <div className="space-y-4">
                       <div>
                         <Label className="text-sm font-medium">Technical Skills</Label>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {profile.technicalSkills.map((skill, index) => (
-                            <Badge key={index} variant="secondary">
-                              {skill}
-                            </Badge>
-                          ))}
+                          {skillsEdit ? (
+                            editedSkills.technicalSkills.map((skill, index) => (
+                              <Input
+                                key={index}
+                                value={skill}
+                                className="w-40"
+                                onChange={(e) => {
+                                  const newSkills = [...editedSkills.technicalSkills]
+                                  newSkills[index] = e.target.value
+                                  setEditedSkills({ ...editedSkills, technicalSkills: newSkills })
+                                }}
+                              />
+                            ))
+                          ) : (
+                            profile.technicalSkills.map((skill, index) => (
+                              <Badge key={index} variant="secondary">
+                                {skill}
+                              </Badge>
+                            ))
+                          )}
                         </div>
                       </div>
                     </div>
                   </CardContent>
-                  <Separator/>
+
+                  <Separator />
+
                   <CardContent>
                     <div className="space-y-4">
                       <div>
                         <Label className="text-sm font-medium">Soft Skills</Label>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {profile.softSkills.map((skill, index) => (
-                            <Badge key={index} variant="secondary">
-                              {skill}
-                            </Badge>
-                          ))}
+                          {skillsEdit ? (
+                            editedSkills.softSkills.map((skill, index) => (
+                              <Input
+                                key={index}
+                                value={skill}
+                                className="w-40"
+                                onChange={(e) => {
+                                  const newSkills = [...editedSkills.softSkills]
+                                  newSkills[index] = e.target.value
+                                  setEditedSkills({ ...editedSkills, softSkills: newSkills })
+                                }}
+                              />
+                            ))
+                          ) : (
+                            profile.softSkills.map((skill, index) => (
+                              <Badge key={index} variant="secondary">
+                                {skill}
+                              </Badge>
+                            ))
+                          )}
                         </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+
 
                 {/* Course Preference */}
                 <Card>
