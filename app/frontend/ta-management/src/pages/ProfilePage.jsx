@@ -104,11 +104,6 @@ const studentProfile = {
     "Adaptability",
     "Critical Thinking",
   ],
-  availability: {
-    maxHours: "20",
-    preferredDays: ["Monday", "Wednesday", "Friday"],
-    timePreference: "Morning",
-  },
 }
 
 
@@ -339,34 +334,7 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
 
-              {/*
-              <Card>
-                <CardHeader>
-                  <CardTitle>Availability</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Maximum Hours per Week</Label>
-                    <p className="text-sm font-medium">{profile.availability.maxHours} hours</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Preferred Days</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.availability.preferredDays.map((day, index) => (
-                        <Badge key={index} variant="secondary">
-                          {day}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Time Preference</Label>
-                    <p className="text-sm">{profile.availability.timePreference}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              */}
-
+              {/* Availability Calendar */}
               <Card>
                 <CardHeader>
                   <CardTitle>Availability</CardTitle>
