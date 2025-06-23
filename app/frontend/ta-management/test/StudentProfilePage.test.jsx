@@ -1,6 +1,6 @@
 // ProfilePage.test.jsx
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import ProfilePage from '@/pages/ProfilePage'
@@ -55,14 +55,37 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Sarah Johnson')).toBeInTheDocument()
   })
 
-  it('renders skills and course preferences', () => {
+  it('allows editing and saving technical skills', async () => {
+    const user = userEvent.setup()
+    await user.click(screen.getByText('Edit Skills'))
+
+    // Get the section labeled "Technical Skills"
+    const techSkillsSection = screen.getByText('Technical Skills').closest('div')
+
+    // Narrow search scope to the section
+    const scopedInputs = within(techSkillsSection).getAllByRole('textbox')
+    expect(scopedInputs.length).toBeGreaterThan(0)
+
+    await user.clear(scopedInputs[0])
+    await user.type(scopedInputs[0], 'TypeScript')
+    await user.click(screen.getByText('Save'))
+
+    // Now search for "TypeScript" only within the technical skills section
+    const updatedTechSkills = within(techSkillsSection).getByText('TypeScript')
+    expect(updatedTechSkills).toBeInTheDocument()
+  })
+
+  it('renders skills', () => {
     expect(screen.getByText('Skills & Qualifications')).toBeInTheDocument()
-    expect(screen.getByText('Course Preference')).toBeInTheDocument()
-    expect(screen.getByText('COSC 111')).toBeInTheDocument()
     expect(screen.getByText('Communication')).toBeInTheDocument()
   })
 
-  it('renders the mocked calendar component', () => {
+  it('renders course preferences', () => {
+    expect(screen.getByText('Course Preference')).toBeInTheDocument()
+    expect(screen.getByText('COSC 111')).toBeInTheDocument()
+  })
+
+  it('renders the mocked availability calendar component', () => {
     expect(screen.getByTestId('mock-calendar')).toBeInTheDocument()
   })
 
