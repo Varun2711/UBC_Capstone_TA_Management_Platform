@@ -61,8 +61,9 @@ class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
     student_record = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='profile', null=True, blank=True)
     gpa = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
-    expected_graduation = models.DateField(null=True, blank=True)
+    year_degree_start = models.IntegerField(null=True, blank=True)
     minor = models.CharField(max_length=100, null=True, blank=True)
+    ubc_employee_id = models.CharField(max_length=20, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -70,34 +71,30 @@ class StudentProfile(models.Model):
         db_table = 'profiles_studentprofile'
 
 class StudentExperience(models.Model):
-    EXPERIENCE_TYPES = [
-        ('teaching', 'Teaching Assistant'),
-        ('research', 'Research Assistant'),
-        ('internship', 'Internship'),
-        ('work', 'Work Experience'),
-        ('volunteer', 'Volunteer'),
-        ('other', 'Other'),
-    ]
+    """Teaching Assistant experience only - completely optional"""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
-    experience_type = models.CharField(max_length=20, choices=EXPERIENCE_TYPES)
-    position_title = models.CharField(max_length=100)
-    organization = models.CharField(max_length=100)
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ta_experiences')
+    course_code = models.CharField(max_length=20)  # e.g., "COSC 111"
+    course_name = models.CharField(max_length=100, blank=True)  # e.g., "Introduction to Programming"
+    term = models.CharField(max_length=20)  # e.g., "Fall 2023", "Summer 2024"
+    instructor_name = models.CharField(max_length=100, blank=True)  # Supervising instructor
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     is_current = models.BooleanField(default=False)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True)  # Optional details about the TA role
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['-start_date']
         db_table = 'profiles_studentexperience'
+        verbose_name = 'TA Experience'
+        verbose_name_plural = 'TA Experiences'
 
 class StudentSkill(models.Model):
     SKILL_TYPES = [
-        ('technical', 'Technical'),
+        ('technical', 'Technical Skills'),
         ('soft', 'Soft Skills'),
     ]
 

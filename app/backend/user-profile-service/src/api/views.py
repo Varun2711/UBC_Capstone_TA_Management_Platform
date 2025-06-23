@@ -1,11 +1,13 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics, permissions
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+from django.contrib.auth.models import User
 
-from .models import Student, Instructor, TAScheduler
-from .serializers import StudentSerializer, InstructorSerializer, TASchedulerSerializer
+from .models import Student, Instructor, TAScheduler, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
+from .serializers import StudentSerializer, InstructorSerializer, TASchedulerSerializer, StudentProfileSerializer, StudentExperienceSerializer, StudentSkillsSerializer,StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer
 
 # Import utilities - make sure you've created these files first
 from utils.profile_utils import get_user_by_id, get_user_by_email
@@ -130,6 +132,154 @@ class TASchedulerViewSet(viewsets.ModelViewSet):
             error_response("Email or employee_number parameter required"),
             status=status.HTTP_400_BAD_REQUEST
         )
+
+# Student Profile Views  
+class StudentProfileDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = ComprehensiveStudentProfileSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            return get_object_or_404(User, id=student_id)
+        return self.request.user
+    
+class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = StudentProfileSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            user = get_object_or_404(User, id=student_id)
+        else:
+            user = self.request.user
+        
+        profile, created = StudentProfile.objects.get_or_create(user=user)
+        return profile
+    
+#student experience views
+class StudentTAExperienceListCreateView(generics.ListCreateAPIView):
+    serializer_class = StudentExperienceSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        return StudentExperience.objects.filter(student=student)
+    
+    def perform_create(self, serializer):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        serializer.save(student=student)
+    
+class StudentTAExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = StudentExperienceSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        return StudentExperience.objects.filter(student=student)
+
+# Student Skills Views
+class StudentSkillListCreateView(generics.ListCreateAPIView):
+    serializer_class = StudentSkillsSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        return StudentSkill.objects.filter(student=student)
+    
+    def perform_create(self, serializer):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        serializer.save(student=student)
+
+class StudentSkillDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = StudentSkillsSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        return StudentSkill.objects.filter(student=student)
+
+# Student Availability Views
+class StudentAvailabilityView(generics.RetrieveUpdateAPIView):
+    serializer_class = StudentAvailabilitySerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        
+        availability, created = StudentAvailability.objects.get_or_create(student=student)
+        return availability
+
+# Student Course Preferences Views
+class StudentCoursePreferenceListCreateView(generics.ListCreateAPIView):
+    serializer_class = StudentCoursePreferenceSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        return StudentCoursePreference.objects.filter(student=student)
+    
+    def perform_create(self, serializer):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        
+        # Check if student already has 10 preferences
+        existing_count = StudentCoursePreference.objects.filter(student=student).count()
+        if existing_count >= 10:
+            return Response(
+                {'error': 'Maximum 10 course preferences allowed.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer.save(student=student)
+
+class StudentCoursePreferenceDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = StudentCoursePreferenceSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(User, id=student_id)
+        else:
+            student = self.request.user
+        return StudentCoursePreference.objects.filter(student=student)
     
 #shared endpoint to find users across all types
 @api_view(['GET'])

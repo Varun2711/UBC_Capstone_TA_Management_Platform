@@ -33,17 +33,31 @@ class TASchedulerSerializer(serializers.ModelSerializer):
 class StudentProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentProfile
-        fields = ['gpa', 'expected_graduation', 'minor', 'created_at', 'updated_at']
+        fields = ['gpa', 'year_degree_start', 'minor', 'ubc_employee_id', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
 class StudentExperienceSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentExperience
         fields = [
-            'id', 'experience_type', 'position_title', 'organization',
-            'start_date', 'end_date', 'is_current', 'description', 'created_at', 'updated_at'
+            'id', 'course_code', 'course_name', 'term', 'instructor_name',
+            'start_date', 'end_date', 'is_current', 'description', 
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        """Custom validation for TA experience"""
+        # Ensure end_date is after start_date if provided
+        if data.get('end_date') and data.get('start_date'):
+            if data['end_date'] < data['start_date']:
+                raise serializers.ValidationError("End date cannot be before start date.")
+        
+        # If is_current is True, end_date should be None
+        if data.get('is_current') and data.get('end_date'):
+            raise serializers.ValidationError("Current positions should not have an end date.")
+        
+        return data
 
 class StudentSkillsSerializer( serializers.ModelSerializer):
     class Meta:
@@ -93,3 +107,60 @@ class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
             'student_profile', 'student_record', 'experiences', 'skills', 
             'availability', 'course_preferences'
         ]
+
+class CreateInstructorSerializer(serializers.Serializer):
+    FACULTY_CHOICES = [
+        ('astr', 'Astronomy'),
+        ('math', 'Mathematics'),
+        ('phy', 'Physics'),
+        ('data', 'Data Science'),
+        ('stat', 'Statistics'), 
+        ('cosc', 'Computer Science'),
+        # based on current ta application form
+    ]
+    faculty = serializers.ChoiceField(choices=FACULTY_CHOICES)
+    first_name = serializers.CharField(max_length=30)
+    last_name = serializers.CharField(max_length=30)
+    email = serializers.EmailField()
+    employee_number = serializers.CharField(max_length=20)
+    
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("User with this email already exists.")
+        if Instructor.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Instructor with this email already exists.")
+        return value
+    
+    def validate_employee_number(self, value):
+        if Instructor.objects.filter(employee_number=value).exists():
+            raise serializers.ValidationError("Instructor with this employee number already exists.")
+        return value
+    
+class CreateSchedulerSerializer(serializers.Serializer):
+    DEPARTMENT_CHOICES = [
+        ('astr', 'Astronomy'),
+        ('math', 'Mathematics'),
+        ('phy', 'Physics'),
+        ('data', 'Data Science'),
+        ('stat', 'Statistics'), 
+        ('cosc', 'Computer Science'),
+        # based on current ta application form
+    ]
+    department = serializers.ChoiceField(choices=DEPARTMENT_CHOICES)
+    first_name = serializers.CharField(max_length=30)
+    last_name = serializers.CharField(max_length=30)
+    email = serializers.EmailField()
+    employee_number = serializers.CharField(max_length=20)
+    
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("User with this email already exists.")
+        if TAScheduler.objects.filter(email=value).exists():
+            raise serializers.ValidationError("TA Scheduler with this email already exists.")
+        return value
+    
+    def validate_employee_number(self, value):
+        if TAScheduler.objects.filter(employee_number=value).exists():
+            raise serializers.ValidationError("TA Scheduler with this employee number already exists.")
+        return value
+    
