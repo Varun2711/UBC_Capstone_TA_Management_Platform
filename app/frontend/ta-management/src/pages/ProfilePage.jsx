@@ -64,6 +64,7 @@ const studentProfile = {
   ],
   academicInfo: {
     yearStanding: "4th Year",
+    degreeStart: "September 2022",
     expectedGraduation: "May 2026",
     credits: "45/60",
     concentration: "Software Engineering",
@@ -364,6 +365,25 @@ export default function ProfilePage() {
                       />
                     ) : (
                       <p className="text-sm">{profile.academicInfo.expectedGraduation}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Degree Start</Label>
+                    {isEditingAcademic ? (
+                      <Input
+                        value={editedAcademicInfo.academicInfo.degreeStart}
+                        onChange={(e) =>
+                          setEditedAcademicInfo({
+                            ...editedAcademicInfo,
+                            academicInfo: {
+                              ...editedAcademicInfo.academicInfo,
+                              degreeStart: e.target.value
+                            }
+                          })
+                        }
+                      />
+                    ) : (
+                      <p className="text-sm">{profile.academicInfo.degreeStart}</p>
                     )}
                   </div>
                   <div className="space-y-2">
