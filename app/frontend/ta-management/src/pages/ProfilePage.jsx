@@ -48,6 +48,7 @@ const studentProfile = {
   name: "Sarah Johnson",
   email: "sarah.johnson@university.edu",
   studentId: "SJ2024001",
+  UBCEmployeeId: "82342316",
   major: "Computer Science",
   minor: "Data Science",
   year: "Graduate Student",
@@ -235,6 +236,10 @@ export default function ProfilePage() {
                     <div className="space-y-2">
                       <Label htmlFor="studentId">Student ID</Label>
                       <p className="text-sm text-muted-foreground">{profile.studentId}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="UBCEmployeeId">UBC Employee ID</Label>
+                      <p className="text-sm text-muted-foreground">{profile.UBCEmployeeId}</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
