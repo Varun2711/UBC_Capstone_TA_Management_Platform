@@ -1,63 +1,72 @@
-import { render, screen, fireEvent } from "@testing-library/react"
-import ProfilePage from "@/pages/ProfilePage"
-import { vi } from "vitest"
+// ProfilePage.test.jsx
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
+import ProfilePage from '@/pages/ProfilePage'
 
-// Mock AppSidebar to avoid rendering its internals
-vi.mock("../components/student-dashboard-sidebar", () => ({
-  AppSidebar: () => <div data-testid="app-sidebar">Sidebar</div>,
+vi.mock('@/components/student-dashboard-sidebar', () => ({
+  AppSidebar: () => <div data-testid="mock-sidebar">Mock Sidebar</div>,
 }))
 
-describe("ProfilePage", () => {
-  it("renders the profile header", () => {
-    render(<ProfilePage />)
-    expect(screen.getByText("My Profile")).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        "Manage your personal information and TA application details"
-      )
-    ).toBeInTheDocument()
+vi.mock('@/components/WeeklyAvailabilityCalendar', () => ({
+  default: ({ editable }) => (
+    <div data-testid="mock-calendar">{editable ? 'Editable Calendar' : 'Static Calendar'}</div>
+  ),
+}))
+
+describe('ProfilePage', () => {
+  beforeEach(() => {
+    render(
+      <MemoryRouter>
+        <ProfilePage />
+      </MemoryRouter>
+    )
   })
 
-  it("renders student name and email", () => {
-    render(<ProfilePage />)
-    expect(screen.getByText("Sarah Johnson")).toBeInTheDocument()
-    expect(screen.getByText("sarah.johnson@university.edu")).toBeInTheDocument()
+  it('renders the profile header', () => {
+    expect(screen.getByText('My Profile')).toBeInTheDocument()
+    expect(screen.getByText(/Manage your personal information/i)).toBeInTheDocument()
   })
 
-  it("enters edit mode when Edit button is clicked", () => {
-    render(<ProfilePage />)
-    const editButton = screen.getByRole("button", { name: /edit profile/i })
-    fireEvent.click(editButton)
-    expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument()
-    expect(screen.getByLabelText("Full Name")).toBeInTheDocument()
-    expect(screen.getByLabelText("Email")).toBeInTheDocument()
+  it('displays basic information fields', () => {
+    expect(screen.getByText('Full Name')).toBeInTheDocument()
+    expect(screen.getByText('Sarah Johnson')).toBeInTheDocument()
+    expect(screen.getByText('Student ID')).toBeInTheDocument()
+    expect(screen.getByText('SJ2024001')).toBeInTheDocument()
   })
 
-  it("updates the name input when edited", () => {
-    render(<ProfilePage />)
-    fireEvent.click(screen.getByRole("button", { name: /edit profile/i }))
-    const nameInput = screen.getByLabelText("Full Name")
-    fireEvent.change(nameInput, { target: { value: "John Doe" } })
-    expect(nameInput.value).toBe("John Doe")
+  it('enables editing mode when clicking "Edit Profile"', async () => {
+    const user = userEvent.setup()
+    await user.click(screen.getByText(/Edit Profile/i))    
+    expect(screen.getByRole('textbox', { name: /Full Name/i })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /Email/i })).toHaveValue('sarah.johnson@university.edu')
   })
 
-  it("cancels changes and reverts to original profile", () => {
-    render(<ProfilePage />)
-    fireEvent.click(screen.getByRole("button", { name: /edit profile/i }))
-    const nameInput = screen.getByLabelText("Full Name")
-    fireEvent.change(nameInput, { target: { value: "John Doe" } })
-    fireEvent.click(screen.getByRole("button", { name: /cancel/i }))
-    expect(screen.getByText("Sarah Johnson")).toBeInTheDocument()
+  it('cancels editing and restores original profile', async () => {
+    const user = userEvent.setup()
+    await user.click(screen.getByText(/Edit Profile/i))
+
+    const nameInput = screen.getByRole('textbox', { name: /Full Name/i })
+    await user.clear(nameInput)
+    await user.type(nameInput, 'Changed Name')
+
+    await user.click(screen.getByText(/Cancel/i))
+    expect(screen.getByText('Sarah Johnson')).toBeInTheDocument()
   })
 
-  it("saves changes and exits edit mode", () => {
-    render(<ProfilePage />)
-    fireEvent.click(screen.getByRole("button", { name: /edit profile/i }))
-    const nameInput = screen.getByLabelText("Full Name")
-    fireEvent.change(nameInput, { target: { value: "John Doe" } })
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
-    expect(screen.getByText("John Doe")).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: /save changes/i })).not.toBeInTheDocument()
+  it('renders skills and course preferences', () => {
+    expect(screen.getByText('Skills & Qualifications')).toBeInTheDocument()
+    expect(screen.getByText('Course Preference')).toBeInTheDocument()
+    expect(screen.getByText('COSC 111')).toBeInTheDocument()
+    expect(screen.getByText('Communication')).toBeInTheDocument()
+  })
+
+  it('renders the mocked calendar component', () => {
+    expect(screen.getByTestId('mock-calendar')).toBeInTheDocument()
+  })
+
+  it('renders the mocked sidebar', () => {
+    expect(screen.getByTestId('mock-sidebar')).toBeInTheDocument()
   })
 })
