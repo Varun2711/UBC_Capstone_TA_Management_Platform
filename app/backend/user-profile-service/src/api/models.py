@@ -71,30 +71,31 @@ class StudentProfile(models.Model):
         db_table = 'profiles_studentprofile'
 
 class StudentExperience(models.Model):
-    """Teaching Assistant experience only - completely optional"""
+    EXPERIENCE_TYPES = [
+        ('teaching', 'Teaching Assistant'),
+        ('work', 'Work Experience'),
+        ('other', 'Other'),
+    ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ta_experiences')
-    course_code = models.CharField(max_length=20)  # e.g., "COSC 111"
-    course_name = models.CharField(max_length=100, blank=True)  # e.g., "Introduction to Programming"
-    term = models.CharField(max_length=20)  # e.g., "Fall 2023", "Summer 2024"
-    instructor_name = models.CharField(max_length=100, blank=True)  # Supervising instructor
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
+    experience_type = models.CharField(max_length=20, choices=EXPERIENCE_TYPES)
+    position_title = models.CharField(max_length=100)
+    organization = models.CharField(max_length=100)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     is_current = models.BooleanField(default=False)
-    description = models.TextField(blank=True)  # Optional details about the TA role
+    description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['-start_date']
         db_table = 'profiles_studentexperience'
-        verbose_name = 'TA Experience'
-        verbose_name_plural = 'TA Experiences'
 
 class StudentSkill(models.Model):
     SKILL_TYPES = [
-        ('technical', 'Technical Skills'),
+        ('technical', 'Technical'),
         ('soft', 'Soft Skills'),
     ]
 

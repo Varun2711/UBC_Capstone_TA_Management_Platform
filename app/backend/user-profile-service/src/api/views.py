@@ -179,7 +179,7 @@ class StudentTAExperienceListCreateView(generics.ListCreateAPIView):
             student = self.request.user
         serializer.save(student=student)
     
-class StudentTAExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
+class StudentExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudentExperienceSerializer
     permission_classes = [IsAuthenticated]
     
