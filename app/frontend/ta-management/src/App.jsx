@@ -12,6 +12,7 @@ import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
+import UserProfile from "./pages/profile-page-scheduler";
 
 function App() {
   // define a message state variable
@@ -49,6 +50,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/student-dashboard" element={<StudentDashboard />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/user-profile-scheduler" element={<UserProfile />} />
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />
