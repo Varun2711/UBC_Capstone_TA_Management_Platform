@@ -29,6 +29,7 @@ class Student(models.Model):
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = True
@@ -40,6 +41,7 @@ class Instructor(models.Model):
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
     email = models.EmailField()
     password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = True
@@ -51,15 +53,28 @@ class TAScheduler(models.Model):
     email = models.EmailField(max_length=100)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
     password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = True
         db_table = 'myapp_tascheduler'
 
+#added admin based on new requirements.
+class Admin(models.Model):
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    password = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = True
+        db_table = 'myapp_admin'
+
 class StudentProfile(models.Model):
-    """ Extended profile for authenticated users """
+    """ Extended profile for students """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
-    student_record = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='profile', null=True, blank=True)
     gpa = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
     year_degree_start = models.IntegerField(null=True, blank=True)
     minor = models.CharField(max_length=100, null=True, blank=True)
@@ -68,6 +83,7 @@ class StudentProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        managed = True
         db_table = 'profiles_studentprofile'
 
 class StudentExperience(models.Model):
@@ -78,7 +94,7 @@ class StudentExperience(models.Model):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
     experience_type = models.CharField(max_length=20, choices=EXPERIENCE_TYPES)
     position_title = models.CharField(max_length=100)
     organization = models.CharField(max_length=100)
@@ -90,6 +106,7 @@ class StudentExperience(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
+        managed = True
         ordering = ['-start_date']
         db_table = 'profiles_studentexperience'
 
@@ -100,36 +117,39 @@ class StudentSkill(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills')
     skill_type = models.CharField(max_length=20, choices=SKILL_TYPES)
     name = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ['student', 'name']
+        managed = True
+        unique_together = ['user', 'name']
         ordering = ['skill_type', 'name']
         db_table = 'profiles_studentskill'
 
 class StudentAvailability(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    student = models.OneToOneField(User, on_delete=models.CASCADE, related_name='availability')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='availability')
     availability_grid = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        managed = True
         db_table = 'profiles_studentavailability'
 
 class StudentCoursePreference(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_preferences')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_preferences')
     course_code = models.CharField(max_length=20)
     preference_rank = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['student', 'course_code']
+        managed = True
+        unique_together = ['user', 'course_code']
         ordering = ['preference_rank']
         db_table = 'profiles_studentcoursepreference'

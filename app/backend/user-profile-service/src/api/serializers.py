@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Student, Instructor, TAScheduler, StudentProfile, StudentExperience, StudentAvailability, StudentCoursePreference, StudentSkill
+from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentAvailability, StudentCoursePreference, StudentSkill
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,6 +30,15 @@ class TASchedulerSerializer(serializers.ModelSerializer):
             'password': {'write_only': True}
         }
 
+class AdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Admin
+        fields = ['employee_number', 'name', 'email', 'password', 'is_active', 'created_at']
+        read_only_fields = ['created_at']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
 class StudentProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentProfile
@@ -40,9 +49,9 @@ class StudentExperienceSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentExperience
         fields = [
-            'id', 'course_code', 'course_name', 'term', 'instructor_name',
-            'start_date', 'end_date', 'is_current', 'description', 
-            'created_at', 'updated_at'
+            'id', 'experience_type', 'position_title', 'organization',  
+            'start_date', 'end_date', 'is_current', 'description',    
+            'created_at', 'updated_at'    
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -89,7 +98,7 @@ class StudentAvailabilitySerializer(serializers.ModelSerializer):
 class StudentCoursePreferenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentCoursePreference
-        fields = ['id', 'student', 'course_code', 'preference_rank', 'created_at', 'updated_at']
+        fields = ['id', 'course_code', 'preference_rank', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
@@ -98,16 +107,32 @@ class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
     skills = StudentSkillsSerializer(many=True, read_only=True)
     availability = StudentAvailabilitySerializer(read_only=True)
     course_preferences = StudentCoursePreferenceSerializer(many=True, read_only=True)
-    student_record = StudentSerializer(source='student_profile.student_record', read_only=True)
+    
+    student_info = serializers.SerializerMethodField()
+    
     
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
-            'student_profile', 'student_record', 'experiences', 'skills', 
+            'student_info','student_profile', 'experiences', 'skills', 
             'availability', 'course_preferences'
         ]
 
+    def get_student_info(self, obj):
+        """Get student info from the custom Student model"""
+        try:
+            student = Student.objects.get(email=obj.email)
+            return {
+                'student_number': student.student_number,
+                'program': student.program,
+                'year_standing': student.year_standing,
+                'study_level': student.study_level,
+                'phone': student.phone
+            }
+        except Student.DoesNotExist:
+            return None
+        
 class CreateInstructorSerializer(serializers.Serializer):
     FACULTY_CHOICES = [
         ('astr', 'Astronomy'),
@@ -164,3 +189,21 @@ class CreateSchedulerSerializer(serializers.Serializer):
             raise serializers.ValidationError("TA Scheduler with this employee number already exists.")
         return value
     
+    # Adding serializer for admin accounts 
+class CreateAdminSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=30)
+    last_name = serializers.CharField(max_length=30)
+    email = serializers.EmailField()
+    employee_number = serializers.CharField(max_length=20)
+    
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("User with this email already exists.")
+        if Admin.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Admin with this email already exists.")
+        return value
+    
+    def validate_employee_number(self, value):
+        if Admin.objects.filter(employee_number=value).exists():
+            raise serializers.ValidationError("Admin with this employee number already exists.")
+        return value

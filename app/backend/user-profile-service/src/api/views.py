@@ -5,11 +5,14 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.models import User
+from utils.permissions import admin_required, IsAdminUser
+from django.utils.decorators import method_decorator
+from utils.password_utils import generate_secure_password
 
-from .models import Student, Instructor, TAScheduler, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
-from .serializers import StudentSerializer, InstructorSerializer, TASchedulerSerializer, StudentProfileSerializer, StudentExperienceSerializer, StudentSkillsSerializer,StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer
+from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
+from .serializers import (StudentSerializer, InstructorSerializer, TASchedulerSerializer, AdminSerializer, StudentProfileSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
+                          StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer)
 
-# Import utilities - make sure you've created these files first
 from utils.profile_utils import get_user_by_id, get_user_by_email
 from utils.response_utils import success_response, error_response
 from utils.logging_utils import log_user_activity
@@ -53,7 +56,6 @@ class StudentViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-
 class InstructorViewSet(viewsets.ModelViewSet):
     queryset = Instructor.objects.all()
     serializer_class = InstructorSerializer
@@ -92,7 +94,6 @@ class InstructorViewSet(viewsets.ModelViewSet):
             error_response("Email or employee_number parameter required"),
             status=status.HTTP_400_BAD_REQUEST
         )
-
 
 class TASchedulerViewSet(viewsets.ModelViewSet):
     queryset = TAScheduler.objects.all()
@@ -133,7 +134,7 @@ class TASchedulerViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-# Student Profile Views  
+# Student Profile Views - FIXED to use consistent User model approach
 class StudentProfileDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ComprehensiveStudentProfileSerializer
     permission_classes = [IsAuthenticated]
@@ -141,8 +142,14 @@ class StudentProfileDetailView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            return get_object_or_404(User, id=student_id)
-        return self.request.user
+            # Admin accessing specific student by student_number
+            # Find the student, then get the corresponding User
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
+            return user
+        else:
+            # Student accessing their own profile via JWT token
+            return self.request.user
     
 class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = StudentProfileSerializer
@@ -151,14 +158,18 @@ class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            user = get_object_or_404(User, id=student_id)
+            # Admin accessing specific student
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
+            # Student accessing their own profile
             user = self.request.user
         
+        # Create or get the student profile - FIXED logic flow
         profile, created = StudentProfile.objects.get_or_create(user=user)
         return profile
     
-#student experience views
+# Student Experience Views - FIXED to use User model consistently
 class StudentTAExperienceListCreateView(generics.ListCreateAPIView):
     serializer_class = StudentExperienceSerializer
     permission_classes = [IsAuthenticated]
@@ -166,18 +177,22 @@ class StudentTAExperienceListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            # Admin accessing specific student
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        return StudentExperience.objects.filter(student=student)
+            # Student accessing their own data
+            user = self.request.user
+        return StudentExperience.objects.filter(user=user)
     
     def perform_create(self, serializer):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        serializer.save(student=student)
+            user = self.request.user
+        serializer.save(user=user)
     
 class StudentExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudentExperienceSerializer
@@ -186,12 +201,13 @@ class StudentExperienceDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        return StudentExperience.objects.filter(student=student)
+            user = self.request.user
+        return StudentExperience.objects.filter(user=user)
 
-# Student Skills Views
+# Student Skills Views - FIXED to use User model consistently
 class StudentSkillListCreateView(generics.ListCreateAPIView):
     serializer_class = StudentSkillsSerializer
     permission_classes = [IsAuthenticated]
@@ -199,18 +215,20 @@ class StudentSkillListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        return StudentSkill.objects.filter(student=student)
+            user = self.request.user
+        return StudentSkill.objects.filter(user=user)
     
     def perform_create(self, serializer):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        serializer.save(student=student)
+            user = self.request.user
+        serializer.save(user=user)
 
 class StudentSkillDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudentSkillsSerializer
@@ -219,12 +237,13 @@ class StudentSkillDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        return StudentSkill.objects.filter(student=student)
+            user = self.request.user
+        return StudentSkill.objects.filter(user=user)
 
-# Student Availability Views
+# Student Availability Views - FIXED logic flow
 class StudentAvailabilityView(generics.RetrieveUpdateAPIView):
     serializer_class = StudentAvailabilitySerializer
     permission_classes = [IsAuthenticated]
@@ -232,14 +251,16 @@ class StudentAvailabilityView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
+            user = self.request.user
         
-        availability, created = StudentAvailability.objects.get_or_create(student=student)
+        # Create or get the student availability - FIXED logic flow
+        availability, created = StudentAvailability.objects.get_or_create(user=user)
         return availability
 
-# Student Course Preferences Views
+# Student Course Preferences Views - FIXED error handling
 class StudentCoursePreferenceListCreateView(generics.ListCreateAPIView):
     serializer_class = StudentCoursePreferenceSerializer
     permission_classes = [IsAuthenticated]
@@ -247,27 +268,39 @@ class StudentCoursePreferenceListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        return StudentCoursePreference.objects.filter(student=student)
+            user = self.request.user
+        return StudentCoursePreference.objects.filter(user=user)
+    
+    def create(self, request, *args, **kwargs):
+        """Override create to check preference limit before creating"""
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
+        else:
+            user = request.user
+        
+        # Check if student already has 10 preferences
+        existing_count = StudentCoursePreference.objects.filter(user=user).count()
+        if existing_count >= 10:
+            return Response(
+                error_response('Maximum 10 course preferences allowed.'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        return super().create(request, *args, **kwargs)
     
     def perform_create(self, serializer):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        
-        # Check if student already has 10 preferences
-        existing_count = StudentCoursePreference.objects.filter(student=student).count()
-        if existing_count >= 10:
-            return Response(
-                {'error': 'Maximum 10 course preferences allowed.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        serializer.save(student=student)
+            user = self.request.user
+        serializer.save(user=user)
 
 class StudentCoursePreferenceDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudentCoursePreferenceSerializer
@@ -276,14 +309,15 @@ class StudentCoursePreferenceDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
         if student_id:
-            student = get_object_or_404(User, id=student_id)
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
         else:
-            student = self.request.user
-        return StudentCoursePreference.objects.filter(student=student)
-    
-#shared endpoint to find users across all types
+            user = self.request.user
+        return StudentCoursePreference.objects.filter(user=user)
+
+# Shared endpoint to find users across all types
 @api_view(['GET'])
-@permission_classes([AllowAny])  # Add this decorator
+@permission_classes([AllowAny])
 def find_user(request):
     """Find a user across all user types by email, student_number, or employee_number"""
     email = request.query_params.get('email')
@@ -309,6 +343,8 @@ def find_user(request):
                 serializer = InstructorSerializer(user)
             elif found_type == 'scheduler':
                 serializer = TASchedulerSerializer(user)
+            elif found_type == 'admin':
+                serializer = AdminSerializer(user)
             
             log_user_activity(found_type, getattr(user, 'student_number', getattr(user, 'employee_number', 'unknown')), 'profile_searched')
             
@@ -354,6 +390,16 @@ def find_user(request):
                     "user": TASchedulerSerializer(user).data,  
                     "type": "scheduler"
                 }))
+            
+        # Try admin
+        if user_type == 'admin' or user_type is None:
+            user = get_user_by_id(employee_number, 'admin')
+            if user:
+                log_user_activity('admin', employee_number, 'profile_searched')
+                return Response(success_response({
+                    "user": AdminSerializer(user).data,  
+                    "type": "admin"
+                }))
     
     # No parameters provided
     if not email and not student_number and not employee_number:
@@ -368,6 +414,262 @@ def find_user(request):
         status=status.HTTP_404_NOT_FOUND
     )
 
+# Admin Management Views
+@method_decorator(admin_required, name='dispatch')
+class CreateInstructorView(generics.CreateAPIView):
+    serializer_class = CreateInstructorSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                # Check if instructor with this employee number already exists
+                if Instructor.objects.filter(employee_number=serializer.validated_data['employee_number']).exists():
+                    return Response(
+                        error_response("Instructor with this employee number already exists"),
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Check if email is already in use
+                if Instructor.objects.filter(email=serializer.validated_data['email']).exists():
+                    return Response(
+                        error_response("Email already in use"),
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Get faculty object
+                faculty = Faculty.objects.get(name__iexact=serializer.validated_data['faculty'])
+                
+                # Generate secure temporary password
+                temp_password = generate_secure_password()
+                
+                # Create instructor
+                instructor = Instructor.objects.create(
+                    employee_number=serializer.validated_data['employee_number'],
+                    name=f"{serializer.validated_data['first_name']} {serializer.validated_data['last_name']}",
+                    email=serializer.validated_data['email'],
+                    faculty=faculty,
+                    password=temp_password
+                )
+                
+                # Return response with temporary password for admin to share
+                response_data = InstructorSerializer(instructor).data
+                response_data['temporary_password'] = temp_password
+                
+                log_user_activity('admin', request.user.email, f'created_instructor_{instructor.employee_number}')
+                
+                return Response(
+                    success_response(
+                        response_data, 
+                        "Instructor created successfully. Please share the temporary password with the instructor."
+                    ),
+                    status=status.HTTP_201_CREATED
+                )
+                
+            except Faculty.DoesNotExist:
+                return Response(
+                    error_response("Faculty not found"),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            except Exception as e:
+                return Response(
+                    error_response(f"Error creating instructor: {str(e)}"),
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
+        return Response(
+            error_response("Invalid data", serializer.errors),
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@method_decorator(admin_required, name='dispatch')
+class CreateSchedulerView(generics.CreateAPIView):
+    serializer_class = CreateSchedulerSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                # Check if scheduler with this employee number already exists
+                if TAScheduler.objects.filter(employee_number=serializer.validated_data['employee_number']).exists():
+                    return Response(
+                        error_response("TA Scheduler with this employee number already exists"),
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Check if email is already in use
+                if TAScheduler.objects.filter(email=serializer.validated_data['email']).exists():
+                    return Response(
+                        error_response("Email already in use"),
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Get department object
+                department = Department.objects.get(name__iexact=serializer.validated_data['department'])
+                
+                # Generate secure temporary password
+                temp_password = generate_secure_password()
+                
+                # Create TA scheduler
+                scheduler = TAScheduler.objects.create(
+                    employee_number=serializer.validated_data['employee_number'],
+                    name=f"{serializer.validated_data['first_name']} {serializer.validated_data['last_name']}",
+                    email=serializer.validated_data['email'],
+                    department=department,
+                    password=temp_password
+                )
+                
+                # Return response with temporary password for admin to share
+                response_data = TASchedulerSerializer(scheduler).data
+                response_data['temporary_password'] = temp_password
+                
+                log_user_activity('admin', request.user.email, f'created_scheduler_{scheduler.employee_number}')
+                
+                return Response(
+                    success_response(
+                        response_data,
+                        "TA Scheduler created successfully. Please share the temporary password with the scheduler."
+                    ),
+                    status=status.HTTP_201_CREATED
+                )
+                
+            except Department.DoesNotExist:
+                return Response(
+                    error_response("Department not found"),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            except Exception as e:
+                return Response(
+                    error_response(f"Error creating TA scheduler: {str(e)}"),
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
+        return Response(
+            error_response("Invalid data", serializer.errors),
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@method_decorator(admin_required, name='dispatch')
+class UserManagementView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def patch(self, request):
+        action = request.data.get('action')
+        
+        if action == 'deactivate':
+            return self.deactivate_user(request)
+        elif action == 'modify':
+            return self.modify_user(request)
+        else:
+            return Response(
+                error_response("Invalid action. Use 'deactivate' or 'modify'"),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    def deactivate_user(self, request):
+        """Deactivate a user account - Admin only"""
+        user_type = request.data.get('user_type')
+        user_id = request.data.get('user_id')
+        
+        if not user_type or not user_id:
+            return Response(
+                error_response("user_type and user_id are required"),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            if user_type == 'student':
+                user = Student.objects.get(student_number=user_id)
+                user.is_active = False
+                user.save()
+            elif user_type == 'instructor':
+                user = Instructor.objects.get(employee_number=user_id)
+                user.is_active = False
+                user.save()
+            elif user_type == 'scheduler':
+                user = TAScheduler.objects.get(employee_number=user_id)
+                user.is_active = False
+                user.save()
+            else:
+                return Response(
+                    error_response("Invalid user_type"),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            log_user_activity('admin', request.user.email, f'deactivated_{user_type}_{user_id}')
+            
+            return Response(
+                success_response(message=f"{user_type.title()} account deactivated successfully")
+            )
+            
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+            return Response(
+                error_response(f"{user_type.title()} not found"),
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                error_response(f"Error deactivating user: {str(e)}"),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def modify_user(self, request):
+        """Modify a user account - Admin only"""
+        user_type = request.data.get('user_type')
+        user_id = request.data.get('user_id')
+        update_data = request.data.get('update_data', {})
+        
+        if not user_type or not user_id:
+            return Response(
+                error_response("user_type and user_id are required"),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            if user_type == 'student':
+                user = Student.objects.get(student_number=user_id)
+                serializer = StudentSerializer(user, data=update_data, partial=True)
+            elif user_type == 'instructor':
+                user = Instructor.objects.get(employee_number=user_id)
+                serializer = InstructorSerializer(user, data=update_data, partial=True)
+            elif user_type == 'scheduler':
+                user = TAScheduler.objects.get(employee_number=user_id)
+                serializer = TASchedulerSerializer(user, data=update_data, partial=True)
+            else:
+                return Response(
+                    error_response("Invalid user_type"),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if serializer.is_valid():
+                serializer.save()
+                log_user_activity('admin', request.user.email, f'modified_{user_type}_{user_id}')
+                
+                return Response(
+                    success_response(
+                        serializer.data,
+                        f"{user_type.title()} account modified successfully"
+                    )
+                )
+            else:
+                return Response(
+                    error_response("Invalid data", serializer.errors),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+            return Response(
+                error_response(f"{user_type.title()} not found"),
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                error_response(f"Error modifying user: {str(e)}"),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def api_root(request):
@@ -375,9 +677,25 @@ def api_root(request):
     return JsonResponse({
         'status': 'User Profile Service is running',
         'available_endpoints': {
+            # Basic user endpoints
             'students': '/api/profile/students/',
             'instructors': '/api/profile/instructors/',
             'schedulers': '/api/profile/schedulers/',
-            'find_user': '/api/profile/find-user/'
+            'find_user': '/api/profile/find-user/',
+            
+            # Admin endpoints
+            'admin_create_instructor': '/api/profile/admin/create-instructor/',
+            'admin_create_scheduler': '/api/profile/admin/create-scheduler/',
+            'admin_user_management': '/api/profile/admin/user-management/',
+            
+            # Student profile endpoints
+            'my_profile': '/api/profile/me/',
+            'my_experiences': '/api/profile/me/experiences/',
+            'my_skills': '/api/profile/me/skills/',
+            'my_availability': '/api/profile/me/availability/',
+            'my_preferences': '/api/profile/me/preferences/',
+            
+            # Admin student access
+            'student_profile': '/api/profile/student/{student_id}/',
         }
     })
