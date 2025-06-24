@@ -387,7 +387,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>GPA</Label>
+                    <Label>GPA (Optional)</Label>
                     {isEditingAcademic ? (
                       <Input
                         value={editedAcademicInfo.gpa}
@@ -636,7 +636,7 @@ export default function ProfilePage() {
             <div className="grid gap-6 lg:grid-cols-3">
 
               <div className="space-y-6 col-span-2">
-                {/* Skills and Qualifications */}
+                {/* Skills*/}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Skills & Qualifications</CardTitle>
@@ -887,7 +887,7 @@ export default function ProfilePage() {
                 {/* Availability Calendar */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Availability<span className="text-red-500">*</span></CardTitle>
+                    <CardTitle>Availability</CardTitle>
                     <div className="flex gap-2 mt-2">
                       {isEditingAvailability ? (
                         <>
