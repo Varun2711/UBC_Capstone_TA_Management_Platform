@@ -30,7 +30,7 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Full Name')).toBeInTheDocument()
     expect(screen.getByText('Sarah Johnson')).toBeInTheDocument()
     expect(screen.getByText('Student ID')).toBeInTheDocument()
-    expect(screen.getByText('SJ2024001')).toBeInTheDocument()
+    expect(screen.getByText('20240012')).toBeInTheDocument()
   })
 
   it('enables editing mode when clicking "Edit Profile"', async () => {
