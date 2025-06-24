@@ -67,8 +67,6 @@ const studentProfile = {
     yearStanding: "4th Year",
     degreeStart: "September 2022",
     expectedGraduation: "May 2026",
-    credits: "45/60",
-    concentration: "Software Engineering",
   },
   experience: [
     {
@@ -142,17 +140,36 @@ export default function ProfilePage() {
   const [isEditingCourses, setIsEditingCourses] = useState(false)
   const [coursePreference, setCoursePreference] = useState(profile.coursePreference)
 
-  const handleSave = () => {
-    const { name, studentId, UBCEmployeeId, email } = profile
+  const handleSave = (profileData) => {
+  const {
+    name,
+    studentId,
+    UBCEmployeeId,
+    email,
+    major,
+    year,
+    academicInfo,
+    experience
+  } = profileData
 
-    // for checking that at least one character is there in the following fields
-    if (!name.trim() || !studentId.trim() || !UBCEmployeeId.trim() || !email.trim()) {
-      alert("Please fill out all required fields.")
-      return
-    }
-    setIsEditing(false)
-    console.log("Profile saved:", profile)
+  if (
+    !name.trim() ||
+    !studentId.trim() ||
+    !UBCEmployeeId.trim() ||
+    !email.trim() ||
+    !major.trim() ||
+    !year.trim() ||
+    !academicInfo.expectedGraduation.trim() ||
+    !academicInfo.degreeStart.trim() ||
+    !academicInfo.yearStanding.trim()
+  ) {
+    alert("Please fill out all required fields.")
+    return false
   }
+  console.log("Profile validated successfully:", profileData)
+  return true
+}
+
 
   const handleCancel = () => {
     setProfile(studentProfile) // Reset to original data
@@ -277,7 +294,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
+                      <Label htmlFor="phone">Phone (Optional)</Label>
                       {isEditing ? (
                         <Input
                           id="phone"
@@ -302,14 +319,19 @@ export default function ProfilePage() {
                     <Button
                       size="sm"
                       onClick={() => {
-                        setProfile({
+                        const updatedProfile = {
                           ...profile,
                           major: editedAcademicInfo.major,
                           minor: editedAcademicInfo.minor,
                           year: editedAcademicInfo.year,
                           gpa: editedAcademicInfo.gpa,
-                          academicInfo: { ...editedAcademicInfo.academicInfo }
-                        })
+                          academicInfo: { ...editedAcademicInfo.academicInfo },
+                        }
+
+                        const isValid = handleSave(updatedProfile)
+                        if (!isValid) return
+
+                        setProfile(updatedProfile)
                         setIsEditingAcademic(false)
                       }}
                     >
@@ -343,7 +365,7 @@ export default function ProfilePage() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label>Major</Label>
+                    <Label>Major<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
                         value={editedAcademicInfo.major}
@@ -354,7 +376,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Academic Level</Label>
+                    <Label>Academic Level<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
                         value={editedAcademicInfo.year}
@@ -376,7 +398,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Expected Graduation</Label>
+                    <Label>Expected Graduation<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
                         value={editedAcademicInfo.academicInfo.expectedGraduation}
@@ -395,7 +417,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Degree Start</Label>
+                    <Label>Degree Start<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
                         value={editedAcademicInfo.academicInfo.degreeStart}
@@ -414,7 +436,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Year Standing</Label>
+                    <Label>Year Standing<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
                         value={editedAcademicInfo.academicInfo.yearStanding}
@@ -865,7 +887,7 @@ export default function ProfilePage() {
                 {/* Availability Calendar */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Availability</CardTitle>
+                    <CardTitle>Availability<span className="text-red-500">*</span></CardTitle>
                     <div className="flex gap-2 mt-2">
                       {isEditingAvailability ? (
                         <>
