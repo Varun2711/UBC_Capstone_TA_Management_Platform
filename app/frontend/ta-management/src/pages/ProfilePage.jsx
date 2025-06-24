@@ -47,7 +47,7 @@ import WeeklyAvailabilityCalendar from "../components/WeeklyAvailabilityCalendar
 const studentProfile = {
   name: "Sarah Johnson",
   email: "sarah.johnson@university.edu",
-  studentId: "SJ2024001",
+  studentId: "20240012",
   UBCEmployeeId: "82342316",
   major: "Computer Science",
   minor: "Data Science",
@@ -143,7 +143,13 @@ export default function ProfilePage() {
   const [coursePreference, setCoursePreference] = useState(profile.coursePreference)
 
   const handleSave = () => {
-    // Here you would typically save to a backend
+    const { name, studentId, UBCEmployeeId, email } = profile
+
+    // for checking that at least one character is there in the following fields
+    if (!name.trim() || !studentId.trim() || !UBCEmployeeId.trim() || !email.trim()) {
+      alert("Please fill out all required fields.")
+      return
+    }
     setIsEditing(false)
     console.log("Profile saved:", profile)
   }
@@ -222,7 +228,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
+                      <Label htmlFor="name">Full Name<span className="text-red-500">*</span></Label>
                       {isEditing ? (
                         <Input
                           id="name"
@@ -234,7 +240,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="studentId">Student ID</Label>
+                      <Label htmlFor="studentId">Student ID<span className="text-red-500">*</span></Label>
                       {isEditing ? (
                         <Input
                           id="studentId"
@@ -246,7 +252,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="UBCEmployeeId">UBC Employee ID</Label>
+                      <Label htmlFor="UBCEmployeeId">UBC Employee ID<span className="text-red-500">*</span></Label>
                       {isEditing ? (
                         <Input
                           id="UBCEmployeeId"
@@ -258,7 +264,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">Email<span className="text-red-500">*</span></Label>
                       {isEditing ? (
                         <Input
                           id="email"
