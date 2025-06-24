@@ -230,16 +230,32 @@ export default function ProfilePage() {
                           onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                         />
                       ) : (
-                        <p className="text-sm font-medium">{profile.name}</p>
+                        <p className="text-sm">{profile.name}</p>
                       )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="studentId">Student ID</Label>
-                      <p className="text-sm text-muted-foreground">{profile.studentId}</p>
+                      {isEditing ? (
+                        <Input
+                          id="studentId"
+                          value={profile.studentId}
+                          onChange={(e) => setProfile({ ...profile, studentId: e.target.value })}
+                        />
+                      ) : (
+                        <p className="text-sm">{profile.studentId}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="UBCEmployeeId">UBC Employee ID</Label>
-                      <p className="text-sm text-muted-foreground">{profile.UBCEmployeeId}</p>
+                      {isEditing ? (
+                        <Input
+                          id="UBCEmployeeId"
+                          value={profile.UBCEmployeeId}
+                          onChange={(e) => setProfile({ ...profile, UBCEmployeeId: e.target.value })}
+                        />
+                      ) : (
+                        <p className="text-sm">{profile.UBCEmployeeId}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
