@@ -210,7 +210,14 @@ export default function ProfilePage() {
                 <CardTitle>Basic Information</CardTitle>
                 {isEditing ? (
                   <div className="flex gap-2">
-                    <Button onClick={handleSave} className="gap-2">
+                    <Button 
+                    onClick={() => {
+                      const isValid = handleSave(profile) // ✅ validate the latest state
+                      if (!isValid) return
+
+                      setIsEditing(false) // ✅ only close edit mode if validation passed
+                    }}
+                    className="gap-2">
                       <Save className="h-4 w-4" />
                       Save
                     </Button>
