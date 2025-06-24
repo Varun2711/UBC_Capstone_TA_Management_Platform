@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Student, Instructor, TAScheduler
 from django.contrib.auth.hashers import make_password
+from .models import Admin  
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -39,6 +40,14 @@ class TASchedulerSerializer(serializers.ModelSerializer):
     class Meta:
         model = TAScheduler
         fields = ['employee_number', 'name', 'email', 'department', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+class AdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Admin
+        fields = ['employee_number', 'name', 'email', 'password', 'is_active']
         extra_kwargs = {
             'password': {'write_only': True}
         }

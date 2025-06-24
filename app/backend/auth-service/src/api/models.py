@@ -11,6 +11,7 @@ class Student(models.Model):
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
+    is_active = models.BooleanField(default=True)
     
     class Meta:
         managed = False  
@@ -22,6 +23,7 @@ class Instructor(models.Model):
     faculty = models.IntegerField() 
     email = models.EmailField()
     password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = False
@@ -33,7 +35,21 @@ class TAScheduler(models.Model):
     email = models.EmailField(max_length=100)
     department = models.IntegerField() 
     password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = False
         db_table = 'myapp_tascheduler'
+
+# NEW MODEL - Add Admin user type
+class Admin(models.Model):
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    password = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_admin'

@@ -9,7 +9,7 @@ import jwt
 from django.conf import settings
 from django.http import JsonResponse
 
-from .models import Student, Instructor, TAScheduler
+from .models import Student, Instructor, TAScheduler, Admin
 from .serializers import LoginSerializer, TokenSerializer, StudentRegistrationSerializer
 
 # Get Django's default User model
@@ -47,6 +47,17 @@ def find_user_by_email(email, password):
             return None, None, None
     except TAScheduler.DoesNotExist:
         pass
+
+    # NEW - Check Admin
+    try:
+        admin = Admin.objects.get(email=email)
+        if check_password(password, admin.password):
+            return admin, "admin", admin.employee_number
+        else:
+            return None, None, None
+    except Admin.DoesNotExist:
+        pass
+
 
     return None, None, None # if not found in student, instructor, or ta scheduler, user does not exist
         
