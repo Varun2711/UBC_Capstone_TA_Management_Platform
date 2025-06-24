@@ -63,15 +63,15 @@ const WeeklyAvailabilityCalendar = ({
                 return (
                   <td key={day} className="border p-0">
                     <div className="flex flex-col h-full">
-                      {/* Top Half (first 30 minutes) */}
                       <div
+                        data-testid={`slot-${day}-${hourNum}-top`}
                         className={`h-5 cursor-pointer ${
                           isSelected(day, hourNum, "top") ? "bg-blue-400" : "hover:bg-blue-100"
                         } border-b`}
                         onClick={() => editable && toggleSlot(day, hourNum, "top")}
                       />
-                      {/* Bottom Half (next 30 minutes) */}
                       <div
+                        data-testid={`slot-${day}-${hourNum}-bottom`}
                         className={`h-5 cursor-pointer ${
                           isSelected(day, hourNum, "bottom") ? "bg-blue-400" : "hover:bg-blue-100"
                         }`}

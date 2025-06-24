@@ -4,16 +4,13 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import ProfilePage from '@/pages/ProfilePage'
+import WeeklyAvailabilityCalendar from '@/components/WeeklyAvailabilityCalendar'
+
 
 vi.mock('@/components/student-dashboard-sidebar', () => ({
   AppSidebar: () => <div data-testid="mock-sidebar">Mock Sidebar</div>,
 }))
 
-vi.mock('@/components/WeeklyAvailabilityCalendar', () => ({
-  default: ({ editable }) => (
-    <div data-testid="mock-calendar">{editable ? 'Editable Calendar' : 'Static Calendar'}</div>
-  ),
-}))
 
 describe('ProfilePage', () => {
   beforeEach(() => {
@@ -86,10 +83,40 @@ describe('ProfilePage', () => {
   })
 
   it('renders the mocked availability calendar component', () => {
-    expect(screen.getByTestId('mock-calendar')).toBeInTheDocument()
+    const slot = screen.getByTestId('slot-Monday-8-top')
+    expect(slot).toBeInTheDocument()
   })
 
   it('renders the mocked sidebar', () => {
     expect(screen.getByTestId('mock-sidebar')).toBeInTheDocument()
+  })
+})
+
+describe('WeeklyAvailabilityCalendar', () => {
+  it('highlights a time slot when clicked', async () => {
+    const user = userEvent.setup()
+    const mockSetAvailability = vi.fn()
+
+    render(
+      <WeeklyAvailabilityCalendar
+        editable={true}
+        availability={[]} // start with no slots selected
+        setAvailability={mockSetAvailability}
+      />
+    )
+
+    const slot = screen.getByTestId('slot-Monday-8-top')
+
+    // Initially should NOT have bg-blue-400
+    expect(slot).not.toHaveClass('bg-blue-400')
+
+    // Click to select
+    await user.click(slot)
+
+    // Should now be selected
+    expect(slot).toHaveClass('bg-blue-400')
+
+    // setAvailability should have been called with ["Monday-8-top"]
+    expect(mockSetAvailability).toHaveBeenCalledWith(["Monday-8-top"])
   })
 })
