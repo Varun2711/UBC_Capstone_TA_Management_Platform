@@ -695,7 +695,7 @@ export default function ProfilePage() {
                             if (hasEmptyTechnical || hasEmptySoft) {
                               alert("Each skill must contain text.")
                               return
-    }
+                            }
                             setProfile((prev) => ({
                               ...prev,
                               technicalSkills: editedSkills.technicalSkills,
@@ -860,6 +860,12 @@ export default function ProfilePage() {
                         <>
                           <Button
                             onClick={() => {
+                              const hasEmptyCoursePreference = coursePreference.some(coursePreference => coursePreference.trim() === "")
+
+                              if (hasEmptyCoursePreference) {
+                                alert("Each course preference must contain text.")
+                                return
+                              }
                               setIsEditingCourses(false)
                             }}
                             className="gap-2"
