@@ -70,14 +70,12 @@ const studentProfile = {
   },
   experience: [
     {
-      title: "Teaching Assistant",
       course: "CS 111 - Introduction to Programming",
       semester: "Fall 2023",
       professor: "Dr. Smith",
       description: "Assisted with lab sessions, graded assignments, and held office hours for 30+ students.",
     },
     {
-      title: "Teaching Assistant",
       course: "MATH 101 - Introduction to Calculus",
       semester: "Summer 2023",
       professor: "Dr. Brown",
@@ -378,7 +376,7 @@ export default function ProfilePage() {
                         onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, major: e.target.value })}
                       />
                     ) : (
-                      <p className="text-sm font-medium">{profile.major}</p>
+                      <p className="text-sm">{profile.major}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -400,7 +398,7 @@ export default function ProfilePage() {
                         onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, gpa: e.target.value })}
                       />
                     ) : (
-                      <p className="text-sm font-medium">{profile.gpa}</p>
+                      <p className="text-sm">{profile.gpa}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -476,11 +474,11 @@ export default function ProfilePage() {
             </Card>
 
 
-            {/* Experience */}
+            {/* Past TA Experiences */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Experience</CardTitle>
+                  <CardTitle>Past TA Experiences</CardTitle>
                 </div>
                 {isEditingExperience ? (
                   <div className="flex gap-2">
@@ -532,21 +530,6 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <Label>Title</Label>
-                        {isEditingExperience ? (
-                          <Input
-                            value={exp.title}
-                            onChange={(e) => {
-                              const newExp = [...editedExperience]
-                              newExp[index].title = e.target.value
-                              setEditedExperience(newExp)
-                            }}
-                          />
-                        ) : (
-                          <p className="text-sm font-medium">{exp.title}</p>
-                        )}
-                      </div>
 
                       <div className="space-y-1">
                         <Label>Course</Label>
@@ -576,7 +559,7 @@ export default function ProfilePage() {
                             }}
                           />
                         ) : (
-                          <p className="text-sm text-muted-foreground">{exp.semester}</p>
+                          <p className="text-sm">{exp.semester}</p>
                         )}
                       </div>
 
@@ -592,7 +575,7 @@ export default function ProfilePage() {
                             }}
                           />
                         ) : (
-                          <p className="text-sm text-muted-foreground">{exp.professor}</p>
+                          <p className="text-sm">{exp.professor}</p>
                         )}
                       </div>
                     </div>
