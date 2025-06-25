@@ -552,7 +552,7 @@ export default function ProfilePage() {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        setEditedExperience([...profile.experience])
+                        setEditedExperience(profile.experience.map(exp => ({ ...exp })))
                         setIsEditingExperience(false)
                       }}
                     >
@@ -560,7 +560,13 @@ export default function ProfilePage() {
                     </Button>
                   </div>
                 ) : (
-                  <Button size="sm" onClick={() => setIsEditingExperience(true)}>
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      setEditedExperience(profile.experience.map(exp => ({ ...exp }))) // deep copy
+                      setIsEditingExperience(true)
+                    }}
+                    >
                     <Edit className="h-4 w-4" />
                     Edit Experience
                   </Button>
@@ -725,7 +731,17 @@ export default function ProfilePage() {
                           </Button>
                         </div>
                       ) : (
-                        <Button size="sm" onClick={() => setSkillsEdit(true)}>
+                        <Button 
+                        size="sm" 
+                        //onClick={() => setSkillsEdit(true)}
+                        onClick={() => {
+                          setEditedSkills({
+                            technicalSkills: [...profile.technicalSkills],
+                            softSkills: [...profile.softSkills],
+                          })
+                          setSkillsEdit(true)
+                        }}
+                        >
                           <Edit className="h-4 w-4" />
                           Edit Skills
                         </Button>
@@ -871,6 +887,10 @@ export default function ProfilePage() {
                                     alert("Each course preference must contain text.")
                                     return
                                   }
+                                  setProfile((prev) => ({
+                                    ...prev,
+                                    coursePreference: [...coursePreference],
+                                  }))
                                   setIsEditingCourses(false)
                                 }}
                                 className="gap-2"
@@ -881,7 +901,7 @@ export default function ProfilePage() {
                               <Button
                                 onClick={() => {
                                   setIsEditingCourses(false)
-                                  setCoursePreference(profile.coursePreference) // Reset to original
+                                  setCoursePreference([...profile.coursePreference]) // Reset to original
                                 }}
                                 variant="outline"
                                 className="gap-2"
@@ -891,7 +911,13 @@ export default function ProfilePage() {
                               </Button>
                             </>
                           ) : (
-                            <Button onClick={() => setIsEditingCourses(true)} className="gap-2">
+                            <Button 
+                            onClick={() => {
+                              setCoursePreference([...profile.coursePreference]) // deep copy
+                              setIsEditingCourses(true)
+                            }}       
+                            className="gap-2"
+                            >
                               <Edit className="h-4 w-4" />
                               Edit Preferences
                             </Button>
