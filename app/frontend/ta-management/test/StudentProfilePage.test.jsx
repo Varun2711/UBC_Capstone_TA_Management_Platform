@@ -33,16 +33,16 @@ describe('ProfilePage', () => {
     expect(screen.getByText('20240012')).toBeInTheDocument()
   })
 
-  it('enables editing mode when clicking "Edit Profile"', async () => {
+  it('enables editing mode when clicking "Edit Personal Information"', async () => {
     const user = userEvent.setup()
-    await user.click(screen.getByText(/Edit Profile/i))    
+    await user.click(screen.getByText(/Edit Personal Information/i))    
     expect(screen.getByRole('textbox', { name: /Full Name/i })).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: /Email/i })).toHaveValue('sarah.johnson@university.edu')
   })
 
   it('cancels editing and restores original profile', async () => {
     const user = userEvent.setup()
-    await user.click(screen.getByText(/Edit Profile/i))
+    await user.click(screen.getByText(/Edit Personal Information/i))
 
     const nameInput = screen.getByRole('textbox', { name: /Full Name/i })
     await user.clear(nameInput)
