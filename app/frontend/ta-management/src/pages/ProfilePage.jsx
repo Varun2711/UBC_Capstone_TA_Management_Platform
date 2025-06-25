@@ -231,7 +231,7 @@ export default function ProfilePage() {
                 ) : (
                   <Button onClick={() => setIsEditing(true)} className="gap-2">
                     <Edit className="h-4 w-4" />
-                    Edit Profile
+                    Edit Personal Information
                   </Button>
                 )}
               </CardHeader>
