@@ -16,6 +16,9 @@ import {
   Settings,
   User,
   X,
+  ChevronDown,
+  ChevronUp,
+  Check,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +45,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "../components/student-dashboard-sidebar"
 import WeeklyAvailabilityCalendar from "../components/WeeklyAvailabilityCalendar"
+import * as Select from '@radix-ui/react-select'
+
 
 // Mock data
 const studentProfile = {
@@ -382,10 +387,60 @@ export default function ProfilePage() {
                   <div className="space-y-2">
                     <Label>Academic Level<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
-                      <Input
+                      <Select.Root
                         value={editedAcademicInfo.year}
-                        onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, year: e.target.value })}
-                      />
+                        onValueChange={(value) =>
+                          setEditedAcademicInfo({ ...editedAcademicInfo, year: value })
+                        }
+                      >
+                        <Select.Trigger className="flex items-center justify-between w-full border rounded px-3 py-2 text-sm">
+                          <Select.Value placeholder="Select Academic Level" />
+                          <Select.Icon>
+                            <ChevronDown className="h-4 w-4" />
+                          </Select.Icon>
+                        </Select.Trigger>
+                        <Select.Content className="border rounded shadow bg-white">
+                          <Select.ScrollUpButton className="flex items-center justify-center">
+                            <ChevronUp className="h-4 w-4" />
+                          </Select.ScrollUpButton>
+                          <Select.Viewport className="p-1">
+
+                          {/* Empty selection option */}
+                            <Select.Item
+                              value=" "
+                              className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-500"
+                            >
+                              <Select.ItemText>Select Academic Level</Select.ItemText>
+                              <Select.ItemIndicator>
+                                <Check className="h-4 w-4" />
+                              </Select.ItemIndicator>
+                            </Select.Item>
+
+                          {/* Actual academic level options */}
+                            <Select.Item
+                              value="Undergraduate"
+                              className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
+                            >
+                              <Select.ItemText>Undergraduate</Select.ItemText>
+                              <Select.ItemIndicator>
+                                <Check className="h-4 w-4" />
+                              </Select.ItemIndicator>
+                            </Select.Item>
+                            <Select.Item
+                              value="Graduate"
+                              className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
+                            >
+                              <Select.ItemText>Graduate</Select.ItemText>
+                              <Select.ItemIndicator>
+                                <Check className="h-4 w-4" />
+                              </Select.ItemIndicator>
+                            </Select.Item>
+                          </Select.Viewport>
+                          <Select.ScrollDownButton className="flex items-center justify-center">
+                            <ChevronDown className="h-4 w-4" />
+                          </Select.ScrollDownButton>
+                        </Select.Content>
+                      </Select.Root>
                     ) : (
                       <p className="text-sm">{profile.year}</p>
                     )}
