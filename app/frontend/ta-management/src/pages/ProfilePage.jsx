@@ -155,7 +155,6 @@ export default function ProfilePage() {
   if (
     !name.trim() ||
     !studentId.trim() ||
-    !UBCEmployeeId.trim() ||
     !email.trim() ||
     !major.trim() ||
     !year.trim() ||
@@ -204,10 +203,10 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Profile Picture and Basic Info */}
+            {/* Profile Picture and Personal Info */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Basic Information</CardTitle>
+                <CardTitle>Personal Information</CardTitle>
                 {isEditing ? (
                   <div className="flex gap-2">
                     <Button 
@@ -276,7 +275,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="UBCEmployeeId">UBC Employee ID<span className="text-red-500">*</span></Label>
+                      <Label htmlFor="UBCEmployeeId">UBC Employee ID (Optional)</Label>
                       {isEditing ? (
                         <Input
                           id="UBCEmployeeId"
