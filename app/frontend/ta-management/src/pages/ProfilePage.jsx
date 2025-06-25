@@ -689,6 +689,13 @@ export default function ProfilePage() {
                         <Button
                           size="sm"
                           onClick={() => {
+                            const hasEmptyTechnical = editedSkills.technicalSkills.some(skill => skill.trim() === "")
+                            const hasEmptySoft = editedSkills.softSkills.some(skill => skill.trim() === "")
+
+                            if (hasEmptyTechnical || hasEmptySoft) {
+                              alert("Each skill must contain text.")
+                              return
+    }
                             setProfile((prev) => ({
                               ...prev,
                               technicalSkills: editedSkills.technicalSkills,
