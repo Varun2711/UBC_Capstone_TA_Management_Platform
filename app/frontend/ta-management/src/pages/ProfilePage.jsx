@@ -979,6 +979,9 @@ export default function ProfilePage() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  <p>
+                    Please select your available time slots in a week for the TA position.<br/><br/>
+                  </p>
                   <WeeklyAvailabilityCalendar
                     editable={isEditingAvailability}
                     availability={availabilityData}
