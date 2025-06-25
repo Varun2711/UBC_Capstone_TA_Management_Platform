@@ -78,7 +78,7 @@ describe('ProfilePage', () => {
   })
 
   it('renders course preferences', () => {
-    expect(screen.getByText('Course Preference')).toBeInTheDocument()
+    expect(screen.getByText('Course Preferences')).toBeInTheDocument()
     expect(screen.getByText('COSC 111')).toBeInTheDocument()
   })
 

@@ -366,6 +366,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <Button size="sm" onClick={() => setIsEditingAcademic(true)}>
+                    <Edit className="h-4 w-4" />
                     Edit Academic Information
                   </Button>
                 )}
@@ -560,6 +561,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <Button size="sm" onClick={() => setIsEditingExperience(true)}>
+                    <Edit className="h-4 w-4" />
                     Edit Experience
                   </Button>
                 )}
@@ -677,310 +679,313 @@ export default function ProfilePage() {
 
 
 
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="flex flex-col lg:flex-row gap-6">
 
-              <div className="space-y-6 col-span-2">
+              <div className="flex flex-col lg:flex-row gap-6">
                 {/* Skills*/}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Skills & Qualifications</CardTitle>
-                    {skillsEdit ? (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            const hasEmptyTechnical = editedSkills.technicalSkills.some(skill => skill.trim() === "")
-                            const hasEmptySoft = editedSkills.softSkills.some(skill => skill.trim() === "")
+                <div className="flex-1 flex flex-col">
+                  <Card className="h-full flex flex-col">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle>Skills & Qualifications</CardTitle>
+                      {skillsEdit ? (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const hasEmptyTechnical = editedSkills.technicalSkills.some(skill => skill.trim() === "")
+                              const hasEmptySoft = editedSkills.softSkills.some(skill => skill.trim() === "")
 
-                            if (hasEmptyTechnical || hasEmptySoft) {
-                              alert("Each skill must contain text.")
-                              return
-                            }
-                            setProfile((prev) => ({
-                              ...prev,
-                              technicalSkills: editedSkills.technicalSkills,
-                              softSkills: editedSkills.softSkills,
-                            }))
-                            setSkillsEdit(false)
-                          }}
-                        >
+                              if (hasEmptyTechnical || hasEmptySoft) {
+                                alert("Each skill must contain text.")
+                                return
+                              }
+                              setProfile((prev) => ({
+                                ...prev,
+                                technicalSkills: editedSkills.technicalSkills,
+                                softSkills: editedSkills.softSkills,
+                              }))
+                              setSkillsEdit(false)
+                            }}
+                          >
+                            <Save className="h-4 w-4" />
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditedSkills({
+                                technicalSkills: [...profile.technicalSkills],
+                                softSkills: [...profile.softSkills],
+                              })
+                              setSkillsEdit(false)
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button size="sm" onClick={() => setSkillsEdit(true)}>
+                          <Edit className="h-4 w-4" />
+                          Edit Skills
+                        </Button>
+                      )}
+                    </CardHeader>
+
+                    {/* TECHNICAL SKILLS */}
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium">Technical Skills</Label>
+                          <div className="flex flex-col gap-2 mt-2">
+                            {skillsEdit ? (
+                              editedSkills.technicalSkills.map((skill, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <Input
+                                    value={skill}
+                                    className="w-40"
+                                    onChange={(e) => {
+                                      const newSkills = [...editedSkills.technicalSkills]
+                                      newSkills[index] = e.target.value
+                                      setEditedSkills({ ...editedSkills, technicalSkills: newSkills })
+                                    }}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      const updated = editedSkills.technicalSkills.filter((_, i) => i !== index)
+                                      setEditedSkills({ ...editedSkills, technicalSkills: updated })
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {profile.technicalSkills.map((skill, index) => (
+                                  <Badge key={index} variant="secondary">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Add Button */}
+                            {skillsEdit && (
+                              <Button
+                                onClick={() =>
+                                  setEditedSkills({
+                                    ...editedSkills,
+                                    technicalSkills: [...editedSkills.technicalSkills, ""],
+                                  })
+                                }
+                                variant="outline"
+                              >
+                                + Add Technical Skill
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+
+                    <Separator />
+
+                    {/* SOFT SKILLS */}
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium">Soft Skills</Label>
+                          <div className="flex flex-col gap-2 mt-2">
+                            {skillsEdit ? (
+                              editedSkills.softSkills.map((skill, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <Input
+                                    value={skill}
+                                    className="w-40"
+                                    onChange={(e) => {
+                                      const newSkills = [...editedSkills.softSkills]
+                                      newSkills[index] = e.target.value
+                                      setEditedSkills({ ...editedSkills, softSkills: newSkills })
+                                    }}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      const updated = editedSkills.softSkills.filter((_, i) => i !== index)
+                                      setEditedSkills({ ...editedSkills, softSkills: updated })
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {profile.softSkills.map((skill, index) => (
+                                  <Badge key={index} variant="secondary">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Add Button */}
+                            {skillsEdit && (
+                              <Button
+                                onClick={() =>
+                                  setEditedSkills({
+                                    ...editedSkills,
+                                    softSkills: [...editedSkills.softSkills, ""],
+                                  })
+                                }
+                                variant="outline"
+                              >
+                                + Add Soft Skill
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="flex-1 flex flex-col">
+                  <div className="flex-1 flex flex-col">
+                    {/* Course Preferences */}
+                    <Card className="h-full flex flex-col">
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Course Preferences</CardTitle>
+                        <div className="flex gap-2 mt-2">
+                          {isEditingCourses ? (
+                            <>
+                              <Button
+                                onClick={() => {
+                                  const hasEmptyCoursePreference = coursePreference.some(coursePreference => coursePreference.trim() === "")
+
+                                  if (hasEmptyCoursePreference) {
+                                    alert("Each course preference must contain text.")
+                                    return
+                                  }
+                                  setIsEditingCourses(false)
+                                }}
+                                className="gap-2"
+                              >
+                                <Save className="h-4 w-4" />
+                                Save
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setIsEditingCourses(false)
+                                  setCoursePreference(profile.coursePreference) // Reset to original
+                                }}
+                                variant="outline"
+                                className="gap-2"
+                              >
+                                <X className="h-4 w-4" />
+                                Cancel
+                              </Button>
+                            </>
+                          ) : (
+                            <Button onClick={() => setIsEditingCourses(true)} className="gap-2">
+                              <Edit className="h-4 w-4" />
+                              Edit Preferences
+                            </Button>
+                          )}
+                        </div>
+                      </CardHeader>
+
+                      <CardContent>
+                        {isEditingCourses ? (
+                          <div className="space-y-4">
+                            {coursePreference.map((course, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <Input
+                                  value={course}
+                                  onChange={(e) => {
+                                    const updated = [...coursePreference]
+                                    updated[index] = e.target.value
+                                    setCoursePreference(updated)
+                                  }}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const updated = coursePreference.filter((_, i) => i !== index)
+                                    setCoursePreference(updated)
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              onClick={() => setCoursePreference([...coursePreference, ""])}
+                              variant="outline"
+                            >
+                              + Add Course
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {coursePreference.map((course, index) => (
+                              <Badge key={index} variant="secondary">
+                                {course}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              {/* Availability Calendar */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Availability</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    {isEditingAvailability ? (
+                      <>
+                        <Button onClick={() => setIsEditingAvailability(false)} className="gap-2">
                           <Save className="h-4 w-4" />
                           Save
                         </Button>
                         <Button
-                          size="sm"
-                          variant="outline"
                           onClick={() => {
-                            setEditedSkills({
-                              technicalSkills: [...profile.technicalSkills],
-                              softSkills: [...profile.softSkills],
-                            })
-                            setSkillsEdit(false)
+                            setIsEditingAvailability(false)
+                            setAvailabilityData([]) // or reset to original data if available
                           }}
+                          variant="outline"
+                          className="gap-2"
                         >
+                          <X className="h-4 w-4" />
                           Cancel
                         </Button>
-                      </div>
+                      </>
                     ) : (
-                      <Button size="sm" onClick={() => setSkillsEdit(true)}>
-                        Edit Skills
+                      <Button onClick={() => setIsEditingAvailability(true)} className="gap-2">
+                        <Edit className="h-4 w-4" />
+                        Edit Availability
                       </Button>
                     )}
-                  </CardHeader>
-
-                  {/* TECHNICAL SKILLS */}
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium">Technical Skills</Label>
-                        <div className="flex flex-col gap-2 mt-2">
-                          {skillsEdit ? (
-                            editedSkills.technicalSkills.map((skill, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <Input
-                                  value={skill}
-                                  className="w-40"
-                                  onChange={(e) => {
-                                    const newSkills = [...editedSkills.technicalSkills]
-                                    newSkills[index] = e.target.value
-                                    setEditedSkills({ ...editedSkills, technicalSkills: newSkills })
-                                  }}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const updated = editedSkills.technicalSkills.filter((_, i) => i !== index)
-                                    setEditedSkills({ ...editedSkills, technicalSkills: updated })
-                                  }}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="flex flex-wrap gap-2">
-                              {profile.technicalSkills.map((skill, index) => (
-                                <Badge key={index} variant="secondary">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Add Button */}
-                          {skillsEdit && (
-                            <Button
-                              onClick={() =>
-                                setEditedSkills({
-                                  ...editedSkills,
-                                  technicalSkills: [...editedSkills.technicalSkills, ""],
-                                })
-                              }
-                              variant="outline"
-                            >
-                              + Add Technical Skill
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-
-                  <Separator />
-
-                  {/* SOFT SKILLS */}
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium">Soft Skills</Label>
-                        <div className="flex flex-col gap-2 mt-2">
-                          {skillsEdit ? (
-                            editedSkills.softSkills.map((skill, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <Input
-                                  value={skill}
-                                  className="w-40"
-                                  onChange={(e) => {
-                                    const newSkills = [...editedSkills.softSkills]
-                                    newSkills[index] = e.target.value
-                                    setEditedSkills({ ...editedSkills, softSkills: newSkills })
-                                  }}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const updated = editedSkills.softSkills.filter((_, i) => i !== index)
-                                    setEditedSkills({ ...editedSkills, softSkills: updated })
-                                  }}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="flex flex-wrap gap-2">
-                              {profile.softSkills.map((skill, index) => (
-                                <Badge key={index} variant="secondary">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Add Button */}
-                          {skillsEdit && (
-                            <Button
-                              onClick={() =>
-                                setEditedSkills({
-                                  ...editedSkills,
-                                  softSkills: [...editedSkills.softSkills, ""],
-                                })
-                              }
-                              variant="outline"
-                            >
-                              + Add Soft Skill
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-
-
-                {/* Course Preferences */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Course Preferences</CardTitle>
-                    <div className="flex gap-2 mt-2">
-                      {isEditingCourses ? (
-                        <>
-                          <Button
-                            onClick={() => {
-                              const hasEmptyCoursePreference = coursePreference.some(coursePreference => coursePreference.trim() === "")
-
-                              if (hasEmptyCoursePreference) {
-                                alert("Each course preference must contain text.")
-                                return
-                              }
-                              setIsEditingCourses(false)
-                            }}
-                            className="gap-2"
-                          >
-                            <Save className="h-4 w-4" />
-                            Save
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setIsEditingCourses(false)
-                              setCoursePreference(profile.coursePreference) // Reset to original
-                            }}
-                            variant="outline"
-                            className="gap-2"
-                          >
-                            <X className="h-4 w-4" />
-                            Cancel
-                          </Button>
-                        </>
-                      ) : (
-                        <Button onClick={() => setIsEditingCourses(true)} className="gap-2">
-                          <Edit className="h-4 w-4" />
-                          Edit Preferences
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent>
-                    {isEditingCourses ? (
-                      <div className="space-y-4">
-                        {coursePreference.map((course, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Input
-                              value={course}
-                              onChange={(e) => {
-                                const updated = [...coursePreference]
-                                updated[index] = e.target.value
-                                setCoursePreference(updated)
-                              }}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                const updated = coursePreference.filter((_, i) => i !== index)
-                                setCoursePreference(updated)
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          onClick={() => setCoursePreference([...coursePreference, ""])}
-                          variant="outline"
-                        >
-                          + Add Course
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {coursePreference.map((course, index) => (
-                          <Badge key={index} variant="secondary">
-                            {course}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-              </div>
-
-              <div>
-                {/* Availability Calendar */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Availability</CardTitle>
-                    <div className="flex gap-2 mt-2">
-                      {isEditingAvailability ? (
-                        <>
-                          <Button onClick={() => setIsEditingAvailability(false)} className="gap-2">
-                            <Save className="h-4 w-4" />
-                            Save
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setIsEditingAvailability(false)
-                              setAvailabilityData([]) // or reset to original data if available
-                            }}
-                            variant="outline"
-                            className="gap-2"
-                          >
-                            <X className="h-4 w-4" />
-                            Cancel
-                          </Button>
-                        </>
-                      ) : (
-                        <Button onClick={() => setIsEditingAvailability(true)} className="gap-2">
-                          <Edit className="h-4 w-4" />
-                          Edit Availability
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <WeeklyAvailabilityCalendar
-                      editable={isEditingAvailability}
-                      availability={availabilityData}
-                      setAvailability={setAvailabilityData}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <WeeklyAvailabilityCalendar
+                    editable={isEditingAvailability}
+                    availability={availabilityData}
+                    setAvailability={setAvailabilityData}
+                  />
+                </CardContent>
+              </Card>
             </div>
           </main>
         </div>
