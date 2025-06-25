@@ -66,14 +66,22 @@ const WeeklyAvailabilityCalendar = ({
                       <div
                         data-testid={`slot-${day}-${hourNum}-top`}
                         className={`h-5 cursor-pointer ${
-                          isSelected(day, hourNum, "top") ? "bg-blue-400" : "hover:bg-blue-100"
+                          isSelected(day, hourNum, "top") 
+                          ? "bg-blue-400" 
+                          : editable
+                          ? "hover:bg-blue-100"
+                          : ""
                         } border-b`}
                         onClick={() => editable && toggleSlot(day, hourNum, "top")}
                       />
                       <div
                         data-testid={`slot-${day}-${hourNum}-bottom`}
                         className={`h-5 cursor-pointer ${
-                          isSelected(day, hourNum, "bottom") ? "bg-blue-400" : "hover:bg-blue-100"
+                          isSelected(day, hourNum, "bottom") 
+                          ? "bg-blue-400" 
+                          : editable
+                          ? "hover:bg-blue-100"
+                          : ""
                         }`}
                         onClick={() => editable && toggleSlot(day, hourNum, "bottom")}
                       />
