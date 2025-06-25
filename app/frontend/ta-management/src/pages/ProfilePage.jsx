@@ -851,10 +851,10 @@ export default function ProfilePage() {
 
 
 
-                {/* Course Preference */}
+                {/* Course Preferences */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Course Preference</CardTitle>
+                    <CardTitle>Course Preferences</CardTitle>
                     <div className="flex gap-2 mt-2">
                       {isEditingCourses ? (
                         <>
