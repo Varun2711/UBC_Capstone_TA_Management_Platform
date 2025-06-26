@@ -534,7 +534,7 @@ export default function ProfilePage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Past TA Experiences</CardTitle>
+                  <CardTitle>Past TA Experience</CardTitle>
                 </div>
                 {isEditingExperience ? (
                   <div className="flex gap-2">
@@ -1006,7 +1006,9 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <p>
-                    Please select your available time slots in a week for the TA position.<br/><br/>
+                    Please indicate your general weekly availability below. Blue boxes 
+                    represent times that you are available for TA work, and white boxes 
+                    represent times that you are not.<br/><br/>
                   </p>
                   <WeeklyAvailabilityCalendar
                     editable={isEditingAvailability}
