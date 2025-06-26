@@ -30,11 +30,20 @@ export default function LoginPage() {
       const response = await login(email, password)
       localStorage.setItem('accessToken', response.access)
       localStorage.setItem('refreshToken', response.refresh)
-      console.log("user_type: " + response.user_type) // for testing, todo: delete
 
-      // todo navigate to particular dashboard depending on user_type
-      navigate("/student-dashboard")
-      console.log("Login form submitted")
+      const user_type = response.user_type
+
+      // navigate to particular dashboard depending on user_type
+      if(user_type == "student") {
+        navigate("/student-dashboard")
+      } else if(user_type == "instructor") {
+        navigate("/instructordashboard") // broken for now because this page does not exist yet
+      } else if(user_type == "scheduler") {
+        navigate("/tadashboard")
+      } else {
+        // admin
+      }
+
     } catch (error) {
       // if anything goes wrong with login, set the error state (this is used in the return to conditionally display error text)
       setLoginError("Login Failed. You have entered an invalid email address or password. Please try again.")
