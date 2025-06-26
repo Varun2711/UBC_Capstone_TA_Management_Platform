@@ -19,7 +19,7 @@ class Student(models.Model):
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    faculty = models.IntegerField() 
+    faculty_id = models.IntegerField() 
     email = models.EmailField()
     password = models.CharField(max_length=255)
 
@@ -31,7 +31,7 @@ class TAScheduler(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=100)
-    department = models.IntegerField() 
+    department_id = models.IntegerField() 
     password = models.CharField(max_length=255)
 
     class Meta:
