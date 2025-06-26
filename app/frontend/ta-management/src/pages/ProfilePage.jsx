@@ -19,6 +19,8 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -54,6 +56,7 @@ const studentProfile = {
   email: "sarah.johnson@university.edu",
   studentId: "20240012",
   UBCEmployeeId: "82342316",
+  password: "password123",
   major: "Computer Science",
   minor: "Data Science",
   year: "Graduate Student",
@@ -114,6 +117,9 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [profile, setProfile] = useState(studentProfile)
 
+  const [editedProfile, setEditedProfile] = useState({ ...studentProfile })
+
+
   // State for skills editing
   const [skillsEdit, setSkillsEdit] = useState(false)
   const [editedSkills, setEditedSkills] = useState({
@@ -143,11 +149,16 @@ export default function ProfilePage() {
   const [isEditingCourses, setIsEditingCourses] = useState(false)
   const [coursePreference, setCoursePreference] = useState(profile.coursePreference)
 
+  // State for password visibility
+  const [showPassword, setShowPassword] = useState(false)
+
+
   const handleSave = (profileData) => {
   const {
     name,
     studentId,
     UBCEmployeeId,
+    password,
     email,
     major,
     year,
@@ -161,6 +172,7 @@ export default function ProfilePage() {
     !email.trim() ||
     !major.trim() ||
     !year.trim() ||
+    !password.trim() ||
     !academicInfo.expectedGraduation.trim() ||
     !academicInfo.degreeStart.trim() ||
     !academicInfo.yearStanding.trim()
@@ -173,8 +185,8 @@ export default function ProfilePage() {
 }
 
 
-  const handleCancel = () => {
-    setProfile(studentProfile) // Reset to original data
+  const handleCancel = (profileData) => {
+    setProfile(profileData) // Reset to original data
     setIsEditing(false)
   }
 
@@ -214,22 +226,32 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <Button 
                     onClick={() => {
-                      const isValid = handleSave(profile) // ✅ validate the latest state
+                      const isValid = handleSave(editedProfile) // ✅ validate the latest state
                       if (!isValid) return
 
+                      setProfile(editedProfile) // ✅ update profile with validated data
                       setIsEditing(false) // ✅ only close edit mode if validation passed
                     }}
                     className="gap-2">
                       <Save className="h-4 w-4" />
                       Save
                     </Button>
-                    <Button onClick={handleCancel} variant="outline" className="gap-2">
+                    <Button onClick={ 
+                      () => handleCancel(profile)} 
+                      variant="outline" className="gap-2">
                       <X className="h-4 w-4" />
                       Cancel
                     </Button>
                   </div>
                 ) : (
-                  <Button onClick={() => setIsEditing(true)} className="gap-2">
+                  <Button onClick={
+                    () => {
+                      setEditedProfile({ ...profile }) // deep copy of profile
+                      setIsEditing(true)
+                      }
+                    }
+                    className="gap-2"
+                  >
                     <Edit className="h-4 w-4" />
                     Edit Personal Information
                   </Button>
@@ -258,8 +280,8 @@ export default function ProfilePage() {
                       {isEditing ? (
                         <Input
                           id="name"
-                          value={profile.name}
-                          onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                          value={editedProfile.name}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
                         />
                       ) : (
                         <p className="text-sm">{profile.name}</p>
@@ -270,8 +292,8 @@ export default function ProfilePage() {
                       {isEditing ? (
                         <Input
                           id="studentId"
-                          value={profile.studentId}
-                          onChange={(e) => setProfile({ ...profile, studentId: e.target.value })}
+                          value={editedProfile.studentId}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, studentId: e.target.value })}
                         />
                       ) : (
                         <p className="text-sm">{profile.studentId}</p>
@@ -282,11 +304,40 @@ export default function ProfilePage() {
                       {isEditing ? (
                         <Input
                           id="UBCEmployeeId"
-                          value={profile.UBCEmployeeId}
-                          onChange={(e) => setProfile({ ...profile, UBCEmployeeId: e.target.value })}
+                          value={editedProfile.UBCEmployeeId}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, UBCEmployeeId: e.target.value })}
                         />
                       ) : (
                         <p className="text-sm">{profile.UBCEmployeeId}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">
+                        Password<span className="text-red-500">*</span>
+                      </Label>
+                      {isEditing ? (
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            value={editedProfile.password}
+                            onChange={(e) => setEditedProfile({ ...editedProfile, password: e.target.value })}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm">••••••••</p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -295,8 +346,8 @@ export default function ProfilePage() {
                         <Input
                           id="email"
                           type="email"
-                          value={profile.email}
-                          onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                          value={editedProfile.email}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
                         />
                       ) : (
                         <p className="text-sm">{profile.email}</p>
@@ -307,8 +358,8 @@ export default function ProfilePage() {
                       {isEditing ? (
                         <Input
                           id="phone"
-                          value={profile.phone}
-                          onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                          value={editedProfile.phone}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, phone: e.target.value })}
                         />
                       ) : (
                         <p className="text-sm">{profile.phone}</p>
