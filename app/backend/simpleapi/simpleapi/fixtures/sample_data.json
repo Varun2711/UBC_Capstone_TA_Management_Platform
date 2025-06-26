@@ -97,9 +97,10 @@
   "pk": 1,
   "fields": {
     "employee_number": "E002",
-    "name": "Bob Smith",
-    "email": "bmsmith@ubco.com",
-    "department": 2
+    "name": "John Cena",
+    "email": "cena@wwe.com",
+    "department": 8,
+    "password": "pbkdf2_sha256$1000000$I41R0RJq8cNbJ5QlEFQZcG$D9B76WNN4BnTtCCfgCFaDfvLW8IvDzIZL2ZHWQLC2A8="
   }
 },
 {
@@ -109,7 +110,8 @@
     "employee_number": "E004",
     "name": "Annie Smith",
     "email": "ansmith@ubco.com",
-    "department": 2
+    "department": 2,
+    "password": "pbkdf2_sha256$1000000$I41R0RJq8cNbJ5QlEFQZcG$D9B76WNN4BnTtCCfgCFaDfvLW8IvDzIZL2ZHWQLC2A8="
   }
 },
 {
@@ -117,9 +119,10 @@
   "pk": 1,
   "fields": {
     "employee_number": "E101",
-    "name": "Dr Charlie Brown",
+    "name": "Dr. Severus Snape",
     "faculty": 1,
-    "email": "cbrown@ubco.com"
+    "email": "snape@hogwarts.edu",
+    "password": "pbkdf2_sha256$1000000$I41R0RJq8cNbJ5QlEFQZcG$D9B76WNN4BnTtCCfgCFaDfvLW8IvDzIZL2ZHWQLC2A8="
   }
 },
 {
@@ -127,9 +130,10 @@
   "pk": 2,
   "fields": {
     "employee_number": "E102",
-    "name": "Dr. Mary White",
-    "faculty": 1,
-    "email": "mwhite@ubco.com"
+    "name": "Dr. Walter White",
+    "faculty": 2,
+    "email": "wwhite@ubco.com",
+    "password": "pbkdf2_sha256$1000000$I41R0RJq8cNbJ5QlEFQZcG$D9B76WNN4BnTtCCfgCFaDfvLW8IvDzIZL2ZHWQLC2A8="
   }
 },
 {
@@ -137,15 +141,15 @@
   "pk": 1,
   "fields": {
     "student_number": "11112222",
-    "name": "Alice Smith",
+    "name": "Violet Sorrengail",
     "phone": null,
     "program": "Computer Science",
     "year_standing": 3,
     "study_level": "Undergraduate",
     "department": 2,
     "sin": null,
-    "password": "password123",
-    "email": "asmith@capstone.ca"
+    "password": "pbkdf2_sha256$1000000$I41R0RJq8cNbJ5QlEFQZcG$D9B76WNN4BnTtCCfgCFaDfvLW8IvDzIZL2ZHWQLC2A8=",
+    "email": "violet@basgiath.edu"
   }
 },
 {
@@ -153,15 +157,15 @@
   "pk": 2,
   "fields": {
     "student_number": "44332211",
-    "name": "Bob Brown",
+    "name": "Ellie Williams",
     "phone": null,
     "program": "Physics",
     "year_standing": 2,
     "study_level": "Undergraduate",
     "department": 2,
     "sin": null,
-    "password": "password123",
-    "email": "bbrown@capstone.ca"
+    "password": "pbkdf2_sha256$1000000$I41R0RJq8cNbJ5QlEFQZcG$D9B76WNN4BnTtCCfgCFaDfvLW8IvDzIZL2ZHWQLC2A8=",
+    "email": "ellie@capstone.ca"
   }
 },
 {
@@ -169,15 +173,15 @@
   "pk": 3,
   "fields": {
     "student_number": "87654321",
-    "name": "Jane Johnson",
+    "name": "Percy Jackson",
     "phone": null,
     "program": "Mathematics",
     "year_standing": null,
     "study_level": "Graduate",
     "department": 2,
     "sin": null,
-    "password": "password123",
-    "email": "jjohnson@capstone.ca"
+    "password": "pbkdf2_sha256$1000000$I41R0RJq8cNbJ5QlEFQZcG$D9B76WNN4BnTtCCfgCFaDfvLW8IvDzIZL2ZHWQLC2A8=",
+    "email": "percy@camphalfblood.edu"
   }
 },
 {
