@@ -88,7 +88,7 @@ describe("InstructorDashboard", () => {
     renderInstructorDashboard()
 
     // Fill out the request form
-    const courseSelect = screen.getByLabelText(/Select the course you want to request/i)
+    const courseSelect = screen.getByLabelText(/Select the course you wish to specify preferred qualifications for:/i)
     const requestInput = screen.getByLabelText(/Enter your request/i)
     const submitButton = screen.getByRole("button", { name: /submit/i })
 
@@ -98,7 +98,7 @@ describe("InstructorDashboard", () => {
     await user.click(submitButton)
 
     // Should show success message
-    expect(alertSpy).toHaveBeenCalledWith("Request submitted successfully!")
+    expect(alertSpy).toHaveBeenCalledWith("TA qualification preferences submitted successfully!")
 
     // Form should be cleared
     expect(courseSelect).toHaveValue("")
@@ -115,7 +115,7 @@ describe("InstructorDashboard", () => {
     await user.click(submitButton)
 
     // Form validation should prevent submission
-    const courseSelect = screen.getByLabelText(/Select the course you want to request/i)
+    const courseSelect = screen.getByLabelText(/Select the course you wish to specify preferred qualifications for/i)
     const requestInput = screen.getByLabelText(/Enter your request/i)
 
     expect(courseSelect).toHaveAttribute("required")
@@ -189,11 +189,11 @@ describe("InstructorDashboard", () => {
     renderInstructorDashboard()
 
     // Check form labels
-    expect(screen.getByLabelText(/Select the course you want to request/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Select the course you wish to specify preferred qualifications for/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/Enter your request/i)).toBeInTheDocument()
 
     // Check required fields
-    const courseSelect = screen.getByLabelText(/Select the course you want to request/i)
+    const courseSelect = screen.getByLabelText(/Select the course you wish to specify preferred qualifications for/i)
     const requestInput = screen.getByLabelText(/Enter your request/i)
 
     expect(courseSelect).toHaveAttribute("required")
