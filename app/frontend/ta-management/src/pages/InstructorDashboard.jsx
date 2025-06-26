@@ -109,10 +109,10 @@ export default function InstructorDashboard() {
 
   const handleRequestSubmit = (e) => {
     e.preventDefault()
-    console.log("Request submitted:", { course: selectedRequestCourse, item: requestItem })
+    console.log("TA qualifications request submitted:", { course: selectedRequestCourse, qualifications: requestItem })
     setRequestItem("")
     setSelectedRequestCourse("")
-    alert("Request submitted successfully!")
+    alert("TA qualification preferences submitted successfully!")
   }
 
   const stats = [
@@ -238,14 +238,14 @@ export default function InstructorDashboard() {
               {/* Request Course Specific Items */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Request Course Specific Items</CardTitle>
-                  <CardDescription>Submit requests for course-specific resources or information</CardDescription>
+                  <CardTitle>Request TA Preferred Qualifications</CardTitle>
+                  <CardDescription>Submit a request for course-specific preferred qualifications</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleRequestSubmit} className="space-y-4">
                     <div>
                       <Label htmlFor="course-select" className="text-sm font-medium">
-                        Select the course you want to request specific info on: *
+                        Select the course you wish to specify preferred qualifications for: *
                       </Label>
                       <select
                         id="course-select"
@@ -273,7 +273,7 @@ export default function InstructorDashboard() {
                         value={requestItem}
                         onChange={(e) => setRequestItem(e.target.value)}
                         className="mt-1"
-                        placeholder="Enter your request details..."
+                        placeholder="e.g., Experience with Unity, JavaScript proficiency, etc."
                         required
                       />
                     </div>
