@@ -3,7 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import MockDashboard from "./pages/MockDashboard";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
-
+import Application from "./pages/Application";
 import StudentDashboard from "./pages/Student_Dashboard";
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
@@ -34,14 +34,13 @@ function App() {
       });
   }, []);
 
-
   return (
     // React Router setup, commented out for now
     // Initial test to check router functionlity below
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/TAdashboard" element={< TASchedulerDashboard/>} />
+      <Route path="/TAdashboard" element={<TASchedulerDashboard />} />
       <Route path="/MockDashboard" element={<MockDashboard />} />
       <Route path="/create-account/step1" element={<CreateAccount1 />} />
       <Route path="/create-account/step2" element={<CreateAccount2 />} />
@@ -50,6 +49,8 @@ function App() {
       <Route path="/student-dashboard" element={<StudentDashboard />} />
       <Route path="/user-profile-scheduler" element={<UserProfile />} />
       <Route path="/instructor-dashboard" element={<InstructorDashboard/>} />
+      <Route path="/application" element={<Application />} />
+
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />
