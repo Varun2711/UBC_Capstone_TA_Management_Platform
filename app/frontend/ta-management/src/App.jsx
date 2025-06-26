@@ -4,8 +4,10 @@ import LoginPage from "./pages/LoginPage";
 import MockDashboard from "./pages/MockDashboard";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
 import Application from "./pages/Application";
-
 import StudentDashboard from "./pages/Student_Dashboard";
+import ProfilePage from "./pages/ProfilePage";
+
+
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -47,6 +49,7 @@ function App() {
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/student-dashboard" element={<StudentDashboard />} />
+      <Route path="/profile" element={<ProfilePage />} />
       <Route path="/user-profile-scheduler" element={<UserProfile />} />
       <Route path="/application" element={<Application />} />
       {/* Add more routes if needed */}
