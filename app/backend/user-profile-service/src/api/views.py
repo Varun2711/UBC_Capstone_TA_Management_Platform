@@ -8,15 +8,30 @@ from django.contrib.auth.models import User
 from utils.permissions import admin_required, IsAdminUser
 from django.utils.decorators import method_decorator
 from utils.password_utils import generate_secure_password
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
 from .serializers import (StudentSerializer, InstructorSerializer, TASchedulerSerializer, AdminSerializer, StudentProfileSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
-                          StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer)
+                          StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, FacultySerializer)
 
 from utils.profile_utils import get_user_by_id, get_user_by_email
 from utils.response_utils import success_response, error_response
 from utils.logging_utils import log_user_activity
 
+
+class FacultyListView(generics.ListAPIView):
+    """
+    Endpoint to list all available faculties - no authentication required
+    """
+    queryset = Faculty.objects.all()
+    serializer_class = FacultySerializer
+    permission_classes = [AllowAny]
+    
+    def get(self, request, *args, **kwargs):
+        faculties = Faculty.objects.all()
+        serializer = FacultySerializer(faculties, many=True)
+        return Response(serializer.data)
+    
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
@@ -419,7 +434,8 @@ def find_user(request):
 class CreateInstructorView(generics.CreateAPIView):
     serializer_class = CreateInstructorSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
-    
+    authentication_classes = [JWTAuthentication]  # Add this line
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -439,6 +455,7 @@ class CreateInstructorView(generics.CreateAPIView):
                     )
                 
                 # Get faculty object
+                print(f"DEBUG: Looking for faculty: {serializer.validated_data['faculty']}")
                 faculty = Faculty.objects.get(name__iexact=serializer.validated_data['faculty'])
                 
                 # Generate secure temporary password
@@ -487,6 +504,8 @@ class CreateInstructorView(generics.CreateAPIView):
 class CreateSchedulerView(generics.CreateAPIView):
     serializer_class = CreateSchedulerSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [JWTAuthentication]  # Add this line
+    
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -554,6 +573,7 @@ class CreateSchedulerView(generics.CreateAPIView):
 @method_decorator(admin_required, name='dispatch')
 class UserManagementView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [JWTAuthentication]  # Add this line
     
     def patch(self, request):
         action = request.data.get('action')

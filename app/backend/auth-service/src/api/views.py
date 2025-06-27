@@ -80,18 +80,38 @@ def login_view(request):
         # Generate refresh token
         refresh = RefreshToken.for_user(django_user)
 
-        refresh["user_id"] = user_id
+        #refresh["user_id"] = user_id
         refresh["user_type"] = user_type
         refresh["email"] = email
         refresh["name"] = user.name
 
+        # Add custom ID as separate field based on user type
+        if user_type == 'admin':
+            refresh["admin_id"] = user_id
+        elif user_type == 'student':
+            refresh["student_id"] = user_id
+        elif user_type == 'instructor':
+            refresh["instructor_id"] = user_id
+        elif user_type == 'scheduler':
+            refresh["scheduler_id"] = user_id
+
         # Generate access token
         access = refresh.access_token
 
-        access["user_id"] = user_id
+        #access["user_id"] = user_id
         access["user_type"] = user_type
         access["email"] = email
         access["name"] = user.name
+
+        # Add custom ID as separate field
+        if user_type == 'admin':
+            access["admin_id"] = user_id
+        elif user_type == 'student':
+            access["student_id"] = user_id
+        elif user_type == 'instructor':
+            access["instructor_id"] = user_id
+        elif user_type == 'scheduler':
+            access["scheduler_id"] = user_id
 
         response_data = {"access": str(access),
                          "refresh": str(refresh),
