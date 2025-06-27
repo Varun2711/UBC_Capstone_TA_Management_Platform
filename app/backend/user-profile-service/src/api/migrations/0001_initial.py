@@ -27,6 +27,33 @@ def remove_faculties(apps, schema_editor):
     Faculty = apps.get_model('api', 'Faculty')
     Faculty.objects.all().delete()
 
+def create_departments(apps, schema_editor):
+    Faculty = apps.get_model('api', 'Faculty')
+    Department = apps.get_model('api', 'Department')
+
+    # Get or create faculties first
+    faculty_map = {
+        'Astronomy': Faculty.objects.get_or_create(name='Astronomy')[0],
+        'Mathematics': Faculty.objects.get_or_create(name='Mathematics')[0],
+        'Physics': Faculty.objects.get_or_create(name='Physics')[0],
+        'Data Science': Faculty.objects.get_or_create(name='Data Science')[0],
+        'Statistics': Faculty.objects.get_or_create(name='Statistics')[0],
+        'Computer Science': Faculty.objects.get_or_create(name='Computer Science')[0],
+    }
+
+    Department.objects.bulk_create([
+        Department(name='Astronomy', faculty=faculty_map['Astronomy']),
+        Department(name='Mathematics', faculty=faculty_map['Mathematics']),
+        Department(name='Physics', faculty=faculty_map['Physics']),
+        Department(name='Data Science', faculty=faculty_map['Data Science']),
+        Department(name='Statistics', faculty=faculty_map['Statistics']),
+        Department(name='Computer Science', faculty=faculty_map['Computer Science']),
+    ])
+
+def remove_departments(apps, schema_editor):
+    Department = apps.get_model('api', 'Department')
+    Department.objects.all().delete()
+
 class Migration(migrations.Migration):
 
     initial = True
@@ -215,6 +242,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.RunPython(add_faculties, remove_faculties),
+        migrations.RunPython(create_departments, remove_departments),
     ]
     
 

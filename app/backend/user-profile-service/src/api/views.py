@@ -456,7 +456,22 @@ class CreateInstructorView(generics.CreateAPIView):
                 
                 # Get faculty object
                 print(f"DEBUG: Looking for faculty: {serializer.validated_data['faculty']}")
-                faculty = Faculty.objects.get(name__iexact=serializer.validated_data['faculty'])
+                faculty_code = serializer.validated_data['faculty']
+                faculty_name_map = {
+                    'astr': 'Astronomy',
+                    'math': 'Mathematics',
+                    'phy': 'Physics',
+                    'data': 'Data Science',
+                    'stat': 'Statistics',
+                    'cosc': 'Computer Science'
+                }
+                faculty_name = faculty_name_map.get(faculty_code)
+                if not faculty_name:
+                    return Response(
+                        error_response("Invalid faculty code"),
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                faculty = Faculty.objects.get(name__iexact=faculty_name)
                 
                 # Generate secure temporary password
                 temp_password = generate_secure_password()
@@ -526,7 +541,22 @@ class CreateSchedulerView(generics.CreateAPIView):
                     )
                 
                 # Get department object
-                department = Department.objects.get(name__iexact=serializer.validated_data['department'])
+                department_code = serializer.validated_data['department']
+                department_name_map = {
+                    'astr': 'Astronomy',
+                    'math': 'Mathematics',
+                    'phy': 'Physics',
+                    'data': 'Data Science',
+                    'stat': 'Statistics',
+                    'cosc': 'Computer Science'
+                }
+                department_name = department_name_map.get(department_code)
+                if not department_name:
+                    return Response(
+                        error_response("Invalid department code"),
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                department = Department.objects.get(name__iexact=department_name)
                 
                 # Generate secure temporary password
                 temp_password = generate_secure_password()
