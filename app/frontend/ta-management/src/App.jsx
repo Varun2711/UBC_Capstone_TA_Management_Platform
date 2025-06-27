@@ -14,6 +14,7 @@ import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
+import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
 
 function App() {
   // define a message state variable
@@ -52,6 +53,7 @@ function App() {
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/user-profile-scheduler" element={<UserProfile />} />
       <Route path="/application" element={<Application />} />
+      <Route path="/ta-coordinator-allocation" element={<TaCoordinatorAllocationPage />} />
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />
