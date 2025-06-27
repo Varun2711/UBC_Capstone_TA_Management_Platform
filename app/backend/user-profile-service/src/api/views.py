@@ -11,7 +11,7 @@ from utils.password_utils import generate_secure_password
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
-from .serializers import (StudentSerializer, InstructorSerializer, TASchedulerSerializer, AdminSerializer, StudentProfileSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
+from .serializers import (StudentSerializer, InstructorSerializer, TASchedulerSerializer, AdminSerializer, UpdateStudentProfileSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
                           StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, FacultySerializer)
 
 from utils.profile_utils import get_user_by_id, get_user_by_email
@@ -167,7 +167,7 @@ class StudentProfileDetailView(generics.RetrieveUpdateAPIView):
             return self.request.user
     
 class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
-    serializer_class = StudentProfileSerializer
+    serializer_class =  UpdateStudentProfileSerializer
     permission_classes = [IsAuthenticated]
     
     def get_object(self):
@@ -180,9 +180,9 @@ class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
             # Student accessing their own profile
             user = self.request.user
         
-        # Create or get the student profile - FIXED logic flow
-        profile, created = StudentProfile.objects.get_or_create(user=user)
-        return profile
+        # Make sure profile exists
+        StudentProfile.objects.get_or_create(user=user)
+        return user  # <-- Return USER object, not profile
     
 # Student Experience Views - FIXED to use User model consistently
 class StudentTAExperienceListCreateView(generics.ListCreateAPIView):

@@ -51,6 +51,49 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         fields = ['gpa', 'year_degree_start', 'minor', 'ubc_employee_id', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
+class UpdateStudentProfileSerializer(serializers.ModelSerializer):
+    student_profile = StudentProfileSerializer()
+    
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'student_profile']
+    
+    def update(self, instance, validated_data):
+        # Extract nested data
+        profile_data = validated_data.pop('student_profile', None)
+        
+        # Update User fields
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.save()
+        
+        # Update StudentProfile if data provided
+        if profile_data:
+            try:
+                # Try multiple ways to get the profile
+                student_profile = None
+                
+                # Method 1: Direct attribute
+                if hasattr(instance, 'student_profile'):
+                    student_profile = instance.student_profile
+                # Method 2: Related name
+                elif hasattr(instance, 'studentprofile'):
+                    student_profile = instance.studentprofile
+                # Method 3: Query explicitly
+                else:
+                    student_profile = StudentProfile.objects.get(user=instance)
+                
+                # Update the profile fields
+                if student_profile:
+                    for attr, value in profile_data.items():
+                        setattr(student_profile, attr, value)
+                    student_profile.save()
+            except StudentProfile.DoesNotExist:
+                # Create profile if it doesn't exist
+                StudentProfile.objects.create(user=instance, **profile_data)
+        
+        return instance
+
 class StudentExperienceSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentExperience
@@ -108,7 +151,7 @@ class StudentCoursePreferenceSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
-    student_profile = StudentProfileSerializer(read_only=True)
+    student_profile = StudentProfileSerializer()
     experiences = StudentExperienceSerializer(many=True, read_only=True)
     skills = StudentSkillsSerializer(many=True, read_only=True)
     availability = StudentAvailabilitySerializer(read_only=True)
