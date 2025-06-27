@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 
@@ -22,6 +22,23 @@ export default function LoginPage() {
     setShowPassword(!showPassword)
   }
 
+  // useeffect to check for token and redirect user who is already logged in (cannot login again!)
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken')
+    const userType = localStorage.getItem('user_type')
+
+    // if already logged in, send them to correct dashboard based on user type
+    if(token && userType) {
+      if(userType === "student") {
+        navigate("/student-dashboard")
+      } else if(userType === "instructor") {
+        navigate("/instructordashboard")
+      } else if(userType === "scheduler") {
+        navigate("/tadashboard")
+      }
+    }
+  }, [navigate])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -30,15 +47,16 @@ export default function LoginPage() {
       const response = await login(email, password)
       localStorage.setItem('accessToken', response.access)
       localStorage.setItem('refreshToken', response.refresh)
+      localStorage.setItem('user_type', response.user_type)
 
       const user_type = response.user_type
 
       // navigate to particular dashboard depending on user_type
-      if(user_type == "student") {
+      if(user_type === "student") {
         navigate("/student-dashboard")
-      } else if(user_type == "instructor") {
+      } else if(user_type === "instructor") {
         navigate("/instructordashboard") // broken for now because this page does not exist yet
-      } else if(user_type == "scheduler") {
+      } else if(user_type === "scheduler") {
         navigate("/tadashboard")
       } else {
         // admin

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import LoginPage from "../src/pages/LoginPage"
 import axios from "axios"
-import { user_types } from "./test-utils/testUsers"
+import { user_types, USERS } from "./test-utils/testUsers"
 
 // Mocking
 const mockNavigate = vi.fn()
@@ -18,6 +18,10 @@ vi.mock("react-router-dom", async () => {
     useNavigate: () => mockNavigate,
   }
 })
+
+// Constants to mock access tokens
+const ACCESS_TOKEN = "ACCESS_TOKEN"
+const REFERSH_TOKEN = "REFRESH_TOKEN"
 
 // Set up helper fn. that wraps component with MemoryRouter (for testing)
 const renderLoginPage = () => {
@@ -73,17 +77,15 @@ describe("LoginPage", () => {
     expect(passwordInput).toHaveAttribute("required")
   })
 
-  // Valid login by user type
-  
-
+  // Valid login for each user type
   it.each(user_types)(
     "logs in $name with valid credentials and navigates to user-specific dashboard",
-    async ({ name, email, password, expectedRedirect }) => {
+    async ({ name, email, password, dashboardRoute }) => {
       // mock a normal response from /auth
       axios.post.mockResolvedValue({
         data: {
-          access: 'ACCESS_TOKEN',
-          refresh: 'REFRESH_TOKEN',
+          access: ACCESS_TOKEN,
+          refresh: REFERSH_TOKEN,
           user_type: name
         },
       })
@@ -100,16 +102,17 @@ describe("LoginPage", () => {
       await user.click(submitButton)
     
       // check that tokens were stored
-      expect(localStorage.getItem('accessToken')).toBe('ACCESS_TOKEN')
-      expect(localStorage.getItem('refreshToken')).toBe('REFRESH_TOKEN')
+      expect(localStorage.getItem('accessToken')).toBe(ACCESS_TOKEN)
+      expect(localStorage.getItem('refreshToken')).toBe(REFERSH_TOKEN)
 
       // check that navigated to correct dashboard
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith(expectedRedirect)
+        expect(mockNavigate).toHaveBeenCalledWith(dashboardRoute)
       })
     }
   )
 
+  // Bad login credentials
   it("displays error on login with invalid credentials", async () => {
     renderLoginPage()
       const user = userEvent.setup()
@@ -138,4 +141,17 @@ describe("LoginPage", () => {
       expect(localStorage.getItem("refreshToken")).toBeNull();
   })
 
+  // Login persistence
+  it("redirects user to correct dashboard if access token exists in localStorage", async () => {
+    // simulate student already logged in
+    localStorage.setItem("accessToken", ACCESS_TOKEN)
+    localStorage.setItem("user_type", user_types[USERS.student].name)
+
+    renderLoginPage()
+
+    // expect redirect since already logged in
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(user_types[USERS.student].dashboardRoute)
+    })
+  })
 })
