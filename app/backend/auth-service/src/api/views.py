@@ -85,7 +85,7 @@ def login_view(request):
         refresh["email"] = email
         refresh["name"] = user.name
 
-        # Add custom ID as separate field based on user type
+        # Add custom ID as separate field based on user type, this logic is required.
         if user_type == 'admin':
             refresh["admin_id"] = user_id
         elif user_type == 'student':
@@ -103,7 +103,7 @@ def login_view(request):
         access["email"] = email
         access["name"] = user.name
 
-        # Add custom ID as separate field
+        # Add custom ID as separate field, this logic is required.
         if user_type == 'admin':
             access["admin_id"] = user_id
         elif user_type == 'student':
@@ -120,71 +120,6 @@ def login_view(request):
                          "name": user.name}
         
         return Response(TokenSerializer(response_data).data)
-
-        # Try to authenticate based on user_type
-        # todo: delete once i am done with; need to steal the error handling from here
-        # and add to find_user_by_email
-        if user_type == 'student':
-            try:
-                user = Student.objects.get(email=email)
-                if not check_password(password, user.password):
-                    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-                user_id = user.student_number
-            except Student.DoesNotExist:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-                
-        elif user_type == 'instructor':
-            try:
-                user = Instructor.objects.get(email=email)
-                user_id = user.employee_number
-            except Instructor.DoesNotExist:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-                
-        elif user_type == 'scheduler':
-            try:
-                user = TAScheduler.objects.get(email=email)
-                user_id = user.employee_number
-            except TAScheduler.DoesNotExist:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response({'error': 'Invalid user type'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Create or get a Django User for JWT compatibility
-        django_user, created = User.objects.get_or_create(
-            username=email,
-            defaults={
-                'email': email,
-                'first_name': user.name,
-                'is_active': True,
-            }
-        )
-        
-        # Generate standard refresh token
-        refresh = RefreshToken.for_user(django_user)
-        
-        # Add custom claims to BOTH refresh and access tokens
-        refresh['user_id'] = user_id
-        refresh['user_type'] = user_type
-        refresh['email'] = email
-        refresh['name'] = user.name
-        
-        # Get the access token and add the same claims
-        access = refresh.access_token
-        access['user_id'] = user_id
-        access['user_type'] = user_type
-        access['email'] = email
-        access['name'] = user.name
-        
-        response_data = {
-            'access': str(access),
-            'refresh': str(refresh),
-            'user_id': user_id,
-            'user_type': user_type,
-            'name': user.name
-        }
-        
-        return Response(TokenSerializer(response_data).data)
-    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
