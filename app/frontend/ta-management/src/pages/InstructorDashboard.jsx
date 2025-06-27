@@ -200,7 +200,7 @@ export default function InstructorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-6">
-                    The TAs for your courses have not been assigned yet. Please wait, or contact Chad for more details.
+                    The TAs for your courses have not been assigned yet. Please wait, or contact Admin for more details.
                   </p>
 
                   {/* View Assigned Courses */}
