@@ -187,31 +187,31 @@ class AdminAPITest(APITestCase):
         
         return str(access_token)
 
-    # def test_admin_create_instructor(self):
-    #     """Test admin creating instructor"""
-    #     print("DEBUG: Starting admin_create_instructor test")
-    #     token = self._get_admin_token()
-    #     print(f"DEBUG: Admin token generated: {token[:20]}...") # Show first 20 chars of token
-    #     self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-    #     print(f"DEBUG: Set Authorization header: Bearer {token[:20]}...")
+    def test_admin_create_instructor(self):
+        """Test admin creating instructor"""
+        print("DEBUG: Starting admin_create_instructor test")
+        token = self._get_admin_token()
+        print(f"DEBUG: Admin token generated: {token[:20]}...") # Show first 20 chars of token
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+        print(f"DEBUG: Set Authorization header: Bearer {token[:20]}...")
 
-    #     data = {
-    #         'employee_number': 'EMP001',
-    #         'first_name': 'John',
-    #         'last_name': 'Professor',
-    #         'email': 'prof@ubc.ca',
-    #         'faculty': 'cosc'  # Use faculty name directly  
-    #     }
-    #     print(f"DEBUG: Request data: {data}")
+        data = {
+            'employee_number': 'EMP001',
+            'first_name': 'John',
+            'last_name': 'Professor',
+            'email': 'prof@ubc.ca',
+            'faculty': 'cosc'  # Use faculty name directly  
+        }
+        print(f"DEBUG: Request data: {data}")
 
-    #     response = self.client.post('/api/admin/create-instructor/', data, format='json')  # Changed
-    #     print("DEBUG: Sending POST request to /api/admin/create-instructor/")
+        response = self.client.post('/api/admin/create-instructor/', data, format='json')  # Changed
+        print("DEBUG: Sending POST request to /api/admin/create-instructor/")
 
-    #     print(f"DEBUG: Response status code: {response.status_code}")
-    #     print(f"DEBUG: Response content: {response.content}")
-    #     print(f"DEBUG: Response headers: {response.headers}")
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    #     print("DEBUG: Test completed")
+        print(f"DEBUG: Response status code: {response.status_code}")
+        print(f"DEBUG: Response content: {response.content}")
+        print(f"DEBUG: Response headers: {response.headers}")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        print("DEBUG: Test completed")
 
     def test_non_admin_cannot_create_instructor(self):
         """Test that non-admin users cannot create instructors"""
