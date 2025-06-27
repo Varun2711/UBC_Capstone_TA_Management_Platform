@@ -4,12 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import LoginPage from "../src/pages/LoginPage"
 import axios from "axios"
-
-// Test logn credentials for student (todo: probably put these somewhere else as we have more of them)
-const validEmail = "asmith@capstone.ca"
-const validPassword = "password123"
-const invalidEmail = "zendaya@gmail.com"
-const invalidPassword = "cupcake"
+import { user_types } from "./test-utils/testUsers"
 
 // Mocking
 const mockNavigate = vi.fn()
@@ -24,7 +19,7 @@ vi.mock("react-router-dom", async () => {
   }
 })
 
-// Wrap component with MemoryRouter for testing
+// Set up helper fn. that wraps component with MemoryRouter (for testing)
 const renderLoginPage = () => {
   return render(
     <MemoryRouter initialEntries={["/login"]}>
@@ -33,11 +28,14 @@ const renderLoginPage = () => {
   )
 }
 
+// Start of tests
 describe("LoginPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
   })
+
+  // Basic form behavior
 
   it("renders the login form correctly", () => {
     renderLoginPage()
@@ -75,33 +73,30 @@ describe("LoginPage", () => {
     expect(passwordInput).toHaveAttribute("required")
   })
 
-  describe("login with valid credentials", () => {    
-    // todo: add test cases for other user groups once we are able to test them
-    // currently, just tests student
+  // Valid login by user type
+  
 
-    beforeEach(() => {
-      vi.clearAllMocks()
-      localStorage.clear()
-    })
-
-    it("if student account, stores access tokens and navigates to student dashboard", async () => {
-      renderLoginPage()
-      const user = userEvent.setup()
-
+  it.each(user_types)(
+    "logs in $name with valid credentials and navigates to user-specific dashboard",
+    async ({ name, email, password, expectedRedirect }) => {
       // mock a normal response from /auth
       axios.post.mockResolvedValue({
         data: {
           access: 'ACCESS_TOKEN',
           refresh: 'REFRESH_TOKEN',
+          user_type: name
         },
       })
       
+      renderLoginPage()
+      const user = userEvent.setup()
+
       const emailInput = screen.getByLabelText(/email address/i)
       const passwordInput = screen.getByLabelText(/password/i)
       const submitButton = screen.getByRole("button", { name: /login/i })
 
-      await user.type(emailInput, validEmail)
-      await user.type(passwordInput, validPassword)
+      await user.type(emailInput, email)
+      await user.type(passwordInput, password)
       await user.click(submitButton)
     
       // check that tokens were stored
@@ -109,14 +104,14 @@ describe("LoginPage", () => {
       expect(localStorage.getItem('refreshToken')).toBe('REFRESH_TOKEN')
 
       // check that navigated to correct dashboard
-      expect(mockNavigate).toHaveBeenCalledWith("/student-dashboard")
-    })
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(expectedRedirect)
+      })
+    }
+  )
 
-  })
-
-  describe("login with invalid credentials", () => {
-    it("displays an error message and does not store access tokens", async () => {
-      renderLoginPage()
+  it("displays error on login with invalid credentials", async () => {
+    renderLoginPage()
       const user = userEvent.setup()
       
       // mock an error response from /auth
@@ -131,16 +126,16 @@ describe("LoginPage", () => {
       const passwordInput = screen.getByLabelText(/password/i)
       const submitButton = screen.getByRole("button", { name: /login/i })
 
-      await user.type(emailInput, invalidEmail)
-      await user.type(passwordInput, invalidPassword)
+      await user.type(emailInput, "notanemail@gmail.com")
+      await user.type(passwordInput, "unicorn")
       await user.click(submitButton)
 
       // check for error message
       expect(screen.getByRole("alert")).toHaveTextContent(/login failed/i);
 
-      // check that does not have access tokens
+      // check that does NOT have access tokens
       expect(localStorage.getItem("accessToken")).toBeNull();
       expect(localStorage.getItem("refreshToken")).toBeNull();
-    })
   })
+
 })
