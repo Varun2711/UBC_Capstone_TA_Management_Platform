@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { CourseCard } from '@/components/scheduler/course_management/course-card';
-import { BookOpen, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ vi.mock('lucide-react', () => ({
   MoreHorizontal: () => <svg data-testid="more-horizontal-icon" />,
   Edit: () => <svg data-testid="edit-icon" />,
   Trash2: () => <svg data-testid="trash-icon" />,
+  Plus: () => <svg data-testid="plus-icon" />,
 }));
 
 // Mock TermSection component

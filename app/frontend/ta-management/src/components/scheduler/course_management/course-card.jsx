@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { BookOpen, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2 , Plus} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -65,7 +65,9 @@ export function CourseCard({
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Course
                     </DropdownMenuItem>
-                    <DropdownMenuItem>Add Offering</DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Offering</DropdownMenuItem>
                     <DropdownMenuItem className="text-red-600" onClick={() => onDelete(course.id)}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete Course
