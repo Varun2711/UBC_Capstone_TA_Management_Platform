@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, MoreHorizontal, FileText } from "lucide-react"
+import { ChevronDown, ChevronRight, MoreHorizontal, FileText , Edit , Trash2, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -33,9 +33,15 @@ export function OfferingCard({ offering, isExpanded, onToggle }) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Edit Offering</DropdownMenuItem>
-                  <DropdownMenuItem>Add Lab/Tutorial</DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600">Delete Offering</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Offering</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Lab/Tutorial</DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-600">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Offering</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
