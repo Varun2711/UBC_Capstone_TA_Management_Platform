@@ -26,8 +26,8 @@ urlpatterns = [
     path('me/update/', StudentProfileUpdateView.as_view(), name='update-my-profile'),
     
     # Student Experience Management  
-    path('me/experiences/', StudentTAExperienceListCreateView.as_view(), name='my-experiences'),
-    path('me/experiences/<uuid:pk>/', StudentExperienceDetailView.as_view(), name='my-experience-detail'),
+    path('me/experience/', StudentTAExperienceListCreateView.as_view(), name='my-experiences'),
+    path('me/experience/<uuid:pk>/', StudentExperienceDetailView.as_view(), name='my-experience-detail'),
     
     # Student Skills Management
     path('me/skills/', StudentSkillListCreateView.as_view(), name='my-skills'),
@@ -42,11 +42,11 @@ urlpatterns = [
     
     # Admin views for specific students
     path('student/<str:student_id>/', StudentProfileDetailView.as_view(), name='student-profile'),
-    path('student/<str:student_id>/experiences/', StudentTAExperienceListCreateView.as_view(), name='student-experiences'),
+    path('student/<str:student_id>/experience/', StudentTAExperienceListCreateView.as_view(), name='student-experiences'),
     path('student/<str:student_id>/skills/', StudentSkillListCreateView.as_view(), name='student-skills'),
     path('student/<str:student_id>/availability/', StudentAvailabilityView.as_view(), name='student-availability'),
     path('student/<str:student_id>/preferences/', StudentCoursePreferenceListCreateView.as_view(), name='student-preferences'),
-    path('student/<str:student_id>/experiences/<uuid:pk>/', StudentExperienceDetailView.as_view(), name='student-experience-detail'),
+    path('student/<str:student_id>/experience/<uuid:pk>/', StudentExperienceDetailView.as_view(), name='student-experience-detail'),
     path('student/<str:student_id>/skills/<uuid:pk>/', StudentSkillDetailView.as_view(), name='student-skill-detail'),
     path('student/<str:student_id>/preferences/<uuid:pk>/', StudentCoursePreferenceDetailView.as_view(), name='student-preference-detail'),
 ]
