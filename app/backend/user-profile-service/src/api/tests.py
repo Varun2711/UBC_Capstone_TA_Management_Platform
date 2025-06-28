@@ -85,7 +85,7 @@ class UserProfileAPITest(APITestCase):
             'end_date': '2024-04-30',
             'description': 'Assisted in COSC 110 course'
         }
-        response = self.client.post('/api/me/experiences/', data, format='json')  # Changed
+        response = self.client.post('/api/me/experience/', data, format='json')  # Changed
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_student_skill(self):
