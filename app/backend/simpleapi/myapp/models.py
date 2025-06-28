@@ -8,10 +8,6 @@ class Faculty(models.Model):
         managed = False
         db_table = 'myapp_faculty'
 
-    def __str__(self):
-        return self.name
-
-
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='departments')
@@ -19,24 +15,6 @@ class Department(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_department'
-
-    def __str__(self):
-        return self.name
-
-
-class TAScheduler(models.Model):
-    employee_number = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_tascheduler'
-
-    def __str__(self):
-        return f"{self.name} ({self.employee_number})"
-
 
 class Student(models.Model):
     student_number = models.CharField(max_length=8, unique=True)
@@ -49,32 +27,54 @@ class Student(models.Model):
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = False
         db_table = 'myapp_student'
-
-    def __str__(self):
-        return f"{self.name}"
 
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
     email = models.EmailField()
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
 
-    class Meta: 
+    class Meta:
         managed = False
         db_table = 'myapp_instructor'
 
-    def __str__(self):
-        return f"{self.name}"
+class TAScheduler(models.Model):
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_tascheduler'
+
+#added admin based on new requirements.
+class Admin(models.Model):
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    password = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_admin'
 
 class Course(models.Model):
     course_number = models.CharField(max_length=10, primary_key=True)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=255)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, db_constraint=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
@@ -88,7 +88,7 @@ class CourseOffering(models.Model):
     section_number = models.CharField(max_length=5)
     term_number = models.CharField(max_length=20)
     year_offered = models.IntegerField()
-    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True)
+    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
     day = models.CharField(max_length=10)
     time = models.CharField(max_length=20)
 
@@ -110,7 +110,7 @@ class LabSection(models.Model):
 
 class InstructorRequest(models.Model):
     request_id = models.AutoField(primary_key=True)
-    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True)
+    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.SET_NULL, null=True, blank=True)
     request_date = models.DateField()
     request_description = models.TextField()
@@ -131,9 +131,9 @@ class JobPosting(models.Model):
     description = models.TextField(null=True, blank=True)
     post_date = models.DateField()
     deadline_date = models.DateField()
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE,db_constraint=False)
+    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True, db_constraint=False)
     requirements = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=status_choices, default='draft')
      
@@ -175,9 +175,10 @@ class Application(models.Model):
         ('draft', 'Draft'),
     }
     application_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, db_constraint=False)
     posting = models.ForeignKey(JobPosting, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=status_choices, default='draft')
+
 
 class ApplicationQuestionResponse(models.Model):
     response_id = models.AutoField(primary_key=True)
@@ -206,14 +207,14 @@ class Offer(models.Model):
     offer_id = models.AutoField(primary_key=True)
     application = models.ForeignKey(Application, on_delete=models.CASCADE)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
     lab_section = models.ForeignKey(LabSection, on_delete=models.SET_NULL, null=True, blank=True)
     required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
     role = models.CharField(max_length=3, choices=role_choices, default='rta')
     offer_date = models.DateField()
     status = models.CharField(max_length=50)
     notes = models.TextField(null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created')
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created',db_constraint=False)
 
 class Assignment(models.Model):
     role_choices= {
@@ -226,16 +227,16 @@ class Assignment(models.Model):
     }
     
     assignment_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, db_constraint=False)
     offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, null=True, blank=True)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
     lab_section = models.ForeignKey(LabSection, on_delete=models.SET_NULL, null=True, blank=True)
     required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
     role = models.CharField(max_length=3, choices=role_choices, default='rta')
     assigned_date = models.DateField()
-    assigned_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_made')
+    assigned_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_made', db_constraint=False )
     notes = models.TextField(null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_created')
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_created', db_constraint=False)
 
 class Shift(models.Model):
     shift_id = models.AutoField(primary_key=True)
@@ -247,7 +248,7 @@ class Shift(models.Model):
 
 class Availability(models.Model):
     availability_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
     day_of_week = models.CharField(max_length=10)
     start_time = models.TimeField()
     end_time = models.TimeField()
@@ -256,7 +257,7 @@ class Availability(models.Model):
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
     application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
     file_name = models.CharField(max_length=255)
     file_type = models.CharField(max_length=50)
     file_size = models.IntegerField()
