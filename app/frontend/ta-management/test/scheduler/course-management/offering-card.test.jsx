@@ -1,8 +1,8 @@
 import { render, screen, fireEvent} from '@testing-library/react';
-import { vi } from 'vitest';
+import { expect, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { OfferingCard } from '@/components/scheduler/course_management/offering-card';
-import { ChevronDown, ChevronRight, MoreHorizontal, FileText } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal, FileText, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,9 @@ vi.mock('lucide-react', () => ({
   ChevronRight: () => <svg data-testid="chevron-right-icon" />,
   MoreHorizontal: () => <svg data-testid="more-horizontal-icon" />,
   FileText: () => <svg data-testid="file-text-icon" />,
+  Edit: () => <svg data-testid="edit-icon" />,
+  Trash2: () => <svg data-testid="trash-icon" />,
+  Plus: () => <svg data-testid="plus-icon" />,
 }));
 
 // Mock the sidebar component (kept from UserProfile tests)
@@ -87,6 +90,10 @@ describe('OfferingCard Component', () => {
     expect(screen.getByText('Add Lab/Tutorial')).toBeInTheDocument();
     expect(screen.getByText('Delete Offering')).toBeInTheDocument();
     expect(screen.getByText('Delete Offering').closest('div')).toHaveClass('text-red-600');
+    expect(screen.getByTestId('edit-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('plus-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('trash-icon')).toBeInTheDocument();
+    
   });
 
   it('does not render requirements badges when specialRequirements is empty', () => {
