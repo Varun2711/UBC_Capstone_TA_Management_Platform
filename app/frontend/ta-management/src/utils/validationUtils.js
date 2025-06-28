@@ -1,4 +1,4 @@
-// validationUtils.js - Simple validation for each page in the application form
+// validationUtils.js - This handles the validation logic for each page in the application form
 export const validateStep1 = (responses) => {
   const errors = {};
 
@@ -10,7 +10,7 @@ export const validateStep1 = (responses) => {
     errors.residingInKelowna = "Please indicate if you're residing in Kelowna.";
   }
 
-  if (responses.residingInKelowna === "No") {
+  if (responses.residingInKelowna === "no") {
     errors.residingInKelowna =
       " You are not eligible to work as a TA if you are not residing in Kelowna.";
   }
@@ -23,12 +23,12 @@ export const validateStep1 = (responses) => {
     errors.hasOtherPositions = "Please indicate if you have other positions.";
   }
 
-  if (responses.hasOtherPositions === "Yes" && !responses.otherPositionHours) {
+  if (responses.hasOtherPositions === "yes" && !responses.otherPositionHours) {
     errors.otherPositionHours = "Please specify hours for other positions.";
   }
 
   if (
-    responses.hasOtherPositions === "Yes" &&
+    responses.hasOtherPositions === "yes" &&
     responses.otherPositionHours > 60
   ) {
     errors.otherPositionHours =
@@ -77,43 +77,43 @@ export const validateStep2 = (responses) => {
 export const validateStep3 = (student) => {
   const errors = {};
 
-  if (!student.firstName || student.firstName.trim().length < 2) {
-    errors.firstName = "First name must be at least 2 characters.";
-  }
+  // if (!student.firstName || student.firstName.trim().length < 2) {
+  //   errors.firstName = "First name must be at least 2 characters.";
+  // }
 
-  if (!student.lastName || student.lastName.trim().length < 2) {
-    errors.lastName = "Last name must be at least 2 characters.";
-  }
+  // if (!student.lastName || student.lastName.trim().length < 2) {
+  //   errors.lastName = "Last name must be at least 2 characters.";
+  // }
 
-  if (!student.email) {
-    errors.email = "Email is required";
-  } else {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(student.email)) {
-      errors.email = "Please enter a valid email address.";
-    }
-  }
+  // if (!student.email) {
+  //   errors.email = "Email is required";
+  // } else {
+  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //   if (!emailRegex.test(student.email)) {
+  //     errors.email = "Please enter a valid email address.";
+  //   }
+  // }
 
-  if (!student.phone) {
-    errors.phone = "Phone number is required";
-  }
+  // if (!student.phone) {
+  //   errors.phone = "Phone number is required";
+  // }
 
-  if (!student.gpa) {
-    errors.gpa = "GPA is required";
-  } else {
-    const gpa = parseFloat(student.gpa);
-    if (isNaN(gpa) || gpa < 0 || gpa > 4.0) {
-      errors.gpa = "GPA must be between 0.0 and 4.0";
-    }
-  }
+  // if (!student.gpa) {
+  //   errors.gpa = "GPA is required";
+  // } else {
+  //   const gpa = parseFloat(student.gpa);
+  //   if (isNaN(gpa) || gpa < 0 || gpa > 4.0) {
+  //     errors.gpa = "GPA must be between 0.0 and 4.0";
+  //   }
+  // }
 
-  if (!student.resume) {
-    errors.resume = "Resume is required";
-  }
+  // if (!student.resume) {
+  //   errors.resume = "Resume is required";
+  // }
 
-  if (!student.transcript) {
-    errors.transcript = "Transcript is required";
-  }
+  // if (!student.transcript) {
+  //  errors.transcript = "Transcript is required";
+  // }
 
   return {
     isValid: Object.keys(errors).length === 0,

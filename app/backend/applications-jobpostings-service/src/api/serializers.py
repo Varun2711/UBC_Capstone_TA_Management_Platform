@@ -27,7 +27,7 @@ class TermSerializer(serializers.ModelSerializer):
     class Meta:
         model = Term 
         fields = [
-            'code'
+            'code', 'description'
         ] 
 
 # Serializers for JobPosting which nests Department and TAScheduler serializers, as job posting questions

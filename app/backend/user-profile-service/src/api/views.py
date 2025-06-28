@@ -152,7 +152,7 @@ class TASchedulerViewSet(viewsets.ModelViewSet):
 # Student Profile Views - FIXED to use consistent User model approach
 class StudentProfileDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ComprehensiveStudentProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]    
     
     def get_object(self):
         student_id = self.kwargs.get('student_id')
@@ -168,7 +168,7 @@ class StudentProfileDetailView(generics.RetrieveUpdateAPIView):
     
 class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class =  UpdateStudentProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]    
     
     def get_object(self):
         student_id = self.kwargs.get('student_id')
