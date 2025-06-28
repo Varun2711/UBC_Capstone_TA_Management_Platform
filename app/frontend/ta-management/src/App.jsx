@@ -17,6 +17,7 @@ import UserProfile from "./pages/profile-page-scheduler";
 import InstructorDashboard from "./pages/InstructorDashboard";
 
 function App() {
+
   // define a message state variable
   const [message, setMessage] = useState("");
   const message_url = "/api/hello"; // update the api call to have a relative address instead of a direct address
@@ -38,7 +39,7 @@ function App() {
   }, []);
 
   return (
-    // React Router setup, commented out for now
+    // React Router setup
     // Initial test to check router functionlity below
     <Routes>
       <Route path="/" element={<LandingPage />} />
