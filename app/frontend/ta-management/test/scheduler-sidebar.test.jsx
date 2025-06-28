@@ -38,7 +38,7 @@ vi.mock('lucide-react', () => ({
 
 describe('AppSidebar', () => {
   it('renders the sidebar with header, content, and footer', () => {
-    renderSidebar();
+    renderSidebar({ activePage: 'Dashboard' });
     expect(screen.getByText('TA Scheduler')).toBeInTheDocument();
     expect(screen.getByText('Admin Portal')).toBeInTheDocument();
     expect(screen.getByTestId('calendar-icon')).toBeInTheDocument();
@@ -50,10 +50,10 @@ describe('AppSidebar', () => {
   });
 
   it('renders all navigation items correctly', () => {
-    renderSidebar();
+    renderSidebar({ activePage: 'Course Management' });
     const navigationItems = [
-      { title: 'Dashboard', icon: 'home-icon', isActive: true },
-      { title: 'Course Management', icon: 'book-open-icon' },
+      { title: 'Dashboard', icon: 'home-icon' },
+      { title: 'Course Management', icon: 'book-open-icon', isActive: true },
       { title: 'TA Positions', icon: 'user-check-icon' },
       { title: 'Applications', icon: 'file-text-icon' },
       { title: 'Appointments', icon: 'check-circle-icon' },
@@ -65,6 +65,8 @@ describe('AppSidebar', () => {
       expect(within(navigationGroup).getByTestId(item.icon)).toBeInTheDocument();
       if (item.isActive) {
         expect(menuItem.closest('[data-active="true"]')).toBeInTheDocument();
+      } else {
+        expect(menuItem.closest('[data-active="true"]')).not.toBeInTheDocument();
       }
     });
   });
@@ -85,7 +87,7 @@ describe('AppSidebar', () => {
   });
 
   it('renders system items correctly', () => {
-    renderSidebar();
+    renderSidebar({ activePage: 'Settings' });
     const systemItems = [{ title: 'Settings', icon: 'settings-icon' }];
     const systemGroup = screen.getByText('System').closest('[data-sidebar="group"]');
     systemItems.forEach((item) => {
@@ -96,7 +98,7 @@ describe('AppSidebar', () => {
   });
 
   it('has correct accessibility attributes', () => {
-    renderSidebar();
+    renderSidebar({ activePage: 'Dashboard' });
     const header = screen.getByText('TA Scheduler').closest('[data-sidebar="header"]');
     expect(header).toHaveAttribute('data-sidebar', 'header');
     const navigationGroup = screen.getByText('Navigation').closest('[data-sidebar="group"]');
@@ -108,14 +110,16 @@ describe('AppSidebar', () => {
     expect(footer).toHaveAttribute('data-sidebar', 'footer');
   });
 
-  it('applies active state styling to the Dashboard item', () => {
-    renderSidebar();
-    const dashboardItem = screen.getByText('Dashboard').closest('[data-active="true"]');
-    expect(dashboardItem).toHaveAttribute('data-active', 'true');
+  it('applies active state styling to the specified active page', () => {
+    renderSidebar({ activePage: 'TA Positions' });
+    const activeItem = screen.getByText('TA Positions').closest('[data-active="true"]');
+    expect(activeItem).toHaveAttribute('data-active', 'true');
+    const inactiveItem = screen.getByText('Dashboard').closest('[data-active="true"]');
+    expect(inactiveItem).not.toBeInTheDocument();
   });
 
   it('renders avatar with correct fallback', () => {
-    renderSidebar();
+    renderSidebar({ activePage: 'Dashboard' });
     const avatar = screen.getByText('Admin User').closest('[data-sidebar="menu-button"]');
     const avatarFallback = within(avatar).getByText('AD');
     expect(avatarFallback).toBeInTheDocument();
@@ -123,7 +127,7 @@ describe('AppSidebar', () => {
   });
 
   it('renders the dropdown menu in the footer with correct items', async () => {
-    renderSidebar();
+    renderSidebar({ activePage: 'Dashboard' });
     const dropdownTrigger = screen.getByRole('button');
     await userEvent.click(dropdownTrigger);
     expect(await screen.findByText('My Account')).toBeInTheDocument();
