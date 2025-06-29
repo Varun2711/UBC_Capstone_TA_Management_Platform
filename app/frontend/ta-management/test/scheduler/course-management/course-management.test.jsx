@@ -4,12 +4,15 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import CourseManagement from '@/pages/Scheduler/course-management';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { X, ChevronDown } from 'lucide-react';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
   Bell: () => <svg data-testid="bell-icon" />,
   Plus: () => <svg data-testid="plus-icon" />,
   PanelLeft: () => <svg data-testid="panel-left-icon" />,
+  X: () => <X data-testid="close-icon" />,
+  ChevronDown: () => <ChevronDown data-testid="chevron-down-icon" />,
 }));
 
 // Mock useMobile hook
@@ -87,6 +90,14 @@ vi.mock('@/components/scheduler/course_management/course-filters', () => ({
       />
     </div>
   ),
+}));
+
+
+
+// Mock AddCourseModal to check for its presence
+vi.mock('@/components/scheduler/course_management/add-course-modal', () => ({
+  AddCourseModal: ({ isOpen }) =>
+    isOpen ? <div data-testid="add-course-modal">Add Course Modal</div> : null,
 }));
 
 
@@ -181,17 +192,21 @@ describe('CourseManagement Page', () => {
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
   });
 
-  it('calls handleAddCourse when clicking Add Course button in header', async () => {
-    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  it('opens the AddCourseModal when clicking the Add Course button', async () => {
+    const user = userEvent.setup();
     render(
       <MemoryRouter>
-        <SidebarProvider>
-          <CourseManagement />
-        </SidebarProvider>
+        <CourseManagement />
       </MemoryRouter>
     );
+  
+    // The modal should not be visible initially
+    expect(screen.queryByTestId('add-course-modal')).not.toBeInTheDocument();
+  
+    // Click the "Add Course" button
     await user.click(screen.getByRole('button', { name: 'Add Course' }));
-    expect(consoleLogSpy).toHaveBeenCalledWith('Add course clicked');
-    consoleLogSpy.mockRestore();
+  
+    // Assert that the modal is now visible in the document
+    expect(screen.getByTestId('add-course-modal')).toBeInTheDocument();
   });
 });

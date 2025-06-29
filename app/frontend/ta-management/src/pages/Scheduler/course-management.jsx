@@ -11,6 +11,7 @@ import { CourseCard } from "@/components/scheduler/course_management/course-card
 import { CourseFilters } from "@/components/scheduler/course_management/course-filters"
 import { EmptyState } from "@/components/scheduler/course_management/empty-state"
 import { mockCourses } from "@/data/mock-courses"
+import { AddCourseModal } from "@/components/scheduler/course_management/add-course-modal"
 
 export default function CourseManagement() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -20,6 +21,7 @@ export default function CourseManagement() {
   const [expandedOfferings, setExpandedOfferings] = useState(new Set())
   const [expandedLabSections, setExpandedLabSections] = useState(new Set())
   const [courses, setCourses] = useState(mockCourses)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   const toggleCourse = (courseId) => {
     setExpandedCourses((prev) => {
@@ -58,8 +60,16 @@ export default function CourseManagement() {
   }
 
   const handleAddCourse = () => {
-    // TODO: Implement add course functionality
-    console.log("Add course clicked")
+    setIsAddModalOpen(true)
+  }
+
+  const handleAddCourseSubmit = (newCourse) => {
+    setCourses((prev) => [...prev, newCourse])
+    console.log("Course added:", newCourse)
+  }
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false)
   }
 
   const handleEditCourse = (course) => {
@@ -165,6 +175,12 @@ export default function CourseManagement() {
           {filteredCourses.length === 0 && <EmptyState onAddCourse={handleAddCourse} />}
         </main>
       </SidebarInset>
+      <AddCourseModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onAddCourse={handleAddCourseSubmit}
+        existingCourses={courses}
+      />
     </SidebarProvider>
   )
 }
