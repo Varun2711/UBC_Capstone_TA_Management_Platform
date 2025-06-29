@@ -15,8 +15,10 @@ import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
+import InstructorDashboard from "./pages/InstructorDashboard";
 
 function App() {
+
   // define a message state variable
   const [message, setMessage] = useState("");
   const message_url = "/api/hello"; // update the api call to have a relative address instead of a direct address
@@ -38,7 +40,7 @@ function App() {
   }, []);
 
   return (
-    // React Router setup, commented out for now
+    // React Router setup
     // Initial test to check router functionlity below
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -52,6 +54,7 @@ function App() {
       <Route path="/student-dashboard" element={<StudentDashboard />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/user-profile-scheduler" element={<UserProfile />} />
+      <Route path="/instructor-dashboard" element={<InstructorDashboard/>} />
       <Route path="/application" element={<Application />} />
       <Route path="/ta-coordinator-allocation" element={<TaCoordinatorAllocationPage />} />
       {/* Add more routes if needed */}
