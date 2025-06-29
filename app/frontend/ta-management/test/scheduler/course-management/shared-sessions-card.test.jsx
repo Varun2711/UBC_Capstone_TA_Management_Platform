@@ -55,7 +55,6 @@ describe('SharedSessionsCard Component', () => {
         onToggleLabSection={mockOnToggleLabSection}
       />
     );
-    screen.logTestingPlaygroundURL();
     expect(screen.getByText('Shared Sessions for Fall 2025')).toBeInTheDocument();
     expect(screen.getByText('CS101, CS102')).toBeInTheDocument();
     expect(screen.getByText('2 sessions')).toBeInTheDocument();
