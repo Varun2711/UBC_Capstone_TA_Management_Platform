@@ -1,10 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen , within} from '@testing-library/react';
 import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import CourseManagement from '@/pages/Scheduler/course-management';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Edit } from 'lucide-react';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
@@ -13,6 +13,7 @@ vi.mock('lucide-react', () => ({
   PanelLeft: () => <svg data-testid="panel-left-icon" />,
   X: () => <X data-testid="close-icon" />,
   ChevronDown: () => <ChevronDown data-testid="chevron-down-icon" />,
+  Edit: () => <svg data-testid="edit-icon" />,
 }));
 
 // Mock useMobile hook
@@ -70,15 +71,17 @@ vi.mock('@/data/mock-courses', () => ({
   ],
 }));
 
-// Mock CourseCard with minimal data-testid
+// Mock CourseCard with minimal data-testid and props
 vi.mock('@/components/scheduler/course_management/course-card', () => ({
-  CourseCard: ({ course }) => (
+  // The mock now gives us access to the props
+  CourseCard: ({ course, onEdit }) => (
     <div data-testid={`course-card-${course.id}`}>
       {course.code} - {course.title}
+      {/* Add a button to simulate the interaction */}
+      <button onClick={() => onEdit(course)}>Edit</button>
     </div>
   ),
 }));
-
 // Mock CourseFilters with minimal data-testid
 vi.mock('@/components/scheduler/course_management/course-filters', () => ({
   CourseFilters: ({ searchQuery, onSearchChange }) => (
@@ -90,6 +93,12 @@ vi.mock('@/components/scheduler/course_management/course-filters', () => ({
       />
     </div>
   ),
+}));
+
+// Mock EditCourseModal to check for its presence
+vi.mock('@/components/scheduler/course_management/edit-course-modal', () => ({
+  EditCourseModal: ({ isOpen, course }) =>
+    isOpen ? <div data-testid="edit-course-modal">Editing: {course.title}</div> : null,
 }));
 
 
@@ -208,5 +217,29 @@ describe('CourseManagement Page', () => {
   
     // Assert that the modal is now visible in the document
     expect(screen.getByTestId('add-course-modal')).toBeInTheDocument();
+  });
+
+  it('opens the EditCourseModal with the correct course when an edit button is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <CourseManagement />
+      </MemoryRouter>
+    );
+  
+    // 1. Ensure the modal is not visible initially
+    expect(screen.queryByTestId('edit-course-modal')).not.toBeInTheDocument();
+  
+    // 2. Find the specific "Edit" button for the first course within our mocked card
+    const cs101Card = screen.getByTestId('course-card-cs101');
+    const editButton = within(cs101Card).getByRole('button', { name: /edit/i });
+  
+    // 3. Click the button
+    await user.click(editButton);
+  
+    // 4. Assert that the modal is now visible and contains the correct course title
+    const editModal = screen.getByTestId('edit-course-modal');
+    expect(editModal).toBeInTheDocument();
+    expect(editModal).toHaveTextContent('Editing: Introduction to Computer Science');
   });
 });

@@ -224,4 +224,26 @@ describe('CourseCard Component', () => {
     expect(screen.queryByText('A foundational course in programming.')).not.toBeInTheDocument();
     expect(screen.getByTestId('term-section-Fall-2025')).toBeInTheDocument();
   });
+
+  it('displays the visible offerings count from props', () => {
+    render(
+      <CourseCard
+        course={mockCourse}
+        isExpanded={false}
+        onToggle={mockOnToggle}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+        expandedOfferings={new Set()}
+        expandedLabSections={new Set()}
+        onToggleOffering={mockOnToggleOffering}
+        onToggleLabSection={mockOnToggleLabSection}
+        // Pass a different number than the total offerings to test this specifically
+        visibleOfferingsCount={1} 
+      />
+    );
+
+    // The mockCourse has 2 offerings, but we passed visibleOfferingsCount={1}
+    // This simulates a filter being applied on the parent page.
+    expect(screen.getByText('1 Offering')).toBeInTheDocument();
+  });
 });

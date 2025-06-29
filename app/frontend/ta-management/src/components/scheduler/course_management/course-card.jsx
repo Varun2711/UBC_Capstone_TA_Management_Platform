@@ -52,7 +52,11 @@ export function CourseCard({
                   </div>
                 </div>
               </div>
+              
               <div className="flex items-center space-x-2">
+              <Badge variant="secondary">
+                  {visibleOfferingsCount} {visibleOfferingsCount === 1 ? "Offering" : "Offerings"}
+                </Badge>
                 <Badge variant="outline">{course.department}</Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

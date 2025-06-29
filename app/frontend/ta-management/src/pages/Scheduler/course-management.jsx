@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { Bell, Plus } from "lucide-react"
 
@@ -12,6 +11,7 @@ import { CourseFilters } from "@/components/scheduler/course_management/course-f
 import { EmptyState } from "@/components/scheduler/course_management/empty-state"
 import { mockCourses } from "@/data/mock-courses"
 import { AddCourseModal } from "@/components/scheduler/course_management/add-course-modal"
+import { EditCourseModal } from "@/components/scheduler/course_management/edit-course-modal"
 
 export default function CourseManagement() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -22,6 +22,8 @@ export default function CourseManagement() {
   const [expandedLabSections, setExpandedLabSections] = useState(new Set())
   const [courses, setCourses] = useState(mockCourses)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState(null)
 
   const toggleCourse = (courseId) => {
     setExpandedCourses((prev) => {
@@ -73,8 +75,18 @@ export default function CourseManagement() {
   }
 
   const handleEditCourse = (course) => {
-    // TODO: Implement edit course functionality
-    console.log("Edit course clicked for:", course.code)
+    setSelectedCourse(course)
+    setIsEditModalOpen(true)
+  }
+
+  const handleEditCourseSubmit = (updatedCourse) => {
+    setCourses((prev) => prev.map((course) => (course.id === updatedCourse.id ? updatedCourse : course)))
+    console.log("Course updated:", updatedCourse)
+  }
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false)
+    setSelectedCourse(null)
   }
 
   const handleDeleteCourse = (courseId) => {
@@ -175,10 +187,20 @@ export default function CourseManagement() {
           {filteredCourses.length === 0 && <EmptyState onAddCourse={handleAddCourse} />}
         </main>
       </SidebarInset>
+
+      {/* Modals */}
       <AddCourseModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onAddCourse={handleAddCourseSubmit}
+        existingCourses={courses}
+      />
+
+      <EditCourseModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onEditCourse={handleEditCourseSubmit}
+        course={selectedCourse}
         existingCourses={courses}
       />
     </SidebarProvider>
