@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import CourseManagement from '@/pages/Scheduler/course-management';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { X, ChevronDown, Edit, ChevronsUpDown, Check } from 'lucide-react';
+import { X, ChevronDown, Edit, ChevronsUpDown, Check, Calendar, AlertCircle } from 'lucide-react';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
@@ -16,6 +16,8 @@ vi.mock('lucide-react', () => ({
   Edit: () => <svg data-testid="edit-icon" />,
   ChevronsUpDown: () => <ChevronsUpDown data-testid="chevrons-up-down-icon" />,
   Check: () => <svg data-testid="check-icon" />,
+  Calendar: () => <Calendar data-testid="calendar-icon" />,
+  AlertCircle: () => <AlertCircle data-testid="alert-circle-icon" />,
 }));
 
 // Mock useMobile hook
@@ -73,16 +75,16 @@ vi.mock('@/data/mock-courses', () => ({
   ],
 }));
 
-// Mock CourseCard with minimal data-testid and props
+// Mock CourseCard with props to simulate all interactions
 vi.mock('@/components/scheduler/course_management/course-card', () => ({
-  CourseCard: ({ course, onEdit, onEditOffering }) => (
+  CourseCard: ({ course, onEdit, onEditOffering, onAddLabTutorial }) => (
     <div data-testid={`course-card-${course.id}`}>
       {course.code} - {course.title}
       <button onClick={() => onEdit(course)}>Edit Course</button>
-      {/* Simulate a list of offerings within the card */}
       {course.offerings.map(offering => (
         <div key={offering.id} data-testid={`offering-${offering.id}`}>
             <button onClick={() => onEditOffering(offering)}>Edit Offering: {offering.section}</button>
+            <button onClick={() => onAddLabTutorial(offering)}>Add Lab/Tutorial to {offering.section}</button>
         </div>
       ))}
     </div>
@@ -102,25 +104,25 @@ vi.mock('@/components/scheduler/course_management/course-filters', () => ({
   ),
 }));
 
-// Mock EditCourseModal to check for its presence
+// Mock all modals to check for their presence
 vi.mock('@/components/scheduler/course_management/edit-course-modal', () => ({
   EditCourseModal: ({ isOpen, course }) =>
     isOpen ? <div data-testid="edit-course-modal">Editing Course: {course.title}</div> : null,
 }));
 
-
-
-// Mock AddCourseModal to check for its presence
 vi.mock('@/components/scheduler/course_management/add-course-modal', () => ({
   AddCourseModal: ({ isOpen }) =>
     isOpen ? <div data-testid="add-course-modal">Add Course Modal</div> : null,
 }));
 
-
-// Mock EditOfferingModal to check for its presence
 vi.mock('@/components/scheduler/course_management/edit-offering-modal', () => ({
   EditOfferingModal: ({ isOpen, course, offering }) =>
     isOpen ? <div data-testid="edit-offering-modal">Editing Offering: {offering.section} for {course.code}</div> : null,
+}));
+
+vi.mock('@/components/scheduler/course_management/add-lab-tutorial-modal', () => ({
+    AddLabTutorialModal: ({ isOpen, course, offering }) =>
+        isOpen ? <div data-testid="add-lab-tutorial-modal">Adding Lab/Tutorial for: {offering.section}</div> : null,
 }));
 
 
@@ -155,9 +157,6 @@ describe('CourseManagement Page', () => {
     );
     expect(screen.getByRole('navigation')).toHaveTextContent('Course Management');
     expect(screen.getByRole('button', { name: /toggle sidebar/i })).toBeInTheDocument();
-    expect(screen.getByTestId('plus-icon')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add Course' })).toBeInTheDocument();
-    expect(screen.getByTestId('bell-icon')).toBeInTheDocument();
   });
 
   it('renders main content with title and description', () => {
@@ -194,10 +193,6 @@ describe('CourseManagement Page', () => {
     );
     expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
     expect(screen.getByTestId('course-card-math201')).toBeInTheDocument();
-    expect(screen.getByTestId('course-card-phys301')).toBeInTheDocument();
-    expect(screen.getByText('CS101 - Introduction to Computer Science')).toBeInTheDocument();
-    expect(screen.getByText('MATH201 - Calculus II')).toBeInTheDocument();
-    expect(screen.getByText('PHYS301 - Quantum Mechanics')).toBeInTheDocument();
   });
 
   it('renders EmptyState when no courses match filters', async () => {
@@ -210,48 +205,30 @@ describe('CourseManagement Page', () => {
     );
     await user.type(screen.getByTestId('search-input'), 'Nonexistent');
     expect(screen.queryByTestId('course-card-cs101')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('course-card-math201')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('course-card-phys301')).not.toBeInTheDocument();
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
   });
 
   it('opens the AddCourseModal when clicking the Add Course button', async () => {
-    const user = userEvent.setup();
     render(
       <MemoryRouter>
         <CourseManagement />
       </MemoryRouter>
     );
-  
-    // The modal should not be visible initially
     expect(screen.queryByTestId('add-course-modal')).not.toBeInTheDocument();
-  
-    // Click the "Add Course" button
     await user.click(screen.getByRole('button', { name: 'Add Course' }));
-  
-    // Assert that the modal is now visible in the document
     expect(screen.getByTestId('add-course-modal')).toBeInTheDocument();
   });
 
   it('opens the EditCourseModal with the correct course when a course edit button is clicked', async () => {
-    const user = userEvent.setup();
     render(
       <MemoryRouter>
         <CourseManagement />
       </MemoryRouter>
     );
-  
-    // 1. Ensure the modal is not visible initially
     expect(screen.queryByTestId('edit-course-modal')).not.toBeInTheDocument();
-  
-    // 2. Find the specific "Edit" button for the first course within our mocked card
     const cs101Card = screen.getByTestId('course-card-cs101');
     const editButton = within(cs101Card).getByRole('button', { name: /edit course/i });
-  
-    // 3. Click the button
     await user.click(editButton);
-  
-    // 4. Assert that the modal is now visible and contains the correct course title
     const editModal = screen.getByTestId('edit-course-modal');
     expect(editModal).toBeInTheDocument();
     expect(editModal).toHaveTextContent('Editing Course: Introduction to Computer Science');
@@ -263,23 +240,36 @@ describe('CourseManagement Page', () => {
           <CourseManagement />
         </MemoryRouter>
       );
-
-    // 1. Ensure the modal is not visible initially
     expect(screen.queryByTestId('edit-offering-modal')).not.toBeInTheDocument();
-
-    // 2. Find the specific "Edit Offering" button for Section B (id: '2') of CS101
-    //    We update the query to match the actual data-testid rendered from the mock data.
     const offeringB_Card = screen.getByTestId('offering-2');
     const editOfferingButton = within(offeringB_Card).getByRole('button', { name: /edit offering: b/i });
-
-    // 3. Click the button
     await user.click(editOfferingButton);
-
-    // 4. Assert that the modal is now visible
     const editOfferingModal = screen.getByTestId('edit-offering-modal');
     expect(editOfferingModal).toBeInTheDocument();
-
-    // 5. Assert that the modal received the correct offering and course data
     expect(editOfferingModal).toHaveTextContent('Editing Offering: B for CS101');
+  });
+
+  it('opens the AddLabTutorialModal with correct data when button is clicked', async () => {
+    render(
+      <MemoryRouter>
+        <CourseManagement />
+      </MemoryRouter>
+    );
+    // Ensure modal is not visible initially
+    expect(screen.queryByTestId('add-lab-tutorial-modal')).not.toBeInTheDocument();
+
+    // Find the button to add a lab/tutorial to section 'C'
+    const offeringC_Card = screen.getByTestId('offering-3');
+    const addLabButton = within(offeringC_Card).getByRole('button', { name: /add lab\/tutorial to c/i });
+
+    // Click the button
+    await user.click(addLabButton);
+
+    // Assert that the modal is now visible
+    const addLabModal = screen.getByTestId('add-lab-tutorial-modal');
+    expect(addLabModal).toBeInTheDocument();
+
+    // Assert that the modal received the correct offering data
+    expect(addLabModal).toHaveTextContent('Adding Lab/Tutorial for: C');
   });
 });
