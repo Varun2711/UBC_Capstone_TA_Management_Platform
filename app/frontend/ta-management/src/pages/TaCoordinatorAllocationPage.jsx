@@ -34,6 +34,9 @@ import {
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AppSidebar } from "../components/scheduler-sidebar"
+import App from "@/App"
+
 
 // Mock data for TAs
 const availableTAs = [
@@ -165,85 +168,6 @@ const courses = [
   },
 ]
 
-const sidebarItems = [
-  {
-    title: "Dashboard",
-    icon: Home,
-    url: "/coordinator",
-    isActive: false,
-  },
-  {
-    title: "Applications",
-    icon: FileText,
-    url: "/coordinator/applications",
-  },
-  {
-    title: "TA Allocation",
-    icon: Users,
-    url: "/coordinator/allocation",
-    isActive: true,
-  },
-  {
-    title: "Schedule",
-    icon: Calendar,
-    url: "/coordinator/schedule",
-  },
-  {
-    title: "Reports",
-    icon: BookOpen,
-    url: "/coordinator/reports",
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    url: "/coordinator/settings",
-  },
-]
-
-function CoordinatorSidebar() {
-  return (
-    <Sidebar>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <GraduationCap className="h-6 w-6" />
-          <span className="font-semibold">TA Coordinator</span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={item.isActive}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <div className="flex items-center gap-2 p-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg" alt="Coordinator" />
-            <AvatarFallback>TC</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Dr. Taylor</span>
-            <span className="text-xs text-muted-foreground">TA Coordinator</span>
-          </div>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
-  )
-}
-
 function getStatusBadge(status) {
   switch (status) {
     case "Available":
@@ -293,7 +217,7 @@ export default function TAAllocationPage() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <CoordinatorSidebar />
+        <AppSidebar activePage="TA Allocation"/>
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
