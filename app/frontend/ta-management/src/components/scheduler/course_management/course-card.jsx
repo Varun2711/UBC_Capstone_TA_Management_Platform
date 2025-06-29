@@ -15,6 +15,7 @@ export function CourseCard({
   onDelete,
   onAddOffering,
   onEditOffering,
+  onAddLabTutorial,
   expandedOfferings,
   expandedLabSections,
   onToggleOffering,
@@ -106,6 +107,7 @@ export function CourseCard({
                       onToggleOffering={onToggleOffering}
                       onToggleLabSection={onToggleLabSection}
                       onEditOffering={onEditOffering}
+                      onAddLabTutorial={onAddLabTutorial}
                     />
                   ))
                 ) : (

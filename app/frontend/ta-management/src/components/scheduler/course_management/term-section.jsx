@@ -13,6 +13,7 @@ export function TermSection({
   onToggleOffering,
   onToggleLabSection,
   onEditOffering,
+  onAddLabTutorial,
 }) {
   const [term, year] = termKey.split("-")
   const hasMultipleProfessors = termOfferings.length > 1
@@ -47,6 +48,7 @@ export function TermSection({
           isExpanded={expandedOfferings.has(offering.id)}
           onToggle={() => onToggleOffering(offering.id)}
           onEdit={onEditOffering}
+          onAddLabTutorial={onAddLabTutorial}
         />
       ))}
 

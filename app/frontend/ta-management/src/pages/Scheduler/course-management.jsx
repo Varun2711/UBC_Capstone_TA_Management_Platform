@@ -15,6 +15,7 @@ import { AddCourseModal } from "@/components/scheduler/course_management/add-cou
 import { EditCourseModal } from "@/components/scheduler/course_management/edit-course-modal"
 import { AddOfferingModal } from "@/components/scheduler/course_management/add-offering-modal"
 import { EditOfferingModal } from "@/components/scheduler/course_management/edit-offering-modal"
+import { AddLabTutorialModal } from "@/components/scheduler/course_management/add-lab-tutorial-modal"
 
 export default function CourseManagement() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -28,6 +29,7 @@ export default function CourseManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddOfferingModalOpen, setIsAddOfferingModalOpen] = useState(false)
   const [isEditOfferingModalOpen, setIsEditOfferingModalOpen] = useState(false)
+  const [isAddLabTutorialModalOpen, setIsAddLabTutorialModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [selectedOffering, setSelectedOffering] = useState(null)
 
@@ -142,6 +144,48 @@ export default function CourseManagement() {
     setSelectedCourse(null)
   }
 
+  const handleAddLabTutorial = (offering) => {
+    setSelectedOffering(offering)
+    setSelectedCourse(courses.find((course) => course.offerings.some((o) => o.id === offering.id)))
+    setIsAddLabTutorialModalOpen(true)
+  }
+
+  const handleAddLabTutorialSubmit = (courseId, term, year, sessionType, newSession) => {
+    setCourses((prev) =>
+      prev.map((course) => {
+        if (course.id === courseId) {
+          const termKey = `${term}-${year}`
+          const updatedSharedSessions = { ...course.sharedSessions }
+
+          // Initialize term if it doesn't exist
+          if (!updatedSharedSessions[termKey]) {
+            updatedSharedSessions[termKey] = { labs: [], tutorials: [] }
+          }
+
+          // Add session to appropriate type
+          const sessionTypeKey = sessionType === "lab" ? "labs" : "tutorials"
+          updatedSharedSessions[termKey] = {
+            ...updatedSharedSessions[termKey],
+            [sessionTypeKey]: [...updatedSharedSessions[termKey][sessionTypeKey], newSession],
+          }
+
+          return {
+            ...course,
+            sharedSessions: updatedSharedSessions,
+          }
+        }
+        return course
+      }),
+    )
+    console.log("Lab/Tutorial session added:", newSession)
+  }
+
+  const handleCloseAddLabTutorialModal = () => {
+    setIsAddLabTutorialModalOpen(false)
+    setSelectedOffering(null)
+    setSelectedCourse(null)
+  }
+
   const handleDeleteCourse = (courseId) => {
     if (window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
       setCourses(courses.filter((course) => course.id !== courseId))
@@ -229,6 +273,7 @@ export default function CourseManagement() {
                   onDelete={handleDeleteCourse}
                   onAddOffering={handleAddOffering}
                   onEditOffering={handleEditOffering}
+                  onAddLabTutorial={handleAddLabTutorial}
                   expandedOfferings={expandedOfferings}
                   expandedLabSections={expandedLabSections}
                   onToggleOffering={toggleOffering}
@@ -274,6 +319,22 @@ export default function CourseManagement() {
         course={selectedCourse}
         offering={selectedOffering}
         existingOfferings={selectedCourse?.offerings || []}
+      />
+
+<AddLabTutorialModal
+        isOpen={isAddLabTutorialModalOpen}
+        onClose={handleCloseAddLabTutorialModal}
+        onAddSession={handleAddLabTutorialSubmit}
+        course={selectedCourse}
+        offering={selectedOffering}
+        existingSessions={
+          selectedCourse && selectedOffering
+            ? selectedCourse.sharedSessions[`${selectedOffering.term}-${selectedOffering.year}`] || {
+                labs: [],
+                tutorials: [],
+              }
+            : { labs: [], tutorials: [] }
+        }
       />
     </SidebarProvider>
   )
