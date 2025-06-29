@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-export function OfferingCard({ offering, isExpanded, onToggle }) {
+export function OfferingCard({ offering, isExpanded, onToggle, onEdit }) {
   return (
     <Card className="ml-2">
       <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -33,9 +33,10 @@ export function OfferingCard({ offering, isExpanded, onToggle }) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(offering)}>
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit Offering</DropdownMenuItem>
+                    Edit Offering
+                  </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Lab/Tutorial</DropdownMenuItem>

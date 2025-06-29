@@ -1,5 +1,4 @@
 
-
 import { useState } from "react"
 import { Bell, Plus } from "lucide-react"
 
@@ -15,6 +14,7 @@ import { mockCourses } from "@/data/mock-courses"
 import { AddCourseModal } from "@/components/scheduler/course_management/add-course-modal"
 import { EditCourseModal } from "@/components/scheduler/course_management/edit-course-modal"
 import { AddOfferingModal } from "@/components/scheduler/course_management/add-offering-modal"
+import { EditOfferingModal } from "@/components/scheduler/course_management/edit-offering-modal"
 
 export default function CourseManagement() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -27,7 +27,9 @@ export default function CourseManagement() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddOfferingModalOpen, setIsAddOfferingModalOpen] = useState(false)
+  const [isEditOfferingModalOpen, setIsEditOfferingModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
+  const [selectedOffering, setSelectedOffering] = useState(null)
 
   const toggleCourse = (courseId) => {
     setExpandedCourses((prev) => {
@@ -109,6 +111,34 @@ export default function CourseManagement() {
 
   const handleCloseAddOfferingModal = () => {
     setIsAddOfferingModalOpen(false)
+    setSelectedCourse(null)
+  }
+
+  const handleEditOffering = (offering) => {
+    setSelectedOffering(offering)
+    setSelectedCourse(courses.find((course) => course.offerings.some((o) => o.id === offering.id)))
+    setIsEditOfferingModalOpen(true)
+  }
+
+  const handleEditOfferingSubmit = (courseId, updatedOffering) => {
+    setCourses((prev) =>
+      prev.map((course) =>
+        course.id === courseId
+          ? {
+              ...course,
+              offerings: course.offerings.map((offering) =>
+                offering.id === updatedOffering.id ? updatedOffering : offering,
+              ),
+            }
+          : course,
+      ),
+    )
+    console.log("Offering updated:", updatedOffering)
+  }
+
+  const handleCloseEditOfferingModal = () => {
+    setIsEditOfferingModalOpen(false)
+    setSelectedOffering(null)
     setSelectedCourse(null)
   }
 
@@ -198,6 +228,7 @@ export default function CourseManagement() {
                   onEdit={handleEditCourse}
                   onDelete={handleDeleteCourse}
                   onAddOffering={handleAddOffering}
+                  onEditOffering={handleEditOffering}
                   expandedOfferings={expandedOfferings}
                   expandedLabSections={expandedLabSections}
                   onToggleOffering={toggleOffering}
@@ -233,6 +264,15 @@ export default function CourseManagement() {
         onClose={handleCloseAddOfferingModal}
         onAddOffering={handleAddOfferingSubmit}
         course={selectedCourse}
+        existingOfferings={selectedCourse?.offerings || []}
+      />
+
+      <EditOfferingModal
+        isOpen={isEditOfferingModalOpen}
+        onClose={handleCloseEditOfferingModal}
+        onEditOffering={handleEditOfferingSubmit}
+        course={selectedCourse}
+        offering={selectedOffering}
         existingOfferings={selectedCourse?.offerings || []}
       />
     </SidebarProvider>

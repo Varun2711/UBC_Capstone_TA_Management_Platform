@@ -13,7 +13,8 @@ export function CourseCard({
   onToggle,
   onEdit,
   onDelete,
-  onAddOffering, // Add this prop
+  onAddOffering,
+  onEditOffering,
   expandedOfferings,
   expandedLabSections,
   onToggleOffering,
@@ -104,6 +105,7 @@ export function CourseCard({
                       expandedLabSections={expandedLabSections}
                       onToggleOffering={onToggleOffering}
                       onToggleLabSection={onToggleLabSection}
+                      onEditOffering={onEditOffering}
                     />
                   ))
                 ) : (
