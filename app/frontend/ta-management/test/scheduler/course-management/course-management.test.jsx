@@ -75,15 +75,20 @@ vi.mock('@/data/mock-courses', () => ({
 
 // Mock CourseCard with minimal data-testid and props
 vi.mock('@/components/scheduler/course_management/course-card', () => ({
-  // The mock now gives us access to the props
-  CourseCard: ({ course, onEdit }) => (
+  CourseCard: ({ course, onEdit, onEditOffering }) => (
     <div data-testid={`course-card-${course.id}`}>
       {course.code} - {course.title}
-      {/* Add a button to simulate the interaction */}
-      <button onClick={() => onEdit(course)}>Edit</button>
+      <button onClick={() => onEdit(course)}>Edit Course</button>
+      {/* Simulate a list of offerings within the card */}
+      {course.offerings.map(offering => (
+        <div key={offering.id} data-testid={`offering-${offering.id}`}>
+            <button onClick={() => onEditOffering(offering)}>Edit Offering: {offering.section}</button>
+        </div>
+      ))}
     </div>
   ),
 }));
+
 // Mock CourseFilters with minimal data-testid
 vi.mock('@/components/scheduler/course_management/course-filters', () => ({
   CourseFilters: ({ searchQuery, onSearchChange }) => (
@@ -100,7 +105,7 @@ vi.mock('@/components/scheduler/course_management/course-filters', () => ({
 // Mock EditCourseModal to check for its presence
 vi.mock('@/components/scheduler/course_management/edit-course-modal', () => ({
   EditCourseModal: ({ isOpen, course }) =>
-    isOpen ? <div data-testid="edit-course-modal">Editing: {course.title}</div> : null,
+    isOpen ? <div data-testid="edit-course-modal">Editing Course: {course.title}</div> : null,
 }));
 
 
@@ -109,6 +114,13 @@ vi.mock('@/components/scheduler/course_management/edit-course-modal', () => ({
 vi.mock('@/components/scheduler/course_management/add-course-modal', () => ({
   AddCourseModal: ({ isOpen }) =>
     isOpen ? <div data-testid="add-course-modal">Add Course Modal</div> : null,
+}));
+
+
+// Mock EditOfferingModal to check for its presence
+vi.mock('@/components/scheduler/course_management/edit-offering-modal', () => ({
+  EditOfferingModal: ({ isOpen, course, offering }) =>
+    isOpen ? <div data-testid="edit-offering-modal">Editing Offering: {offering.section} for {course.code}</div> : null,
 }));
 
 
@@ -221,7 +233,7 @@ describe('CourseManagement Page', () => {
     expect(screen.getByTestId('add-course-modal')).toBeInTheDocument();
   });
 
-  it('opens the EditCourseModal with the correct course when an edit button is clicked', async () => {
+  it('opens the EditCourseModal with the correct course when a course edit button is clicked', async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -234,7 +246,7 @@ describe('CourseManagement Page', () => {
   
     // 2. Find the specific "Edit" button for the first course within our mocked card
     const cs101Card = screen.getByTestId('course-card-cs101');
-    const editButton = within(cs101Card).getByRole('button', { name: /edit/i });
+    const editButton = within(cs101Card).getByRole('button', { name: /edit course/i });
   
     // 3. Click the button
     await user.click(editButton);
@@ -242,6 +254,32 @@ describe('CourseManagement Page', () => {
     // 4. Assert that the modal is now visible and contains the correct course title
     const editModal = screen.getByTestId('edit-course-modal');
     expect(editModal).toBeInTheDocument();
-    expect(editModal).toHaveTextContent('Editing: Introduction to Computer Science');
+    expect(editModal).toHaveTextContent('Editing Course: Introduction to Computer Science');
+  });
+
+  it('opens the EditOfferingModal with correct data when an offering edit button is clicked', async () => {
+    render(
+        <MemoryRouter>
+          <CourseManagement />
+        </MemoryRouter>
+      );
+
+    // 1. Ensure the modal is not visible initially
+    expect(screen.queryByTestId('edit-offering-modal')).not.toBeInTheDocument();
+
+    // 2. Find the specific "Edit Offering" button for Section B (id: '2') of CS101
+    //    We update the query to match the actual data-testid rendered from the mock data.
+    const offeringB_Card = screen.getByTestId('offering-2');
+    const editOfferingButton = within(offeringB_Card).getByRole('button', { name: /edit offering: b/i });
+
+    // 3. Click the button
+    await user.click(editOfferingButton);
+
+    // 4. Assert that the modal is now visible
+    const editOfferingModal = screen.getByTestId('edit-offering-modal');
+    expect(editOfferingModal).toBeInTheDocument();
+
+    // 5. Assert that the modal received the correct offering and course data
+    expect(editOfferingModal).toHaveTextContent('Editing Offering: B for CS101');
   });
 });
