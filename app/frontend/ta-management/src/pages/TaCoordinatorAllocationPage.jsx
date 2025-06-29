@@ -374,50 +374,124 @@ export default function TAAllocationPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle>Select TA</CardTitle>
-                      <CardDescription>Choose a TA to assign to a course section</CardDescription>
+                      <CardDescription>
+                        {selectedTA ? "TA Details" : "Choose a TA to assign to a course section"}
+                      </CardDescription>
                     </CardHeader>
+
                     <CardContent>
-                      <div className="space-y-3">
-                        {availableTAs
-                          .filter((ta) => ta.status !== "Fully Allocated")
-                          .map((ta) => (
-                            <div
-                              key={ta.id}
-                              className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                                selectedTA?.id === ta.id ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
-                              }`}
-                              onClick={() => setSelectedTA(ta)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={ta.avatar || "/placeholder.svg"} alt={ta.name} />
-                                    <AvatarFallback>
-                                      {ta.name
-                                        .split(" ")
-                                        .map((n) => n[0])
-                                        .join("")}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-medium">{ta.name}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {ta.currentHours}/{ta.maxHours} hours • {ta.major}
-                                    </p>
-                                  </div>
-                                </div>
-                                {getStatusBadge(ta.status)}
-                              </div>
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {ta.skills.slice(0, 3).map((skill, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {skill}
-                                  </Badge>
-                                ))}
-                              </div>
+                      {selectedTA ? (
+                        // ✅ TA DETAIL VIEW
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={selectedTA.avatar || "/placeholder.svg"} alt={selectedTA.name} />
+                              <AvatarFallback>
+                                {selectedTA.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-lg font-semibold">{selectedTA.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {selectedTA.currentHours}/{selectedTA.maxHours} hours • {selectedTA.major}
+                              </p>
+                              <p className="text-sm text-muted-foreground">Status: {selectedTA.status}</p>
                             </div>
-                          ))}
-                      </div>
+                          </div>
+                          
+                          <div className="mt-4">
+                            <p className="text-sm font-medium mb-2">Email: {selectedTA.email}</p>
+                            <p className="text-sm font-medium mb-2">Student ID: {selectedTA.studentId}</p>
+                            <p className="text-sm font-medium mb-2">Academic level: {selectedTA.year}</p>
+                            <p className="text-sm font-medium mb-2">Major: {selectedTA.major}</p>
+                            <p className="text-sm font-medium mb-2">GPA: {selectedTA.gpa}</p>
+                          </div>
+                          
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">Experience</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedTA.experience.map((experience, index) => (
+                                <Badge key={index} variant="outline">
+                                  {experience}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">Skills</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedTA.skills.map((skill, index) => (
+                                <Badge key={index} variant="outline">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">Availability</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedTA.availability.map((day, index) => (
+                                <Badge key={index} variant="outline">
+                                  {day}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* ✅ Go Back Button */}
+                          <Button variant="outline" onClick={() => setSelectedTA(null)}>
+                            ← Go Back
+                          </Button>
+                        </div>
+                      ) : (
+                        // ✅ TA LIST VIEW
+                        <div className="space-y-3">
+                          {availableTAs
+                            .filter((ta) => ta.status !== "Fully Allocated")
+                            .map((ta) => (
+                              <div
+                                key={ta.id}
+                                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                  selectedTA?.id === ta.id ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
+                                }`}
+                                onClick={() => setSelectedTA(ta)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage src={ta.avatar || "/placeholder.svg"} alt={ta.name} />
+                                      <AvatarFallback>
+                                        {ta.name
+                                          .split(" ")
+                                          .map((n) => n[0])
+                                          .join("")}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-medium">{ta.name}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {ta.currentHours}/{ta.maxHours} hours • {ta.major}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {getStatusBadge(ta.status)}
+                                </div>
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {ta.skills.slice(0, 3).map((skill, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs">
+                                      {skill}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
