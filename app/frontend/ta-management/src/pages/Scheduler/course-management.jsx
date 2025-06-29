@@ -1,4 +1,4 @@
-"use client"
+
 
 import { useState } from "react"
 import { Bell, Plus } from "lucide-react"

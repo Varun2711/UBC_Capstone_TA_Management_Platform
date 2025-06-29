@@ -1,4 +1,3 @@
-"use client"
 import { BookOpen, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"

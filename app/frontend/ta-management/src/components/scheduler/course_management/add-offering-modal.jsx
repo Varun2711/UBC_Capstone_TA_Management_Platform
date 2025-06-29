@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useMemo } from "react"
 import { Plus, AlertCircle, Check, ChevronsUpDown } from "lucide-react"
 
