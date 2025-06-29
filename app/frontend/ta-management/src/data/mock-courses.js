@@ -27,8 +27,8 @@ export const mockCourses = [
           },
         },
         {
-          id: "cs101-wt2-25",
-          year: "2025",
+          id: "cs101-wt2-24",
+          year: "2024",
           term: "Winter Term 2",
           instructor: "Dr. Michael Chen",
           section: "Section A",
