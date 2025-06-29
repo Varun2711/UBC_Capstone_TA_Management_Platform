@@ -505,15 +505,24 @@ export default function TAAllocationPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {courses.map((course) => (
-                          <div key={course.id}>
-                            <h4 className="font-medium mb-2">
-                              {course.code} - {course.name}
-                            </h4>
-                            <div className="space-y-2 ml-4">
-                              {course.sections
-                                //.filter((section) => section.taAssigned < section.taRequired)
-                                .map((section) => (
+                        {courses.map((course) => {
+                          const availableSections = course.sections.filter(
+                            (section) => section.taAssigned < section.taRequired
+                          )
+
+                          return (
+                            <div key={course.id}>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-medium">
+                                  {course.code} - {course.name}
+                                </h4>
+                                {availableSections.length === 0 && (
+                                  <p className="text-sm text-muted-foreground">No TA positions remaining</p>
+                                )}
+                              </div>
+
+                              <div className="space-y-2 ml-4">
+                                {availableSections.map((section) => (
                                   <div
                                     key={section.id}
                                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -538,9 +547,10 @@ export default function TAAllocationPage() {
                                     </div>
                                   </div>
                                 ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </CardContent>
                   </Card>
