@@ -512,7 +512,7 @@ export default function TAAllocationPage() {
                             </h4>
                             <div className="space-y-2 ml-4">
                               {course.sections
-                                .filter((section) => section.taAssigned < section.taRequired)
+                                //.filter((section) => section.taAssigned < section.taRequired)
                                 .map((section) => (
                                   <div
                                     key={section.id}
