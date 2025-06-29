@@ -48,6 +48,7 @@ describe('CourseCard Component', () => {
   const mockOnDelete = vi.fn();
   const mockOnToggleOffering = vi.fn();
   const mockOnToggleLabSection = vi.fn();
+  const mockOnAddOffering = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,6 +62,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set()}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -86,6 +88,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set(['1'])}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -110,6 +113,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set()}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -130,6 +134,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set()}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -151,6 +156,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set()}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -172,6 +178,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set()}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -192,6 +199,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set()}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -213,6 +221,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set()}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -233,6 +242,7 @@ describe('CourseCard Component', () => {
         onToggle={mockOnToggle}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
         expandedOfferings={new Set()}
         expandedLabSections={new Set()}
         onToggleOffering={mockOnToggleOffering}
@@ -246,4 +256,67 @@ describe('CourseCard Component', () => {
     // This simulates a filter being applied on the parent page.
     expect(screen.getByText('1 Offering')).toBeInTheDocument();
   });
+
+  it('calls onAddOffering when "Add Offering" is clicked in dropdown', async () => {
+    render(
+      <CourseCard
+        course={mockCourse}
+        isExpanded={false}
+        onToggle={mockOnToggle}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
+        expandedOfferings={new Set()}
+        expandedLabSections={new Set()}
+        onToggleOffering={mockOnToggleOffering}
+        onToggleLabSection={mockOnToggleLabSection}
+        visibleOfferingsCount={2}
+      />,
+    );
+
+    // Open the dropdown menu
+    await user.click(screen.getByTestId('more-horizontal-icon'));
+
+    // Click the "Add Offering" menu item
+    await user.click(screen.getByRole('menuitem', { name: /add offering/i }));
+
+    // Assert that the callback was called with the correct course data
+    expect(mockOnAddOffering).toHaveBeenCalledWith(mockCourse);
+    expect(mockOnAddOffering).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows "Add First Offering" button and calls onAddOffering on click when course has no offerings', async () => {
+    // Create a version of the mock course with an empty offerings array
+    const courseWithNoOfferings = { ...mockCourse, offerings: [] };
+
+    render(
+      <CourseCard
+        course={courseWithNoOfferings}
+        isExpanded={true} // The card must be expanded to see this button
+        onToggle={mockOnToggle}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+        onAddOffering={mockOnAddOffering}
+        expandedOfferings={new Set()}
+        expandedLabSections={new Set()}
+        onToggleOffering={mockOnToggleOffering}
+        onToggleLabSection={mockOnToggleLabSection}
+        visibleOfferingsCount={0}
+      />,
+    );
+
+    // Check that the empty state message and button are visible
+    expect(screen.getByText('No offerings available for this course.')).toBeInTheDocument();
+    const addFirstButton = screen.getByRole('button', { name: /add first offering/i });
+    expect(addFirstButton).toBeInTheDocument();
+
+    // Click the button
+    await user.click(addFirstButton);
+
+    // Assert that the callback was called with the correct course data
+    expect(mockOnAddOffering).toHaveBeenCalledWith(courseWithNoOfferings);
+    expect(mockOnAddOffering).toHaveBeenCalledTimes(1);
+  });
+
+
 });

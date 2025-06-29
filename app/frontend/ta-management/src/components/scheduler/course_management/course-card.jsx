@@ -1,6 +1,8 @@
-import { BookOpen, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2 , Plus} from "lucide-react"
+"use client"
+import { BookOpen, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2, Plus } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -12,11 +14,12 @@ export function CourseCard({
   onToggle,
   onEdit,
   onDelete,
+  onAddOffering, // Add this prop
   expandedOfferings,
   expandedLabSections,
   onToggleOffering,
   onToggleLabSection,
-  visibleOfferingsCount, // Add this new prop
+  visibleOfferingsCount,
 }) {
   const groupOfferingsByTerm = (offerings) => {
     const grouped = {}
@@ -48,13 +51,12 @@ export function CourseCard({
                     <CardTitle className="text-lg">
                       {course.code} - {course.title}
                     </CardTitle>
-                    
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
-              <Badge variant="secondary">
+                <Badge variant="secondary">
                   {visibleOfferingsCount} {visibleOfferingsCount === 1 ? "Offering" : "Offerings"}
                 </Badge>
                 <Badge variant="outline">{course.department}</Badge>
@@ -69,9 +71,10 @@ export function CourseCard({
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Course
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onAddOffering(course)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Offering</DropdownMenuItem>
+                      Add Offering
+                    </DropdownMenuItem>
                     <DropdownMenuItem className="text-red-600" onClick={() => onDelete(course.id)}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete Course
@@ -91,18 +94,33 @@ export function CourseCard({
               {/* Course Offerings grouped by term */}
               <div className="space-y-4">
                 <h4 className="font-medium text-sm">Course Offerings</h4>
-                {Object.entries(groupOfferingsByTerm(course.offerings)).map(([termKey, termOfferings]) => (
-                  <TermSection
-                    key={termKey}
-                    termKey={termKey}
-                    termOfferings={termOfferings}
-                    course={course}
-                    expandedOfferings={expandedOfferings}
-                    expandedLabSections={expandedLabSections}
-                    onToggleOffering={onToggleOffering}
-                    onToggleLabSection={onToggleLabSection}
-                  />
-                ))}
+                {course.offerings && course.offerings.length > 0 ? (
+                  Object.entries(groupOfferingsByTerm(course.offerings)).map(([termKey, termOfferings]) => (
+                    <TermSection
+                      key={termKey}
+                      termKey={termKey}
+                      termOfferings={termOfferings}
+                      course={course}
+                      expandedOfferings={expandedOfferings}
+                      expandedLabSections={expandedLabSections}
+                      onToggleOffering={onToggleOffering}
+                      onToggleLabSection={onToggleLabSection}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <p className="text-sm">No offerings available for this course.</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 bg-transparent"
+                      onClick={() => onAddOffering(course)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Offering
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
