@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import { Bell, Plus } from "lucide-react"
 
@@ -12,6 +14,7 @@ import { EmptyState } from "@/components/scheduler/course_management/empty-state
 import { mockCourses } from "@/data/mock-courses"
 import { AddCourseModal } from "@/components/scheduler/course_management/add-course-modal"
 import { EditCourseModal } from "@/components/scheduler/course_management/edit-course-modal"
+import { AddOfferingModal } from "@/components/scheduler/course_management/add-offering-modal"
 
 export default function CourseManagement() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -23,6 +26,7 @@ export default function CourseManagement() {
   const [courses, setCourses] = useState(mockCourses)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isAddOfferingModalOpen, setIsAddOfferingModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
 
   const toggleCourse = (courseId) => {
@@ -86,6 +90,25 @@ export default function CourseManagement() {
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false)
+    setSelectedCourse(null)
+  }
+
+  const handleAddOffering = (course) => {
+    setSelectedCourse(course)
+    setIsAddOfferingModalOpen(true)
+  }
+
+  const handleAddOfferingSubmit = (courseId, newOffering) => {
+    setCourses((prev) =>
+      prev.map((course) =>
+        course.id === courseId ? { ...course, offerings: [...course.offerings, newOffering] } : course,
+      ),
+    )
+    console.log("Offering added:", newOffering)
+  }
+
+  const handleCloseAddOfferingModal = () => {
+    setIsAddOfferingModalOpen(false)
     setSelectedCourse(null)
   }
 
@@ -174,6 +197,7 @@ export default function CourseManagement() {
                   onToggle={() => toggleCourse(course.id)}
                   onEdit={handleEditCourse}
                   onDelete={handleDeleteCourse}
+                  onAddOffering={handleAddOffering}
                   expandedOfferings={expandedOfferings}
                   expandedLabSections={expandedLabSections}
                   onToggleOffering={toggleOffering}
@@ -202,6 +226,14 @@ export default function CourseManagement() {
         onEditCourse={handleEditCourseSubmit}
         course={selectedCourse}
         existingCourses={courses}
+      />
+
+      <AddOfferingModal
+        isOpen={isAddOfferingModalOpen}
+        onClose={handleCloseAddOfferingModal}
+        onAddOffering={handleAddOfferingSubmit}
+        course={selectedCourse}
+        existingOfferings={selectedCourse?.offerings || []}
       />
     </SidebarProvider>
   )

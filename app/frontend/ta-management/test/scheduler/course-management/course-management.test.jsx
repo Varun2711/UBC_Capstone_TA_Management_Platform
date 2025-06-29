@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import CourseManagement from '@/pages/Scheduler/course-management';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { X, ChevronDown, Edit } from 'lucide-react';
+import { X, ChevronDown, Edit, ChevronsUpDown, Check } from 'lucide-react';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
@@ -14,6 +14,8 @@ vi.mock('lucide-react', () => ({
   X: () => <X data-testid="close-icon" />,
   ChevronDown: () => <ChevronDown data-testid="chevron-down-icon" />,
   Edit: () => <svg data-testid="edit-icon" />,
+  ChevronsUpDown: () => <ChevronsUpDown data-testid="chevrons-up-down-icon" />,
+  Check: () => <svg data-testid="check-icon" />,
 }));
 
 // Mock useMobile hook
