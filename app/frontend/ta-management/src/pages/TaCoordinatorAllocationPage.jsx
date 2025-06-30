@@ -281,7 +281,14 @@ export default function TAAllocationPage() {
     const matchesSearch =
       ta.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ta.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ta.studentId.toLowerCase().includes(searchTerm.toLowerCase())
+      ta.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ta.major.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ta.skills.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      ta.experience.some((exp) => exp.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      ta.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ta.availability.some((day) => day.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      ta.year.toLowerCase().includes(searchTerm.toLowerCase())
+
     const matchesFilter = filterStatus === "all" || ta.status.toLowerCase().includes(filterStatus.toLowerCase())
     return matchesSearch && matchesFilter
   })
@@ -458,47 +465,62 @@ export default function TAAllocationPage() {
                         </div>
                       ) : (
                         // ✅ TA LIST VIEW
-                        <div className="space-y-3">
-                          {taList
-                            .filter((ta) => ta.status !== "Fully Allocated")
-                            .map((ta) => (
-                              <div
-                                key={ta.id}
-                                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                                  selectedTA?.id === ta.id ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
-                                }`}
-                                onClick={() => setSelectedTA(ta)}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarImage src={ta.avatar || "/placeholder.svg"} alt={ta.name} />
-                                      <AvatarFallback>
-                                        {ta.name
-                                          .split(" ")
-                                          .map((n) => n[0])
-                                          .join("")}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <p className="font-medium">{ta.name}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        {ta.currentHours}/{ta.maxHours} hours • {ta.major}
-                                      </p>
+                        <>
+                          {/* ✅ Search Bar */}
+                          <input
+                            type="text"
+                            placeholder="Search TAs by name, email, ID, major, and other details..."
+                            className="w-full mb-4 p-2 border border-gray-300 rounded-md"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                          
+                          <div className="space-y-3">
+                            {filteredTAs
+                              .filter((ta) => ta.status !== "Fully Allocated")
+                              .map((ta) => (
+                                <div
+                                  key={ta.id}
+                                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                    selectedTA?.id === ta.id ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
+                                  }`}
+                                  onClick={() => setSelectedTA(ta)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={ta.avatar || "/placeholder.svg"} alt={ta.name} />
+                                        <AvatarFallback>
+                                          {ta.name
+                                            .split(" ")
+                                            .map((n) => n[0])
+                                            .join("")}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <p className="font-medium">{ta.name}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          {ta.currentHours}/{ta.maxHours} hours • {ta.major}
+                                        </p>
+                                      </div>
                                     </div>
+                                    {getStatusBadge(ta.status)}
                                   </div>
-                                  {getStatusBadge(ta.status)}
+                                  <div className="mt-2 flex flex-wrap gap-1">
+                                    {ta.skills.slice(0, 3).map((skill, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
                                 </div>
-                                <div className="mt-2 flex flex-wrap gap-1">
-                                  {ta.skills.slice(0, 3).map((skill, index) => (
-                                    <Badge key={index} variant="outline" className="text-xs">
-                                      {skill}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
+                              ))
+                            }
+                            {filteredTAs.filter((ta) => ta.status !== "Fully Allocated").length === 0 && (
+                              <p className="text-sm text-muted-foreground text-center">No TAs match your search.</p>
+                            )}
+                          </div>
+                        </>
                       )}
                     </CardContent>
                   </Card>
