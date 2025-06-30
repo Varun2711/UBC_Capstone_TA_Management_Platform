@@ -39,7 +39,7 @@ import App from "@/App"
 
 
 // Mock data for TAs
-const availableTAs = [
+let availableTAs = [
   {
     id: 1,
     name: "Sarah Johnson",
@@ -54,7 +54,7 @@ const availableTAs = [
     experience: ["CS 101", "CS 201"],
     availability: ["Monday", "Wednesday", "Friday"],
     avatar: "/placeholder.svg?height=40&width=40",
-    status: "Available",
+    status: "Partially Allocated",
   },
   {
     id: 2,
@@ -88,6 +88,22 @@ const availableTAs = [
     avatar: "/placeholder.svg?height=40&width=40",
     status: "Fully Allocated",
   },
+  {
+    id: 4,
+    name: "Abraham Lincoln",
+    email: "abraham.lincoln@university.edu",
+    studentId: "AL2354021",
+    major: "Political Science",
+    year: "Undergraduate",
+    gpa: "3.80",
+    maxHours: 20,
+    currentHours: 0,
+    skills: ["Canadian Government", "International Law", "European History"],
+    experience: ["GOV 101", "LAW 201"],
+    availability: ["Monday", "Tuesday", "Friday"],
+    avatar: "/placeholder.svg?height=40&width=40",
+    status: "Not Allocated",
+  },
 ]
 
 // Mock data for courses
@@ -104,6 +120,7 @@ const courses = [
         type: "Lecture",
         section: "001",
         time: "MWF 9:00-10:00",
+        weekHours: 3,
         enrollment: 120,
         taRequired: 2,
         taAssigned: 1,
@@ -114,6 +131,7 @@ const courses = [
         type: "Lab",
         section: "L01",
         time: "M 2:00-4:00",
+        weekHours: 2,
         enrollment: 25,
         taRequired: 1,
         taAssigned: 0,
@@ -124,6 +142,7 @@ const courses = [
         type: "Lab",
         section: "L02",
         time: "W 2:00-4:00",
+        weekHours: 2,
         enrollment: 25,
         taRequired: 1,
         taAssigned: 0,
@@ -146,6 +165,7 @@ const courses = [
         type: "Lecture",
         section: "001",
         time: "TTh 11:00-12:30",
+        weekHours: 3,
         enrollment: 80,
         taRequired: 2,
         taAssigned: 2,
@@ -156,6 +176,7 @@ const courses = [
         type: "Lab",
         section: "L01",
         time: "T 3:00-5:00",
+        weekHours: 2,
         enrollment: 20,
         taRequired: 1,
         taAssigned: 1,
@@ -194,13 +215,69 @@ function getPriorityBadge(priority) {
   }
 }
 
+
 export default function TAAllocationPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTA, setSelectedTA] = useState(null)
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [filterStatus, setFilterStatus] = useState("all")
+  const [assignments, setAssignments] = useState([])
+  const [taList, setTaList] = useState(availableTAs)
 
-  const filteredTAs = availableTAs.filter((ta) => {
+  // Function to store the assignment of a TA to a course
+  const handleAssignTA = (selectedTA, selectedCourse) => {
+    const alreadyAssigned = assignments.some(
+      (a) =>
+        a.taStudentId === selectedTA.studentId &&
+        a.courseCode === selectedCourse.code &&
+        a.section === selectedCourse.section
+    )
+
+    if (alreadyAssigned) return
+
+    setAssignments((prevAssignments) => [
+      ...prevAssignments,
+      {
+        taName: selectedTA.name,
+        taStudentId: selectedTA.studentId,
+        courseCode: selectedCourse.code,
+        courseName: selectedCourse.name,
+        section: selectedCourse.section,
+        instructor: selectedCourse.instructor,
+        semester: selectedCourse.semester,
+        type: selectedCourse.type,
+        time: selectedCourse.time,
+      },
+    ])
+  }
+
+  // Function to update TA hours after assignment
+  const updateHours = (ta, course) => {
+    const updatedTA = {
+      ...ta,
+      currentHours: ta.currentHours + course.weekHours,
+      status:
+        ta.currentHours + course.weekHours >= ta.maxHours
+          ? "Fully Allocated"
+          : "Partially Allocated",
+    }
+
+    // ✅ Properly update state
+    setTaList((prevTAs) =>
+      prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
+    )
+
+    // Also update selectedTA so UI reflects changes
+    setSelectedTA(updatedTA)
+  }
+
+
+// Function to get assignments for a specific TA
+  function getAssignmentsForTA(taName) {
+  return assignments.filter((assignment) => assignment.taName === taName)
+}
+
+  const filteredTAs = taList.filter((ta) => {
     const matchesSearch =
       ta.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ta.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -209,8 +286,8 @@ export default function TAAllocationPage() {
     return matchesSearch && matchesFilter
   })
 
-  const totalTAs = availableTAs.length
-  const availableTACount = availableTAs.filter((ta) => ta.status === "Available").length
+  const totalTAs = taList.length
+  const availableTACount = taList.filter((ta) => ta.status === "Available").length
   const totalCourses = courses.length
   const coursesNeedingTAs = courses.filter((course) => course.totalTAAssigned < course.totalTARequired).length
 
@@ -266,9 +343,9 @@ export default function TAAllocationPage() {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{availableTAs.reduce((sum, ta) => sum + ta.currentHours, 0)}</div>
+                  <div className="text-2xl font-bold">{taList.reduce((sum, ta) => sum + ta.currentHours, 0)}</div>
                   <p className="text-xs text-muted-foreground">
-                    of {availableTAs.reduce((sum, ta) => sum + ta.maxHours, 0)} max hours
+                    of {taList.reduce((sum, ta) => sum + ta.maxHours, 0)} max hours
                   </p>
                 </CardContent>
               </Card>
@@ -292,80 +369,11 @@ export default function TAAllocationPage() {
             </div>
 
             {/* Main Allocation Interface */}
-            <Tabs defaultValue="courses" className="space-y-4">
+            <Tabs defaultValue="allocate" className="space-y-4">
               <TabsList>
-                <TabsTrigger value="courses">Manage Courses</TabsTrigger>
                 <TabsTrigger value="allocate">Allocate TAs</TabsTrigger>
+                <TabsTrigger value="allocated">Allocated TAs</TabsTrigger>
               </TabsList>
-
-              {/* Courses Tab */}
-              <TabsContent value="courses" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Course Sections</CardTitle>
-                    <CardDescription>Manage course sections and TA requirements</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {courses.map((course) => (
-                        <div key={course.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <h3 className="font-semibold text-lg">
-                                {course.code} - {course.name}
-                              </h3>
-                              <p className="text-muted-foreground">
-                                {course.instructor} • {course.semester}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {getPriorityBadge(course.priority)}
-                              <Badge variant="outline">
-                                {course.totalTAAssigned}/{course.totalTARequired} TAs Assigned
-                              </Badge>
-                            </div>
-                          </div>
-
-                          <div className="grid gap-3">
-                            {course.sections.map((section) => (
-                              <div
-                                key={section.id}
-                                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                              >
-                                <div className="flex items-center gap-4">
-                                  <Badge variant={section.type === "Lecture" ? "default" : "secondary"}>
-                                    {section.type}
-                                  </Badge>
-                                  <div>
-                                    <p className="font-medium">Section {section.section}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {section.time} • {section.enrollment} students
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <div className="text-right">
-                                    <p className="text-sm font-medium">
-                                      {section.taAssigned}/{section.taRequired} TAs
-                                    </p>
-                                    {section.assignedTAs.length > 0 && (
-                                      <p className="text-xs text-muted-foreground">{section.assignedTAs.join(", ")}</p>
-                                    )}
-                                  </div>
-                                  <Button size="sm" variant="outline">
-                                    <Plus className="h-4 w-4 mr-1" />
-                                    Assign TA
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
 
               {/* Allocate Tab */}
               <TabsContent value="allocate" className="space-y-4">
@@ -451,7 +459,7 @@ export default function TAAllocationPage() {
                       ) : (
                         // ✅ TA LIST VIEW
                         <div className="space-y-3">
-                          {availableTAs
+                          {taList
                             .filter((ta) => ta.status !== "Fully Allocated")
                             .map((ta) => (
                               <div
@@ -522,13 +530,18 @@ export default function TAAllocationPage() {
                               <div className="space-y-2 ml-4">
                                 {availableSections.map((section) => (
                                   <div
-                                    key={section.id}
+                                    key={`${course.id}-${section.id}`}
                                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                                      selectedCourse?.id === section.id
+                                      selectedCourse?.sectionId === section.id
                                         ? "border-blue-500 bg-blue-50"
                                         : "hover:bg-muted/50"
                                     }`}
-                                    onClick={() => setSelectedCourse(section)}
+                                    onClick={() => setSelectedCourse({
+                                      ...section,
+                                      name: course.name,
+                                      code: course.code,
+                                      sectionId: section.id,
+                                    })}
                                   >
                                     <div className="flex items-center justify-between">
                                       <div>
@@ -566,12 +579,12 @@ export default function TAAllocationPage() {
                           <p className="font-medium">
                             Assign <span className="text-blue-600">{selectedTA.name}</span> to{" "}
                             <span className="text-blue-600">
-                              {selectedCourse.type} Section {selectedCourse.section}
+                              {selectedCourse.code} - {selectedCourse.name} - {selectedCourse.type} Section {selectedCourse.section}
                             </span>
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
                             This will add to their current workload: {selectedTA.currentHours} →{" "}
-                            {selectedTA.currentHours + 5} hours
+                            {selectedTA.currentHours + selectedCourse.weekHours} hours
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -588,6 +601,8 @@ export default function TAAllocationPage() {
                             onClick={() => {
                               // Handle assignment logic here
                               console.log("Assigning", selectedTA.name, "to", selectedCourse)
+                              updateHours(selectedTA, selectedCourse)
+                              handleAssignTA(selectedTA, selectedCourse)
                               setSelectedTA(null)
                               setSelectedCourse(null)
                             }}
@@ -599,6 +614,39 @@ export default function TAAllocationPage() {
                     </CardContent>
                   </Card>
                 )}
+              </TabsContent>
+
+              {/* Allocated TAs Tab */}
+              <TabsContent value="allocated" className="space-y-4">
+                {taList.filter(
+                (ta) => ta.status === "Fully Allocated" || ta.status === "Partially Allocated")
+                .map((ta) => (
+                  <Card key={ta.id}>
+                    <CardHeader>
+                       <CardTitle>{ta.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Current Workload: {ta.currentHours}/{ta.maxHours} hours
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Status: {ta.status}
+                      </p>
+                    
+                      {getAssignmentsForTA(ta.name).map((assignment, idx) => (
+                        <div key={`${assignment.taStudentId}-${assignment.courseCode}-${assignment.section}`}>
+                          <p className="font-medium mt-2">
+                            {assignment.taName} - {assignment.taStudentId}   
+                          </p>
+                          <p className="text-sm text-muted-foreground">                      
+                            {assignment.courseCode} - {assignment.courseName} - {assignment.section}
+                          </p>
+                        </div>
+                      ))} 
+
+                    </CardContent>
+                  </Card>
+                ))}
               </TabsContent>
             </Tabs>
           </main>
