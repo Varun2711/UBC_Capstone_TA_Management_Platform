@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { ChevronDown, ChevronRight, Mail, Calendar, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -152,14 +151,20 @@ export function InstructorRequirementsCard({
                             {/* General Requirements */}
                             <div className="space-y-2">
                               <h5 className="font-medium text-sm">Requirements</h5>
-                              <ul className="space-y-1">
-                                {offering.requirements.generalRequirements.map((req, idx) => (
-                                  <li key={idx} className="text-sm text-muted-foreground flex items-start">
-                                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                                    {req}
-                                  </li>
-                                ))}
-                              </ul>
+                              {offering.requirements.generalRequirements && offering.requirements.generalRequirements.length > 0 ? (
+                                <ul className="space-y-1">
+                                  {offering.requirements.generalRequirements.map((req, idx) => (
+                                    <li key={idx} className="text-sm text-muted-foreground flex items-start">
+                                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                      {req}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-sm text-muted-foreground italic">
+                                  No requirements received yet.
+                                </p>
+                              )}
                             </div>
                           </div>
                         </CardContent>
