@@ -413,60 +413,6 @@ export default function TAAllocationPage() {
 
           {/* Main Content */}
           <main className="flex-1 space-y-6 p-6">
-            {/* Overview Cards 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total TAs</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{totalTAs}</div>
-                  <p className="text-xs text-muted-foreground">{availableTACount} available</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Courses</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{totalCourses}</div>
-                  <p className="text-xs text-muted-foreground">{coursesNeedingTAs} need TAs</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Hours Allocated</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{taList.reduce((sum, ta) => sum + ta.currentHours, 0)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    of {taList.reduce((sum, ta) => sum + ta.maxHours, 0)} max hours
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Allocation Status</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {Math.round(
-                      (courses.reduce((sum, course) => sum + course.totalTAAssigned, 0) /
-                        courses.reduce((sum, course) => sum + course.totalTARequired, 0)) *
-                        100,
-                    )}
-                    %
-                  </div>
-                  <p className="text-xs text-muted-foreground">Complete</p>
-                </CardContent>
-              </Card>
-            </div>
-            */}
-
             {/* Main Allocation Interface */}
             <Tabs defaultValue="allocate" className="space-y-4">
               <TabsList>
