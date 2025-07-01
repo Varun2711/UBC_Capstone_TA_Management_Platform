@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Bell,
   BookOpen,
@@ -80,8 +80,8 @@ let availableTAs = [
     major: "Computer Science",
     year: "Graduate",
     gpa: "3.78",
-    maxHours: 15,
-    currentHours: 15,
+    maxHours: 10,
+    currentHours: 10,
     skills: ["JavaScript", "React", "Node.js"],
     experience: ["CS 102", "CS 250"],
     availability: ["Monday", "Tuesday", "Wednesday"],
@@ -124,7 +124,6 @@ const courses = [
         enrollment: 120,
         taRequired: 2,
         taAssigned: 1,
-        assignedTAs: ["Sarah Johnson"],
       },
       {
         id: 2,
@@ -135,7 +134,6 @@ const courses = [
         enrollment: 25,
         taRequired: 1,
         taAssigned: 0,
-        assignedTAs: [],
       },
       {
         id: 3,
@@ -146,7 +144,6 @@ const courses = [
         enrollment: 25,
         taRequired: 1,
         taAssigned: 0,
-        assignedTAs: [],
       },
     ],
     totalTARequired: 4,
@@ -169,7 +166,6 @@ const courses = [
         enrollment: 80,
         taRequired: 2,
         taAssigned: 2,
-        assignedTAs: ["Michael Chen", "Emily Rodriguez"],
       },
       {
         id: 5,
@@ -180,7 +176,6 @@ const courses = [
         enrollment: 20,
         taRequired: 1,
         taAssigned: 1,
-        assignedTAs: ["Emily Rodriguez"],
       },
     ],
     totalTARequired: 3,
@@ -250,6 +245,65 @@ export default function TAAllocationPage() {
       },
     ])
   }
+
+  //Adding emily to the list of assignments since she is already assigned to a course
+  useEffect(() => {
+    setAssignments((prevAssignments) => {
+      const hasEmily = prevAssignments.some(
+        (a) => a.taStudentId === "ER2024003"
+      )
+      if (hasEmily) return prevAssignments
+      
+      return [
+      ...prevAssignments,
+      {
+        taName: "Emily Rodriguez",
+        taStudentId: "ER2024003",
+        courseCode: "CS 201",
+        courseName: "Data Structures",
+        section: "L01",
+        instructor: "Dr. Johnson",
+        semester: "Spring 2024",
+        type: "Lab",
+        time: "T 3:00-5:00",
+      },
+      {
+        taName: "Emily Rodriguez",
+        taStudentId: "ER2024003",
+        courseCode: "CS 201",
+        courseName: "Data Structures",
+        section: "001",
+        instructor: "Dr. Johnson",
+        semester: "Spring 2024",
+        type: "Lecture",
+        time: "TTh 11:00-12:30",
+      },
+      {
+        taName: "Emily Rodriguez",
+        taStudentId: "ER2024003",
+        courseCode: "CS 101",
+        courseName: "Introduction to Programming",
+        section: "001",
+        instructor: "Dr. Smith",
+        semester: "Spring 2024",
+        type: "Lecture",
+        time: "MWF 9:00-10:00",
+      },
+      {
+        taName: "Emily Rodriguez",
+        taStudentId: "ER2024003",
+        courseCode: "CS 101",
+        courseName: "Introduction to Programming",
+        section: "L01",
+        instructor: "Dr. Smith",
+        semester: "Spring 2024",
+        type: "Lab",
+        time: "M 2:00-4:00",
+      },
+      ]
+    })
+  }, [])
+
 
   // Function to update TA hours after assignment
   const updateHours = (ta, course) => {
