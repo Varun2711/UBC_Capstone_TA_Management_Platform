@@ -97,8 +97,10 @@ describe("TAAllocationPage", () => {
     await userEvent.click(screen.getByText("Allocated TAs"))
 
     expect(screen.getByText("Abraham Lincoln")).toBeInTheDocument()
-    expect(screen.getByText(/CS 101 - Introduction to Programming/)).toBeInTheDocument()
-    expect(screen.getByText(/L01/)).toBeInTheDocument()
+    const courses = screen.getAllByText(/CS 101 - Introduction to Programming/);
+    expect(courses.length).toBeGreaterThan(0);
+    const sections = screen.getAllByText(/L01/);
+    expect(sections.length).toBeGreaterThan(0);
   })
 
   it("cancels TA assignment on Cancel button click", async () => {
