@@ -112,7 +112,7 @@ export function CourseCard({
                   ))
                 ) : (
                   <div className="text-center py-6 text-muted-foreground">
-                    <p className="text-sm">No offerings available for this course.</p>
+                    <p className="text-sm">This course currently has no offerings.</p>
                     <Button
                       variant="outline"
                       size="sm"

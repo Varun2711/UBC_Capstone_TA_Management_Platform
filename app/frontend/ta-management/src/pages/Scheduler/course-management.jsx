@@ -75,7 +75,6 @@ export default function CourseManagement() {
 
   const handleAddCourseSubmit = (newCourse) => {
     setCourses((prev) => [...prev, newCourse])
-    console.log("Course added:", newCourse)
   }
 
   const handleCloseAddModal = () => {
@@ -89,7 +88,6 @@ export default function CourseManagement() {
 
   const handleEditCourseSubmit = (updatedCourse) => {
     setCourses((prev) => prev.map((course) => (course.id === updatedCourse.id ? updatedCourse : course)))
-    console.log("Course updated:", updatedCourse)
   }
 
   const handleCloseEditModal = () => {
@@ -108,7 +106,6 @@ export default function CourseManagement() {
         course.id === courseId ? { ...course, offerings: [...course.offerings, newOffering] } : course,
       ),
     )
-    console.log("Offering added:", newOffering)
   }
 
   const handleCloseAddOfferingModal = () => {
@@ -135,7 +132,6 @@ export default function CourseManagement() {
           : course,
       ),
     )
-    console.log("Offering updated:", updatedOffering)
   }
 
   const handleCloseEditOfferingModal = () => {
@@ -177,7 +173,6 @@ export default function CourseManagement() {
         return course
       }),
     )
-    console.log("Lab/Tutorial session added:", newSession)
   }
 
   const handleCloseAddLabTutorialModal = () => {

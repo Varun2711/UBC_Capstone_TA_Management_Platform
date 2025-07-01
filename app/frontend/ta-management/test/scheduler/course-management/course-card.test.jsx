@@ -306,7 +306,7 @@ describe('CourseCard Component', () => {
     );
 
     // Check that the empty state message and button are visible
-    expect(screen.getByText('No offerings available for this course.')).toBeInTheDocument();
+    expect(screen.getByText('This course currently has no offerings.')).toBeInTheDocument();
     const addFirstButton = screen.getByRole('button', { name: /add first offering/i });
     expect(addFirstButton).toBeInTheDocument();
 

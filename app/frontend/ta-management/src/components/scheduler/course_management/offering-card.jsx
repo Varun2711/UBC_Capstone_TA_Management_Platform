@@ -1,10 +1,10 @@
-import { ChevronDown, ChevronRight, MoreHorizontal, FileText , Edit , Trash2, Plus } from "lucide-react"
+import { ChevronDown, ChevronRight, MoreHorizontal, FileText, Edit, Trash2, Plus } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function OfferingCard({ offering, isExpanded, onToggle, onEdit, onAddLabTutorial }) {
   return (
@@ -58,7 +58,7 @@ export function OfferingCard({ offering, isExpanded, onToggle, onEdit, onAddLabT
                 <FileText className="h-4 w-4 mr-2" />
                 TA Requirements - {offering.section}
               </h5>
-              {offering.requirements.specialRequirements.length > 0 && (
+              {offering.requirements.specialRequirements.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
                   {offering.requirements.specialRequirements.map((req, idx) => (
                     <Badge key={idx} variant="outline" className="text-xs">
@@ -66,11 +66,15 @@ export function OfferingCard({ offering, isExpanded, onToggle, onEdit, onAddLabT
                     </Badge>
                   ))}
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  No TA requirements have been specified.
+                </p>
               )}
             </div>
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
     </Card>
-  )
+  );
 }
