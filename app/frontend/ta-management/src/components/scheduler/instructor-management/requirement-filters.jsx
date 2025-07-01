@@ -29,7 +29,7 @@ export function RequirementsFilters({
         </div>
 
         <Select value={selectedDepartment} onValueChange={onDepartmentChange}>
-          <SelectTrigger aria-label = "Department" sclassName="w-full sm:w-48">
+          <SelectTrigger aria-label = "Department" className="w-full sm:w-48">
             <SelectValue placeholder="Department" />
           </SelectTrigger>
           <SelectContent>
