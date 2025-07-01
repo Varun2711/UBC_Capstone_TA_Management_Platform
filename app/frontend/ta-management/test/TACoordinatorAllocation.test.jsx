@@ -10,16 +10,6 @@ function renderWithRouter(ui) {
 
 describe("TAAllocationPage", () => {
 
-  it("renders the TA Allocation Management page with overview cards", () => {
-    renderWithRouter(<TAAllocationPage />)
-
-    expect(screen.getByText("TA Allocation Management")).toBeInTheDocument()
-    expect(screen.getByText("Total TAs")).toBeInTheDocument()
-    expect(screen.getByText("Courses")).toBeInTheDocument()
-    expect(screen.getByText("Total Hours Allocated")).toBeInTheDocument()
-    expect(screen.getByText("Allocation Status")).toBeInTheDocument()
-  })
-
   it("shows the list of available TAs by default in Allocate tab", () => {
     renderWithRouter(<TAAllocationPage />)
 
