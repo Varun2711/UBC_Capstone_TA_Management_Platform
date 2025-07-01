@@ -413,7 +413,7 @@ export default function TAAllocationPage() {
 
           {/* Main Content */}
           <main className="flex-1 space-y-6 p-6">
-            {/* Overview Cards */}
+            {/* Overview Cards 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -465,6 +465,7 @@ export default function TAAllocationPage() {
                 </CardContent>
               </Card>
             </div>
+            */}
 
             {/* Main Allocation Interface */}
             <Tabs defaultValue="allocate" className="space-y-4">
