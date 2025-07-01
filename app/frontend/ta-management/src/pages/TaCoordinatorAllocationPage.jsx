@@ -218,6 +218,9 @@ export default function TAAllocationPage() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [assignments, setAssignments] = useState([])
   const [taList, setTaList] = useState(availableTAs)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [assignmentToDelete, setAssignmentToDelete] = useState(null)
+
 
   // Function to store the assignment of a TA to a course
   const handleAssignTA = (selectedTA, selectedCourse) => {
@@ -245,6 +248,40 @@ export default function TAAllocationPage() {
       },
     ])
   }
+
+  const handleDeleteAssignment = (assignmentToDelete) => {
+    setAssignments((prevAssignments) =>
+      prevAssignments.filter(
+        (a) =>
+          !(
+            a.taStudentId === assignmentToDelete.taStudentId &&
+            a.courseCode === assignmentToDelete.courseCode &&
+            a.section === assignmentToDelete.section
+          )
+      )
+    )
+
+    // Update TA hours and status
+    const ta = taList.find((ta) => ta.studentId === assignmentToDelete.taStudentId)
+    const course = courses.find((c) => c.code === assignmentToDelete.courseCode)
+    const section = course?.sections.find((s) => s.section === assignmentToDelete.section)
+
+    if (ta && section) {
+      const updatedTA = {
+        ...ta,
+        currentHours: Math.max(0, ta.currentHours - section.weekHours),
+        status:
+          Math.max(0, ta.currentHours - section.weekHours) === 0
+            ? "Not Allocated"
+            : "Partially Allocated",
+      }
+
+      setTaList((prevTAs) =>
+        prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
+      )
+    }
+  }
+
 
   //Adding emily to the list of assignments since she is already assigned to a course
   useEffect(() => {
@@ -717,6 +754,16 @@ export default function TAAllocationPage() {
                           <p className="text-sm text-muted-foreground">                      
                             {assignment.courseCode} - {assignment.courseName} - {assignment.section}
                           </p>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              setAssignmentToDelete(assignment)
+                              setShowDeleteModal(true)
+                            }}
+                          >
+                            Delete
+                          </Button>
                         </div>
                       ))} 
 
@@ -724,6 +771,43 @@ export default function TAAllocationPage() {
                   </Card>
                 ))}
               </TabsContent>
+
+              {showDeleteModal && assignmentToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                  <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                    <h2 className="text-lg font-semibold mb-4">Confirm Deletion</h2>
+                    <p className="text-sm mb-6">
+                      Are you sure you want to delete the assignment of{" "}
+                      <strong>{assignmentToDelete.taName}</strong> to{" "}
+                      <strong>
+                        {assignmentToDelete.courseCode} - {assignmentToDelete.section}
+                      </strong>?
+                    </p>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowDeleteModal(false)
+                          setAssignmentToDelete(null)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          handleDeleteAssignment(assignmentToDelete)
+                          setShowDeleteModal(false)
+                          setAssignmentToDelete(null)
+                        }}
+                      >
+                        Confirm
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </Tabs>
           </main>
         </div>
