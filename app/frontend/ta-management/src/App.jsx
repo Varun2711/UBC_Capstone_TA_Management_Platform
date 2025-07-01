@@ -6,7 +6,7 @@ import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
 import Application from "./pages/Application";
 import StudentDashboard from "./pages/Student_Dashboard";
 import ProfilePage from "./pages/ProfilePage";
-
+import CourseManagement from "./pages/Scheduler/course-management";
 
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
@@ -55,6 +55,7 @@ function App() {
       <Route path="/user-profile-scheduler" element={<UserProfile />} />
       <Route path="/instructor-dashboard" element={<InstructorDashboard/>} />
       <Route path="/application" element={<Application />} />
+      <Route path="/course-management" element={<CourseManagement />} />
 
       {/* Add more routes if needed */}
     </Routes>
