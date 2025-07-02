@@ -11,7 +11,7 @@ from utils.password_utils import generate_secure_password
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
-from .serializers import (StudentSerializer, InstructorSerializer, TASchedulerSerializer, AdminSerializer, UpdateStudentProfileSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
+from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
                           StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, FacultySerializer)
 
 from utils.profile_utils import get_user_by_id, get_user_by_email
@@ -170,11 +170,11 @@ class ProfileDetailView(generics.RetrieveAPIView):
         if user_type == 'student':
             return ComprehensiveStudentProfileSerializer
         elif user_type == 'instructor':
-            return InstructorSerializer
+            return InstructorProfileSerializer
         elif user_type == 'scheduler':
-            return TASchedulerSerializer
+            return TASchedulerProfileSerializer
         elif user_type == 'admin':
-            return AdminSerializer
+            return AdminProfileSerializer
         else:
             # Default fallback
             return ComprehensiveStudentProfileSerializer
