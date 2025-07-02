@@ -1,228 +1,228 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import UserProfile from '@/pages/profile-page-scheduler';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { MapPin, PanelLeft } from 'lucide-react';
+import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
-// Mock the sidebar component to avoid testing its internal implementation
+import UserProfile from '@/pages/profile-page-scheduler'; 
+import { getProfile, updateProfile } from '../src/logic/scheduler-profile';
+
+// Mock the logic module for API calls
+vi.mock('../src/logic/scheduler-profile', () => ({
+  getProfile: vi.fn(),
+  updateProfile: vi.fn(),
+}));
+
+// Mock child components to isolate the UserProfile component
 vi.mock('@/components/scheduler-sidebar', () => ({
   AppSidebar: () => <div data-testid="mock-sidebar">Mocked Sidebar</div>,
 }));
 
+vi.mock('@/components/ui/sidebar', async (importOriginal) => {
+  const original = await importOriginal();
+  return {
+    ...original,
+    SidebarProvider: ({ children }) => <div>{children}</div>, // Simple wrapper
+    SidebarInset: ({ children }) => <div>{children}</div>,
+    SidebarTrigger: () => <button aria-label="Toggle sidebar"><svg /></button>,
+  };
+});
 
 vi.mock('lucide-react', () => ({
-  Mail : () => <svg data-testid = "mail-icon" />,
-  Edit : () => <svg data-testid = "edit-icon" />,
-  Save : () => <svg data-testid = "save-icon" />,
-  X : () => < svg data-testid = 'x-icon' />,
-  Bell : () => < svg data-testid = 'bell-icon' />,
-  PanelLeft : () => < svg data-testid = 'panel-left-icon' />
-
+  Mail: () => <svg data-testid="mail-icon" />,
+  Edit: () => <svg data-testid="edit-icon" />,
+  Save: () => <svg data-testid="save-icon" />,
+  X: () => <svg data-testid="x-icon" />,
+  Bell: () => <svg data-testid="bell-icon" />,
 }));
 
-describe('UserProfile Component', () => {
-  // Sets up a user event instance to simulate user interactions
+
+// Mock profile data for our tests
+const mockUserProfile = {
+  name: 'John Doe',
+  email: 'john.doe@university.edu',
+  employee_number: 'EMP123',
+  department_name: 'Computer Science',
+};
+
+
+describe('UserProfile Component with API Integration', () => {
   const user = userEvent.setup();
 
-
-  // Render User Profile Component before each test
+  // Reset mocks before each test to ensure isolation
   beforeEach(() => {
-    render(
-      <MemoryRouter>
-        <SidebarProvider>
-        <UserProfile />
-      </SidebarProvider>
-      </MemoryRouter>
-      
-      
-    );
+    vi.clearAllMocks();
   });
 
-  it('renders the component with sidebar and main content', () => {
-    expect(screen.getByTestId('mock-sidebar')).toBeInTheDocument();
-    expect(screen.getByRole('heading' , {name : /user profile/i })).toBeInTheDocument();
-    expect(screen.getByText('Manage your personal information')).toBeInTheDocument();
+  it('shows a loading state while fetching the profile', () => {
+    // Mock getProfile to be in a pending state
+    vi.mocked(getProfile).mockReturnValue(new Promise(() => {}));
+    render(<MemoryRouter><UserProfile /></MemoryRouter>);
+    expect(screen.getByText('Loading profile...')).toBeInTheDocument();
   });
 
-  it('displays personal information card with all fields', () => {
-    expect(screen.getByText('Personal Information')).toBeInTheDocument();
-    expect(screen.getByText('Your basic personal details')).toBeInTheDocument();
-    expect(screen.getByText('First Name')).toBeInTheDocument();
-    expect(screen.getByText('Last Name')).toBeInTheDocument();
-    expect(screen.getByText('Email Address')).toBeInTheDocument();
-    expect(screen.getByText('Employee Number')).toBeInTheDocument();
-    expect(screen.getByText('Department')).toBeInTheDocument();
+  it('displays an error message if fetching the profile fails', async () => {
+    // Mock getProfile to reject with an error
+    vi.mocked(getProfile).mockRejectedValue(new Error('Network Error'));
+    render(<MemoryRouter><UserProfile /></MemoryRouter>);
+    expect(await screen.findByText('Could not load your profile. Please try again later.')).toBeInTheDocument();
   });
 
-  it('starts in view mode and switches to edit mode when Edit Profile is clicked', async () => {
-    // Check initial view mode (non-editable fields)
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
-    expect(screen.getByText('Edit Profile')).toBeInTheDocument();
+  it('fetches and displays user data correctly', async () => {
+    // Mock getProfile to return successful data
+    vi.mocked(getProfile).mockResolvedValue(mockUserProfile);
+    render(<MemoryRouter><UserProfile /></MemoryRouter>);
+    
 
-    // Click Edit Profile button
-    await user.click(screen.getByText('Edit Profile'));
+    // Wait for the loading to finish and check for the user's data
+  // The full name 'John Doe' appears in the card title
+  expect(await screen.findByText('John Doe')).toBeInTheDocument(); 
 
-    // Check edit mode (input fields should appear)
-    expect(screen.getAllByRole('textbox')).toHaveLength(3); // First Name, Last Name, Email
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
-    expect(screen.getByText('Save Changes')).toBeInTheDocument();
+  // The first name 'John' appears in the details section
+  expect(screen.getByText('John')).toBeInTheDocument(); 
+  
+  // Use getAllByText for data that appears in multiple places
+  const emailElements = screen.getAllByText('john.doe@university.edu');
+  expect(emailElements.length).toBeGreaterThan(0); // Asserts the email is found at least once
+  
+  const departmentElements = screen.getAllByText('Computer Science');
+  expect(departmentElements.length).toBeGreaterThan(0); // Asserts department is found at least once
+
+  // Employee number appears only once, so getByText is fine
+  expect(screen.getByText('EMP123')).toBeInTheDocument();
   });
 
-  it('shows Cancel and Save buttons in edit mode and handles Cancel correctly', async () => {
-    // Enter edit mode
-    await user.click(screen.getByText('Edit Profile'));
+  it('switches to edit mode, allows changes, and cancels them', async () => {
+    vi.mocked(getProfile).mockResolvedValue(mockUserProfile);
+    render(<MemoryRouter><UserProfile /></MemoryRouter>);
+    
+    // Wait for profile to load
+    const editButton = await screen.findByRole('button', { name: /edit profile/i });
+    await user.click(editButton);
 
-    // Verify Cancel and Save buttons
-    const cancelButton = screen.getByText('Cancel');
-    const saveButton = screen.getByText('Save Changes');
-    expect(cancelButton).toBeInTheDocument();
-    expect(saveButton).toBeInTheDocument();
+    // Change first name
+    const firstNameInput = screen.getByLabelText(/first name/i);
+    await user.clear(firstNameInput);
+    await user.type(firstNameInput, 'Jane');
 
-    // Click Cancel
+    // Check that name has changed in the input
+    expect(firstNameInput).toHaveValue('Jane');
+
+    // Click cancel
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
     await user.click(cancelButton);
 
-    // Verify back to view mode
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
-    expect(screen.getByText('Edit Profile')).toBeInTheDocument();
+    // Verify the data reverted to the original fetched data
+    expect(screen.getByText('John')).toBeInTheDocument(); // Displayed value after canceling
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument(); // Back to view mode
   });
 
-  it('handles Save button click and shows loading state', async () => {
+  it('saves updated user data successfully', async () => {
+    vi.mocked(getProfile).mockResolvedValue(mockUserProfile);
+    vi.mocked(updateProfile).mockResolvedValue({ success: true }); // Mock successful update
+    render(<MemoryRouter><UserProfile /></MemoryRouter>);
+
     // Enter edit mode
-    await user.click(screen.getByText('Edit Profile'));
+    const editButton = await screen.findByRole('button', { name: /edit profile/i });
+    await user.click(editButton);
 
-    // Click Save
-    const saveButton = screen.getByText('Save Changes');
-    await user.click(saveButton);
-
-    // Check loading state
-    expect(screen.getByText('Saving...')).toBeInTheDocument();
-    expect(saveButton).toBeDisabled();
-
-    // Wait for save to complete (simulated API call)
-    await waitFor(() => {
-      expect(screen.queryByText('Saving...')).not.toBeInTheDocument();
-      expect(screen.getByText('Edit Profile')).toBeInTheDocument();
-    });
-  });
-
-  it('renders sidebar trigger and notification bell', () => {
-    expect(screen.getByRole('button', { name: /toggle sidebar/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /notifications/i })).toBeInTheDocument();
-    expect(screen.getByTestId('bell-icon')).toBeInTheDocument();
-  });
-
-  it('displays contact information with icons', () => {
-    expect(screen.getByTestId('mail-icon')).toBeInTheDocument();
-  });
-
-  it('disables buttons during saving', async () => {
-    // Enter edit mode
-    await user.click(screen.getByText('Edit Profile'));
-
-    // Click Save
-    const saveButton = screen.getByText('Save Changes');
-    const cancelButton = screen.getByText('Cancel');
-    await user.click(saveButton);
-
-    // Check disabled state
-    expect(saveButton).toBeDisabled();
-    expect(cancelButton).toBeDisabled();
-
-    // Wait for save to complete
-    await waitFor(() => {
-      expect(saveButton).toBeDisabled();
-    });
-  });
-
-  it('shows error message when typing a single letter in first name', async () => {
-    await user.click(screen.getByText('Edit Profile'));
-
-    const firstNameInput = screen.getByLabelText('First Name');
+    // Update fields
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
-    await user.type(firstNameInput, 'J');
-
-    expect(screen.getByText('First name must be at least 2 characters')).toBeInTheDocument();
-    expect(firstNameInput).toHaveClass('border-destructive');
-    expect(screen.getByText('Save Changes')).toBeDisabled();
-  });
-
-  it('shows error message when typing a single letter in last name', async () => {
-    await user.click(screen.getByText('Edit Profile'));
-
-    const lastNameInput = screen.getByLabelText('Last Name');
-    await user.clear(lastNameInput);
-    await user.type(lastNameInput, 'S');
-
-    expect(screen.getByText('Last name must be at least 2 characters')).toBeInTheDocument();
-    expect(lastNameInput).toHaveClass('border-destructive');
-    expect(screen.getByText('Save Changes')).toBeDisabled();
-  });
-
-
-  it('shows error message for invalid email', async () => {
-    await user.click(screen.getByText('Edit Profile'));
-
-    const emailInput = screen.getByLabelText('Email Address');
-    await user.clear(emailInput);
-    await user.type(emailInput, 'invalid');
-
-    expect(screen.getByText('Invalid email address')).toBeInTheDocument();
-    expect(emailInput).toHaveClass('border-destructive');
-    expect(screen.getByText('Save Changes')).toBeDisabled();
-  });
-
-
-  it('clears error message when correcting first name', async () => {
-    await user.click(screen.getByText('Edit Profile'));
-
-    const firstNameInput = screen.getByLabelText('First Name');
-    await user.clear(firstNameInput);
-    await user.type(firstNameInput, 'J');
-
-    expect(screen.getByText('First name must be at least 2 characters')).toBeInTheDocument();
-
-    await user.type(firstNameInput, 'o');
-
-    expect(screen.queryByText('First name must be at least 2 characters')).not.toBeInTheDocument();
-    expect(firstNameInput).not.toHaveClass('border-destructive');
-  });
-  it('enables Save button when all fields are valid', async () => {
-    await user.click(screen.getByText('Edit Profile'));
-
-    const firstNameInput = screen.getByLabelText('First Name');
-    const lastNameInput = screen.getByLabelText('Last Name');
-    const emailInput = screen.getByLabelText('Email Address');
-
-    await user.clear(firstNameInput);
-    await user.clear(lastNameInput);
-    await user.clear(emailInput);
-
     await user.type(firstNameInput, 'Jane');
-    await user.type(lastNameInput, 'Doe');
-    await user.type(emailInput, 'jane.doe@university.edu');
 
-    expect(screen.queryByText('First name must be at least 2 characters')).not.toBeInTheDocument();
-    expect(screen.queryByText('Last name must be at least 2 characters')).not.toBeInTheDocument();
-    expect(screen.queryByText('Invalid email address')).not.toBeInTheDocument();
-    expect(screen.getByText('Save Changes')).not.toBeDisabled();
-  });
-
-  it('prevents saving with invalid input', async () => {
-    await user.click(screen.getByText('Edit Profile'));
-
-    const firstNameInput = screen.getByLabelText('First Name');
-    await user.clear(firstNameInput);
-    await user.type(firstNameInput, 'J');
-
-    const saveButton = screen.getByText('Save Changes');
+    // Click save
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
     await user.click(saveButton);
 
-    // Verify no saving occurs (no loading state)
-    expect(screen.queryByText('Saving...')).not.toBeInTheDocument();
-    expect(screen.getByText('First name must be at least 2 characters')).toBeInTheDocument();
+    // Wait for the save operation to complete
+    await waitFor(() => {
+      // Check that the update function was called with the correct data
+      expect(updateProfile).toHaveBeenCalledWith({
+        name: 'Jane Doe',
+        email: 'john.doe@university.edu',
+      });
+      // The component should switch back to view mode and display the new name
+      expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+      expect(screen.queryByText('Saving...')).not.toBeInTheDocument();
+    });
   });
 
+  it('displays a backend validation error on save failure', async () => {
+    const user = userEvent.setup();
+    // This is the error the backend will "return"
+    const backendError = {
+      response: {
+        status: 400,
+        data: { email: ['This email address is already in use.'] },
+      },
+    };
 
+    vi.mocked(getProfile).mockResolvedValue(mockUserProfile);
+    vi.mocked(updateProfile).mockRejectedValue(backendError);
+
+    render(<MemoryRouter><UserProfile /></MemoryRouter>);
+
+    // 1. Enter edit mode
+    await user.click(await screen.findByRole('button', { name: /edit profile/i }));
+
+    // 2. Click save immediately. The data is valid according to client-side rules,
+    //    so validateForm() will pass and the API call will be made.
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    // 3. Now, wait for the backend error message to appear.
+    //    `findByText` is a great shortcut that combines `getByText` with `waitFor`.
+    const errorMessage = await screen.findByText('This email address is already in use.');
+    expect(errorMessage).toBeInTheDocument();
+    
+    // 4. Verify the component is still in edit mode and not stuck on "Saving..."
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
+    expect(screen.queryByText(/saving/i)).not.toBeInTheDocument();
+});
+
+  it('displays a generic API error on other save failures', async () => {
+    vi.mocked(getProfile).mockResolvedValue(mockUserProfile);
+    vi.mocked(updateProfile).mockRejectedValue(new Error('Server blew up')); // Generic error
+    render(<MemoryRouter><UserProfile /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: /edit profile/i }));
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    // Wait for the generic error message to appear
+    expect(await screen.findByText('Failed to save changes. Please try again.')).toBeInTheDocument();
+  });
+
+  it('shows client-side validation errors for invalid input', async () => {
+    vi.mocked(getProfile).mockResolvedValue(mockUserProfile);
+    render(<MemoryRouter><UserProfile /></MemoryRouter>);
+
+    await user.click(await screen.findByRole('button', { name: /edit profile/i }));
+
+    const firstNameInput = screen.getByLabelText(/first name/i);
+    const emailInput = screen.getByLabelText(/email address/i);
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+
+    // Test first name validation
+    await user.clear(firstNameInput);
+    await user.type(firstNameInput, 'J');
+    expect(screen.getByText('Name must be at least 2 characters')).toBeInTheDocument();
+    expect(saveButton).toBeDisabled();
+
+    // Correct first name
+    await user.type(firstNameInput, 'ane');
+    expect(screen.queryByText('Name must be at least 2 characters')).not.toBeInTheDocument();
+
+    // Test email validation
+    await user.clear(emailInput);
+    await user.type(emailInput, 'invalid-email');
+    expect(screen.getByText('Invalid email address')).toBeInTheDocument();
+    expect(saveButton).toBeDisabled();
+    
+    // Correct email
+    await user.clear(emailInput);
+    await user.type(emailInput, 'jane.doe@valid.com');
+    expect(screen.queryByText('Invalid email address')).not.toBeInTheDocument();
+
+    // Form should now be valid and save button enabled
+    expect(saveButton).not.toBeDisabled();
+  });
 });
