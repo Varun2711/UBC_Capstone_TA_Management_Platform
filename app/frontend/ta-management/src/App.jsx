@@ -19,26 +19,6 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 
 function App() {
 
-  // define a message state variable
-  const [message, setMessage] = useState("");
-  const message_url = "/api/hello"; // update the api call to have a relative address instead of a direct address
-  // make an api call with fetch
-  useEffect(() => {
-    fetch(message_url)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setMessage(data.message);
-      })
-      .catch((error) => {
-        console.log(`error has occurred ${error}`);
-      });
-  }, []);
-
   return (
     // React Router setup
     // Initial test to check router functionlity below
