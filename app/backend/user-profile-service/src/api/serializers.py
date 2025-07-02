@@ -113,6 +113,50 @@ class UpdateStudentProfileSerializer(serializers.ModelSerializer):
                 StudentProfile.objects.create(user=instance, **profile_data)
         
         return instance
+    
+class UpdateInstructorSerializer(serializers.ModelSerializer):
+    """Serializer for updating instructor profiles"""
+    class Meta:
+        model = Instructor
+        fields = ['name', 'email']
+        read_only_fields = ['employee_number', 'faculty', 'is_active']
+        
+    def validate_email(self, value):
+        """Ensure email is not already in use by another instructor"""
+        instance = self.instance
+        if Instructor.objects.exclude(pk=instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+
+class UpdateTASchedulerSerializer(serializers.ModelSerializer):
+    """Serializer for updating TA scheduler profiles"""
+    class Meta:
+        model = TAScheduler
+        fields = ['name', 'email']
+        read_only_fields = ['employee_number', 'department', 'is_active']
+        
+    def validate_email(self, value):
+        """Ensure email is not already in use by another scheduler"""
+        instance = self.instance
+        if TAScheduler.objects.exclude(pk=instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+
+class UpdateAdminSerializer(serializers.ModelSerializer):
+    """Serializer for updating admin profiles"""
+    class Meta:
+        model = Admin
+        fields = ['name', 'email']
+        read_only_fields = ['employee_number', 'is_active', 'created_at']
+        
+    def validate_email(self, value):
+        """Ensure email is not already in use by another admin"""
+        instance = self.instance
+        if Admin.objects.exclude(pk=instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
 
 class StudentExperienceSerializer(serializers.ModelSerializer):
     class Meta:

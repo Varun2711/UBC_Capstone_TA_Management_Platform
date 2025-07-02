@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (StudentViewSet, InstructorViewSet, TASchedulerViewSet, find_user, api_root, CreateInstructorView, CreateSchedulerView, UserManagementView,
-                    ProfileDetailView, StudentProfileUpdateView, StudentTAExperienceListCreateView, StudentExperienceDetailView,StudentSkillListCreateView, 
+                    ProfileDetailView, ProfileUpdateView, StudentTAExperienceListCreateView, StudentExperienceDetailView,StudentSkillListCreateView, 
                     StudentSkillDetailView, StudentAvailabilityView, StudentCoursePreferenceListCreateView, StudentCoursePreferenceDetailView, FacultyListView)
 
 router = DefaultRouter()
@@ -23,7 +23,7 @@ urlpatterns = [
     
     # Student Profile Management
     path('me/', ProfileDetailView.as_view(), name='my-profile'),
-    path('me/update/', StudentProfileUpdateView.as_view(), name='update-my-profile'),
+    path('me/update/', ProfileUpdateView.as_view(), name='update-my-profile'),
     
     # Student Experience Management  
     path('me/experience/', StudentTAExperienceListCreateView.as_view(), name='my-experiences'),
