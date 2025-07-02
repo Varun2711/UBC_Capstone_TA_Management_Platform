@@ -35,6 +35,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppSidebar } from "../components/scheduler-sidebar"
+import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import App from "@/App"
 
 
@@ -52,7 +53,11 @@ let availableTAs = [
     currentHours: 10,
     skills: ["Python", "Java", "JavaScript"],
     experience: ["CS 101", "CS 201"],
-    availability: ["Monday", "Wednesday", "Friday"],
+    availability: [
+      "Monday-9-top", "Monday-10-bottom",
+      "Wednesday-13-top", "Wednesday-14-bottom",
+      "Friday-11-top", "Friday-12-bottom"
+    ],
     avatar: "/placeholder.svg?height=40&width=40",
     status: "Partially Allocated",
   },
@@ -68,7 +73,10 @@ let availableTAs = [
     currentHours: 15,
     skills: ["C++", "Python", "Machine Learning"],
     experience: ["CS 301", "CS 401"],
-    availability: ["Tuesday", "Thursday"],
+    availability: [
+      "Tuesday-10-top", "Tuesday-11-top",
+      "Thursday-14-top", "Thursday-14-bottom"
+    ],
     avatar: "/placeholder.svg?height=40&width=40",
     status: "Partially Allocated",
   },
@@ -84,7 +92,9 @@ let availableTAs = [
     currentHours: 10,
     skills: ["JavaScript", "React", "Node.js"],
     experience: ["CS 102", "CS 250"],
-    availability: ["Monday", "Tuesday", "Wednesday"],
+    availability: [
+      "Monday-9-bottom", "Tuesday-10-top", "Wednesday-15-bottom"
+    ],
     avatar: "/placeholder.svg?height=40&width=40",
     status: "Fully Allocated",
   },
@@ -100,7 +110,9 @@ let availableTAs = [
     currentHours: 0,
     skills: ["Canadian Government", "International Law", "European History"],
     experience: ["GOV 101", "LAW 201"],
-    availability: ["Monday", "Tuesday", "Friday"],
+    availability: [
+      "Monday-8-top", "Tuesday-10-top", "Tuesday-10-bottom", "Friday-9-bottom"
+    ],
     avatar: "/placeholder.svg?height=40&width=40",
     status: "Not Allocated",
   },
@@ -119,7 +131,14 @@ const courses = [
         id: 1,
         type: "Lecture",
         section: "001",
-        time: "MWF 9:00-10:00",
+        slots: [
+          "Monday-9-top",
+          "Monday-9-bottom",
+          "Wednesday-9-top",
+          "Wednesday-9-bottom",
+          "Friday-9-top",
+          "Friday-9-bottom",
+        ],
         weekHours: 3,
         enrollment: 120,
         taRequired: 2,
@@ -129,7 +148,12 @@ const courses = [
         id: 2,
         type: "Lab",
         section: "L01",
-        time: "M 2:00-4:00",
+        slots: [
+          "Monday-14-top",
+          "Monday-14-bottom",
+          "Monday-15-top",
+          "Monday-15-bottom",
+        ],
         weekHours: 2,
         enrollment: 25,
         taRequired: 1,
@@ -139,7 +163,12 @@ const courses = [
         id: 3,
         type: "Lab",
         section: "L02",
-        time: "W 2:00-4:00",
+        slots: [
+          "Wednesday-14-top",
+          "Wednesday-14-bottom",
+          "Wednesday-15-top",
+          "Wednesday-15-bottom",
+        ],
         weekHours: 2,
         enrollment: 25,
         taRequired: 1,
@@ -161,7 +190,14 @@ const courses = [
         id: 4,
         type: "Lecture",
         section: "001",
-        time: "TTh 11:00-12:30",
+        slots: [
+          "Tuesday-11-top",
+          "Tuesday-11-bottom",
+          "Tuesday-12-top",
+          "Thursday-11-top",
+          "Thursday-11-bottom",
+          "Thursday-12-top",
+        ],
         weekHours: 3,
         enrollment: 80,
         taRequired: 2,
@@ -171,7 +207,12 @@ const courses = [
         id: 5,
         type: "Lab",
         section: "L01",
-        time: "T 3:00-5:00",
+        slots: [
+          "Tuesday-15-top",
+          "Tuesday-15-bottom",
+          "Tuesday-16-top",
+          "Tuesday-16-bottom",
+        ],
         weekHours: 2,
         enrollment: 20,
         taRequired: 1,
@@ -213,13 +254,15 @@ function getPriorityBadge(priority) {
 
 export default function TAAllocationPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedTA, setSelectedTA] = useState(null)
+  const [selectedTAId, setSelectedTAId] = useState(null)
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [filterStatus, setFilterStatus] = useState("all")
   const [assignments, setAssignments] = useState([])
   const [taList, setTaList] = useState(availableTAs)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState(null)
+
+  const selectedTA = taList.find((ta) => ta.id === selectedTAId)
 
 
   // Function to store the assignment of a TA to a course
@@ -344,29 +387,97 @@ export default function TAAllocationPage() {
 
   // Function to update TA hours after assignment
   const updateHours = (ta, course) => {
+    const newHours = ta.currentHours + course.weekHours
+    const newStatus = newHours >= ta.maxHours ? "Fully Allocated" : "Partially Allocated"
+
     const updatedTA = {
       ...ta,
-      currentHours: ta.currentHours + course.weekHours,
-      status:
-        ta.currentHours + course.weekHours >= ta.maxHours
-          ? "Fully Allocated"
-          : "Partially Allocated",
+      currentHours: newHours,
+      status: newStatus,
     }
 
-    // ✅ Properly update state
     setTaList((prevTAs) =>
-      prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
+      prevTAs.map((t) => (t.id === ta.id ? updatedTA : t))
     )
 
-    // Also update selectedTA so UI reflects changes
-    setSelectedTA(updatedTA)
+    setSelectedTAId(ta.id)
   }
+
+  const dayAbbreviations = {
+    Monday: "M",
+    Tuesday: "T",
+    Wednesday: "W",
+    Thursday: "Th",
+    Friday: "F",
+  }
+
+  // Helper: Convert slot string to minute offset
+  const slotToMinutes = (slot) => {
+    const [day, hour, half] = slot.split("-")
+    return parseInt(hour) * 60 + (half === "bottom" ? 30 : 0)
+  }
+
+  // Helper: Convert minutes back to HH:MM
+  const minutesToTime = (mins) => {
+    const hours = Math.floor(mins / 60).toString().padStart(2, "0")
+    const minutes = (mins % 60).toString().padStart(2, "0")
+    return `${hours}:${minutes}`
+  }
+
+  const formatSlots = (slots = []) => {
+    if (!slots.length) return "No scheduled time"
+
+    // Group slot keys by day
+    const groupedByDay = {}
+    for (const slot of slots) {
+      const [day, hour, half] = slot.split("-")
+      const mins = slotToMinutes(slot)
+      if (!groupedByDay[day]) groupedByDay[day] = []
+      groupedByDay[day].push(mins)
+    }
+
+    // Sort each day's times
+    Object.values(groupedByDay).forEach(times => times.sort((a, b) => a - b))
+
+    const days = Object.keys(groupedByDay)
+    const dayLabels = days.map(day => dayAbbreviations[day] || day)
+
+    // Check if all days share the same time range
+    const allTimeRanges = Object.values(groupedByDay).map(times => {
+      return [times[0], times[times.length - 1]]
+    })
+
+    const allSameTime =
+      allTimeRanges.every(
+        ([start, end]) =>
+          start === allTimeRanges[0][0] && end === allTimeRanges[0][1]
+      )
+
+    if (allSameTime && days.length > 1) {
+      // Condensed format: MWF 09:00–12:30
+      const [startMins, endMins] = allTimeRanges[0]
+      return `${dayLabels.join("")} ${minutesToTime(startMins)}–${minutesToTime(endMins + 30)}`
+    }
+
+    // Fallback: day-by-day format
+    return days
+      .map((day) => {
+        const times = groupedByDay[day]
+        const start = minutesToTime(times[0])
+        const end = minutesToTime(times[times.length - 1] + 30)
+        return `${dayAbbreviations[day] || day}: ${start}–${end}`
+      })
+      .join(" | ")
+  }
+
+
+
 
 
 // Function to get assignments for a specific TA
   function getAssignmentsForTA(taName) {
   return assignments.filter((assignment) => assignment.taName === taName)
-}
+  }
 
   const filteredTAs = taList.filter((ta) => {
     const matchesSearch =
@@ -404,10 +515,6 @@ export default function TAAllocationPage() {
               <Button variant="ghost" size="icon">
                 <Bell className="h-4 w-4" />
               </Button>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg" alt="Coordinator" />
-                <AvatarFallback>TC</AvatarFallback>
-              </Avatar>
             </div>
           </header>
 
@@ -484,20 +591,20 @@ export default function TAAllocationPage() {
                               ))}
                             </div>
                           </div>
-
+                          
                           <div>
-                            <h4 className="text-sm font-medium mb-2">Availability</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedTA.availability.map((day, index) => (
-                                <Badge key={index} variant="outline">
-                                  {day}
-                                </Badge>
-                              ))}
+                            <div>
+                              <h4 className="text-sm font-medium mb-2">Availability</h4>
+                              <WeeklyAvailabilityCalendar
+                                editable={false}
+                                availability={selectedTA.availability}
+                              />
                             </div>
+
                           </div>
 
                           {/* ✅ Go Back Button */}
-                          <Button variant="outline" onClick={() => setSelectedTA(null)}>
+                          <Button variant="outline" onClick={() => setSelectedTAId(null)}>
                             ← Go Back
                           </Button>
                         </div>
@@ -522,7 +629,7 @@ export default function TAAllocationPage() {
                                   className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                                     selectedTA?.id === ta.id ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
                                   }`}
-                                  onClick={() => setSelectedTA(ta)}
+                                  onClick={() => setSelectedTAId(ta.id)}
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -609,7 +716,7 @@ export default function TAAllocationPage() {
                                           {section.type} - Section {section.section}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                          {section.time} • {section.enrollment} students
+                                          {formatSlots(section.slots)} • {section.enrollment} students
                                         </p>
                                       </div>
                                       <Badge variant="outline">
@@ -651,7 +758,7 @@ export default function TAAllocationPage() {
                           <Button
                             variant="outline"
                             onClick={() => {
-                              setSelectedTA(null)
+                              setSelectedTAId(null)
                               setSelectedCourse(null)
                             }}
                           >
@@ -661,9 +768,25 @@ export default function TAAllocationPage() {
                             onClick={() => {
                               // Handle assignment logic here
                               console.log("Assigning", selectedTA.name, "to", selectedCourse)
-                              updateHours(selectedTA, selectedCourse)
-                              handleAssignTA(selectedTA, selectedCourse)
-                              setSelectedTA(null)
+                              const newHours = selectedTA.currentHours + selectedCourse.weekHours
+                              const newStatus = newHours >= selectedTA.maxHours ? "Fully Allocated" : "Partially Allocated"
+                              const updatedAvailability = Array.from(
+                                new Set([...(selectedTA.availability || []), ...(selectedCourse.slots || [])])
+                              )
+                              // Merge course time slots into TA availability
+                              const updatedTA = {
+                                ...selectedTA,
+                                currentHours: newHours,
+                                status: newStatus,
+                                availability: updatedAvailability,
+                              }
+                              setTaList((prevTAs) =>
+                                prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
+                              )
+                              handleAssignTA(updatedTA, selectedCourse)
+
+                              // Re-select the updated TA by ID
+                              setSelectedTAId(updatedTA.id)
                               setSelectedCourse(null)
                             }}
                           >
