@@ -176,14 +176,14 @@ class ProfileDetailView(generics.RetrieveAPIView):
         elif user_type == 'admin':
             return AdminSerializer
         else:
-            # Default fallback - you might need to adjust this
-            return error_response("Invalid user type")
+            # Default fallback
+            return ComprehensiveStudentProfileSerializer
     
     def get_object(self):
         # Check if accessing specific student (admin view)
         student_id = self.kwargs.get('student_id')
         if student_id:
-            # For admin viewing specific student
+            # Find the Student first, then get the corresponding User
             student = get_object_or_404(Student, student_number=student_id)
             user = get_object_or_404(User, email=student.email)
             return user
@@ -193,16 +193,22 @@ class ProfileDetailView(generics.RetrieveAPIView):
         user_id = self.request.auth.payload.get('sub', None)
         
         if user_type == 'student':
-            return self.request.user  # Django User model for students
+            # For students, we use the Django User model
+            return self.request.user
         elif user_type == 'instructor':
+            # For instructors, find by employee_number
             return get_object_or_404(Instructor, employee_number=user_id)
         elif user_type == 'scheduler':
+            # For schedulers, find by employee_number
             return get_object_or_404(TAScheduler, employee_number=user_id)
         elif user_type == 'admin':
+            # For admins, find by employee_number
             return get_object_or_404(Admin, employee_number=user_id)
         else:
             # Default fallback to the Django user
             return self.request.user
+  
+
     
 class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class =  UpdateStudentProfileSerializer
