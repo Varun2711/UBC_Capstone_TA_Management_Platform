@@ -7,6 +7,7 @@ import Application from "./pages/Application";
 import StudentDashboard from "./pages/Student_Dashboard";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/AdminDashboard";
+import CourseManagement from "./pages/Scheduler/course-management";
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -16,6 +17,7 @@ import UserProfile from "./pages/profile-page-scheduler";
 import InstructorDashboard from "./pages/InstructorDashboard";
 
 function App() {
+
   // define a message state variable
   const [message, setMessage] = useState("");
   const message_url = "/api/hello"; // update the api call to have a relative address instead of a direct address
@@ -37,7 +39,7 @@ function App() {
   }, []);
 
   return (
-    // React Router setup, commented out for now
+    // React Router setup
     // Initial test to check router functionlity below
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -54,6 +56,7 @@ function App() {
       <Route path="/user-profile-scheduler" element={<UserProfile />} />
       <Route path="/instructor-dashboard" element={<InstructorDashboard/>} />
       <Route path="/application" element={<Application />} />
+      <Route path="/course-management" element={<CourseManagement />} />
 
       {/* Add more routes if needed */}
     </Routes>

@@ -1,7 +1,6 @@
 # this file will consist of utility functions for the user profile service
-from api.models import Student, Instructor, TAScheduler
+from api.models import Student, Instructor, TAScheduler, Admin
 
-# In utils/profile_utils.py
 
 def get_user_by_id(user_id, user_type):
     """
@@ -30,6 +29,12 @@ def get_user_by_id(user_id, user_type):
         try:
             return TAScheduler.objects.get(employee_number=user_id)
         except TAScheduler.DoesNotExist:
+            return None
+        
+    elif user_type == 'admin':
+        try:
+            return Admin.objects.get(employee_number=user_id)
+        except Admin.DoesNotExist:
             return None
             
     return None
@@ -63,6 +68,12 @@ def get_user_by_email(email):
         user = TAScheduler.objects.get(email=email)
         return user, 'scheduler'
     except TAScheduler.DoesNotExist:
+        pass
+
+    try:
+        user = Admin.objects.get(email=email)
+        return user, 'admin'
+    except Admin.DoesNotExist:
         pass
     
     return None, None
@@ -107,6 +118,14 @@ def get_user_details(user, user_type):
             'email': user.email,
             'type': 'scheduler',
             'department': user.department.name if user.department else None
+        }
+    
+    elif user_type == 'admin':
+        return {
+            'id': user.employee_number,
+            'name': user.name,
+            'email': user.email,
+            'type': 'admin'
         }
     
     return None

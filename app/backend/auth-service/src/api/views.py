@@ -9,11 +9,58 @@ import jwt
 from django.conf import settings
 from django.http import JsonResponse
 
-from .models import Student, Instructor, TAScheduler
+from .models import Student, Instructor, TAScheduler, Admin
 from .serializers import LoginSerializer, TokenSerializer, StudentRegistrationSerializer
 
 # Get Django's default User model
 User = get_user_model()
+ 
+# Helper function for login
+def find_user_by_email(email, password):
+    '''
+    This function programmatically determines user_type by going through
+    each User table in attempt to find the user by email 
+    '''
+    try:
+        student = Student.objects.get(email = email)
+        if check_password(password, student.password):
+            return student, "student", student.student_number
+        else:
+            return None, None, None
+    except Student.DoesNotExist:
+        pass
+
+    try:
+        instructor = Instructor.objects.get(email = email)
+        if check_password(password, instructor.password):
+            return instructor, "instructor", instructor.employee_number
+        else:
+            return None, None, None
+    except Instructor.DoesNotExist:
+        pass
+
+    try:
+        ta_scheduler = TAScheduler.objects.get(email = email)
+        if check_password(password, ta_scheduler.password):
+            return ta_scheduler, "scheduler", ta_scheduler.employee_number
+        else:
+            return None, None, None
+    except TAScheduler.DoesNotExist:
+        pass
+
+    # NEW - Check Admin
+    try:
+        admin = Admin.objects.get(email=email)
+        if check_password(password, admin.password):
+            return admin, "admin", admin.employee_number
+        else:
+            return None, None, None
+    except Admin.DoesNotExist:
+        pass
+
+
+    return None, None, None # if not found in student, instructor, or ta scheduler, user does not exist
+        
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -22,73 +69,57 @@ def login_view(request):
     if serializer.is_valid():
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
-        user_type = serializer.validated_data['user_type']
+        user, user_type, user_id = find_user_by_email(email, password)
         
-        user = None
-        user_id = None
+        if not user:
+            return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Try to authenticate based on user_type
-        if user_type == 'student':
-            try:
-                user = Student.objects.get(email=email)
-                if not check_password(password, user.password):
-                    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-                user_id = user.student_number
-            except Student.DoesNotExist:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-                
-        elif user_type == 'instructor':
-            try:
-                user = Instructor.objects.get(email=email)
-                user_id = user.employee_number
-            except Instructor.DoesNotExist:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-                
-        elif user_type == 'scheduler':
-            try:
-                user = TAScheduler.objects.get(email=email)
-                user_id = user.employee_number
-            except TAScheduler.DoesNotExist:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response({'error': 'Invalid user type'}, status=status.HTTP_400_BAD_REQUEST)
+        # Create django user
+        django_user, created = User.objects.get_or_create(username = email, defaults={"email":email, "first_name": user.name, "is_active": True})
         
-        # Create or get a Django User for JWT compatibility
-        django_user, created = User.objects.get_or_create(
-            username=email,
-            defaults={
-                'email': email,
-                'first_name': user.name,
-                'is_active': True,
-            }
-        )
-        
-        # Generate standard refresh token
+        # Generate refresh token
         refresh = RefreshToken.for_user(django_user)
-        
-        # Add custom claims to BOTH refresh and access tokens
-        refresh['user_id'] = user_id
-        refresh['user_type'] = user_type
-        refresh['email'] = email
-        refresh['name'] = user.name
-        
-        # Get the access token and add the same claims
+
+        #refresh["user_id"] = user_id
+        refresh["user_type"] = user_type
+        refresh["email"] = email
+        refresh["name"] = user.name
+
+        # Add custom ID as separate field based on user type, this logic is required.
+        if user_type == 'admin':
+            refresh["admin_id"] = user_id
+        elif user_type == 'student':
+            refresh["student_id"] = user_id
+        elif user_type == 'instructor':
+            refresh["instructor_id"] = user_id
+        elif user_type == 'scheduler':
+            refresh["scheduler_id"] = user_id
+
+        # Generate access token
         access = refresh.access_token
-        access['user_id'] = user_id
-        access['user_type'] = user_type
-        access['email'] = email
-        access['name'] = user.name
-        
-        response_data = {
-            'access': str(access),
-            'refresh': str(refresh),
-            'user_id': user_id,
-            'user_type': user_type,
-            'name': user.name
-        }
+
+        #access["user_id"] = user_id
+        access["user_type"] = user_type
+        access["email"] = email
+        access["name"] = user.name
+
+        # Add custom ID as separate field, this logic is required.
+        if user_type == 'admin':
+            access["admin_id"] = user_id
+        elif user_type == 'student':
+            access["student_id"] = user_id
+        elif user_type == 'instructor':
+            access["instructor_id"] = user_id
+        elif user_type == 'scheduler':
+            access["scheduler_id"] = user_id
+
+        response_data = {"access": str(access),
+                         "refresh": str(refresh),
+                         "user_id": user_id,
+                         "user_type": user_type,
+                         "name": user.name}
         
         return Response(TokenSerializer(response_data).data)
-    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
