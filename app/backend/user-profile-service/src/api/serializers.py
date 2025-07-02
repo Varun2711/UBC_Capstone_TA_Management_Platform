@@ -51,6 +51,26 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         fields = ['gpa', 'year_degree_start', 'minor', 'ubc_employee_id', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
+# role-specific serializers
+class TASchedulerProfileSerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    
+    class Meta:
+        model = TAScheduler
+        fields = ['employee_number', 'name', 'email', 'department', 'department_name']
+
+class InstructorProfileSerializer(serializers.ModelSerializer):
+    faculty_name = serializers.CharField(source='faculty.name', read_only=True)
+    
+    class Meta:
+        model = Instructor
+        fields = ['employee_number', 'name', 'email', 'faculty', 'faculty_name']
+
+class AdminProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Admin
+        fields = ['employee_number', 'name', 'email']
+
 class UpdateStudentProfileSerializer(serializers.ModelSerializer):
     student_profile = StudentProfileSerializer()
     

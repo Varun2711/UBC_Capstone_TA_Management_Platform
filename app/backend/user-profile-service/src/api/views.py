@@ -149,21 +149,59 @@ class TASchedulerViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-# Student Profile Views - FIXED to use consistent User model approach
-class StudentProfileDetailView(generics.RetrieveUpdateAPIView):
-    serializer_class = ComprehensiveStudentProfileSerializer
+# Rename from StudentProfileDetailView to ProfileDetailView
+class ProfileDetailView(generics.RetrieveAPIView):
+    """
+    Get the profile of a user:
+    - Currently logged in user when accessed via /me/
+    - Specific student when accessed via /student/<student_id>/
+    """
     permission_classes = [IsAuthenticated]
     
-    def get_object(self):
+    def get_serializer_class(self):
+        # Check if accessing specific student (admin view)
         student_id = self.kwargs.get('student_id')
         if student_id:
-            # Admin accessing specific student by student_number
-            # Find the student, then get the corresponding User
+            return ComprehensiveStudentProfileSerializer
+            
+        # Otherwise use serializer based on token user type
+        user_type = self.request.auth.payload.get('user_type', None)
+        
+        if user_type == 'student':
+            return ComprehensiveStudentProfileSerializer
+        elif user_type == 'instructor':
+            return InstructorSerializer
+        elif user_type == 'scheduler':
+            return TASchedulerSerializer
+        elif user_type == 'admin':
+            return AdminSerializer
+        else:
+            # Default fallback - you might need to adjust this
+            return error_response("Invalid user type")
+    
+    def get_object(self):
+        # Check if accessing specific student (admin view)
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            # For admin viewing specific student
             student = get_object_or_404(Student, student_number=student_id)
             user = get_object_or_404(User, email=student.email)
             return user
+            
+        # Otherwise, get current user based on token
+        user_type = self.request.auth.payload.get('user_type', None)
+        user_id = self.request.auth.payload.get('sub', None)
+        
+        if user_type == 'student':
+            return self.request.user  # Django User model for students
+        elif user_type == 'instructor':
+            return get_object_or_404(Instructor, employee_number=user_id)
+        elif user_type == 'scheduler':
+            return get_object_or_404(TAScheduler, employee_number=user_id)
+        elif user_type == 'admin':
+            return get_object_or_404(Admin, employee_number=user_id)
         else:
-            # Student accessing their own profile via JWT token
+            # Default fallback to the Django user
             return self.request.user
     
 class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
