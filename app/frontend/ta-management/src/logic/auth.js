@@ -81,7 +81,7 @@ Utility function to send user to the correct dashboard
 based on what type of user they are.
 (Just performs a repetitive task, doesn't return anything)
 */
-export function navigateToUserDashboard(user_type) {
+export function navigateToUserDashboard(user_type, navigate) {
     if(user_type === USER_TYPES.student) {
         navigate(DASHBOARD_ROUTES.student)
     } else if(user_type === USER_TYPES.instructor) {

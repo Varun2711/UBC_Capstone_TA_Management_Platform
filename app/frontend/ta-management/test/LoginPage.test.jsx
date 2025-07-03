@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import LoginPage from "../src/pages/LoginPage"
 import axios from "axios"
-import { user_types, USERS } from "./test-utils/testUsers"
+import { USERS } from "./test-utils/testUsers"
 
 // Mocking
 const mockNavigate = vi.fn()
@@ -78,15 +78,15 @@ describe("LoginPage", () => {
   })
 
   // Valid login for each user type
-  it.each(user_types)(
-    "logs in $name with valid credentials and navigates to user-specific dashboard",
-    async ({ name, email, password, dashboardRoute }) => {
+  it.each(USERS)(
+    "logs in $type with valid credentials and navigates to $type dashboard",
+    async ({ type, email, password, dashboardRoute }) => {
       // mock a normal response from /auth
       axios.post.mockResolvedValue({
         data: {
           access: ACCESS_TOKEN,
           refresh: REFERSH_TOKEN,
-          user_type: name
+          user_type: type
         },
       })
       
@@ -141,17 +141,33 @@ describe("LoginPage", () => {
       expect(localStorage.getItem("refreshToken")).toBeNull();
   })
 
-  // Login persistence
-  it("redirects user to correct dashboard if access token exists in localStorage", async () => {
-    // simulate student already logged in
-    localStorage.setItem("accessToken", ACCESS_TOKEN)
-    localStorage.setItem("user_type", user_types[USERS.student].name)
+  // Already logged-in user should not be permitted to login again
+  it.each(USERS)(
+    "redirects $type to $type dashboard if already logged in",
+    async ({ type, email, name, user_id, dashboardRoute }) => {
+      // mock a normal response from /validate
+      axios.get.mockResolvedValue({
+        data: {
+          valid: "true",
+          user_id: user_id,
+          user_type: type,
+          name: name,
+          email: email
+        },
+      })
 
-    renderLoginPage()
+      // simulate user already logged in
+      localStorage.setItem("accessToken", ACCESS_TOKEN)
+      localStorage.setItem("refreshToken", REFERSH_TOKEN)
+      localStorage.setItem("user_type", type)
+      
+      renderLoginPage()
+      
+      // expect redirect since already logged in and cannot login again
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(dashboardRoute)
+      })
+    }
+  )
 
-    // expect redirect since already logged in
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith(user_types[USERS.student].dashboardRoute)
-    })
-  })
 })

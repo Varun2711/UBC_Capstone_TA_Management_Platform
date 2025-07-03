@@ -5,7 +5,7 @@ Takes "authorizedRoles" as parameter so you can specify which
 role(s) is/are allowed to access a particular page
 
 Example usage:
-<ProtectedRoute allowedRoles={["student"]}>
+<ProtectedRoute allowedRoles={[]}>
     <StudentDashboard />
 </ProtectedRoute>
 */
@@ -48,14 +48,11 @@ function ProtectedRoute({ children, authorizedRoles }) {
         const isValid = response.valid 
 
         if(isValid) {
-            console.log("A valid " + response.user_type + " user is logged in!!!!")
-            
+            // check if this user is on the list of authorized roles
             if(authorizedRoles && authorizedRoles.includes(response.user_type)) {
                 setIsAuthorized(true)
-                console.log("And you are allowed to go to this page!")
-            } else {
+            } else { // valid user logged in, but not allowed to view this page
                 setIsAuthorized(false)
-                console.log("But you're NOT allowed to see this page bye!")
             }
 
         } else {
@@ -63,7 +60,6 @@ function ProtectedRoute({ children, authorizedRoles }) {
             const error = response.error
             // if token = expired, refresh it
             if(error === "Token has expired") {
-                console.log("Refreshing your token!")
                 await refresh()
             } else {
                 // any other error = unauthorized access
@@ -80,22 +76,18 @@ function ProtectedRoute({ children, authorizedRoles }) {
         const token = localStorage.getItem("refreshToken")
         try {
             // attempt to get a new token (api call to auth/token/refresh)
-            console.log("Attempting to refresh token")
             const response = await requestTokenRefresh(token)
 
             if(response.status === 200) {            
                 // successful request that contains access token,
-                // store the new token and set is author
+                // store the new token and say they are authorized
                 localStorage.setItem("accessToken", response.data.access)
                 setIsAuthorized(true)
-                console.log("Refreshed token!")
             } else {
-                // some sort of error, did not get an access token
-                console.log("response: " + response.status)
+                // some sort of error, did not get an access token = unauthorized
                 setIsAuthorized(false)
             }
         } catch (error) {
-            console.log(error)
             setIsAuthorized(false)
         }
     }

@@ -6,31 +6,42 @@ For an example of how to test the same scenario across each user_type, see
 LoginPage.test.jsx, approx. line 77
 */
 
-export const USERS = {
-  student: 0,
-  instructor: 1,
-  scheduler: 2
-}
+import { DASHBOARD_ROUTES, USER_TYPES } from "@/data/user-types";
 
-export const user_types = [
+export const USERS = [
     {
-      name: "student",
-      email: "percy@camphalfblood.edu",
+      type: USER_TYPES.student,
+      email: "sarah.johnson@student.ubc.ca",
       password: "password123",
-      dashboardRoute: "/student-dashboard"
+      user_id: "1",
+      name: "Sarah Johnson",
+      dashboardRoute: DASHBOARD_ROUTES.student
     },
 
     {
-      name: "instructor",
-      email: "snape@hogwarts.edu",
+      type: USER_TYPES.instructor,
+      email: "david.martinez@ubc.ca",
       password: "password123",
-      dashboardRoute: "/instructordashboard"
+      user_id: "2",
+      name: "Dr. David Martinez",
+      dashboardRoute: DASHBOARD_ROUTES.instructor
     },
 
     {
-      name: "scheduler",
-      email: "cena@wwe.com",
+      type: USER_TYPES.scheduler,
+      email: "jennifer.smith@ubc.ca",
       password: "password123",
-      dashboardRoute: "/scheduler-dashboard"
+      user_id: "3",
+      name: "Dr. Jennifer Smith",
+      dashboardRoute: DASHBOARD_ROUTES.scheduler
+    },
+
+    {
+      type: USER_TYPES.admin,
+      email: "brian.mills@ubc.ca",
+      password: "password123",
+      user_id: "4",
+      name: "Brian Mills",
+      dashboardRoute: DASHBOARD_ROUTES.admin
     }
   ]

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { isAlreadyLoggedIn, navigateToUserDashboard, requestLogin } from "@/logic/auth"
-import { DASHBOARD_ROUTES, USER_TYPES } from "@/data/user-types"
 
 export default function LoginPage() {
   // state handling
@@ -27,7 +26,7 @@ export default function LoginPage() {
     // if already logged in, send them to correct dashboard based on user type
     if(isAlreadyLoggedIn()) {
       const user_type = localStorage.getItem('user_type')
-      navigateToUserDashboard(user_type)
+      navigateToUserDashboard(user_type, navigate)
     }
   }, [navigate])
 
@@ -44,7 +43,7 @@ export default function LoginPage() {
       const user_type = response.user_type
 
       // navigate to particular dashboard depending on user_type
-      navigateToUserDashboard(user_type)
+      navigateToUserDashboard(user_type, navigate)
 
     } catch (error) {
       // if anything goes wrong with login, set the error state (this is used in the return to conditionally display error text)

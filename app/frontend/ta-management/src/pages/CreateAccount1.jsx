@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { isAlreadyLoggedIn } from "@/logic/auth"
+import { isAlreadyLoggedIn, navigateToUserDashboard } from "@/logic/auth"
 
 export default function CreateAccount1() {
   const navigate = useNavigate()
@@ -22,14 +22,7 @@ export default function CreateAccount1() {
     // if already logged in, send them to correct dashboard based on user type
     if(isAlreadyLoggedIn()) {
       const user_type = localStorage.getItem('user_type')
-      // todo these should not be hardcoded
-      if(user_type === "student") {
-        navigate("/student-dashboard")
-      } else if(user_type === "instructor") {
-        navigate("/instructordashboard")
-      } else if(user_type === "scheduler") {
-        navigate("/scheduler-dashboard")
-      }
+      navigateToUserDashboard(user_type)
     }
   }, [navigate])
 
