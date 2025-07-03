@@ -47,14 +47,11 @@ class AcademicTerm(models.Model):
     TERM_CHOICES = [
         ('winter', 'Winter'),
         ('summer', 'Summer'),
-        ('fall', 'Fall'),
-        ('spring', 'Spring'),
     ]
     
     TERM_NUMBER_CHOICES = [
         ('1', 'Term 1'),
         ('2', 'Term 2'),
-        ('3', 'Term 3'),
     ]
 
     term_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -198,14 +195,6 @@ class CourseOffering(models.Model):
         related_name='course_offerings',
         help_text="Time slots when this course meets"
     )
-    enrollment_capacity = models.PositiveIntegerField(
-        default=0,
-        help_text="Maximum number of students that can enroll"
-    )
-    enrollment_current = models.PositiveIntegerField(
-        default=0,
-        help_text="Current number of enrolled students"
-    )
 
     class Meta:
         managed = True
@@ -216,19 +205,10 @@ class CourseOffering(models.Model):
     def __str__(self):
         return f'{self.course.course_number} {self.section_number} ({self.academic_term})'
 
-    @property
-    def is_full(self):
-        """Check if the course offering is at capacity."""
-        return self.enrollment_current >= self.enrollment_capacity
-
-    @property
-    def available_spots(self):
-        """Return the number of available enrollment spots."""
-        return max(0, self.enrollment_capacity - self.enrollment_current)
-
 # lab sections model
 class LabSection(models.Model):
     """
     A Lab section has a course number
     A Lab section has a section and term numbers along with year offered and timeblock
     """
+    
