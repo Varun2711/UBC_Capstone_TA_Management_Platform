@@ -9,7 +9,7 @@ import jwt
 from django.conf import settings
 from django.http import JsonResponse
 
-from .models import Student, Instructor, TAScheduler
+from .models import Student, Instructor, TAScheduler, Admin
 from .serializers import LoginSerializer, TokenSerializer, StudentRegistrationSerializer
 
 # Get Django's default User model
@@ -48,6 +48,16 @@ def find_user_by_email(email, password):
     except TAScheduler.DoesNotExist:
         pass
 
+    # NEW - Check Admin
+    try:
+        admin = Admin.objects.get(email=email)
+        if check_password(password, admin.password):
+            return admin, "admin", admin.employee_number
+        else:
+            return None, None, None
+    except Admin.DoesNotExist:
+        pass
+
     return None, None, None # if not found in student, instructor, or ta scheduler, user does not exist
         
 
@@ -69,18 +79,38 @@ def login_view(request):
         # Generate refresh token
         refresh = RefreshToken.for_user(django_user)
 
-        refresh["user_id"] = user_id
+        #refresh["user_id"] = user_id
         refresh["user_type"] = user_type
         refresh["email"] = email
         refresh["name"] = user.name
 
+        # Add custom ID as separate field based on user type, this logic is required.
+        if user_type == 'admin':
+            refresh["admin_id"] = user_id
+        elif user_type == 'student':
+            refresh["student_id"] = user_id
+        elif user_type == 'instructor':
+            refresh["instructor_id"] = user_id
+        elif user_type == 'scheduler':
+            refresh["scheduler_id"] = user_id
+
         # Generate access token
         access = refresh.access_token
 
-        access["user_id"] = user_id
+        #access["user_id"] = user_id
         access["user_type"] = user_type
         access["email"] = email
         access["name"] = user.name
+
+        # Add custom ID as separate field, this logic is required.
+        if user_type == 'admin':
+            access["admin_id"] = user_id
+        elif user_type == 'student':
+            access["student_id"] = user_id
+        elif user_type == 'instructor':
+            access["instructor_id"] = user_id
+        elif user_type == 'scheduler':
+            access["scheduler_id"] = user_id
 
         response_data = {"access": str(access),
                          "refresh": str(refresh),

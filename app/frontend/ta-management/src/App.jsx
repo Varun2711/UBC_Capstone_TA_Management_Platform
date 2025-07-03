@@ -1,25 +1,33 @@
 import { Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
+import Application from "./pages/Application";
 import StudentDashboard from "./pages/Student_Dashboard";
+import ProfilePage from "./pages/ProfilePage";
+import AdminDashboard from "./pages/AdminDashboard";
+import CourseManagement from "./pages/Scheduler/course-management";
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
-import ProtectedRoute from "./components/ProtectedRoute";
+import UserProfile from "./pages/profile-page-scheduler";
+import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
+import InstructorDashboard from "./pages/InstructorDashboard";
 
 function App() {
+
   return (
     // React Router setup
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
       <Route 
         path="/scheduler-dashboard" 
         element={
           <ProtectedRoute authorizedRoles={["scheduler"]}>
-            < TASchedulerDashboard/>
+            <TASchedulerDashboard />
           </ProtectedRoute> 
         } 
       />
@@ -35,6 +43,12 @@ function App() {
           </ProtectedRoute>
         } 
       />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/user-profile-scheduler" element={<UserProfile />} />
+      <Route path="/instructor-dashboard" element={<InstructorDashboard/>} />
+      <Route path="/application" element={<Application />} />
+      <Route path="/ta-coordinator-allocation" element={<TaCoordinatorAllocationPage />} />
+      <Route path="/course-management" element={<CourseManagement />} />
       {/* Add more routes if needed */}
     </Routes>
   );

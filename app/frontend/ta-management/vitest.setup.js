@@ -15,3 +15,7 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: vi.fn(),
   })),
 })
+Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+  value: () => false,
+  configurable: true,
+});
