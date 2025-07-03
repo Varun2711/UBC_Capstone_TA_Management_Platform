@@ -51,6 +51,26 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         fields = ['gpa', 'year_degree_start', 'minor', 'ubc_employee_id', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
+# role-specific serializers
+class TASchedulerProfileSerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    
+    class Meta:
+        model = TAScheduler
+        fields = ['employee_number', 'name', 'email', 'department', 'department_name']
+
+class InstructorProfileSerializer(serializers.ModelSerializer):
+    faculty_name = serializers.CharField(source='faculty.name', read_only=True)
+    
+    class Meta:
+        model = Instructor
+        fields = ['employee_number', 'name', 'email', 'faculty', 'faculty_name']
+
+class AdminProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Admin
+        fields = ['employee_number', 'name', 'email']
+
 class UpdateStudentProfileSerializer(serializers.ModelSerializer):
     student_profile = StudentProfileSerializer()
     
@@ -93,6 +113,50 @@ class UpdateStudentProfileSerializer(serializers.ModelSerializer):
                 StudentProfile.objects.create(user=instance, **profile_data)
         
         return instance
+    
+class UpdateInstructorSerializer(serializers.ModelSerializer):
+    """Serializer for updating instructor profiles"""
+    class Meta:
+        model = Instructor
+        fields = ['name', 'email']
+        read_only_fields = ['employee_number', 'faculty', 'is_active']
+        
+    def validate_email(self, value):
+        """Ensure email is not already in use by another instructor"""
+        instance = self.instance
+        if Instructor.objects.exclude(pk=instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+
+class UpdateTASchedulerSerializer(serializers.ModelSerializer):
+    """Serializer for updating TA scheduler profiles"""
+    class Meta:
+        model = TAScheduler
+        fields = ['name', 'email']
+        read_only_fields = ['employee_number', 'department', 'is_active']
+        
+    def validate_email(self, value):
+        """Ensure email is not already in use by another scheduler"""
+        instance = self.instance
+        if TAScheduler.objects.exclude(pk=instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+
+class UpdateAdminSerializer(serializers.ModelSerializer):
+    """Serializer for updating admin profiles"""
+    class Meta:
+        model = Admin
+        fields = ['name', 'email']
+        read_only_fields = ['employee_number', 'is_active', 'created_at']
+        
+    def validate_email(self, value):
+        """Ensure email is not already in use by another admin"""
+        instance = self.instance
+        if Admin.objects.exclude(pk=instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
 
 class StudentExperienceSerializer(serializers.ModelSerializer):
     class Meta:
