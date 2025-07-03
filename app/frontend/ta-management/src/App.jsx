@@ -14,29 +14,10 @@ import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
+import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
 import InstructorDashboard from "./pages/InstructorDashboard";
 
 function App() {
-
-  // define a message state variable
-  const [message, setMessage] = useState("");
-  const message_url = "/api/hello"; // update the api call to have a relative address instead of a direct address
-  // make an api call with fetch
-  useEffect(() => {
-    fetch(message_url)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setMessage(data.message);
-      })
-      .catch((error) => {
-        console.log(`error has occurred ${error}`);
-      });
-  }, []);
 
   return (
     // React Router setup
@@ -56,8 +37,8 @@ function App() {
       <Route path="/user-profile-scheduler" element={<UserProfile />} />
       <Route path="/instructor-dashboard" element={<InstructorDashboard/>} />
       <Route path="/application" element={<Application />} />
+      <Route path="/ta-coordinator-allocation" element={<TaCoordinatorAllocationPage />} />
       <Route path="/course-management" element={<CourseManagement />} />
-
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />
