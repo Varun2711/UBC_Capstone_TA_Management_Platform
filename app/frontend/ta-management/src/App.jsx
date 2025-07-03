@@ -17,6 +17,8 @@ import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
 import ViewJobPostings from "./pages/ViewJobPostings_Student";
 import InstructorDashboard from "./pages/InstructorDashboard";
+import ManageApplications from "./pages/Coordinator_ManageApplications";
+import ViewStudentApplication from "./pages/Coordinator_ViewApplication";
 
 function App() {
   return (
@@ -47,6 +49,11 @@ function App() {
         element={<TaCoordinatorAllocationPage />}
       />
       <Route path="/course-management" element={<CourseManagement />} />
+      <Route path="/manage-applications" element={<ManageApplications />} />
+      <Route
+        path="manage-applications/view/:applicationid"
+        element={<ViewStudentApplication />}
+      />
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />
