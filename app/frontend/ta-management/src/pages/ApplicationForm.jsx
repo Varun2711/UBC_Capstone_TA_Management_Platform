@@ -276,8 +276,8 @@ export default function ApplicationForm() {
 
         //transform data to ensure it matches the studentprofile object
         const cleanedData = cleanApiDataFormat(response.data);
+        console.log(cleanedData);
         setStudent(cleanedData);
-        //return response.data;
       } catch (error) {
         console.error(
           "API call failed, falling back to mock data",
@@ -357,9 +357,13 @@ export default function ApplicationForm() {
         status: "submitted",
       };
 
+      console.log(applicationData);
+
       const accessToken = localStorage.getItem("accessToken"); //get the access token for the student profile update
 
       const profileData = transformStudentToApiFormat(student); //format the data to fit the student profile
+
+      console.log(profileData);
 
       const documentData = {
         supportingDocuments: supportingDocs.map((doc) => ({
@@ -376,13 +380,14 @@ export default function ApplicationForm() {
         );
 
         //if there is a token, try to submit an
-        if (accessToken) {
-          const profileResponse = await instance.post("/profile/me/update/", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
-        }
+        // if (accessToken) {
+        //   console.log("I'm inside access token.");
+        //   const profileResponse = await instance.post("/profile/me/update/", {
+        //     headers: {
+        //       Authorization: `Bearer ${accessToken}`,
+        //     },
+        //   });
+        // }
         console.log("Application submitted successfully:", response.data);
         //handle success
         setSubmissionStatus("success");

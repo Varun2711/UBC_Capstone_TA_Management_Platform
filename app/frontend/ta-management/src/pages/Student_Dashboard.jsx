@@ -230,6 +230,7 @@ export default function StudentDashboard() {
       }
 
       try {
+        console.log("We're here!");
         //get user profile to get the student id
         // probably need another way to do this than getting the entire profile
         const res = await instance.get(`/profile/me/`, {
@@ -238,13 +239,50 @@ export default function StudentDashboard() {
           },
         });
 
-        //get the student's applications by the Student ID (i.e., the application table student FK)
-        const applicationResponse = await axios.get("/ajp/applications/", {
-          params: {
-            "by-student": res.data.id,
-          },
-        });
-        console.log(applicationResponse.data);
+        //console.log(res.data);
+        const studentId = res.data.id;
+        //console.log(studentId);
+
+        // const applicationResponse = await instance.get("/ajp/applications/", {
+        //   params: { by-student: studentId }, // or whatever field the filter expects
+        // });
+
+        const applicationResponse = await instance.get(
+          `/ajp/applications/by-student/${studentId}/`
+        );
+
+        //console.log(applicationResponse.data);
+
+        if (Array.isArray(applicationResponse.data)) {
+          const transformedApplications = applicationResponse.data.map(
+            (app) => ({
+              application_id: app.application_id,
+              termSelection: {
+                code:
+                  app.termSelection?.code || app.posting?.term?.code || "N/A",
+              },
+              status: app.status,
+              applied_at: app.applied_at,
+              posting: {
+                title: app.posting?.title || "N/A",
+                posting_id: app.posting?.posting_id,
+                description: app.posting?.description,
+                department: app.posting?.department?.name,
+              },
+            })
+          );
+
+          console.log(transformedApplications);
+
+          setSubmittedApplications(transformedApplications);
+        } else {
+          console.error(
+            "Applications data is not an array:",
+            applicationResponse.data
+          );
+          setSubmittedApplications(mockSubmittedApplications);
+        }
+
         setSubmittedApplications(applicationResponse.data);
       } catch (err) {
         //if something goes wrong and we can't load the student application, fall back on the mockdata
