@@ -8,6 +8,8 @@ import StudentDashboard from "./pages/Student_Dashboard";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
+import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
+
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -16,6 +18,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
 import InstructorDashboard from "./pages/InstructorDashboard";
+
 
 function App() {
 
@@ -39,6 +42,8 @@ function App() {
       <Route path="/application" element={<Application />} />
       <Route path="/ta-coordinator-allocation" element={<TaCoordinatorAllocationPage />} />
       <Route path="/course-management" element={<CourseManagement />} />
+      <Route path="/instructor-management" element={<InstructorRequirements />} />
+
       {/* Add more routes if needed */}
     </Routes>
     // <TASchedulerDashboard />

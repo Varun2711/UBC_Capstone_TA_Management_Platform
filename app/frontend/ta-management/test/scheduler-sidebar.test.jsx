@@ -54,7 +54,7 @@ describe('AppSidebar', () => {
     const navigationItems = [
       { title: 'Dashboard', icon: 'home-icon' },
       { title: 'Course Management', icon: 'book-open-icon', isActive: true },
-      { title: 'TA Positions', icon: 'user-check-icon' },
+      { title: 'Instructor Management', icon: 'user-check-icon' },
       { title: 'Applications', icon: 'file-text-icon' },
       { title: 'Appointments', icon: 'check-circle-icon' },
     ];
@@ -111,8 +111,8 @@ describe('AppSidebar', () => {
   });
 
   it('applies active state styling to the specified active page', () => {
-    renderSidebar({ activePage: 'TA Positions' });
-    const activeItem = screen.getByText('TA Positions').closest('[data-active="true"]');
+    renderSidebar({ activePage: 'Instructor Management' });
+    const activeItem = screen.getByText('Instructor Management').closest('[data-active="true"]');
     expect(activeItem).toHaveAttribute('data-active', 'true');
     const inactiveItem = screen.getByText('Dashboard').closest('[data-active="true"]');
     expect(inactiveItem).not.toBeInTheDocument();
