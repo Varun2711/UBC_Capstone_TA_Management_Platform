@@ -180,6 +180,7 @@ describe('UserProfile Component with API Integration', () => {
 });
 
   it('displays a generic API error on other save failures', async () => {
+  
     vi.mocked(getProfile).mockResolvedValue(mockUserProfile);
     vi.mocked(updateProfile).mockRejectedValue(new Error('Server blew up')); // Generic error
     render(<MemoryRouter><UserProfile /></MemoryRouter>);
@@ -189,6 +190,8 @@ describe('UserProfile Component with API Integration', () => {
 
     // Wait for the generic error message to appear
     expect(await screen.findByText('Failed to save changes. Please try again.')).toBeInTheDocument();
+  
+
   });
 
   it('shows client-side validation errors for invalid input', async () => {
@@ -225,4 +228,5 @@ describe('UserProfile Component with API Integration', () => {
     // Form should now be valid and save button enabled
     expect(saveButton).not.toBeDisabled();
   });
+  
 });

@@ -49,7 +49,6 @@ export default function UserProfile() {
         setOriginalUserData(profile);
         setUserData(profile);
       } catch (error) {
-        console.error("Failed to fetch user profile:", error);
         setFetchError("Could not load your profile. Please try again later.");
       } finally {
         setIsLoading(false);
@@ -75,7 +74,6 @@ export default function UserProfile() {
       setIsEditing(false);
 
     } catch (error) {
-      console.error("Failed to save user data:", error);
 
       // Check if the error is a 400 Bad Request with validation details
       if (error.response && error.response.status === 400 && error.response.data) {
