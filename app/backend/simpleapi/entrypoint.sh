@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+echo "Removing existing migration files" 
+find /app/myapp/migrations -name "*.py" -not -name "__init__.py" -delete
+
 echo "Making migrations migrations..."
 python manage.py makemigrations  --noinput
 

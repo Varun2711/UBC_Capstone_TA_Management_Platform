@@ -1,8 +1,7 @@
-
 services:
   backend:
     build:
-      context: ./backend/simpleapi    
+      context: ./backend/simpleapi
     ports:
       - "8000:8000"
     environment:
@@ -11,12 +10,15 @@ services:
       - .env
     volumes:
       - ./backend/simpleapi:/app
-#do not start the backend service until the database is healthy
+    #do not start the backend service until the database is healthy
     depends_on:
       db:
         condition: service_healthy
         restart: true
       user-profile-service:
+        condition: service_healthy
+        restart: true
+      application-service:
         condition: service_healthy
         restart: true
     networks:
@@ -40,12 +42,18 @@ services:
     networks:
       - app-networks
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/')",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-  
+
   auth-service:
     build:
       context: ./backend/auth-service
@@ -61,7 +69,7 @@ services:
       db:
         condition: service_healthy
         restart: true
-      user-profile-service: 
+      user-profile-service:
         condition: service_healthy
         restart: true
 
@@ -69,7 +77,39 @@ services:
     networks:
       - app-networks
 
-  
+  application-service:
+    container_name: applications-jobpostings-service
+    build:
+      context: ./backend/applications-jobpostings-service
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/applications-jobpostings-service:/app
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      user-profile-service:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8003/api/applications/')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # set app-networks as the current network
+    networks:
+      - app-networks
+
   frontend:
     build:
       context: ./frontend/ta-management
@@ -80,43 +120,43 @@ services:
     networks:
       - app-networks
 
-# postgres database service
-# This service uses the official postgres image and sets up a database with the specified user and password.
-# The credentials are stored in the env file
+  # postgres database service
+  # This service uses the official postgres image and sets up a database with the specified user and password.
+  # The credentials are stored in the env file
   db:
     container_name: app_database
-    image: postgres:latest 
+    image: postgres:latest
     restart: unless-stopped
     environment:
-        POSTGRES_USER: ${POSTGRES_USER}
-        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-        POSTGRES_DB: ${POSTGRES_DB}      
-    volumes:           
-        - db_data:/var/lib/postgresql/data
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
     ports:
-        - "5432:5432"
-# Healthcheck to ensure the database is ready before other services depend on it
+      - "5432:5432"
+    # Healthcheck to ensure the database is ready before other services depend on it
     healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-        interval: 10s
-        retries: 5
-        start_period: 30s
-        timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
     # set app-networks as the current network
     networks:
       - app-networks
 
-#pdgadmin service for managing the database, optional use
-# This service uses the official pgAdmin image and sets up a web interface for managing the PostgreSQL database.
-# To access pgAdmin, navigate to http://localhost:5050 in your web browser.
-# You can log in with the credentials specified below.
+  #pdgadmin service for managing the database, optional use
+  # This service uses the official pgAdmin image and sets up a web interface for managing the PostgreSQL database.
+  # To access pgAdmin, navigate to http://localhost:5050 in your web browser.
+  # You can log in with the credentials specified below.
   pgadmin:
     container_name: app_pgadmin
     image: dpage/pgadmin4:latest
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: capstone@domain.com
-      PGADMIN_DEFAULT_PASSWORD: capstone     
+      PGADMIN_DEFAULT_PASSWORD: capstone
     ports:
       - "5050:80"
     depends_on:
@@ -126,8 +166,7 @@ services:
     # set app-networks as the current network
     networks:
       - app-networks
-      
-  
+
   nginx:
     build:
       context: ./nginx
@@ -145,7 +184,7 @@ services:
 
 volumes:
   db_data:
-  pgadmin_data:  
+  pgadmin_data:
 
 # define a network that will serve as a bridge between containers
 networks:
