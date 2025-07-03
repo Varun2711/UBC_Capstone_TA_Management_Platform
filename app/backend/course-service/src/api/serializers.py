@@ -7,6 +7,16 @@ class AcademicTermSerializer(serializers.ModelSerializer):
         model = AcademicTerm
         fields = '__all__'
 
+class AcademicTermCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AcademicTerm
+        fields = ['year', 'term_number', 'term', 'start_date', 'end_date']
+
+    def validate(self, data):
+        if data['start_date'] >= data['end_date']:
+            raise serializers.ValidationError("Start date must be before end date.")
+        return data
+
 
 class TimeSlotSerializer(serializers.ModelSerializer):
     class Meta:
