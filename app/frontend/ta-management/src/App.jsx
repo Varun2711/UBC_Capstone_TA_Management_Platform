@@ -14,41 +14,109 @@ import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
 import InstructorDashboard from "./pages/InstructorDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { USER_TYPES } from "./data/user-types";
 
 function App() {
 
   return (
     // React Router setup
     <Routes>
+      {/* Accessible to: everyone --------------- */}
       <Route path="/" element={<LandingPage />} />
+
+      {/* Accessible to: non-logged-in user ----- */}
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route 
-        path="/scheduler-dashboard" 
-        element={
-          <ProtectedRoute authorizedRoles={["scheduler"]}>
-            <TASchedulerDashboard />
-          </ProtectedRoute> 
-        } 
-      />
       <Route path="/create-account/step1" element={<CreateAccount1 />} />
       <Route path="/create-account/step2" element={<CreateAccount2 />} />
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+
+      {/* Accessible to: student ---------------- */}
       <Route 
         path="/student-dashboard" 
         element={
-          <ProtectedRoute authorizedRoles={["student"]}>
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
             <StudentDashboard />
           </ProtectedRoute>
         } 
       />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/user-profile-scheduler" element={<UserProfile />} />
-      <Route path="/instructor-dashboard" element={<InstructorDashboard/>} />
-      <Route path="/application" element={<Application />} />
-      <Route path="/ta-coordinator-allocation" element={<TaCoordinatorAllocationPage />} />
-      <Route path="/course-management" element={<CourseManagement />} />
+
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ProfilePage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/application" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <Application />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Accessible to: instructor -------------- */}
+      <Route 
+        path="/instructor-dashboard" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <InstructorDashboard />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Accessible to: scheduler --------------- */}
+      <Route 
+        path="/scheduler-dashboard" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <TASchedulerDashboard />
+          </ProtectedRoute> 
+        } 
+      />
+      
+      <Route 
+        path="/user-profile-scheduler" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <UserProfile />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/ta-coordinator-allocation" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <TaCoordinatorAllocationPage />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/course-management" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <CourseManagement />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Accessible to: admin ------------------- */}
+      <Route 
+        path="/admin-dashboard" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+  
       {/* Add more routes if needed */}
     </Routes>
   );
