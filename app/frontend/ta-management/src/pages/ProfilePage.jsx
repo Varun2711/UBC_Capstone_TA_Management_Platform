@@ -48,6 +48,7 @@ import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "../components/student-dashboard-sidebar"
 import WeeklyAvailabilityCalendar from "../components/WeeklyAvailabilityCalendar"
 import * as Select from '@radix-ui/react-select'
+import {getProfile, updateProfile} from "@/logic/student-profile"
 
 
 // Mock data
@@ -152,7 +153,44 @@ export default function ProfilePage() {
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false)
 
+  // State for loading and error handling
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
+  // State for original user data
+  const [originalUserData, setOriginalUserData] = useState(null);
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const data = await getProfile();
+
+        // Correctly parse the flat API response
+        const [firstName, ...lastNameParts] = data.name.split(' ');
+
+        const profile = {
+          firstName: firstName || '',
+          lastName: lastNameParts.join(' ') || '',
+          email: data.email || '',
+          employeeNumber: data.employee_number || '',
+          studentId: data.student_id || '',
+          department: data.department_name || '', // Ensure department is set, default to empty string if not present
+        };
+
+        setOriginalUserData(profile);
+        setUserData(profile);
+      } catch (error) {
+        setFetchError("Could not load your profile. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUserData();
+  }, []);
+
+  //Existing code
+  /*
   const handleSave = (profileData) => {
   const {
     name,
@@ -183,12 +221,113 @@ export default function ProfilePage() {
   console.log("Profile validated successfully:", profileData)
   return true
 }
+*/
+
+  //New code
+  const handleSave = async () => {
+    if (!validateForm()) return;
+    setIsSaving(true);
+    setErrors({});
+
+    try {
+      const updatedData = {
+        name: `${userData.firstName.trim()} ${userData.lastName.trim()}`,
+        email: userData.email,
+      };
+
+      await updateProfile(updatedData);
+
+      setOriginalUserData({ ...userData });
+      setIsEditing(false);
+    } catch (error) {
+       // Check if the error is a 400 Bad Request with validation details
+      if (error.response && error.response.status === 400 && error.response.data) {
+        const backendErrors = error.response.data;
+        const formattedErrors = {};
+
+        // Format backend errors to match the frontend state structure
+        for (const field in backendErrors) {
+          // Example: backend sends { "email": ["Enter a valid email."] }
+          // We format it to { email: "Enter a valid email." }
+          formattedErrors[field] = backendErrors[field][0]; 
+        }
+
+        setErrors(formattedErrors); // Update state with specific field errors
+      } else {
+        // Handle other errors (network, server 500, etc.)
+        setErrors({ api: "Failed to save changes. Please try again." });
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setUserData((prev) => ({ ...prev, [field]: value }));
+    const error = validateField(field, value);
+    setErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
+  const validateField = (field, value) => {
+    let error = null;
+    if (field === "firstName" || field === "lastName") {
+      if (!value || value.trim().length < 2) {
+        error = "Name must be at least 2 characters";
+      }
+    } else if (field === "email") {
+      if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+        error = "Invalid email address";
+      }
+    }
+    return error;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const fields = ["firstName", "lastName", "email"];
+    fields.forEach((field) => {
+      const error = validateField(field, userData[field]);
+      if (error) newErrors[field] = error;
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleEdit = () => setIsEditing(true);
+
+  const handleCancel = () => {
+    setUserData({ ...originalUserData });
+    setErrors({});
+    setIsEditing(false);
+  };
+
+  const isFormValid = () => {
+    if (!userData) return false;
+    return (
+      userData.firstName?.trim().length >= 2 &&
+      userData.lastName?.trim().length >= 2 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email?.trim() || '')
+    );
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading profile...</div>;
+  }
+
+  if (fetchError) {
+    return <div className="flex justify-center items-center h-screen text-red-500">{fetchError}</div>;
+  }
+
+  if (!userData) return null;
 
 
+  //Existing code 
+  /*
   const handleCancel = (profileData) => {
     setProfile(profileData) // Reset to original data
     setIsEditing(false)
   }
+  */
 
   return (
     <SidebarProvider>
