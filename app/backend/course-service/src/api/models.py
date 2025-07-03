@@ -143,7 +143,7 @@ class Course(models.Model):
     """
     course_number = models.CharField(max_length=9, unique=True)
     course_name = models.CharField(max_length=100)
-    department = models.CharField(max_length=20)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
     course_description = models.TextField(max_length=500, blank=True, null=True)
     course_level = models.CharField(max_length=4, blank=True)
 
