@@ -7,7 +7,7 @@ import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { login } from "@/logic/auth"
+import { isAlreadyLoggedIn, requestLogin, requestTokenValidation } from "@/logic/auth"
 
 export default function LoginPage() {
   // state handling
@@ -22,19 +22,17 @@ export default function LoginPage() {
     setShowPassword(!showPassword)
   }
 
-  // useeffect to check for token and redirect user who is already logged in (cannot login again!)
+  // on page load, check for token and redirect user who is already logged in (cannot login again!)
   useEffect(() => {
-    const token = localStorage.getItem('accessToken')
-    const userType = localStorage.getItem('user_type')
-
     // if already logged in, send them to correct dashboard based on user type
-    if(token && userType) {
-      if(userType === "student") {
+    if(isAlreadyLoggedIn()) {
+      const user_type = localStorage.getItem('user_type')
+      if(user_type === "student") {
         navigate("/student-dashboard")
-      } else if(userType === "instructor") {
+      } else if(user_type === "instructor") {
         navigate("/instructordashboard")
-      } else if(userType === "scheduler") {
-        navigate("/tadashboard")
+      } else if(user_type === "scheduler") {
+        navigate("/scheduler-dashboard")
       }
     }
   }, [navigate])
@@ -44,7 +42,7 @@ export default function LoginPage() {
 
     // on login form submission, attempt to login
     try {
-      const response = await login(email, password)
+      const response = await requestLogin(email, password)
       localStorage.setItem('accessToken', response.access)
       localStorage.setItem('refreshToken', response.refresh)
       localStorage.setItem('user_type', response.user_type)
@@ -57,7 +55,7 @@ export default function LoginPage() {
       } else if(user_type === "instructor") {
         navigate("/instructordashboard") // broken for now because this page does not exist yet
       } else if(user_type === "scheduler") {
-        navigate("/tadashboard")
+        navigate("/scheduler-dashboard")
       } else {
         // admin
       }

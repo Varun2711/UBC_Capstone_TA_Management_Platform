@@ -1,17 +1,76 @@
-// Set of helper functions that send correctly formatted requests to the auth service
-// and return the response
-// Currently just student login but will be added to as needed
+/*
+Set of helper functions related to authentication/logging in
+This takes care of any heavy lifting related to sending api
+requests and receiving responses, along with other auth-related
+tasks. Uses axios library for easy formatting of requests
+*/
 
 import axios from "axios"
 
 const API_URL = 'http://localhost:8080/api'
 
-// sends a post request w login info for student user
-export const login = async (email, password) => {
+/*
+Send POST request to auth/login/
+- Request params: email, password
+- Response keys: access, refresh, user_id, user_type, name
+*/
+export const requestLogin = async (email, password) => {
     const response = await axios.post(`${API_URL}/auth/login/`, {
         email,
         password
     })
 
     return response.data
+}
+
+/*
+Send GET request to auth/validate/
+- Request params: access_token
+- Response keys: valid (boolean), user_id, user_type, name, email
+*/
+export const requestTokenValidation = async(access_token) => {
+    if (access_token) {
+        const response = await axios.get(`${API_URL}/auth/validate/`, {
+            headers: {
+                'Authorization': `Bearer ${access_token}`
+            }
+        })
+        
+        return response.data
+    }
+
+    return null
+}
+
+/*
+Send POST request to auth/token/refresh/
+- Request params: refresh_token
+- Response keys: access, refresh, user_id, user_type, name
+*/
+export const requestTokenRefresh = async(refresh_token) => {
+    if(refresh_token) {
+        const response = await axios.post(`${API_URL}/auth/token/refresh/`, {
+            refresh_token
+        })
+
+        return response.data
+    }
+
+    return null
+}
+
+/*
+Utility function to check if logged in
+Returns true if user is currently logged in AND has been given
+a user type. Returns false otherwise.
+*/
+export async function isAlreadyLoggedIn() {
+    const token = localStorage.getItem('accessToken')
+    const response = await requestTokenValidation(token)
+
+    if(response) {
+        return (response.valid && response.user_type)
+    }
+
+    return false
 }

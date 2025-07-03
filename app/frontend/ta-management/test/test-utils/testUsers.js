@@ -1,8 +1,8 @@
 /*
 This file contains login credentials and other relevant info for each user type.
-Use this anytime you need to login a user for testing; just import the file and
+Use this any time you need to login a user for testing; just import the file and
 then access as an array of objects.
-For an example of how to test the same scenario across each user type, see 
+For an example of how to test the same scenario across each user_type, see 
 LoginPage.test.jsx, approx. line 77
 */
 
@@ -31,6 +31,6 @@ export const user_types = [
       name: "scheduler",
       email: "cena@wwe.com",
       password: "password123",
-      dashboardRoute: "/tadashboard"
+      dashboardRoute: "/scheduler-dashboard"
     }
   ]
