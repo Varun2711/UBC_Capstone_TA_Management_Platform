@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { isAlreadyLoggedIn, requestLogin, requestTokenValidation } from "@/logic/auth"
+import { isAlreadyLoggedIn, navigateToUserDashboard, requestLogin } from "@/logic/auth"
+import { DASHBOARD_ROUTES, USER_TYPES } from "@/data/user-types"
 
 export default function LoginPage() {
   // state handling
@@ -27,13 +27,7 @@ export default function LoginPage() {
     // if already logged in, send them to correct dashboard based on user type
     if(isAlreadyLoggedIn()) {
       const user_type = localStorage.getItem('user_type')
-      if(user_type === "student") {
-        navigate("/student-dashboard")
-      } else if(user_type === "instructor") {
-        navigate("/instructordashboard")
-      } else if(user_type === "scheduler") {
-        navigate("/scheduler-dashboard")
-      }
+      navigateToUserDashboard(user_type)
     }
   }, [navigate])
 
@@ -50,15 +44,7 @@ export default function LoginPage() {
       const user_type = response.user_type
 
       // navigate to particular dashboard depending on user_type
-      if(user_type === "student") {
-        navigate("/student-dashboard")
-      } else if(user_type === "instructor") {
-        navigate("/instructordashboard") // broken for now because this page does not exist yet
-      } else if(user_type === "scheduler") {
-        navigate("/scheduler-dashboard")
-      } else {
-        // admin
-      }
+      navigateToUserDashboard(user_type)
 
     } catch (error) {
       // if anything goes wrong with login, set the error state (this is used in the return to conditionally display error text)

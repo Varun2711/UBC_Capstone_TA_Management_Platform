@@ -5,6 +5,7 @@ requests and receiving responses, along with other auth-related
 tasks. Uses axios library for easy formatting of requests
 */
 
+import { USER_TYPES, DASHBOARD_ROUTES } from "@/data/user-types"
 import axios from "axios"
 
 const API_URL = 'http://localhost:8080/api'
@@ -73,4 +74,21 @@ export async function isAlreadyLoggedIn() {
     }
 
     return false
+}
+
+/*
+Utility function to send user to the correct dashboard
+based on what type of user they are.
+(Just performs a repetitive task, doesn't return anything)
+*/
+export function navigateToUserDashboard(user_type) {
+    if(user_type === USER_TYPES.student) {
+        navigate(DASHBOARD_ROUTES.student)
+    } else if(user_type === USER_TYPES.instructor) {
+        navigate(DASHBOARD_ROUTES.instructor)
+    } else if(user_type === USER_TYPES.scheduler) {
+        navigate(DASHBOARD_ROUTES.scheduler)
+    } else if(user_type === USER_TYPES.admin) {
+        navigate(DASHBOARD_ROUTES.admin)
+    }
 }
