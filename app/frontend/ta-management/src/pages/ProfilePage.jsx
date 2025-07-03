@@ -120,32 +120,44 @@ export default function ProfilePage() {
     const fetchUserData = async () => {
       try {
         const data = await getProfile();
+        console.log("Fetched user data from backend:", data);
 
-        // Correctly parse the flat API response and map all fields
-        const [firstName, ...lastNameParts] = data.name.split(' ');
-
+        // Correctly parse the ACTUAL API response structure
         const profileData = {
-          firstName: firstName || '',
-          lastName: lastNameParts.join(' ') || '',
+          // Use first_name and last_name directly from the API response
+          firstName: data.first_name || '',
+          lastName: data.last_name || '',
           email: data.email || '',
-          employeeNumber: data.employee_number || '', // Mapped from backend
-          studentId: data.student_id || '', // Mapped from backend
-          major: data.major || '', // Mapped from backend
-          minor: data.minor || '', // Mapped from backend
-          year: data.year || '', // Mapped from backend (e.g., "Graduate Student")
-          gpa: data.gpa || '', // Mapped from backend
-          phone: data.phone || '', // Mapped from backend
-          avatar: data.avatar || "/placeholder.svg?height=120&width=120", // Mapped from backend
-          coursePreference: data.course_preference || [], // Mapped from backend
-          academicInfo: { // Assuming academic info comes nested or you map it
-            yearStanding: data.year_standing || '', // Mapped from backend
-            degreeStart: data.degree_start || '', // Mapped from backend
-            expectedGraduation: data.expected_graduation || '', // Mapped from backend
+          
+          // Access nested data from the student_info object
+          studentId: data.student_info?.student_number || '',
+          phone: data.student_info?.phone || '',
+          major: data.student_info?.program || '', 
+          year: data.student_info?.study_level || '', 
+          
+          // These fields are not in your API response, so they will be empty strings
+          gpa: data.gpa || '', 
+          minor: data.student_info?.minor || '', 
+          employeeNumber: data.employee_number || '',
+
+          avatar: data.avatar || "/placeholder.svg?height=120&width=120",
+          
+          // Use the correct plural key names from the API
+          coursePreference: data.course_preferences || [], 
+          experience: data.experiences || [],
+          availability: data.availability || [],
+
+          // The backend sends a single 'skills' array. We will assign them to technicalSkills for now.
+          // You may need to adjust your backend or frontend logic to handle soft vs. technical skills.
+          technicalSkills: data.skills || [],
+          softSkills: [], // Or handle as needed
+
+          academicInfo: {
+            yearStanding: data.student_info?.year_standing?.toString() || '',
+            // These fields are not in your API response, they will be empty
+            degreeStart: data.student_info?.degree_start || '', 
+            expectedGraduation: data.student_info?.expected_graduation || '', 
           },
-          experience: data.experience || [], // Mapped from backend
-          technicalSkills: data.technical_skills || [], // Mapped from backend
-          softSkills: data.soft_skills || [], // Mapped from backend
-          availability: data.availability || [], // Mapped from backend
         };
 
         setOriginalUserData(profileData);
@@ -432,7 +444,7 @@ export default function ProfilePage() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar />
+        <AppSidebar/>
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
