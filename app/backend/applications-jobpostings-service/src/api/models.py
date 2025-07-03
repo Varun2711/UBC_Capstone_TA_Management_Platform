@@ -1,5 +1,8 @@
 from django.db import models
 from django.utils import timezone
+import os
+
+
 
 class Faculty(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -8,13 +11,35 @@ class Faculty(models.Model):
         managed = False
         db_table = 'myapp_faculty'
 
+    def __str__(self):
+        return self.name
+
+
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='departments')
+    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, related_name='departments', null=True)
 
     class Meta:
         managed = False
         db_table = 'myapp_department'
+
+    def __str__(self):
+        return self.name
+
+
+class TAScheduler(models.Model):
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, related_name='ta_schedulers', null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_tascheduler'
+
+    def __str__(self):
+        return f"{self.name} ({self.employee_number})"
+
 
 class Student(models.Model):
     student_number = models.CharField(max_length=8, unique=True)
@@ -27,106 +52,26 @@ class Student(models.Model):
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
-    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = False
         db_table = 'myapp_student'
 
+    def __str__(self):
+        return f"{self.name}"
+
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
+    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True)
     email = models.EmailField()
-    password = models.CharField(max_length=255)
-    is_active = models.BooleanField(default=True)
 
-    class Meta:
+    class Meta: 
         managed = False
         db_table = 'myapp_instructor'
 
-class TAScheduler(models.Model):
-    employee_number = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
-    password = models.CharField(max_length=255)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_tascheduler'
-
-#added admin based on new requirements.
-class Admin(models.Model):
-    employee_number = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100)
-    password = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_admin'
-
-class Course(models.Model):
-    course_number = models.CharField(max_length=10, primary_key=True)
-    title = models.CharField(max_length=100)
-    description = models.TextField(max_length=255)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE, db_constraint=False)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-
     def __str__(self):
-        return f"{self.course_number}"
-
-class CourseOffering(models.Model):
-    course_offering_id = models.AutoField(primary_key=True)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    section_number = models.CharField(max_length=5)
-    term_number = models.CharField(max_length=20)
-    year_offered = models.IntegerField()
-    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
-    day = models.CharField(max_length=10)
-    time = models.CharField(max_length=20)
-
-    class Meta:
-        unique_together = ('course', 'section_number', 'term_number', 'year_offered')
-
-    def __str__(self):
-        return f"{self.course} - {self.section_number} ({self.term_number} {self.year_offered})"
-
-class LabSection(models.Model):
-    lab_section_id = models.AutoField(primary_key=True)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
-    section_number = models.CharField(max_length=5)
-    day = models.CharField(max_length=10)
-    time = models.CharField(max_length=20)
-
-    def __str__(self):
-        return f"{self.course_offering} - Lab {self.section_number} ({self.day} {self.time})"
-
-class InstructorRequest(models.Model):
-    request_id = models.AutoField(primary_key=True)
-    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.SET_NULL, null=True, blank=True)
-    request_date = models.DateField()
-    request_description = models.TextField()
-
-
-class Availability(models.Model):
-    availability_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    day_of_week = models.CharField(max_length=10)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    term_number = models.CharField(max_length=20)
-
-    class Meta: 
-        managed = True
-        db_table = 'myapp_availability'
+        return f"{self.name}"
 
 
 class Term(models.Model):
@@ -156,7 +101,7 @@ class Term(models.Model):
     ], null=True, blank=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_term'  
       
 
@@ -178,7 +123,8 @@ class Term(models.Model):
         """Check if this term is a subset of another term"""
         return self.subsetOf == other_term
 
-class JobPosting(models.Model):    
+class JobPosting(models.Model):
+    
     posting_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
@@ -202,7 +148,7 @@ class JobPosting(models.Model):
     ], default='draft')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_jobposting'
      
 
@@ -220,7 +166,7 @@ class JobPostingQuestion(models.Model):
 
     class Meta:
         unique_together = ('posting', 'question_text')
-        managed = False
+        managed = True
         db_table = 'myapp_jobpostingquestion'
 
     def __str__(self):
@@ -287,7 +233,7 @@ class Application(models.Model):
     otherPositionHours = models.PositiveIntegerField(blank=True, null=True, help_text="Hours per week for other positions")
     
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_application'        
         
     def __str__(self):
@@ -297,72 +243,11 @@ class Application(models.Model):
         """Check if application can be withdrawn"""
         return self.status in ['submitted', 'under_review']     
     
-
-class Offer(models.Model):
-    requiredhours_choices ={
-        ('1', '6 hours'),
-        ('2', '12 hours') 
-    }
-
-    role_choices= {
-        ('rta', 'Regular TA'),
-        ('tac', 'TA Captain'),
-    }
-
-    offer_id = models.AutoField(primary_key=True)
-    application = models.ForeignKey(Application, on_delete=models.CASCADE)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
-    lab_section = models.ForeignKey(LabSection, on_delete=models.SET_NULL, null=True, blank=True)
-    required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
-    role = models.CharField(max_length=3, choices=role_choices, default='rta')
-    offer_date = models.DateField()
-    status = models.CharField(max_length=50)
-    notes = models.TextField(null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created',db_constraint=False)
-
-class Assignment(models.Model):
-    role_choices= {
-        ('rta', 'Regular TA'),
-        ('tac', 'TA Captain'),
-    }
-    requiredhours_choices ={
-        ('1', '6 hours'),
-        ('2', '12 hours'),
-    }
-    
-    assignment_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, db_constraint=False)
-    offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, null=True, blank=True)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
-    lab_section = models.ForeignKey(LabSection, on_delete=models.SET_NULL, null=True, blank=True)
-    required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
-    role = models.CharField(max_length=3, choices=role_choices, default='rta')
-    assigned_date = models.DateField()
-    assigned_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_made', db_constraint=False )
-    notes = models.TextField(null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_created', db_constraint=False)
-
-class Shift(models.Model):
-    shift_id = models.AutoField(primary_key=True)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    notes = models.TextField(null=True, blank=True)
-
-class Availability(models.Model):
-    availability_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
-    day_of_week = models.CharField(max_length=10)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    term_number = models.CharField(max_length=20)
-
+   
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
     application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
     file_name = models.CharField(max_length=255)
     file_type = models.CharField(max_length=50)
     file_size = models.IntegerField()
@@ -370,5 +255,6 @@ class Document(models.Model):
     uploaded_at = models.DateField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_document'
+
