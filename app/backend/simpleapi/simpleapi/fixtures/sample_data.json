@@ -8,6 +8,39 @@
   },
   {
     "model": "myapp.department",
+    "pk": 5,
+    "fields": {
+      "name": "COSC",
+      "faculty": 1
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 6,
+    "fields": {
+      "name": "MATH",
+      "faculty": 1
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 7,
+    "fields": {
+      "name": "DATA",
+      "faculty": 1
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 8,
+    "fields": {
+      "name": "PHYS",
+      "faculty": 1
+    }
+  },
+
+  {
+    "model": "myapp.department",
     "pk": 1,
     "fields": {
       "name": "CMPS",
@@ -359,9 +392,7 @@
       "hasOtherPositions": "yes",
       "otherPositionHours": 8
     }
-  }
-
-},
+  },
 {
   "model": "myapp.course",
   "pk": "COSC124",

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react" // Added useEffect to imports
 import {
   Bell,
   BookOpen,
@@ -51,104 +51,52 @@ import * as Select from '@radix-ui/react-select'
 import {getProfile, updateProfile} from "@/logic/student-profile"
 
 
-// Mock data
-const studentProfile = {
-  name: "Sarah Johnson",
-  email: "sarah.johnson@university.edu",
-  studentId: "20240012",
-  UBCEmployeeId: "82342316",
-  password: "password123",
-  major: "Computer Science",
-  minor: "Data Science",
-  year: "Graduate Student",
-  gpa: "3.85",
-  phone: "+1 (555) 123-4567",
-  avatar: "/placeholder.svg?height=120&width=120",
-  coursePreference: [
-    "COSC 111",
-    "MATH 101",
-    "COSC 121",
-    "DATA 101",
-    "STAT 121",
-    "PHYS 111"
-  ],
-  academicInfo: {
-    yearStanding: "4th Year",
-    degreeStart: "September 2022",
-    expectedGraduation: "May 2026",
-  },
-  experience: [
-    {
-      course: "CS 111 - Introduction to Programming",
-      semester: "Fall 2023",
-      professor: "Dr. Smith",
-      description: "Assisted with lab sessions, graded assignments, and held office hours for 30+ students.",
-    },
-    {
-      course: "MATH 101 - Introduction to Calculus",
-      semester: "Summer 2023",
-      professor: "Dr. Brown",
-      description: "Assisted with lecture sessions, and graded midterms and exams.",
-    },
-  ],
-  technicalSkills: [
-    "Python",
-    "Java",
-    "JavaScript",
-    "React",
-    "Node.js",
-    "SQL",
-    "Git",
-    "Linux",
-    "Machine Learning",
-    "Data Structures",
-  ],
-  softSkills: [
-    "Communication",
-    "Teamwork",
-    "Problem Solving",
-    "Time Management",
-    "Adaptability",
-    "Critical Thinking",
-  ],
-}
+// Mock data - Kept for reference or initial structure, but actual data will come from backend
+// const studentProfile = { /* ... (your mock data structure) ... */ };
+// Removed the studentProfile constant to ensure all data comes from backend logic.
+// If you still need a fallback for local development without a backend, keep it and
+// uncomment its usage where appropriate, but prioritize fetched data.
 
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
-  const [profile, setProfile] = useState(studentProfile)
+  // const [profile, setProfile] = useState(studentProfile) // Removed as it's redundant now
 
-  const [editedProfile, setEditedProfile] = useState({ ...studentProfile })
+  const [editedProfile, setEditedProfile] = useState({}) // Initialize as empty object or null
 
 
   // State for skills editing
   const [skillsEdit, setSkillsEdit] = useState(false)
   const [editedSkills, setEditedSkills] = useState({
-    technicalSkills: [...profile.technicalSkills],
-    softSkills: [...profile.softSkills]
+    technicalSkills: [],
+    softSkills: []
   })
 
   // State for academic information editing
   const [isEditingAcademic, setIsEditingAcademic] = useState(false)
   const [editedAcademicInfo, setEditedAcademicInfo] = useState({
-    major: profile.major,
-    minor: profile.minor,
-    year: profile.year,
-    gpa: profile.gpa,
-    academicInfo: { ...profile.academicInfo }
+    major: '',
+    minor: '',
+    year: '',
+    gpa: '',
+    academicInfo: {
+      yearStanding: '',
+      degreeStart: '',
+      expectedGraduation: '',
+    }
   })
 
   // State for experience editing
   const [isEditingExperience, setIsEditingExperience] = useState(false)
-  const [editedExperience, setEditedExperience] = useState([...profile.experience])
+  const [editedExperience, setEditedExperience] = useState([])
 
   // State for availability editing
   const [isEditingAvailability, setIsEditingAvailability] = useState(false)
-  const [availabilityData, setAvailabilityData] = useState([]) // Initialize as needed
+  const [availabilityData, setAvailabilityData] = useState([]) // Initialize as empty array
 
   // State for course preference editing
   const [isEditingCourses, setIsEditingCourses] = useState(false)
-  const [coursePreference, setCoursePreference] = useState(profile.coursePreference)
+  const [coursePreference, setCoursePreference] = useState([])
 
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false)
@@ -157,31 +105,72 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
 
-  // State for original user data
+  // State for original user data (to revert changes)
   const [originalUserData, setOriginalUserData] = useState(null);
+  // State for current user data (displayed and modified)
   const [userData, setUserData] = useState(null);
+
+  // State for validation errors
+  const [errors, setErrors] = useState({});
+  // State for saving loading indicator
+  const [isSaving, setIsSaving] = useState(false);
+
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const data = await getProfile();
 
-        // Correctly parse the flat API response
+        // Correctly parse the flat API response and map all fields
         const [firstName, ...lastNameParts] = data.name.split(' ');
 
-        const profile = {
+        const profileData = {
           firstName: firstName || '',
           lastName: lastNameParts.join(' ') || '',
           email: data.email || '',
-          employeeNumber: data.employee_number || '',
-          studentId: data.student_id || '',
-          department: data.department_name || '', // Ensure department is set, default to empty string if not present
+          employeeNumber: data.employee_number || '', // Mapped from backend
+          studentId: data.student_id || '', // Mapped from backend
+          major: data.major || '', // Mapped from backend
+          minor: data.minor || '', // Mapped from backend
+          year: data.year || '', // Mapped from backend (e.g., "Graduate Student")
+          gpa: data.gpa || '', // Mapped from backend
+          phone: data.phone || '', // Mapped from backend
+          avatar: data.avatar || "/placeholder.svg?height=120&width=120", // Mapped from backend
+          coursePreference: data.course_preference || [], // Mapped from backend
+          academicInfo: { // Assuming academic info comes nested or you map it
+            yearStanding: data.year_standing || '', // Mapped from backend
+            degreeStart: data.degree_start || '', // Mapped from backend
+            expectedGraduation: data.expected_graduation || '', // Mapped from backend
+          },
+          experience: data.experience || [], // Mapped from backend
+          technicalSkills: data.technical_skills || [], // Mapped from backend
+          softSkills: data.soft_skills || [], // Mapped from backend
+          availability: data.availability || [], // Mapped from backend
         };
 
-        setOriginalUserData(profile);
-        setUserData(profile);
+        setOriginalUserData(profileData);
+        setUserData(profileData);
+
+        // Initialize all edited states with fetched data
+        setEditedProfile({ ...profileData });
+        setEditedAcademicInfo({
+          major: profileData.major,
+          minor: profileData.minor,
+          year: profileData.year,
+          gpa: profileData.gpa,
+          academicInfo: { ...profileData.academicInfo }
+        });
+        setEditedExperience([...profileData.experience]);
+        setEditedSkills({
+          technicalSkills: [...profileData.technicalSkills],
+          softSkills: [...profileData.softSkills]
+        });
+        setCoursePreference([...profileData.coursePreference]);
+        setAvailabilityData([...profileData.availability]);
+
       } catch (error) {
         setFetchError("Could not load your profile. Please try again later.");
+        console.error("Fetch profile error:", error);
       } finally {
         setIsLoading(false);
       }
@@ -189,42 +178,8 @@ export default function ProfilePage() {
     fetchUserData();
   }, []);
 
-  //Existing code
-  /*
-  const handleSave = (profileData) => {
-  const {
-    name,
-    studentId,
-    UBCEmployeeId,
-    password,
-    email,
-    major,
-    year,
-    academicInfo,
-    experience
-  } = profileData
-
-  if (
-    !name.trim() ||
-    !studentId.trim() ||
-    !email.trim() ||
-    !major.trim() ||
-    !year.trim() ||
-    !password.trim() ||
-    !academicInfo.expectedGraduation.trim() ||
-    !academicInfo.degreeStart.trim() ||
-    !academicInfo.yearStanding.trim()
-  ) {
-    alert("Please fill out all required fields.")
-    return false
-  }
-  console.log("Profile validated successfully:", profileData)
-  return true
-}
-*/
-
-  //New code
-  const handleSave = async () => {
+  // New code for saving personal information
+  const handleSavePersonalInfo = async () => {
     if (!validateForm()) return;
     setIsSaving(true);
     setErrors({});
@@ -233,29 +188,28 @@ export default function ProfilePage() {
       const updatedData = {
         name: `${userData.firstName.trim()} ${userData.lastName.trim()}`,
         email: userData.email,
+        phone: userData.phone,
+        student_id: userData.studentId, // Ensure to send student_id if editable
+        employee_number: userData.employeeNumber, // Ensure to send employee_number if editable
+        // Add other fields from userData that are part of the personal info update
+        // Password change should typically be a separate flow for security reasons
       };
 
-      await updateProfile(updatedData);
+      await updateProfile(updatedData); // Assuming updateProfile can take partial updates
 
-      setOriginalUserData({ ...userData });
+      setOriginalUserData({ ...userData }); // Update originalUserData with latest saved data
       setIsEditing(false);
     } catch (error) {
-       // Check if the error is a 400 Bad Request with validation details
-      if (error.response && error.response.status === 400 && error.response.data) {
+       if (error.response && error.response.status === 400 && error.response.data) {
         const backendErrors = error.response.data;
         const formattedErrors = {};
-
-        // Format backend errors to match the frontend state structure
         for (const field in backendErrors) {
-          // Example: backend sends { "email": ["Enter a valid email."] }
-          // We format it to { email: "Enter a valid email." }
-          formattedErrors[field] = backendErrors[field][0]; 
+          formattedErrors[field] = backendErrors[field][0];
         }
-
-        setErrors(formattedErrors); // Update state with specific field errors
+        setErrors(formattedErrors);
       } else {
-        // Handle other errors (network, server 500, etc.)
-        setErrors({ api: "Failed to save changes. Please try again." });
+        setErrors({ api: "Failed to save personal information. Please try again." });
+        console.error("Save personal info error:", error);
       }
     } finally {
       setIsSaving(false);
@@ -293,10 +247,10 @@ export default function ProfilePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleEdit = () => setIsEditing(true);
-
-  const handleCancel = () => {
-    setUserData({ ...originalUserData });
+  // Specific handleCancel for Personal Information
+  const handleCancelPersonalInfo = () => {
+    setUserData({ ...originalUserData }); // Reset to original fetched data
+    setEditedProfile({ ...originalUserData }); // Also reset editedProfile
     setErrors({});
     setIsEditing(false);
   };
@@ -304,11 +258,165 @@ export default function ProfilePage() {
   const isFormValid = () => {
     if (!userData) return false;
     return (
-      userData.firstName?.trim().length >= 2 &&
-      userData.lastName?.trim().length >= 2 &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email?.trim() || '')
+      (userData.firstName?.trim().length >= 2 || (originalUserData && originalUserData.firstName?.trim().length >= 2)) &&
+      (userData.lastName?.trim().length >= 2 || (originalUserData && originalUserData.lastName?.trim().length >= 2)) &&
+      (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email?.trim() || '') || (originalUserData && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(originalUserData.email?.trim() || '')))
     );
   };
+
+
+  // *** Start of Missing Save and Cancel Functions for other sections ***
+
+  // handleSave for Academic Information
+  const handleSaveAcademicInfo = async () => {
+    // Add validation specific to academic info fields if needed
+    // For example: if (!editedAcademicInfo.major.trim()) { alert("Major is required."); return; }
+    setIsSaving(true);
+    try {
+      const updatedData = {
+        major: editedAcademicInfo.major,
+        minor: editedAcademicInfo.minor,
+        year: editedAcademicInfo.year,
+        gpa: editedAcademicInfo.gpa,
+        year_standing: editedAcademicInfo.academicInfo.yearStanding,
+        degree_start: editedAcademicInfo.academicInfo.degreeStart,
+        expected_graduation: editedAcademicInfo.academicInfo.expectedGraduation,
+      };
+      await updateProfile(updatedData); // Adjust your API call as needed
+
+      // Update userData and originalUserData with the new academic info
+      setOriginalUserData((prev) => ({
+        ...prev,
+        major: editedAcademicInfo.major,
+        minor: editedAcademicInfo.minor,
+        year: editedAcademicInfo.year,
+        gpa: editedAcademicInfo.gpa,
+        academicInfo: { ...editedAcademicInfo.academicInfo }
+      }));
+      setUserData((prev) => ({
+        ...prev,
+        major: editedAcademicInfo.major,
+        minor: editedAcademicInfo.minor,
+        year: editedAcademicInfo.year,
+        gpa: editedAcademicInfo.gpa,
+        academicInfo: { ...editedAcademicInfo.academicInfo }
+      }));
+      setIsEditingAcademic(false);
+    } catch (error) {
+      setErrors({ api: "Failed to save academic information. Please try again." });
+      console.error("Failed to save academic info:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // handleCancel for Academic Information
+  const handleCancelAcademicInfo = () => {
+    setEditedAcademicInfo({
+      major: originalUserData.major,
+      minor: originalUserData.minor,
+      year: originalUserData.year,
+      gpa: originalUserData.gpa,
+      academicInfo: { ...originalUserData.academicInfo }
+    });
+    setIsEditingAcademic(false);
+  };
+
+  // handleSave for Experience
+  const handleSaveExperience = async () => {
+    setIsSaving(true);
+    try {
+      await updateProfile({ experience: editedExperience }); // Adjust API call as needed
+
+      setOriginalUserData((prev) => ({ ...prev, experience: [...editedExperience] }));
+      setUserData((prev) => ({ ...prev, experience: [...editedExperience] }));
+      setIsEditingExperience(false);
+    } catch (error) {
+      setErrors({ api: "Failed to save experience. Please try again." });
+      console.error("Failed to save experience:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // handleSave for Skills
+  const handleSaveSkills = async () => {
+    const hasEmptyTechnical = editedSkills.technicalSkills.some(skill => skill.trim() === "");
+    const hasEmptySoft = editedSkills.softSkills.some(skill => skill.trim() === "");
+
+    if (hasEmptyTechnical || hasEmptySoft) {
+      alert("Each skill must contain text.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateProfile({
+        technical_skills: editedSkills.technicalSkills,
+        soft_skills: editedSkills.softSkills
+      }); // Adjust API call as needed
+
+      setOriginalUserData((prev) => ({
+        ...prev,
+        technicalSkills: [...editedSkills.technicalSkills],
+        softSkills: [...editedSkills.softSkills]
+      }));
+      setUserData((prev) => ({
+        ...prev,
+        technicalSkills: [...editedSkills.technicalSkills],
+        softSkills: [...editedSkills.softSkills]
+      }));
+      setSkillsEdit(false);
+    } catch (error) {
+      setErrors({ api: "Failed to save skills. Please try again." });
+      console.error("Failed to save skills:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // handleSave for Course Preferences
+  const handleSaveCourses = async () => {
+    const hasEmptyCoursePreference = coursePreference.some(course => course.trim() === "");
+    if (hasEmptyCoursePreference) {
+      alert("Each course preference must contain text.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateProfile({ course_preference: coursePreference }); // Adjust API call as needed
+
+      setOriginalUserData((prev) => ({ ...prev, coursePreference: [...coursePreference] }));
+      setUserData((prev) => ({ ...prev, coursePreference: [...coursePreference] }));
+      setIsEditingCourses(false);
+    } catch (error) {
+      setErrors({ api: "Failed to save course preferences. Please try again." });
+      console.error("Failed to save course preferences:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // handleSave for Availability
+  const handleSaveAvailability = async () => {
+    setIsSaving(true);
+    try {
+      await updateProfile({ availability: availabilityData }); // Adjust API call to send availabilityData
+
+      setOriginalUserData((prev) => ({ ...prev, availability: [...availabilityData] }));
+      setUserData((prev) => ({ ...prev, availability: [...availabilityData] }));
+      setIsEditingAvailability(false);
+    } catch (error) {
+      setErrors({ api: "Failed to save availability. Please try again." });
+      console.error("Failed to save availability:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // *** End of Missing Save and Cancel Functions for other sections ***
+
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading profile...</div>;
@@ -320,14 +428,6 @@ export default function ProfilePage() {
 
   if (!userData) return null;
 
-
-  //Existing code 
-  /*
-  const handleCancel = (profileData) => {
-    setProfile(profileData) // Reset to original data
-    setIsEditing(false)
-  }
-  */
 
   return (
     <SidebarProvider>
@@ -357,38 +457,31 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Profile Picture and Personal Info */}
+            {/* Personal Information Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Personal Information</CardTitle>
                 {isEditing ? (
                   <div className="flex gap-2">
-                    <Button 
-                    onClick={() => {
-                      const isValid = handleSave(editedProfile) // ✅ validate the latest state
-                      if (!isValid) return
-
-                      setProfile(editedProfile) // ✅ update profile with validated data
-                      setIsEditing(false) // ✅ only close edit mode if validation passed
-                    }}
-                    className="gap-2">
+                    <Button
+                      onClick={handleSavePersonalInfo} // Call the specific save handler
+                      className="gap-2"
+                      disabled={isSaving || !isFormValid()} // Disable save during saving or if form is invalid
+                    >
+                      {isSaving ? "Saving..." : "Save"}
                       <Save className="h-4 w-4" />
-                      Save
                     </Button>
-                    <Button onClick={ 
-                      () => handleCancel(profile)} 
-                      variant="outline" className="gap-2">
+                    <Button onClick={handleCancelPersonalInfo} variant="outline" className="gap-2">
                       <X className="h-4 w-4" />
                       Cancel
                     </Button>
                   </div>
                 ) : (
-                  <Button onClick={
-                    () => {
-                      setEditedProfile({ ...profile }) // deep copy of profile
-                      setIsEditing(true)
-                      }
-                    }
+                  <Button
+                    onClick={() => {
+                      setEditedProfile({ ...userData }); // Initialize editedProfile with current userData
+                      setIsEditing(true);
+                    }}
                     className="gap-2"
                   >
                     <Edit className="h-4 w-4" />
@@ -397,11 +490,12 @@ export default function ProfilePage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-6">
+                {errors.api && <p className="text-red-500 text-sm mb-4">{errors.api}</p>}
                 <div className="flex items-start gap-6">
                   <div className="relative">
                     <Avatar className="h-32 w-32">
-                      <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.name} />
-                      <AvatarFallback className="text-2xl">SJ</AvatarFallback>
+                      <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={`${userData.firstName} ${userData.lastName}`} />
+                      <AvatarFallback className="text-2xl">{`${userData.firstName?.charAt(0) || ''}${userData.lastName?.charAt(0) || ''}`}</AvatarFallback>
                     </Avatar>
                     {isEditing && (
                       <Button
@@ -415,27 +509,41 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name<span className="text-red-500">*</span></Label>
+                      <Label htmlFor="firstName">First Name<span className="text-red-500">*</span></Label>
                       {isEditing ? (
                         <Input
-                          id="name"
-                          value={editedProfile.name}
-                          onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
+                          id="firstName"
+                          value={userData.firstName}
+                          onChange={(e) => handleInputChange("firstName", e.target.value)}
                         />
                       ) : (
-                        <p className="text-sm">{profile.name}</p>
+                        <p className="text-sm">{userData.firstName}</p>
                       )}
+                      {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name<span className="text-red-500">*</span></Label>
+                      {isEditing ? (
+                        <Input
+                          id="lastName"
+                          value={userData.lastName}
+                          onChange={(e) => handleInputChange("lastName", e.target.value)}
+                        />
+                      ) : (
+                        <p className="text-sm">{userData.lastName}</p>
+                      )}
+                      {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="studentId">Student ID<span className="text-red-500">*</span></Label>
                       {isEditing ? (
                         <Input
                           id="studentId"
-                          value={editedProfile.studentId}
-                          onChange={(e) => setEditedProfile({ ...editedProfile, studentId: e.target.value })}
+                          value={userData.studentId}
+                          onChange={(e) => setUserData({ ...userData, studentId: e.target.value })}
                         />
                       ) : (
-                        <p className="text-sm">{profile.studentId}</p>
+                        <p className="text-sm">{userData.studentId}</p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -443,24 +551,24 @@ export default function ProfilePage() {
                       {isEditing ? (
                         <Input
                           id="UBCEmployeeId"
-                          value={editedProfile.UBCEmployeeId}
-                          onChange={(e) => setEditedProfile({ ...editedProfile, UBCEmployeeId: e.target.value })}
+                          value={userData.employeeNumber}
+                          onChange={(e) => setUserData({ ...userData, employeeNumber: e.target.value })}
                         />
                       ) : (
-                        <p className="text-sm">{profile.UBCEmployeeId}</p>
+                        <p className="text-sm">{userData.employeeNumber}</p>
                       )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">
-                        Password<span className="text-red-500">*</span>
+                        Password<span className="text-red-500">*</span> {/* This section might need a separate password change component */}
                       </Label>
                       {isEditing ? (
                         <div className="relative">
                           <Input
                             id="password"
                             type={showPassword ? "text" : "password"}
-                            value={editedProfile.password}
-                            onChange={(e) => setEditedProfile({ ...editedProfile, password: e.target.value })}
+                            value="********" // Password should not be pre-filled
+                            onChange={(e) => { /* handle password change separately if needed */ }}
                             className="pr-10"
                           />
                           <button
@@ -485,23 +593,24 @@ export default function ProfilePage() {
                         <Input
                           id="email"
                           type="email"
-                          value={editedProfile.email}
-                          onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
+                          value={userData.email}
+                          onChange={(e) => handleInputChange("email", e.target.value)}
                         />
                       ) : (
-                        <p className="text-sm">{profile.email}</p>
+                        <p className="text-sm">{userData.email}</p>
                       )}
+                      {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone (Optional)</Label>
                       {isEditing ? (
                         <Input
                           id="phone"
-                          value={editedProfile.phone}
-                          onChange={(e) => setEditedProfile({ ...editedProfile, phone: e.target.value })}
+                          value={userData.phone}
+                          onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
                         />
                       ) : (
-                        <p className="text-sm">{profile.phone}</p>
+                        <p className="text-sm">{userData.phone}</p>
                       )}
                     </div>
                   </div>
@@ -509,7 +618,7 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Academic Information */}
+            {/* Academic Information Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Academic Information</CardTitle>
@@ -517,22 +626,8 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => {
-                        const updatedProfile = {
-                          ...profile,
-                          major: editedAcademicInfo.major,
-                          minor: editedAcademicInfo.minor,
-                          year: editedAcademicInfo.year,
-                          gpa: editedAcademicInfo.gpa,
-                          academicInfo: { ...editedAcademicInfo.academicInfo },
-                        }
-
-                        const isValid = handleSave(updatedProfile)
-                        if (!isValid) return
-
-                        setProfile(updatedProfile)
-                        setIsEditingAcademic(false)
-                      }}
+                      onClick={handleSaveAcademicInfo} // Call the new save handler
+                      disabled={isSaving}
                     >
                       <Save className="h-4 w-4" />
                       Save
@@ -540,22 +635,25 @@ export default function ProfilePage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        setEditedAcademicInfo({
-                          major: profile.major,
-                          minor: profile.minor,
-                          year: profile.year,
-                          gpa: profile.gpa,
-                          academicInfo: { ...profile.academicInfo }
-                        })
-                        setIsEditingAcademic(false)
-                      }}
+                      onClick={handleCancelAcademicInfo} // Call the new cancel handler
                     >
                       Cancel
                     </Button>
                   </div>
                 ) : (
-                  <Button size="sm" onClick={() => setIsEditingAcademic(true)}>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditedAcademicInfo({
+                        major: userData.major,
+                        minor: userData.minor,
+                        year: userData.year,
+                        gpa: userData.gpa,
+                        academicInfo: { ...userData.academicInfo }
+                      });
+                      setIsEditingAcademic(true);
+                    }}
+                  >
                     <Edit className="h-4 w-4" />
                     Edit Academic Information
                   </Button>
@@ -572,7 +670,7 @@ export default function ProfilePage() {
                         onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, major: e.target.value })}
                       />
                     ) : (
-                      <p className="text-sm">{profile.major}</p>
+                      <p className="text-sm">{userData.major}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -596,7 +694,7 @@ export default function ProfilePage() {
                           </Select.ScrollUpButton>
                           <Select.Viewport className="p-1">
 
-                          {/* Empty selection option */}
+                            {/* Empty selection option */}
                             <Select.Item
                               value=" "
                               className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-500"
@@ -607,7 +705,7 @@ export default function ProfilePage() {
                               </Select.ItemIndicator>
                             </Select.Item>
 
-                          {/* Actual academic level options */}
+                            {/* Actual academic level options */}
                             <Select.Item
                               value="Undergraduate"
                               className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
@@ -633,7 +731,7 @@ export default function ProfilePage() {
                         </Select.Content>
                       </Select.Root>
                     ) : (
-                      <p className="text-sm">{profile.year}</p>
+                      <p className="text-sm">{userData.year}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -644,7 +742,7 @@ export default function ProfilePage() {
                         onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, gpa: e.target.value })}
                       />
                     ) : (
-                      <p className="text-sm">{profile.gpa}</p>
+                      <p className="text-sm">{userData.gpa}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -663,7 +761,7 @@ export default function ProfilePage() {
                         }
                       />
                     ) : (
-                      <p className="text-sm">{profile.academicInfo.expectedGraduation}</p>
+                      <p className="text-sm">{userData.academicInfo.expectedGraduation}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -682,7 +780,7 @@ export default function ProfilePage() {
                         }
                       />
                     ) : (
-                      <p className="text-sm">{profile.academicInfo.degreeStart}</p>
+                      <p className="text-sm">{userData.academicInfo.degreeStart}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -701,7 +799,7 @@ export default function ProfilePage() {
                         }
                       />
                     ) : (
-                      <p className="text-sm">{profile.academicInfo.yearStanding}</p>
+                      <p className="text-sm">{userData.academicInfo.yearStanding}</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -712,7 +810,7 @@ export default function ProfilePage() {
                         onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, minor: e.target.value })}
                       />
                     ) : (
-                      <p className="text-sm">{profile.minor}</p>
+                      <p className="text-sm">{userData.minor}</p>
                     )}
                   </div>
                 </div>
@@ -720,7 +818,7 @@ export default function ProfilePage() {
             </Card>
 
 
-            {/* Past TA Experiences */}
+            {/* Past TA Experiences Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -730,10 +828,8 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => {
-                        setProfile({ ...profile, experience: editedExperience })
-                        setIsEditingExperience(false)
-                      }}
+                      onClick={handleSaveExperience} // Call the new save handler
+                      disabled={isSaving}
                     >
                       <Save className="h-4 w-4" />
                       Save
@@ -742,7 +838,7 @@ export default function ProfilePage() {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        setEditedExperience(profile.experience.map(exp => ({ ...exp })))
+                        setEditedExperience(originalUserData.experience.map(exp => ({ ...exp }))) // Reset to original fetched data
                         setIsEditingExperience(false)
                       }}
                     >
@@ -750,13 +846,13 @@ export default function ProfilePage() {
                     </Button>
                   </div>
                 ) : (
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     onClick={() => {
-                      setEditedExperience(profile.experience.map(exp => ({ ...exp }))) // deep copy
+                      setEditedExperience(userData.experience.map(exp => ({ ...exp }))) // deep copy of userData experience
                       setIsEditingExperience(true)
                     }}
-                    >
+                  >
                     <Edit className="h-4 w-4" />
                     Edit Experience
                   </Button>
@@ -764,6 +860,7 @@ export default function ProfilePage() {
               </CardHeader>
 
               <CardContent className="space-y-4">
+                {/* Use editedExperience for mapping */}
                 {editedExperience.map((exp, index) => (
                   <div key={index} className="border rounded-lg p-4 space-y-2">
                     <div className="flex justify-between">
@@ -858,7 +955,7 @@ export default function ProfilePage() {
                       setEditedExperience([
                         ...editedExperience,
                         {
-                          title: '',
+                          title: '', // Add title if your API expects it, based on your mock
                           course: '',
                           semester: '',
                           professor: '',
@@ -878,7 +975,7 @@ export default function ProfilePage() {
             <div className="flex flex-col lg:flex-row gap-6">
 
               <div className="flex flex-col lg:flex-row gap-6">
-                {/* Skills*/}
+                {/* Skills Card */}
                 <div className="flex-1 flex flex-col">
                   <Card className="h-full flex flex-col">
                     <CardHeader className="flex flex-row items-center justify-between">
@@ -887,21 +984,8 @@ export default function ProfilePage() {
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            onClick={() => {
-                              const hasEmptyTechnical = editedSkills.technicalSkills.some(skill => skill.trim() === "")
-                              const hasEmptySoft = editedSkills.softSkills.some(skill => skill.trim() === "")
-
-                              if (hasEmptyTechnical || hasEmptySoft) {
-                                alert("Each skill must contain text.")
-                                return
-                              }
-                              setProfile((prev) => ({
-                                ...prev,
-                                technicalSkills: editedSkills.technicalSkills,
-                                softSkills: editedSkills.softSkills,
-                              }))
-                              setSkillsEdit(false)
-                            }}
+                            onClick={handleSaveSkills} // Call the new save handler
+                            disabled={isSaving}
                           >
                             <Save className="h-4 w-4" />
                             Save
@@ -911,8 +995,8 @@ export default function ProfilePage() {
                             variant="outline"
                             onClick={() => {
                               setEditedSkills({
-                                technicalSkills: [...profile.technicalSkills],
-                                softSkills: [...profile.softSkills],
+                                technicalSkills: [...originalUserData.technicalSkills], // Reset to original fetched data
+                                softSkills: [...originalUserData.softSkills],
                               })
                               setSkillsEdit(false)
                             }}
@@ -921,16 +1005,15 @@ export default function ProfilePage() {
                           </Button>
                         </div>
                       ) : (
-                        <Button 
-                        size="sm" 
-                        //onClick={() => setSkillsEdit(true)}
-                        onClick={() => {
-                          setEditedSkills({
-                            technicalSkills: [...profile.technicalSkills],
-                            softSkills: [...profile.softSkills],
-                          })
-                          setSkillsEdit(true)
-                        }}
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setEditedSkills({
+                              technicalSkills: [...userData.technicalSkills], // Initialize with userData
+                              softSkills: [...userData.softSkills],
+                            })
+                            setSkillsEdit(true)
+                          }}
                         >
                           <Edit className="h-4 w-4" />
                           Edit Skills
@@ -970,7 +1053,7 @@ export default function ProfilePage() {
                               ))
                             ) : (
                               <div className="flex flex-wrap gap-2">
-                                {profile.technicalSkills.map((skill, index) => (
+                                {userData.technicalSkills.map((skill, index) => (
                                   <Badge key={index} variant="secondary">
                                     {skill}
                                   </Badge>
@@ -1031,7 +1114,7 @@ export default function ProfilePage() {
                               ))
                             ) : (
                               <div className="flex flex-wrap gap-2">
-                                {profile.softSkills.map((skill, index) => (
+                                {userData.softSkills.map((skill, index) => (
                                   <Badge key={index} variant="secondary">
                                     {skill}
                                   </Badge>
@@ -1062,7 +1145,7 @@ export default function ProfilePage() {
 
                 <div className="flex-1 flex flex-col">
                   <div className="flex-1 flex flex-col">
-                    {/* Course Preferences */}
+                    {/* Course Preferences Card */}
                     <Card className="h-full flex flex-col">
                       <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Course Preferences</CardTitle>
@@ -1070,20 +1153,9 @@ export default function ProfilePage() {
                           {isEditingCourses ? (
                             <>
                               <Button
-                                onClick={() => {
-                                  const hasEmptyCoursePreference = coursePreference.some(coursePreference => coursePreference.trim() === "")
-
-                                  if (hasEmptyCoursePreference) {
-                                    alert("Each course preference must contain text.")
-                                    return
-                                  }
-                                  setProfile((prev) => ({
-                                    ...prev,
-                                    coursePreference: [...coursePreference],
-                                  }))
-                                  setIsEditingCourses(false)
-                                }}
+                                onClick={handleSaveCourses} // Call the new save handler
                                 className="gap-2"
+                                disabled={isSaving}
                               >
                                 <Save className="h-4 w-4" />
                                 Save
@@ -1091,7 +1163,7 @@ export default function ProfilePage() {
                               <Button
                                 onClick={() => {
                                   setIsEditingCourses(false)
-                                  setCoursePreference([...profile.coursePreference]) // Reset to original
+                                  setCoursePreference([...originalUserData.coursePreference]) // Reset to original fetched data
                                 }}
                                 variant="outline"
                                 className="gap-2"
@@ -1101,12 +1173,12 @@ export default function ProfilePage() {
                               </Button>
                             </>
                           ) : (
-                            <Button 
-                            onClick={() => {
-                              setCoursePreference([...profile.coursePreference]) // deep copy
-                              setIsEditingCourses(true)
-                            }}       
-                            className="gap-2"
+                            <Button
+                              onClick={() => {
+                                setCoursePreference([...userData.coursePreference]) // deep copy of userData course preference
+                                setIsEditingCourses(true)
+                              }}
+                              className="gap-2"
                             >
                               <Edit className="h-4 w-4" />
                               Edit Preferences
@@ -1126,7 +1198,7 @@ export default function ProfilePage() {
                                     const updated = [...coursePreference]
                                     updated[index] = e.target.value
                                     setCoursePreference(updated)
-                                  }}
+                                    }}
                                 />
                                 <Button
                                   variant="ghost"
@@ -1149,7 +1221,7 @@ export default function ProfilePage() {
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-2 mt-2">
-                            {coursePreference.map((course, index) => (
+                            {userData.coursePreference.map((course, index) => (
                               <Badge key={index} variant="secondary">
                                 {course}
                               </Badge>
@@ -1163,21 +1235,21 @@ export default function ProfilePage() {
               </div>
             </div>
             <div>
-              {/* Availability Calendar */}
+              {/* Availability Calendar Card */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Availability</CardTitle>
                   <div className="flex gap-2 mt-2">
                     {isEditingAvailability ? (
                       <>
-                        <Button onClick={() => setIsEditingAvailability(false)} className="gap-2">
+                        <Button onClick={handleSaveAvailability} className="gap-2" disabled={isSaving}>
                           <Save className="h-4 w-4" />
                           Save
                         </Button>
                         <Button
                           onClick={() => {
                             setIsEditingAvailability(false)
-                            setAvailabilityData([]) // or reset to original data if available
+                            setAvailabilityData(originalUserData.availability || []) // Reset to original fetched availability
                           }}
                           variant="outline"
                           className="gap-2"
@@ -1187,7 +1259,13 @@ export default function ProfilePage() {
                         </Button>
                       </>
                     ) : (
-                      <Button onClick={() => setIsEditingAvailability(true)} className="gap-2">
+                      <Button
+                        onClick={() => {
+                          setAvailabilityData(userData.availability || []) // Initialize with userData availability
+                          setIsEditingAvailability(true)
+                        }}
+                        className="gap-2"
+                      >
                         <Edit className="h-4 w-4" />
                         Edit Availability
                       </Button>
@@ -1196,13 +1274,13 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <p>
-                    Please indicate your general weekly availability below. Blue boxes 
-                    represent times that you are available for TA work, and white boxes 
-                    represent times that you are not.<br/><br/>
+                    Please indicate your general weekly availability below. Blue boxes
+                    represent times that you are available for TA work, and white boxes
+                    represent times that you are not.<br /><br />
                   </p>
                   <WeeklyAvailabilityCalendar
                     editable={isEditingAvailability}
-                    availability={availabilityData}
+                    availability={availabilityData} // This state should be initialized from fetched userData.availability
                     setAvailability={setAvailabilityData}
                   />
                 </CardContent>
