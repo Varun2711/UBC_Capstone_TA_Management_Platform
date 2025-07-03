@@ -79,6 +79,7 @@ class Migration(migrations.Migration):
                 'managed': True,
             },
         ),
+
         migrations.CreateModel(
             name='Faculty',
             fields=[
@@ -90,6 +91,7 @@ class Migration(migrations.Migration):
                 'managed': True,
             },
         ),
+
         migrations.CreateModel(
             name='Department',
             fields=[

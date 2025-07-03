@@ -1,15 +1,366 @@
 [
-{
-  "model": "myapp.course",
-  "pk": "COSC101",
-  "fields": {
-    "title": "Introduction to Computer Science",
-    "description": "An introductory course in computer science.",
-    "department": 5,
-    "is_active": true,
-    "created_at": null,
-    "updated_at": null
+  {
+    "model": "myapp.faculty",
+    "pk": 1,
+    "fields": {
+      "name": "Faculty of Science"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 1,
+    "fields": {
+      "name": "CMPS",
+      "faculty": 1
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 1,
+    "fields": {
+      "student_number": "20241001",
+      "name": "Sarah Johnson",
+      "phone": "+1-250-555-0101",
+      "program": "Computer Science",
+      "year_standing": 3,
+      "study_level": "MSc",
+      "department": 1,
+      "sin": "123456789",
+      "password": "pbkdf2_sha256$600000$abc123$hashedpassword1",
+      "email": "sarah.johnson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 2,
+    "fields": {
+      "student_number": "20241002",
+      "name": "Alex Chen",
+      "phone": "+1-250-555-0102",
+      "program": "Computer Science",
+      "year_standing": 4,
+      "study_level": "PhD",
+      "department": 1,
+      "sin": "987654321",
+      "password": "pbkdf2_sha256$600000$def456$hashedpassword2",
+      "email": "alex.chen@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.tascheduler",
+    "pk": 1,
+    "fields": {
+      "employee_number": "EMP001",
+      "name": "Dr. Jennifer Smith",
+      "email": "jennifer.smith@ubc.ca",
+      "department": 1,
+      "password": "pbkdf2_sha256$600000$ghi789$hashedpassword3",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.tascheduler",
+    "pk": 2,
+    "fields": {
+      "employee_number": "EMP002",
+      "name": "Dr. Michael Wong",
+      "email": "michael.wong@ubc.ca",
+      "department": 1,
+      "password": "pbkdf2_sha256$600000$jkl012$hashedpassword4",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 1,
+    "fields": {
+      "employee_number": "INST001",
+      "name": "Prof. David Martinez",
+      "faculty": 1,
+      "email": "david.martinez@ubc.ca",
+      "password": "pbkdf2_sha256$600000$mno345$hashedpassword5",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 2,
+    "fields": {
+      "employee_number": "INST002",
+      "name": "Prof. Lisa Anderson",
+      "faculty": 1,
+      "email": "lisa.anderson@ubc.ca",
+      "password": "pbkdf2_sha256$600000$pqr678$hashedpassword6",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": "COSC101",
+    "fields": {
+      "title": "Introduction to Programming",
+      "description": "Fundamental concepts of programming using Python. Variables, control structures, functions, and basic data structures.",
+      "department": 1,
+      "is_active": true,
+      "created_at": "2024-08-01T10:00:00Z",
+      "updated_at": "2024-08-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": "COSC201",
+    "fields": {
+      "title": "Data Structures and Algorithms",
+      "description": "Advanced programming concepts including arrays, linked lists, trees, graphs, and algorithmic analysis.",
+      "department": 1,
+      "is_active": true,
+      "created_at": "2024-08-01T10:00:00Z",
+      "updated_at": "2024-08-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 1,
+    "fields": {
+      "code": "W2025T1",
+      "description": "Winter 2025 Term 1",
+      "subsetOf": null,
+      "start": "2025-01-06",
+      "end": "2025-04-04",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 2,
+    "fields": {
+      "code": "W2025T2",
+      "description": "Winter 2025 Term 2",
+      "subsetOf": null,
+      "start": "2025-01-06",
+      "end": "2025-04-04",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 3,
+    "fields": {
+      "code": "W2025BOTH",
+      "description": "Winter 2025 Both Terms",
+      "subsetOf": null,
+      "start": "2025-01-06",
+      "end": "2025-04-04",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 4,
+    "fields": {
+      "code": "S2025",
+      "description": "Summer 2025",
+      "subsetOf": null,
+      "start": "2025-05-05",
+      "end": "2025-08-15",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "summer"
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 1,
+    "fields": {
+      "course": "COSC101",
+      "section_number": "001",
+      "term_number": "W2025T1",
+      "year_offered": 2025,
+      "instructor": 1,
+      "day": "MWF",
+      "time": "09:00-10:00"
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 2,
+    "fields": {
+      "course": "COSC101",
+      "section_number": "002",
+      "term_number": "W2025T1",
+      "year_offered": 2025,
+      "instructor": 2,
+      "day": "TTh",
+      "time": "11:00-12:30"
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 3,
+    "fields": {
+      "course": "COSC201",
+      "section_number": "001",
+      "term_number": "W2025T2",
+      "year_offered": 2025,
+      "instructor": 1,
+      "day": "MWF",
+      "time": "14:00-15:00"
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 4,
+    "fields": {
+      "course": "COSC201",
+      "section_number": "002",
+      "term_number": "W2025T2",
+      "year_offered": 2025,
+      "instructor": 2,
+      "day": "TTh",
+      "time": "13:00-14:30"
+    }
+  },
+  {
+    "model": "myapp.labsection",
+    "pk": 1,
+    "fields": {
+      "course_offering": 1,
+      "section_number": "L01",
+      "day": "Monday",
+      "time": "15:00-17:00"
+    }
+  },
+  {
+    "model": "myapp.labsection",
+    "pk": 2,
+    "fields": {
+      "course_offering": 2,
+      "section_number": "L01",
+      "day": "Wednesday",
+      "time": "15:00-17:00"
+    }
+  },
+  {
+    "model": "myapp.labsection",
+    "pk": 3,
+    "fields": {
+      "course_offering": 3,
+      "section_number": "L01",
+      "day": "Tuesday",
+      "time": "16:00-18:00"
+    }
+  },
+  {
+    "model": "myapp.labsection",
+    "pk": 4,
+    "fields": {
+      "course_offering": 4,
+      "section_number": "L01",
+      "day": "Thursday",
+      "time": "16:00-18:00"
+    }
+  },
+  {
+    "model": "myapp.jobposting",
+    "pk": 1,
+    "fields": {
+      "title": "Teaching Assistant - CMPS Summer 2025",
+      "description": "We are seeking enthusiastic Teaching Assistants for Summer 2025. Responsibilities include assisting students during lab sessions, grading assignments, and supporting the instructor during lectures.",
+      "post_date": "2024-11-15",
+      "deadline_date": "2024-12-15",
+      "department": 1,
+      "faculty": 1,
+      "created_by": 1,
+      "term": 1,
+      "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
+      "status": "open"
+    }
+  },
+  {
+    "model": "myapp.jobposting",
+    "pk": 2,
+    "fields": {
+      "title": "Teaching Assistant - CMPS Winter 2025 ",
+      "description": "Seeking qualified Teaching Assistants for CMPS department. TAs will help students understand complex  concepts, assist with assignments, and facilitate lab sessions.",
+      "post_date": "2024-11-20",
+      "deadline_date": "2024-12-20",
+      "department": 1,
+      "faculty": 1,
+      "created_by": 2,
+      "term": 2,
+      "requirements": " Must be a registered student. ",
+      "status": "open"
+    }
+  },
+  {
+    "model": "myapp.application",
+    "pk": 1,
+    "fields": {
+      "student": 1,
+      "posting": 1,
+      "status": "submitted",
+      "applied_at": "2024-11-18T14:30:00Z",
+      "updated_at": "2024-11-18T14:30:00Z",
+      "positionType": "GTA2",
+      "termSelection": 1,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "COSC",
+        "rank2": "MATH",
+        "rank3": "STAT"
+      },
+      "citizenshipStatus": "citizen",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "no",
+      "otherPositionHours": null
+    }
+  },
+  {
+    "model": "myapp.application",
+    "pk": 2,
+    "fields": {
+      "student": 2,
+      "posting": 2,
+      "status": "submitted",
+      "applied_at": "2024-11-22T16:45:00Z",
+      "updated_at": "2024-11-22T16:45:00Z",
+      "positionType": "GTA1",
+      "termSelection": 2,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "COSC",
+        "rank2": "DATA",
+        "rank3": "ASTR"
+      },
+      "citizenshipStatus": "pr",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "yes",
+      "otherPositionHours": 8
+    }
   }
+
 },
 {
   "model": "myapp.course",
@@ -278,5 +629,3 @@
 }
 }
 ]
-
-
