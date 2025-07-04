@@ -9,7 +9,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
 import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
-
+import UserManagement from "./pages/UserManagement";
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -43,6 +43,7 @@ function App() {
       <Route path="/ta-coordinator-allocation" element={<TaCoordinatorAllocationPage />} />
       <Route path="/course-management" element={<CourseManagement />} />
       <Route path="/instructor-management" element={<InstructorRequirements />} />
+      <Route path="/user-management" element={<UserManagement />} />
 
       {/* Add more routes if needed */}
     </Routes>
