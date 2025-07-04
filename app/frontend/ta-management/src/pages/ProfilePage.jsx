@@ -872,8 +872,8 @@ export default function ProfilePage() {
               </CardHeader>
 
               <CardContent className="space-y-4">
-                {/* Use editedExperience for mapping */}
-                {editedExperience.map((exp, index) => (
+                {/* Corrected Logic: Use userData for display, editedExperience for editing */}
+                {(isEditingExperience ? editedExperience : userData.experience).map((exp, index) => (
                   <div key={index} className="border rounded-lg p-4 space-y-2">
                     <div className="flex justify-between">
                       <h4 className="font-medium">Experience #{index + 1}</h4>
@@ -882,8 +882,8 @@ export default function ProfilePage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            const updated = editedExperience.filter((_, i) => i !== index)
-                            setEditedExperience(updated)
+                            const updated = editedExperience.filter((_, i) => i !== index);
+                            setEditedExperience(updated);
                           }}
                         >
                           <X className="h-4 w-4" />
@@ -892,16 +892,15 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
-
                       <div className="space-y-1">
                         <Label>Course</Label>
                         {isEditingExperience ? (
                           <Input
                             value={exp.course}
                             onChange={(e) => {
-                              const newExp = [...editedExperience]
-                              newExp[index].course = e.target.value
-                              setEditedExperience(newExp)
+                              const newExp = [...editedExperience];
+                              newExp[index].course = e.target.value;
+                              setEditedExperience(newExp);
                             }}
                           />
                         ) : (
@@ -915,9 +914,9 @@ export default function ProfilePage() {
                           <Input
                             value={exp.semester}
                             onChange={(e) => {
-                              const newExp = [...editedExperience]
-                              newExp[index].semester = e.target.value
-                              setEditedExperience(newExp)
+                              const newExp = [...editedExperience];
+                              newExp[index].semester = e.target.value;
+                              setEditedExperience(newExp);
                             }}
                           />
                         ) : (
@@ -931,9 +930,9 @@ export default function ProfilePage() {
                           <Input
                             value={exp.professor}
                             onChange={(e) => {
-                              const newExp = [...editedExperience]
-                              newExp[index].professor = e.target.value
-                              setEditedExperience(newExp)
+                              const newExp = [...editedExperience];
+                              newExp[index].professor = e.target.value;
+                              setEditedExperience(newExp);
                             }}
                           />
                         ) : (
@@ -948,9 +947,9 @@ export default function ProfilePage() {
                         <Textarea
                           value={exp.description}
                           onChange={(e) => {
-                            const newExp = [...editedExperience]
-                            newExp[index].description = e.target.value
-                            setEditedExperience(newExp)
+                            const newExp = [...editedExperience];
+                            newExp[index].description = e.target.value;
+                            setEditedExperience(newExp);
                           }}
                         />
                       ) : (
@@ -967,7 +966,6 @@ export default function ProfilePage() {
                       setEditedExperience([
                         ...editedExperience,
                         {
-                          title: '', // Add title if your API expects it, based on your mock
                           course: '',
                           semester: '',
                           professor: '',
