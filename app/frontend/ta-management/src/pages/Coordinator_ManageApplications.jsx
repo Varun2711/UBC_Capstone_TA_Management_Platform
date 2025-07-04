@@ -189,7 +189,7 @@ export default function ManageApplications() {
 
   return (
     <SidebarProvider>
-      <AppSidebar activePage="Dashboard" />
+      <AppSidebar activePage="Applications" />
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">

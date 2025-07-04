@@ -2,27 +2,27 @@ import { useState, useEffect } from "react";
 import { Filter, Search } from "lucide-react";
 
 const applicationStatusOptions = [
-  { value: "", label: "All Application Statuses" },
+  { value: "", label: "Select Status" },
   { value: "submitted", label: "Submitted" },
   { value: "accepted", label: "Accepted" },
 ];
 
 const positionTypeOptions = [
-  { value: "", label: "All Teaching Positions" }, // Fixed: changed " " to ""
+  { value: "", label: "Select Position" }, // Fixed: changed " " to ""
   { value: "UTA", label: "Undergraduate Teaching Assistant" },
   { value: "GTA2", label: "Graduate Teaching Assistant 2 (Masters)" },
   { value: "GTA1", label: "Graduate Teaching Assistant 1 (Ph.D)" },
 ];
 
 const termCodeOptions = [
-  { value: "", label: "All Academic Terms" },
+  { value: "", label: "Select Term" },
   { value: "W2025BOTH", label: "Winter 2025 Term 1 & 2" },
   { value: "W2025T1", label: "Winter 2025 Term 1" },
   { value: "W2025T2", label: "Winter 2025 Term 2" },
 ];
 
 const disciplineOptions = [
-  { value: "", label: "All Disciplines" },
+  { value: "", label: "Select Discipline" },
   { value: "ASTR", label: "ASTR" },
   { value: "COSC", label: "COSC" },
   { value: "DATA", label: "DATA" },
@@ -62,7 +62,7 @@ export default function SearchFilters({
           <select
             value={filters.status}
             onChange={(e) => handleFilterChange("status", e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="px-2 py-2 border text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             {applicationStatusOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -74,7 +74,7 @@ export default function SearchFilters({
           <select
             value={filters.positionType}
             onChange={(e) => handleFilterChange("positionType", e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="px-2 py-2 border text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             {positionTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -86,7 +86,7 @@ export default function SearchFilters({
           <select
             value={filters.discipline}
             onChange={(e) => handleFilterChange("discipline", e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             {disciplineOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -99,7 +99,7 @@ export default function SearchFilters({
           <select
             value={filters.term_code}
             onChange={(e) => handleFilterChange("term_code", e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="px-2 py-2 border text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             {termCodeOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -108,15 +108,15 @@ export default function SearchFilters({
             ))}
           </select>
 
-          <select
+          {/* <select
             value={filters.workload}
             onChange={(e) => handleFilterChange("workload", e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">All Workloads</option>
             <option value="6">6 hours</option>
             <option value="12">12 hours</option>
-          </select>
+          </select> */}
 
           <button
             onClick={clearFilters}

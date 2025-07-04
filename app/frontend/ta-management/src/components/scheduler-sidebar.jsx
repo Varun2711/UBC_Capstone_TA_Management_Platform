@@ -1,7 +1,17 @@
-
-
-import { BookOpen, Calendar, FileText, Home, Settings, Upload, UserCheck, Plus, CheckCircle, User, MoreVerticalIcon } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import {
+  BookOpen,
+  Calendar,
+  FileText,
+  Home,
+  Settings,
+  Upload,
+  UserCheck,
+  Plus,
+  CheckCircle,
+  User,
+  MoreVerticalIcon,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -14,8 +24,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +33,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 const navigationItems = [
   {
@@ -43,7 +53,7 @@ const navigationItems = [
   },
   {
     title: "Applications",
-    url: "#",
+    url: "/manage-applications",
     icon: FileText,
   },
   {
@@ -51,7 +61,7 @@ const navigationItems = [
     url: "#",
     icon: CheckCircle,
   },
-]
+];
 
 const quickActions = [
   {
@@ -69,7 +79,7 @@ const quickActions = [
     url: "#",
     icon: Upload,
   },
-]
+];
 
 const systemItems = [
   {
@@ -77,8 +87,7 @@ const systemItems = [
     url: "#",
     icon: Settings,
   },
-]
-
+];
 
 export function AppSidebar({ activePage, ...props }) {
   const navigate = useNavigate();
@@ -104,7 +113,10 @@ export function AppSidebar({ activePage, ...props }) {
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={activePage === item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={activePage === item.title}
+                  >
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -122,7 +134,10 @@ export function AppSidebar({ activePage, ...props }) {
             <SidebarMenu>
               {quickActions.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={activePage === item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={activePage === item.title}
+                  >
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -140,7 +155,10 @@ export function AppSidebar({ activePage, ...props }) {
             <SidebarMenu>
               {systemItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={activePage === item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={activePage === item.title}
+                  >
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -165,23 +183,30 @@ export function AppSidebar({ activePage, ...props }) {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">Admin User</span>
-                    <span className="truncate text-xs text-muted-foreground">admin@university.edu</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      admin@university.edu
+                    </span>
                   </div>
                   <MoreVerticalIcon className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-popper-anchor-width]"
+              >
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem><button>My Profile</button></DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/")}><button>Logout</button></DropdownMenuItem>
+                <DropdownMenuItem>
+                  <button>My Profile</button>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/")}>
+                  <button>Logout</button>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
-
-

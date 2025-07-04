@@ -48,7 +48,43 @@
       "is_active": true
     }
   },
+  {
+    "model": "myapp.tascheduler",
+    "pk": 1,
+    "fields": {
+      "id": 1,
+      "employee_number": 12345678,
+      "name": "Chad Davis",
+      "email": "chad.davis@gmail.com",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "department_id": 1
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 1,
+    "fields": {
+      "id": 1,
+      "employee_number": 87654321,
+      "name": "Naman Arora",
+      "email": "naman.arora@gmail.com",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "faculty_id": 1
+    }
+  },
 
+  {
+    "model": "myapp.admin",
+    "pk": 1,
+    "fields": {
+      "id": 1,
+      "employee_number": 11111111,
+      "name": "Admin",
+      "email": "admin@gmail.com",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "created_at": "2024-07-01T12:00:00Z"
+    }
+  },
   {
     "model": "myapp.course",
     "pk": "COSC101",
@@ -141,7 +177,78 @@
       "term_type": "summer"
     }
   },
-
+  {
+    "model": "myapp.courseoffering",
+    "pk": 1,
+    "fields": {
+      "course": "COSC101",
+      "section_number": "001",
+      "term_number": "W2025T1",
+      "year_offered": 2025,
+      "instructor": 1,
+      "day": "MWF",
+      "time": "09:00-10:00"
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 2,
+    "fields": {
+      "course": "COSC101",
+      "section_number": "002",
+      "term_number": "W2025T1",
+      "year_offered": 2025,
+      "instructor": 2,
+      "day": "TTh",
+      "time": "11:00-12:30"
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 3,
+    "fields": {
+      "course": "COSC201",
+      "section_number": "001",
+      "term_number": "W2025T2",
+      "year_offered": 2025,
+      "instructor": 1,
+      "day": "MWF",
+      "time": "14:00-15:00"
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 4,
+    "fields": {
+      "course": "COSC201",
+      "section_number": "002",
+      "term_number": "W2025T2",
+      "year_offered": 2025,
+      "instructor": 2,
+      "day": "TTh",
+      "time": "13:00-14:30"
+    }
+  },
+  {
+    "model": "myapp.labsection",
+    "pk": 1,
+    "fields": {
+      "course_offering": 1,
+      "section_number": "L01",
+      "day": "Monday",
+      "time": "15:00-17:00"
+    }
+  },
+  {
+    "model": "myapp.labsection",
+    "pk": 2,
+    "fields": {
+      "course_offering": 2,
+      "section_number": "L01",
+      "day": "Wednesday",
+      "time": "15:00-17:00"
+    }
+  },
   {
     "model": "myapp.jobposting",
     "pk": 1,
@@ -168,59 +275,68 @@
       "deadline_date": "2024-12-20",
       "department": 1,
       "faculty": 1,
-      "created_by": 2,
+      "created_by": 1,
       "term": 2,
       "requirements": " Must be a registered student. ",
       "status": "open"
     }
   },
-
   {
-    "model": "myapp.tascheduler",
+    "model": "myapp.application",
     "pk": 1,
     "fields": {
-      "id": 1,
-      "employee_number": 12345678,
-      "name": "Chad Davis",
-      "email": "chad.davis@gmail.com",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "department_id": 3
+      "student": 1,
+      "posting": 1,
+      "status": "submitted",
+      "applied_at": "2024-11-18T14:30:00Z",
+      "updated_at": "2024-11-18T14:30:00Z",
+      "positionType": "GTA2",
+      "termSelection": 1,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "COSC",
+        "rank2": "MATH",
+        "rank3": "STAT"
+      },
+      "citizenshipStatus": "citizen",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "no",
+      "otherPositionHours": null
     }
   },
   {
-    "model": "myapp.instructor",
-    "pk": 1,
-    "fields": {
-      "id": 1,
-      "employee_number": 87654321,
-      "name": "Naman Arora",
-      "email": "naman.arora@gmail.com",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "faculty_id": 2
-    }
-  },
-  {
-    "model": "myapp.instructor",
+    "model": "myapp.application",
     "pk": 2,
     "fields": {
-      "employee_number": "INST002",
-      "name": "Prof. Lisa Anderson",
-      "faculty": 1,
-      "email": "lisa.anderson@ubc.ca",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
+      "student": 2,
+      "posting": 2,
+      "status": "submitted",
+      "applied_at": "2024-11-22T16:45:00Z",
+      "updated_at": "2024-11-22T16:45:00Z",
+      "positionType": "GTA1",
+      "termSelection": 2,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "COSC",
+        "rank2": "DATA",
+        "rank3": "ASTR"
+      },
+      "citizenshipStatus": "pr",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "yes",
+      "otherPositionHours": 8
     }
   },
   {
-    "model": "myapp.admin",
+    "model": "myapp.instructorrequest",
     "pk": 1,
     "fields": {
-      "id": 1,
-      "employee_number": 11111111,
-      "name": "Admin",
-      "email": "admin@gmail.com",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "created_at": "2024-07-01T12:00:00Z"
+      "instructor": 1,
+      "course_offering": 2,
+      "request_date": "2025-06-13",
+      "request_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
     }
   }
 ]
