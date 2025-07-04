@@ -6,6 +6,8 @@ import StudentDashboard from "./pages/Student_Dashboard";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
+import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
+
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
