@@ -54,7 +54,7 @@ const navigationItems = [
   {
     title: "Course Management",
     icon: BookOpen,
-    url: "/course-management",
+    url: "/admin-course-management",
   },
   {
     title: "TA Positions",
