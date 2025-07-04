@@ -47,7 +47,7 @@ const navigationItems = [
     icon: BookOpen,
   },
   {
-    title: "TA Positions",
+    title: "Instructor Management",
     url: "#",
     icon: UserCheck,
   },

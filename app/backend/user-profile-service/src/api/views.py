@@ -11,7 +11,7 @@ from utils.password_utils import generate_secure_password
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
-from .serializers import (StudentSerializer, InstructorSerializer, TASchedulerSerializer, AdminSerializer, UpdateStudentProfileSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
+from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
                           StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, FacultySerializer)
 
 from utils.profile_utils import get_user_by_id, get_user_by_email
@@ -149,40 +149,103 @@ class TASchedulerViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-# Student Profile Views - FIXED to use consistent User model approach
-class StudentProfileDetailView(generics.RetrieveUpdateAPIView):
-    serializer_class = ComprehensiveStudentProfileSerializer
-    permission_classes = [IsAuthenticated]    
+# Rename from StudentProfileDetailView to ProfileDetailView
+class ProfileDetailView(generics.RetrieveAPIView):
+    """
+    Get the profile of a user:
+    - Currently logged in user when accessed via /me/
+    - Specific student when accessed via /student/<student_id>/
+    """
+    permission_classes = [IsAuthenticated]
     
-    def get_object(self):
+    def get_serializer_class(self):
+        # Check if accessing specific student (admin view)
         student_id = self.kwargs.get('student_id')
         if student_id:
-            # Admin accessing specific student by student_number
-            # Find the student, then get the corresponding User
+            return ComprehensiveStudentProfileSerializer
+            
+        # Otherwise use serializer based on token user type
+        user_type = self.request.auth.payload.get('user_type', None)
+        
+        if user_type == 'student':
+            return ComprehensiveStudentProfileSerializer
+        elif user_type == 'instructor':
+            return InstructorProfileSerializer
+        elif user_type == 'scheduler':
+            return TASchedulerProfileSerializer
+        elif user_type == 'admin':
+            return AdminProfileSerializer
+        else:
+            # Default fallback
+            return ComprehensiveStudentProfileSerializer
+    
+    def get_object(self):
+        # Check if accessing specific student (admin view)
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            # Find the Student first, then get the corresponding User
             student = get_object_or_404(Student, student_number=student_id)
             user = get_object_or_404(User, email=student.email)
             return user
-        else:
-            # Student accessing their own profile via JWT token
+            
+        # Otherwise, get current user based on token
+        user_type = self.request.auth.payload.get('user_type', None)
+        user_id = self.request.auth.payload.get('sub', None)
+        
+        if user_type == 'student':
+            # For students, we use the Django User model
             return self.request.user
+        elif user_type == 'instructor':
+            # For instructors, find by employee_number
+            return get_object_or_404(Instructor, employee_number=user_id)
+        elif user_type == 'scheduler':
+            # For schedulers, find by employee_number
+            return get_object_or_404(TAScheduler, employee_number=user_id)
+        elif user_type == 'admin':
+            # For admins, find by employee_number
+            return get_object_or_404(Admin, employee_number=user_id)
+        else:
+            # Default fallback to the Django user
+            return self.request.user
+  
+
     
-class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
-    serializer_class =  UpdateStudentProfileSerializer
-    permission_classes = [IsAuthenticated]    
+class ProfileUpdateView(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_serializer_class(self):
+        user_type = self.request.auth.payload.get('user_type', None)
+        
+        if user_type == 'student':
+            return UpdateStudentProfileSerializer
+        elif user_type == 'instructor':
+            return UpdateInstructorSerializer
+        elif user_type == 'scheduler':
+            return UpdateTASchedulerSerializer
+        elif user_type == 'admin':
+            return UpdateAdminSerializer
+        else:
+            return UpdateStudentProfileSerializer
     
     def get_object(self):
-        student_id = self.kwargs.get('student_id')
-        if student_id:
-            # Admin accessing specific student
-            student = get_object_or_404(Student, student_number=student_id)
-            user = get_object_or_404(User, email=student.email)
-        else:
-            # Student accessing their own profile
-            user = self.request.user
+        user_type = self.request.auth.payload.get('user_type', None)
+        user_id = self.request.auth.payload.get('sub', None)
         
-        # Make sure profile exists
-        StudentProfile.objects.get_or_create(user=user)
-        return user  # <-- Return USER object, not profile
+        if user_type == 'student':
+            # Student using Django User model
+            user = self.request.user
+            StudentProfile.objects.get_or_create(user=user)
+            return user
+        elif user_type == 'instructor':
+            return get_object_or_404(Instructor, employee_number=user_id)
+        elif user_type == 'scheduler':
+            return get_object_or_404(TAScheduler, employee_number=user_id)
+        elif user_type == 'admin':
+            return get_object_or_404(Admin, employee_number=user_id)
+        else:
+            return self.request.user
+    
+   
     
 # Student Experience Views - FIXED to use User model consistently
 class StudentTAExperienceListCreateView(generics.ListCreateAPIView):

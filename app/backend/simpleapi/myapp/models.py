@@ -134,7 +134,18 @@ class InstructorRequest(models.Model):
     request_description = models.TextField()
 
 
+class Availability(models.Model):
+    availability_id = models.AutoField(primary_key=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    day_of_week = models.CharField(max_length=10)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    term_number = models.CharField(max_length=20)
 
+    class Meta: 
+        managed = False
+        db_table = 'myapp_availability'        
+        
 class Term(models.Model):
     code = models.CharField(max_length=20, unique=True)
     description = models.TextField(null=True, blank=True)
@@ -316,8 +327,8 @@ class Offer(models.Model):
     }
 
     offer_id = models.AutoField(primary_key=True)
-    application = models.ForeignKey(Application, on_delete=models.CASCADE)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, db_constraint=False)
+    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, db_constraint=False)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
     lab_section = models.ForeignKey(LabSection, on_delete=models.SET_NULL, null=True, blank=True)
     required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
@@ -357,13 +368,7 @@ class Shift(models.Model):
     end_time = models.TimeField()
     notes = models.TextField(null=True, blank=True)
 
-class Availability(models.Model):
-    availability_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
-    day_of_week = models.CharField(max_length=10)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    term_number = models.CharField(max_length=20)
+
 
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
