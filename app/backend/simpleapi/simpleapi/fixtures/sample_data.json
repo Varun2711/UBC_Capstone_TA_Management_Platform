@@ -281,33 +281,32 @@
       "status": "open"
     }
   },
-
   {
-    "model": "myapp.tascheduler",
+    "model": "myapp.application",
     "pk": 1,
     "fields": {
-      "id": 1,
-      "employee_number": 12345678,
-      "name": "Chad Davis",
-      "email": "chad.davis@gmail.com",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "department_id": 3
+      "student": 1,
+      "posting": 1,
+      "status": "submitted",
+      "applied_at": "2024-11-18T14:30:00Z",
+      "updated_at": "2024-11-18T14:30:00Z",
+      "positionType": "GTA2",
+      "termSelection": 1,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "COSC",
+        "rank2": "MATH",
+        "rank3": "STAT"
+      },
+      "citizenshipStatus": "citizen",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "no",
+      "otherPositionHours": null
     }
   },
   {
-    "model": "myapp.instructor",
-    "pk": 1,
-    "fields": {
-      "id": 1,
-      "employee_number": 87654321,
-      "name": "Naman Arora",
-      "email": "naman.arora@gmail.com",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "faculty_id": 2
-    }
-  },
-  {
-    "model": "myapp.instructor",
+    "model": "myapp.application",
     "pk": 2,
     "fields": {
       "student": 2,
