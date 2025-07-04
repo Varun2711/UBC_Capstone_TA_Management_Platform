@@ -5,11 +5,11 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.models import User
-from utils.permissions import admin_required, IsAdminUser
+from utils.permissions import admin_required, IsAdminUser, IsSchedulerUser, IsAdminOrSchedulerUser, admin_or_scheduler_required
 from django.utils.decorators import method_decorator
 from utils.password_utils import generate_secure_password
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from django.core.exceptions import PermissionDenied
 from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
 from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
                           StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, FacultySerializer)
@@ -156,7 +156,21 @@ class ProfileDetailView(generics.RetrieveAPIView):
     - Currently logged in user when accessed via /me/
     - Specific student when accessed via /student/<student_id>/
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # This should check user type in get_object
+    
+    def get_object(self):
+        # Check if accessing specific student (admin or scheduler view)
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            # Only allow admin or scheduler to access other student profiles
+            user_type = self.request.auth.payload.get('user_type')
+            if user_type not in ['admin', 'scheduler']:
+                raise PermissionDenied("Only administrators and schedulers can access student profiles")
+                
+            # Find the Student first, then get the corresponding User
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
+            return user
     
     def get_serializer_class(self):
         # Check if accessing specific student (admin view)
@@ -492,11 +506,11 @@ def find_user(request):
         status=status.HTTP_404_NOT_FOUND
     )
 
-# Admin Management Views
-@method_decorator(admin_required, name='dispatch')
+# Admin and scheduler Management Views
+@method_decorator(admin_or_scheduler_required, name='dispatch')
 class CreateInstructorView(generics.CreateAPIView):
     serializer_class = CreateInstructorSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminOrSchedulerUser]
     authentication_classes = [JWTAuthentication]  # Add this line
 
     def create(self, request, *args, **kwargs):
@@ -552,7 +566,8 @@ class CreateInstructorView(generics.CreateAPIView):
                 response_data = InstructorSerializer(instructor).data
                 response_data['temporary_password'] = temp_password
                 
-                log_user_activity('admin', request.user.email, f'created_instructor_{instructor.employee_number}')
+                user_type = request.auth.payload.get('user_type', 'unknown')
+                log_user_activity(user_type, request.user.email, f'created_instructor_{instructor.employee_number}')
                 
                 return Response(
                     success_response(
@@ -800,6 +815,9 @@ def api_root(request):
             'admin_create_instructor': '/api/profile/admin/create-instructor/',
             'admin_create_scheduler': '/api/profile/admin/create-scheduler/',
             'admin_user_management': '/api/profile/admin/user-management/',
+
+            # Scheduler endpoints
+            'scheduler_create_instructor': '/api/profile/scheduler/create-instructor/',
             
             # Student profile endpoints
             'my_profile': '/api/profile/me/',
