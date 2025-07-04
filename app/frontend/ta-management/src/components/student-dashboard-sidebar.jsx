@@ -55,13 +55,13 @@ const navigationItems = [
 ]
 
 
-export function AppSidebar(props) {
+export function AppSidebar({ name, email, avatar }) {
   
   // Using useNavigate from react-router-dom to handle navigation
   const navigate = useNavigate();
   
   return (
-    <Sidebar {...props}>
+    <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
           <GraduationCap className="h-6 w-6" />
@@ -96,12 +96,12 @@ export function AppSidebar(props) {
               <DropdownMenuTrigger asChild className = "h-10">
                 <SidebarMenuButton className="bg-background text-foreground hover:bg-muted">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src="././assets/react.svg" alt="Admin" />
-                    <AvatarFallback>SJ</AvatarFallback>
+                    <AvatarImage src={avatar || "/placeholder.svg"} alt={name}/>
+                    <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">Sarah Johnson</span>
-                    <span className="truncate text-xs text-muted-foreground">sarahj@mail.com</span>
+                    <span className="truncate font-medium">{name}</span>
+                    <span className="truncate text-xs text-muted-foreground">{email}</span>
                   </div>
                   <MoreVerticalIcon className="ml-auto size-4" />
                 </SidebarMenuButton>

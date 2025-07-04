@@ -659,7 +659,11 @@ export default function ProfilePage() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar />
+        <AppSidebar 
+          name={`${userData.firstName} ${userData.lastName}`}
+          email={userData.email}
+          avatar={userData.avatar}
+        />
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
