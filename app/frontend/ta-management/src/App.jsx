@@ -16,6 +16,7 @@ import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { USER_TYPES } from "./data/user-types";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 
 function App() {
 
@@ -24,6 +25,7 @@ function App() {
     <Routes>
       {/* Accessible to: everyone --------------- */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* Accessible to: non-logged-in user ----- */}
       <Route path="/login" element={<LoginPage />} />

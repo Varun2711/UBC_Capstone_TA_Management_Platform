@@ -5,21 +5,15 @@ Takes "authorizedRoles" as parameter so you can specify which
 role(s) is/are allowed to access a particular page
 
 Example usage:
-<ProtectedRoute allowedRoles={[]}>
+<ProtectedRoute allowedRoles={[USER_TYPES.student]}>
     <StudentDashboard />
 </ProtectedRoute>
 */
 
 import { useState, useEffect } from "react";
 import { requestTokenValidation, requestTokenRefresh } from "@/logic/auth";
+import UnauthorizedPage from "@/pages/UnauthorizedPage";
 
-// Helper function to show a simple page w link back to landing page
-// when unauthorized user attempts to access a protected route
-function renderUnauthorizedPage() {
-    return <div>You are unauthorized to access this page. <a href="/" className="text-blue-600 dark:text-blue-500 hover:underline">Return to landing page</a></div>
-}
-
-// Bulk of the protected route logic found here:
 function ProtectedRoute({ children, authorizedRoles }) {
     const [isAuthorized, setIsAuthorized] = useState(null)
 
@@ -99,7 +93,7 @@ function ProtectedRoute({ children, authorizedRoles }) {
     }
 
     // if authorized to view the page, display the page. Otherwise, render the unauthorized access page
-    return isAuthorized ? children : renderUnauthorizedPage()
+    return isAuthorized ? children : < UnauthorizedPage />
 }
 
 export default ProtectedRoute
