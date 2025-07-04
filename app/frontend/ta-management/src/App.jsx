@@ -1,13 +1,17 @@
 import { Route, Routes } from "react-router-dom";
+import { USER_TYPES } from "./data/user-types";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
+
 import LoginPage from "./pages/LoginPage";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
-import Application from "./pages/Application";
+import ApplicationForm from "./pages/ApplicationForm";
 import StudentDashboard from "./pages/Student_Dashboard";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/ProfilePage2";
 import AdminDashboard from "./pages/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
 import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
-
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -15,13 +19,12 @@ import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
+import ViewJobPostings from "./pages/ViewJobPostings_Student";
 import InstructorDashboard from "./pages/InstructorDashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
-import { USER_TYPES } from "./data/user-types";
-import UnauthorizedPage from "./pages/UnauthorizedPage";
+import ManageApplications from "./pages/Coordinator_ManageApplications";
+import ViewStudentApplication from "./pages/Coordinator_ViewApplication";
 
 function App() {
-
   return (
     // React Router setup
     <Routes>
@@ -36,7 +39,7 @@ function App() {
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
-      {/* Accessible to: student ---------------- */}
+    {/* Accessible to: student ---------------- */}
       <Route 
         path="/student-dashboard" 
         element={
@@ -54,12 +57,21 @@ function App() {
           </ProtectedRoute>
         } 
       />
-      
-      <Route 
-        path="/application" 
+
+      <Route
+        path="/apply/jobposting/:postingId"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
-            <Application />
+            <ApplicationForm />
+          </ProtectedRoute>
+        }
+      />
+          
+      <Route 
+        path="/apply" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ViewJobPostings />
           </ProtectedRoute>
         } 
       />
@@ -111,6 +123,33 @@ function App() {
         } 
       />
 
+      <Route
+        path="/instructor-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <InstructorRequirements />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route 
+        path="/manage-applications" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}> 
+            <ManageApplications />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route
+        path="manage-applications/view/:applicationid"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <ViewStudentApplication />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Accessible to: admin ------------------- */}
       <Route 
         path="/admin-dashboard" 
@@ -120,7 +159,7 @@ function App() {
           </ProtectedRoute>
         } 
       />
-  
+   
       {/* Add more routes if needed */}
     </Routes>
   );

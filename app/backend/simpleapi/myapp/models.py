@@ -8,6 +8,9 @@ class Faculty(models.Model):
         managed = False
         db_table = 'myapp_faculty'
 
+    def __str__(self):
+        return f"{self.name}"
+
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='departments')
@@ -15,6 +18,9 @@ class Department(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_department'
+    
+    def __str__(self):
+        return f"{self.name}"
 
     def __str__(self):
         return self.name
@@ -42,7 +48,7 @@ class Student(models.Model):
     program = models.CharField(max_length=100, null=True, blank=True)
     year_standing = models.IntegerField(null=True, blank=True)
     study_level = models.CharField(max_length=20)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
@@ -51,11 +57,14 @@ class Student(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_student'
+    
+    def __str__(self):
+        return f"{self.name}"
 
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, db_constraint=False)
     email = models.EmailField()
     password = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
@@ -63,6 +72,9 @@ class Instructor(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_instructor'
+    
+    def __str__(self):
+        return f"{self.name}"
 
 class TAScheduler(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
@@ -75,6 +87,9 @@ class TAScheduler(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_tascheduler'
+    
+    def __str__(self):
+        return f"{self.name}"
 
 #added admin based on new requirements.
 class Admin(models.Model):
@@ -88,6 +103,9 @@ class Admin(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_admin'
+
+    def __str__(self):
+        return f"{self.name}"
 
 class Course(models.Model):
     course_number = models.CharField(max_length=10, primary_key=True)
@@ -309,7 +327,7 @@ class Application(models.Model):
         db_table = 'myapp_application'        
         
     def __str__(self):
-        return f"Application {self.application_id} - Student {self.student}  for {self.posting}"
+        return f"Application {self.application_id} - {self.student}  for {self.posting}"
        
     def can_withdraw(self):
         """Check if application can be withdrawn"""

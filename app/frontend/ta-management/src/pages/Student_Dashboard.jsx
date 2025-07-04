@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useEffect, useState } from "react";
 import {
   Bell,
   BookOpen,
@@ -16,12 +16,18 @@ import {
   Settings,
   User,
   Users,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Sidebar,
   SidebarContent,
@@ -35,14 +41,22 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { AppSidebar } from "../components/student-dashboard-sidebar"
-
+} from "@/components/ui/sidebar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AppSidebar } from "../components/student-dashboard-sidebar";
+import axios from "axios";
 
 // Mock data
 const studentProfile = {
+  id: 1,
   name: "Sarah Johnson",
   email: "sarahj@mail.com",
   studentId: "SJ2024001",
@@ -51,26 +65,34 @@ const studentProfile = {
   gpa: "3.85",
   phone: "+1 (555) 123-4567",
   avatar: "/placeholder.svg?height=40&width=40",
-}
+};
 
-const submittedApplications = [
+//fetch the students applications
+
+const mockSubmittedApplications = [
   {
-    id: 1,
-    academicPeriod: "2025-2026 Winter Session TA Application",
-    professor: "Dr. Smith",
-    status: "Under Review",
-    appliedDate: "2024-01-15",
-    deadline: "2024-01-20",
+    application_id: 1,
+    termSelection: {
+      code: "2025 Winter Term 1 & Term 2",
+    },
+    status: "under_review",
+    applied_at: "2024-01-15",
+    posting: {
+      title: "2025 TA Applications",
+    },
   },
   {
-    id: 2,
-    academicPeriod: "2025 Summer Session TA Application",
-    professor: "Dr. Johnson",
-    status: "Accepted",
-    appliedDate: "2024-01-10",
-    deadline: "2024-01-15",
+    application_id: 2,
+    termSelection: {
+      code: "2025 Summer",
+    },
+    status: "accepted",
+    applied_at: "2024-01-15",
+    posting: {
+      title: "2025 TA Applications",
+    },
   },
-]
+];
 
 const openPositions = [
   {
@@ -97,7 +119,7 @@ const openPositions = [
     requirements: "Experience with software development projects",
     hours: "12 hrs/week",
   },
-]
+];
 
 const upcomingDeadlines = [
   {
@@ -110,7 +132,7 @@ const upcomingDeadlines = [
     deadline: "2024-03-31",
     daysLeft: 9,
   },
-]
+];
 
 const sidebarItems = [
   {
@@ -144,29 +166,146 @@ const sidebarItems = [
     icon: Settings,
     url: "#",
   },
-]
+];
 
 function getStatusBadge(status) {
   switch (status) {
-    case "Accepted":
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Accepted</Badge>
-    case "Rejected":
-      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>
-    case "Under Review":
-      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Under Review</Badge>
+    case "accepted":
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+          Accepted
+        </Badge>
+      );
+    case "rejected":
+      return (
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+          Rejected
+        </Badge>
+      );
+    case "under_review":
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+          Under Review
+        </Badge>
+      );
+    case "submitted":
+      return (
+        <Badge className="bg-blue-600 text-white hover:bg-blue-100">
+          Submitted
+        </Badge>
+      );
+    case "withdrawn":
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+          Under Review
+        </Badge>
+      );
     default:
-      return <Badge variant="secondary">{status}</Badge>
+      return <Badge variant="secondary">{status}</Badge>;
   }
 }
 
+//base url for the api calls
+const instance = axios.create({
+  baseURL: "http://localhost:8080/api",
+});
+
 export default function StudentDashboard() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState("");
+  const [submittedApplications, setSubmittedApplications] = useState([]);
+  const [error, setError] = useState([]);
+  const [student, setStudent] = useState(null);
+
+  //on mount, load the student data
+  //this includes application data
+  useEffect(() => {
+    const loadStudentDashboardData = async () => {
+      const accessToken = localStorage.getItem("accessToken");
+      //if we can't find the accces token, then for the demo, use the mock student profile data
+      if (!accessToken) {
+        // console.log( "No access token found in localStorage, using mock student data"    );
+        setStudent(studentProfile);
+        setSubmittedApplications(mockSubmittedApplications);
+        return;
+      }
+
+      try {
+        console.log("We're here!");
+        //get user profile to get the student id
+        // probably need another way to do this than getting the entire profile
+        const res = await instance.get(`/profile/me/`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        //console.log(res.data);
+        const studentId = res.data.id;
+        //console.log(studentId);
+
+        // const applicationResponse = await instance.get("/ajp/applications/", {
+        //   params: { by-student: studentId }, // or whatever field the filter expects
+        // });
+
+        const applicationResponse = await instance.get(
+          `/ajp/applications/by-student/${studentId}/`
+        );
+
+        //console.log(applicationResponse.data);
+
+        if (Array.isArray(applicationResponse.data)) {
+          const transformedApplications = applicationResponse.data.map(
+            (app) => ({
+              application_id: app.application_id,
+              termSelection: {
+                code:
+                  app.termSelection?.code || app.posting?.term?.code || "N/A",
+              },
+              status: app.status,
+              applied_at: app.applied_at,
+              posting: {
+                title: app.posting?.title || "N/A",
+                posting_id: app.posting?.posting_id,
+                description: app.posting?.description,
+                department: app.posting?.department?.name,
+              },
+            })
+          );
+
+          console.log(transformedApplications);
+
+          setSubmittedApplications(transformedApplications);
+        } else {
+          console.error(
+            "Applications data is not an array:",
+            applicationResponse.data
+          );
+          setSubmittedApplications(mockSubmittedApplications);
+        }
+
+        setSubmittedApplications(applicationResponse.data);
+      } catch (err) {
+        //if something goes wrong and we can't load the student application, fall back on the mockdata
+        //console.log(err);
+        setSubmittedApplications(mockSubmittedApplications);
+      }
+    };
+    loadStudentDashboardData();
+  }, []);
 
   const filteredOpenPositions = openPositions.filter(
     (position) =>
       position.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      position.professor.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      position.professor.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   return (
     <SidebarProvider>
@@ -188,8 +327,12 @@ export default function StudentDashboard() {
             {/* Welcome Section */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">Welcome back, {studentProfile.name}!</h2>
-                <p className="text-muted-foreground">Here's your TA application overview</p>
+                <h2 className="text-2xl font-bold">
+                  Welcome back, {studentProfile.name}!
+                </h2>
+                <p className="text-muted-foreground">
+                  Here's your TA application overview
+                </p>
               </div>
             </div>
 
@@ -202,13 +345,20 @@ export default function StudentDashboard() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-16 w-16">
-                      <AvatarImage src={studentProfile.avatar || "/placeholder.svg"} alt={studentProfile.name} />
+                      <AvatarImage
+                        src={studentProfile.avatar || "/placeholder.svg"}
+                        alt={studentProfile.name}
+                      />
                       <AvatarFallback>SJ</AvatarFallback>
                     </Avatar>
                     <div>
                       <h3 className="font-semibold">{studentProfile.name}</h3>
-                      <p className="text-sm text-muted-foreground">{studentProfile.major}</p>
-                      <p className="text-sm text-muted-foreground">{studentProfile.year}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {studentProfile.major}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {studentProfile.year}
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -232,17 +382,28 @@ export default function StudentDashboard() {
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle>Upcoming Deadlines</CardTitle>
-                  <CardDescription>Don't miss these application deadlines</CardDescription>
+                  <CardDescription>
+                    Don't miss these application deadlines
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {upcomingDeadlines.map((deadline, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
                         <div>
                           <p className="font-medium">{deadline.course}</p>
-                          <p className="text-sm text-muted-foreground">Deadline: {deadline.deadline}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Deadline: {deadline.deadline}
+                          </p>
                         </div>
-                        <Badge variant={deadline.daysLeft <= 7 ? "destructive" : "secondary"}>
+                        <Badge
+                          variant={
+                            deadline.daysLeft <= 7 ? "destructive" : "secondary"
+                          }
+                        >
                           {deadline.daysLeft} days left
                         </Badge>
                       </div>
@@ -256,25 +417,39 @@ export default function StudentDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>My Applications</CardTitle>
-                <CardDescription>Track the status of your submitted applications</CardDescription>
+                <CardDescription>
+                  Track the status of your submitted applications
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Application ID</TableHead>
+                      <TableHead>Job Posting</TableHead>
                       <TableHead>Academic Period</TableHead>
                       <TableHead>Applied Date</TableHead>
-                      <TableHead>Deadline</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {submittedApplications.map((application) => (
-                      <TableRow key={application.id}>
-                        <TableCell className="font-medium">{application.academicPeriod}</TableCell>
-                        <TableCell>{application.appliedDate}</TableCell>
-                        <TableCell>{application.deadline}</TableCell>
-                        <TableCell>{getStatusBadge(application.status)}</TableCell>
+                      <TableRow key={application.application_id}>
+                        <TableCell className="font-medium">
+                          {application.application_id}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {application.posting.title}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {application.termSelection.code}
+                        </TableCell>
+                        <TableCell>
+                          {formatDate(application.applied_at)}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(application.status)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -285,5 +460,5 @@ export default function StudentDashboard() {
         </div>
       </div>
     </SidebarProvider>
-  )
+  );
 }
