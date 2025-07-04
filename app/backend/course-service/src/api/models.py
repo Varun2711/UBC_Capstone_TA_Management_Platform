@@ -208,7 +208,47 @@ class CourseOffering(models.Model):
 # lab sections model
 class LabSection(models.Model):
     """
-    A Lab section has a course number
-    A Lab section has a section and term numbers along with year offered and timeblock
+    A Lab section is similar to a course offering but specifically for lab/tutorial sessions.
+    Lab sections are associated with a course and academic term, similar to course offerings.
     """
+    lab_section_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    course = models.ForeignKey(
+        Course, 
+        on_delete=models.CASCADE,
+        related_name='lab_sections',
+        help_text="The course this lab section is for"
+    ) 
+    section_number = models.CharField(
+        max_length=3, 
+        help_text="Lab section number (e.g., 'L01', 'T01')"
+    )
+    academic_term = models.ForeignKey(
+        AcademicTerm,
+        on_delete=models.CASCADE,
+        related_name='lab_sections',
+        help_text="Academic term when this lab section is offered"
+    )
+    instructor = models.ForeignKey(
+        Instructor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='lab_sections',
+        help_text="Instructor or TA teaching this lab section"
+    )
+    time_slots = models.ManyToManyField(
+        TimeSlot,
+        blank=True,
+        related_name='lab_sections',
+        help_text="Time slots when this lab section meets"
+    )
+
+    class Meta:
+        managed = True
+        db_table = 'lab_sections'
+        ordering = ['-academic_term__year', 'course__course_number', 'section_number']
+        unique_together = ['course', 'section_number', 'academic_term']
+
+    def __str__(self):
+        return f'{self.course.course_number} {self.section_number} ({self.academic_term}) - Lab'
     

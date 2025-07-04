@@ -19,4 +19,4 @@ if not User.objects.filter(username='user1').exists():
 END
 
 echo "Starting User Profile Service..."
-exec python manage.py runserver 0.0.0.0:8001
+exec python manage.py runserver 0.0.0.0:8004
