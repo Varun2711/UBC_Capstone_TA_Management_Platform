@@ -70,54 +70,33 @@ def login_view(request):
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
         user, user_type, user_id = find_user_by_email(email, password)
-        
+
         if not user:
             return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Create django user
-        django_user, created = User.objects.get_or_create(username = email, defaults={"email":email, "first_name": user.name, "is_active": True})
+        django_user, created = User.objects.get_or_create(username=email, defaults={"email": email, "first_name": user.name, "is_active": True})
         
-        # Generate refresh token
         refresh = RefreshToken.for_user(django_user)
 
-        #refresh["user_id"] = user_id
+        # --- FIX: Manually set the 'sub' claim to the correct ID ---
+        # The access token will inherit this claim.
+        refresh.payload['sub'] = user_id
+        # --- END FIX ---
+
+        # Add your other custom claims
         refresh["user_type"] = user_type
         refresh["email"] = email
         refresh["name"] = user.name
 
-        # Add custom ID as separate field based on user type, this logic is required.
-        if user_type == 'admin':
-            refresh["admin_id"] = user_id
-        elif user_type == 'student':
-            refresh["student_id"] = user_id
-        elif user_type == 'instructor':
-            refresh["instructor_id"] = user_id
-        elif user_type == 'scheduler':
-            refresh["scheduler_id"] = user_id
-
-        # Generate access token
         access = refresh.access_token
 
-        #access["user_id"] = user_id
-        access["user_type"] = user_type
-        access["email"] = email
-        access["name"] = user.name
-
-        # Add custom ID as separate field, this logic is required.
-        if user_type == 'admin':
-            access["admin_id"] = user_id
-        elif user_type == 'student':
-            access["student_id"] = user_id
-        elif user_type == 'instructor':
-            access["instructor_id"] = user_id
-        elif user_type == 'scheduler':
-            access["scheduler_id"] = user_id
-
-        response_data = {"access": str(access),
-                         "refresh": str(refresh),
-                         "user_id": user_id,
-                         "user_type": user_type,
-                         "name": user.name}
+        response_data = {
+            "access": str(access),
+            "refresh": str(refresh),
+            "user_id": user_id,
+            "user_type": user_type,
+            "name": user.name
+        }
         
         return Response(TokenSerializer(response_data).data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (StudentViewSet, InstructorViewSet, TASchedulerViewSet, find_user, api_root, CreateInstructorView, CreateSchedulerView, UserManagementView,
-                    StudentProfileDetailView, StudentProfileUpdateView, StudentTAExperienceListCreateView, StudentExperienceDetailView,StudentSkillListCreateView, 
+                    ProfileDetailView, ProfileUpdateView, StudentTAExperienceListCreateView, StudentExperienceDetailView,StudentSkillListCreateView, 
                     StudentSkillDetailView, StudentAvailabilityView, StudentCoursePreferenceListCreateView, StudentCoursePreferenceDetailView, FacultyListView)
 
 router = DefaultRouter()
@@ -22,8 +22,8 @@ urlpatterns = [
     path('faculties/', FacultyListView.as_view(), name='faculty-list'),
     
     # Student Profile Management
-    path('me/', StudentProfileDetailView.as_view(), name='my-profile'),
-    path('me/update/', StudentProfileUpdateView.as_view(), name='update-my-profile'),
+    path('me/', ProfileDetailView.as_view(), name='my-profile'),
+    path('me/update/', ProfileUpdateView.as_view(), name='update-my-profile'),
     
     # Student Experience Management  
     path('me/experience/', StudentTAExperienceListCreateView.as_view(), name='my-experiences'),
@@ -41,7 +41,7 @@ urlpatterns = [
     path('me/preferences/<uuid:pk>/', StudentCoursePreferenceDetailView.as_view(), name='my-preference-detail'),
     
     # Admin views for specific students
-    path('student/<str:student_id>/', StudentProfileDetailView.as_view(), name='student-profile'),
+    path('student/<str:student_id>/', ProfileDetailView.as_view(), name='student-profile'),
     path('student/<str:student_id>/experience/', StudentTAExperienceListCreateView.as_view(), name='student-experiences'),
     path('student/<str:student_id>/skills/', StudentSkillListCreateView.as_view(), name='student-skills'),
     path('student/<str:student_id>/availability/', StudentAvailabilityView.as_view(), name='student-availability'),
