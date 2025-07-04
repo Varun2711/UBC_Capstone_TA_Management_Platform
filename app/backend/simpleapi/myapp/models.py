@@ -144,10 +144,9 @@ class Availability(models.Model):
     term_number = models.CharField(max_length=20)
 
     class Meta: 
-        managed = True
-        db_table = 'myapp_availability'
-
-
+        managed = False
+        db_table = 'myapp_availability'        
+        
 class Term(models.Model):
     code = models.CharField(max_length=20, unique=True)
     description = models.TextField(null=True, blank=True)
@@ -203,12 +202,12 @@ class JobPosting(models.Model):
     description = models.TextField(null=True, blank=True)
     post_date = models.DateField()
     deadline_date = models.DateField()
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
-    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True, db_constraint=False)
 
     #term that this position is advertising for
-    term = models.ForeignKey('Term', on_delete = models.SET_NULL, null=True)     
+    term = models.ForeignKey('Term', on_delete = models.SET_NULL, null=True, db_constraint=False)     
 
     requirements = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[
@@ -248,8 +247,8 @@ class JobPostingQuestion(models.Model):
 
 class Application(models.Model):        
     application_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey('Student', on_delete=models.SET_NULL, null=True)
-    posting = models.ForeignKey('JobPosting', on_delete=models.SET_NULL, null=True)
+    student = models.ForeignKey('Student', on_delete=models.SET_NULL, null=True, db_constraint=False)
+    posting = models.ForeignKey('JobPosting', on_delete=models.SET_NULL, null=True, db_constraint=False)
     status = models.CharField(max_length=20, choices=[ 
         ('draft', 'Draft'),
         ('submitted', 'Submitted'),
@@ -272,7 +271,7 @@ class Application(models.Model):
     ], blank=True, null=True)
 
     #Term Selection
-    termSelection = models.ForeignKey('Term', on_delete = models.SET_NULL, null=True)      
+    termSelection = models.ForeignKey('Term', on_delete = models.SET_NULL, null=True, db_constraint=False)      
    
     workload = models.CharField(max_length=20, choices=[
         ('6', '6 hours'),
@@ -329,8 +328,8 @@ class Offer(models.Model):
     }
 
     offer_id = models.AutoField(primary_key=True)
-    application = models.ForeignKey(Application, on_delete=models.CASCADE)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, db_constraint=False)
+    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, db_constraint=False)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
     lab_section = models.ForeignKey(LabSection, on_delete=models.SET_NULL, null=True, blank=True)
     required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
@@ -370,13 +369,7 @@ class Shift(models.Model):
     end_time = models.TimeField()
     notes = models.TextField(null=True, blank=True)
 
-class Availability(models.Model):
-    availability_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
-    day_of_week = models.CharField(max_length=10)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    term_number = models.CharField(max_length=20)
+
 
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
