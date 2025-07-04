@@ -8,3 +8,4 @@ tzdata==2025.2
 psycopg2-binary==2.9.10
 djangorestframework==3.16.0
 django-filter==25.1
+coverage
