@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     { role: "Students", count: 1089, percentage: 87.3, color: "bg-blue-500" },
     { role: "Instructors", count: 124, percentage: 9.9, color: "bg-green-500" },
     { role: "TA Schedulers", count: 28, percentage: 2.2, color: "bg-purple-500" },
-    { role: "Admins", count: 6, percentage: 0.5, color: "bg-red-500" },
+    { role: "Admins", count: 7, percentage: 0.5, color: "bg-red-500" },
   ]
 
   const recentActivity = [
