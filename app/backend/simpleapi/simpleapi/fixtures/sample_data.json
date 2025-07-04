@@ -26,7 +26,7 @@
       "study_level": "MSc",
       "department": 1,
       "sin": "123456789",
-      "password": "pbkdf2_sha256$600000$abc123$hashedpassword1",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "sarah.johnson@student.ubc.ca",
       "is_active": true
     }
@@ -43,7 +43,7 @@
       "study_level": "PhD",
       "department": 1,
       "sin": "987654321",
-      "password": "pbkdf2_sha256$600000$def456$hashedpassword2",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "alex.chen@student.ubc.ca",
       "is_active": true
     }
@@ -52,48 +52,37 @@
     "model": "myapp.tascheduler",
     "pk": 1,
     "fields": {
-      "employee_number": "EMP001",
-      "name": "Dr. Jennifer Smith",
-      "email": "jennifer.smith@ubc.ca",
-      "department": 1,
-      "password": "pbkdf2_sha256$600000$ghi789$hashedpassword3",
-      "is_active": true
-    }
-  },
-  {
-    "model": "myapp.tascheduler",
-    "pk": 2,
-    "fields": {
-      "employee_number": "EMP002",
-      "name": "Dr. Michael Wong",
-      "email": "michael.wong@ubc.ca",
-      "department": 1,
-      "password": "pbkdf2_sha256$600000$jkl012$hashedpassword4",
-      "is_active": true
+      "id": 1,
+      "employee_number": 12345678,
+      "name": "Chad Davis",
+      "email": "chad.davis@gmail.com",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "department_id": 3
     }
   },
   {
     "model": "myapp.instructor",
     "pk": 1,
     "fields": {
-      "employee_number": "INST001",
-      "name": "Prof. David Martinez",
-      "faculty": 1,
-      "email": "david.martinez@ubc.ca",
-      "password": "pbkdf2_sha256$600000$mno345$hashedpassword5",
-      "is_active": true
+      "id": 1,
+      "employee_number": 87654321,
+      "name": "Naman Arora",
+      "email": "naman.arora@gmail.com",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "faculty_id": 2
     }
   },
+
   {
-    "model": "myapp.instructor",
-    "pk": 2,
+    "model": "myapp.admin",
+    "pk": 1,
     "fields": {
-      "employee_number": "INST002",
-      "name": "Prof. Lisa Anderson",
-      "faculty": 1,
-      "email": "lisa.anderson@ubc.ca",
-      "password": "pbkdf2_sha256$600000$pqr678$hashedpassword6",
-      "is_active": true
+      "id": 1,
+      "employee_number": 11111111,
+      "name": "Admin",
+      "email": "admin@gmail.com",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "created_at": "2024-07-01T12:00:00Z"
     }
   },
   {
@@ -261,26 +250,6 @@
     }
   },
   {
-    "model": "myapp.labsection",
-    "pk": 3,
-    "fields": {
-      "course_offering": 3,
-      "section_number": "L01",
-      "day": "Tuesday",
-      "time": "16:00-18:00"
-    }
-  },
-  {
-    "model": "myapp.labsection",
-    "pk": 4,
-    "fields": {
-      "course_offering": 4,
-      "section_number": "L01",
-      "day": "Thursday",
-      "time": "16:00-18:00"
-    }
-  },
-  {
     "model": "myapp.jobposting",
     "pk": 1,
     "fields": {
@@ -306,7 +275,7 @@
       "deadline_date": "2024-12-20",
       "department": 1,
       "faculty": 1,
-      "created_by": 2,
+      "created_by": 1,
       "term": 2,
       "requirements": " Must be a registered student. ",
       "status": "open"
@@ -359,273 +328,15 @@
       "hasOtherPositions": "yes",
       "otherPositionHours": 8
     }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 1,
+    "fields": {
+      "instructor": 1,
+      "course_offering": 2,
+      "request_date": "2025-06-13",
+      "request_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+    }
   }
-
-},
-{
-  "model": "myapp.course",
-  "pk": "COSC124",
-  "fields": {
-    "title": "Computer Science for Business",
-    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor i",
-    "department": 5,
-    "is_active": false,
-    "created_at": "2025-06-13T00:04:16.918Z",
-    "updated_at": "2025-06-13T00:04:16.918Z"
-  }
-},
-{
-  "model": "myapp.course",
-  "pk": "DATA101",
-  "fields": {
-    "title": "Data Science Fundamentals",
-    "description": "An introduction to data science concepts.",
-    "department": 7,
-    "is_active": true,
-    "created_at": null,
-    "updated_at": null
-  }
-},
-{
-  "model": "myapp.course",
-  "pk": "MATH101",
-  "fields": {
-    "title": "Calculus I",
-    "description": "An introduction to calculus.",
-    "department": 6,
-    "is_active": true,
-    "created_at": null,
-    "updated_at": null
-  }
-},
-{
-  "model": "myapp.course",
-  "pk": "PHYS101",
-  "fields": {
-    "title": "Physics I",
-    "description": "An introduction to classical physics.",
-    "department": 8,
-    "is_active": true,
-    "created_at": null,
-    "updated_at": "2025-06-13T00:03:28.476Z"
-  }
-},
-{
-  "model": "myapp.courseoffering",
-  "pk": 1,
-  "fields": {
-    "course": "COSC101",
-    "section_number": "001",
-    "term_number": "Winter Term 1",
-    "year_offered": 2024,
-    "instructor": 1,
-    "day": "MWF",
-    "time": "09:00-10:00"
-  }
-},
-{
-  "model": "myapp.courseoffering",
-  "pk": 2,
-  "fields": {
-    "course": "MATH101",
-    "section_number": "001",
-    "term_number": "Winter Term 1",
-    "year_offered": 2024,
-    "instructor": 2,
-    "day": "MW",
-    "time": "10:00 - 11:30"
-  }
-},
-{
-  "model": "myapp.courseoffering",
-  "pk": 3,
-  "fields": {
-    "course": "MATH101",
-    "section_number": "001",
-    "term_number": "Summer Term 1",
-    "year_offered": 2025,
-    "instructor": 1,
-    "day": "MW",
-    "time": "09:00-10:00"
-  }
-},
-{
-  "model": "myapp.labsection",
-  "pk": 1,
-  "fields": {
-    "course_offering": 1,
-    "section_number": "L01",
-    "day": "M",
-    "time": "10:00 - 11:00"
-  }
-},
-{
-  "model": "myapp.labsection",
-  "pk": 2,
-  "fields": {
-    "course_offering": 2,
-    "section_number": "L01",
-    "day": "W",
-    "time": "10:00 - 11:00"
-  }
-},
-{
-  "model": "myapp.labsection",
-  "pk": 3,
-  "fields": {
-    "course_offering": 3,
-    "section_number": "L01",
-    "day": "F",
-    "time": "10:00 - 11:00"
-  }
-},
-{
-  "model": "myapp.jobposting",
-  "pk": 1,
-  "fields": {
-    "title": "CMPS Teaching Assistants",
-    "description": "Applications are now open for teaching assistants for Computer Science, Mathematics, Physics, Statistics and Data Science (CMPS).",
-    "post_date": "2025-06-10",
-    "deadline_date": "2025-06-30",
-    "department": 2,
-    "faculty": 1,
-    "created_by": 1,
-    "requirements": "All applicants must be 3rd year standing or above.",
-    "status": "archived"
-  }
-},
-{
-  "model": "myapp.jobposting",
-  "pk": 2,
-  "fields": {
-    "title": "Computer Science Teaching Assistants",
-    "description": "Applications for computer science TA positions are now open. Please apply before the dealine.",
-    "post_date": "2025-06-12",
-    "deadline_date": "2025-07-31",
-    "department": 5,
-    "faculty": 1,
-    "created_by": 1,
-    "requirements": "Applicants must have at least 3rd year standing.",
-    "status": "draft"
-  }
-},
-{
-  "model": "myapp.jobposting",
-  "pk": 3,
-  "fields": {
-    "title": "Mathematics Teaching Assistants",
-    "description": "Applications for Math TAs are now open. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    "post_date": "2025-06-12",
-    "deadline_date": "2025-07-31",
-    "department": 6,
-    "faculty": 1,
-    "created_by": 2,
-    "requirements": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    "status": "open"
-  }
-},
-{
-  "model": "myapp.jobposting",
-  "pk": 4,
-  "fields": {
-    "title": "Physics TA",
-    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    "post_date": "2025-06-12",
-    "deadline_date": "2025-07-31",
-    "department": 8,
-    "faculty": 1,
-    "created_by": 1,
-    "requirements": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    "status": "open"
-  }
-},
-{
-  "model": "myapp.jobpostingquestion",
-  "pk": 1,
-  "fields": {
-    "posting": 4,
-    "question_text": "Briefly describe your personal strengths and weaknesses."
-  }
-},
-{
-  "model": "myapp.jobpostingquestion",
-  "pk": 2,
-  "fields": {
-    "posting": 3,
-    "question_text": "Briefly describe a previous job experiences and the lessons you learned on the job."
-  }
-},
-{
-  "model": "myapp.jobpostingquestion",
-  "pk": 3,
-  "fields": {
-    "posting": 2,
-    "question_text": "Briefly describe the qualities that make you a suitable candidate for the role."
-  }
-},
-{
-  "model": "myapp.jobpostingquestion",
-  "pk": 4,
-  "fields": {
-    "posting": 4,
-    "question_text": "Who is your biggest role-model and why?"
-  }
-},
-{
-  "model": "myapp.jobpostingquestion",
-  "pk": 5,
-  "fields": {
-    "posting": 3,
-    "question_text": "Describe a challenge you had to overcome."
-  }
-},
-{
-  "model": "myapp.instructorrequest",
-  "pk": 1,
-  "fields": {
-    "instructor": 1,
-    "course_offering": 2,
-    "request_date": "2025-06-13",
-    "request_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-  }
-},
-
-{
-  "model" : "myapp.tascheduler",
-  "pk": 1,
-  "fields": {
-    "id" : 1,
-    "employee_number" : 12345678,
-    "name" : "Chad Davis",
-    "email" : "chad.davis@gmail.com",
-    "password" : "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-    "department_id" : 3
-
-}
-},
-{
-  "model" : "myapp.instructor",
-  "pk": 1,
-  "fields": {
-    "id" : 1,
-    "employee_number" : 87654321,
-    "name" : "Naman Arora",
-    "email" : "naman.arora@gmail.com",
-    "password" : "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-    "faculty_id" : 2
-}
-},
-
-{
-  "model" : "myapp.admin",
-  "pk": 1,
-  "fields": {
-    "id" : 1,
-    "employee_number" : 11111111,
-    "name" : "Admin",
-    "email" : "admin@gmail.com",
-    "password" : "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-    "created_at": "2024-07-01T12:00:00Z"
-}
-}
 ]
