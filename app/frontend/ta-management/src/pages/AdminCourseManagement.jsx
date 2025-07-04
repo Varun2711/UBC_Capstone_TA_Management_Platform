@@ -18,8 +18,10 @@ import {
   Clock,
   AlertCircle,
   CheckCircle,
-  Building,
-  GraduationCap,
+  XCircle,
+  Star,
+  MapPin,
+  Mail,
   TrendingUp,
   BarChart3,
 } from "lucide-react"
@@ -50,9 +52,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AdminSidebar } from "../components/admin-dashboard-sidebar"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Switch } from "@/components/ui/switch"
 
 export default function AdminCourseManagement() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -62,214 +63,301 @@ export default function AdminCourseManagement() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [selectedCourses, setSelectedCourses] = useState([])
   const [activeTab, setActiveTab] = useState("overview")
-  const [viewMode, setViewMode] = useState("table") // table or grid
 
-  // Mock course data with comprehensive admin fields
+  // Course data similar to scheduler version but with admin-specific fields
   const courses = [
     {
       id: 1,
       code: "CS 101",
       name: "Introduction to Computer Science",
       department: "Computer Science",
-      instructor: "Dr. Michael Smith",
-      instructorEmail: "m.smith@university.edu",
-      instructorId: "inst_001",
-      enrollment: 45,
-      maxEnrollment: 50,
-      waitlist: 8,
-      taPositions: 3,
-      filledTaPositions: 2,
-      openTaPositions: 1,
+      instructor: {
+        name: "Dr. Michael Smith",
+        email: "m.smith@university.edu",
+        phone: "(555) 123-4567",
+        avatar: "/placeholder.svg?height=40&width=40",
+        rating: 4.8,
+        experience: "15 years",
+      },
+      enrollment: {
+        current: 45,
+        max: 50,
+        waitlist: 8,
+        dropRate: "5%",
+      },
+      taPositions: {
+        total: 3,
+        filled: 2,
+        pending: 5,
+        deadline: "2024-02-01",
+      },
       status: "Active",
       semester: "Fall 2024",
       credits: 3,
-      schedule: "MWF 10:00-11:00 AM",
-      room: "CS Building 101",
-      building: "Computer Science Building",
-      prerequisites: "None",
+      schedule: {
+        days: "MWF",
+        time: "10:00-11:00 AM",
+        room: "CS Building 101",
+        capacity: 50,
+      },
+      prerequisites: ["None"],
+      description:
+        "An introduction to computer science concepts, programming fundamentals, and problem-solving techniques.",
       lastModified: "2024-01-15",
-      applicationDeadline: "2024-02-01",
       priority: "High",
-      budget: 15000,
-      budgetUsed: 8500,
-      courseType: "Core",
-      level: "Undergraduate",
-      format: "In-Person",
+      budget: "$15,000",
       approvalStatus: "Approved",
-      createdBy: "admin_001",
-      createdDate: "2023-12-01",
-      lastUpdated: "2024-01-15",
-      enrollmentTrend: "+12%",
-      satisfactionRating: 4.2,
-      completionRate: 89,
-      averageGrade: "B+",
-      taApplications: 15,
-      pendingApplications: 5,
+      createdBy: "Dr. Johnson",
+      tags: ["Core", "Freshman", "Programming"],
+      performance: {
+        passRate: "92%",
+        satisfaction: 4.6,
+        difficulty: 3.2,
+      },
     },
     {
       id: 2,
       code: "MATH 201",
       name: "Calculus II",
       department: "Mathematics",
-      instructor: "Dr. Sarah Johnson",
-      instructorEmail: "s.johnson@university.edu",
-      instructorId: "inst_002",
-      enrollment: 38,
-      maxEnrollment: 40,
-      waitlist: 12,
-      taPositions: 2,
-      filledTaPositions: 2,
-      openTaPositions: 0,
+      instructor: {
+        name: "Dr. Sarah Johnson",
+        email: "s.johnson@university.edu",
+        phone: "(555) 234-5678",
+        avatar: "/placeholder.svg?height=40&width=40",
+        rating: 4.9,
+        experience: "12 years",
+      },
+      enrollment: {
+        current: 38,
+        max: 40,
+        waitlist: 12,
+        dropRate: "8%",
+      },
+      taPositions: {
+        total: 2,
+        filled: 2,
+        pending: 3,
+        deadline: "2024-01-28",
+      },
       status: "Active",
       semester: "Fall 2024",
       credits: 4,
-      schedule: "TTh 2:00-3:30 PM",
-      room: "Math Building 205",
-      building: "Mathematics Building",
-      prerequisites: "MATH 101",
+      schedule: {
+        days: "TTh",
+        time: "2:00-3:30 PM",
+        room: "Math Building 205",
+        capacity: 40,
+      },
+      prerequisites: ["MATH 101"],
+      description: "Advanced calculus covering integration techniques, sequences, series, and applications.",
       lastModified: "2024-01-12",
-      applicationDeadline: "2024-01-28",
-      priority: "Medium",
-      budget: 12000,
-      budgetUsed: 11800,
-      courseType: "Core",
-      level: "Undergraduate",
-      format: "In-Person",
+      priority: "High",
+      budget: "$12,000",
       approvalStatus: "Approved",
-      createdBy: "admin_002",
-      createdDate: "2023-11-15",
-      lastUpdated: "2024-01-12",
-      enrollmentTrend: "+8%",
-      satisfactionRating: 4.5,
-      completionRate: 92,
-      averageGrade: "B",
-      taApplications: 8,
-      pendingApplications: 0,
+      createdBy: "Dr. Williams",
+      tags: ["Core", "Mathematics", "Advanced"],
+      performance: {
+        passRate: "85%",
+        satisfaction: 4.4,
+        difficulty: 4.1,
+      },
     },
     {
       id: 3,
       code: "PHYS 301",
       name: "Quantum Mechanics",
       department: "Physics",
-      instructor: "Dr. Robert Chen",
-      instructorEmail: "r.chen@university.edu",
-      instructorId: "inst_003",
-      enrollment: 25,
-      maxEnrollment: 30,
-      waitlist: 3,
-      taPositions: 1,
-      filledTaPositions: 0,
-      openTaPositions: 1,
+      instructor: {
+        name: "Dr. Robert Chen",
+        email: "r.chen@university.edu",
+        phone: "(555) 345-6789",
+        avatar: "/placeholder.svg?height=40&width=40",
+        rating: 4.7,
+        experience: "20 years",
+      },
+      enrollment: {
+        current: 25,
+        max: 30,
+        waitlist: 3,
+        dropRate: "12%",
+      },
+      taPositions: {
+        total: 1,
+        filled: 0,
+        pending: 8,
+        deadline: "2024-01-25",
+      },
       status: "Active",
       semester: "Fall 2024",
       credits: 3,
-      schedule: "MWF 1:00-2:00 PM",
-      room: "Physics Lab 301",
-      building: "Physics Building",
-      prerequisites: "PHYS 201, MATH 201",
+      schedule: {
+        days: "MWF",
+        time: "1:00-2:00 PM",
+        room: "Physics Lab 301",
+        capacity: 30,
+      },
+      prerequisites: ["PHYS 201", "MATH 201"],
+      description: "Introduction to quantum mechanics principles, wave functions, and quantum systems.",
       lastModified: "2024-01-10",
-      applicationDeadline: "2024-01-25",
-      priority: "High",
-      budget: 18000,
-      budgetUsed: 5200,
-      courseType: "Advanced",
-      level: "Graduate",
-      format: "Hybrid",
-      approvalStatus: "Pending",
-      createdBy: "admin_001",
-      createdDate: "2023-12-10",
-      lastUpdated: "2024-01-10",
-      enrollmentTrend: "-5%",
-      satisfactionRating: 4.8,
-      completionRate: 95,
-      averageGrade: "A-",
-      taApplications: 12,
-      pendingApplications: 8,
+      priority: "Medium",
+      budget: "$18,000",
+      approvalStatus: "Approved",
+      createdBy: "Dr. Chen",
+      tags: ["Advanced", "Physics", "Graduate"],
+      performance: {
+        passRate: "78%",
+        satisfaction: 4.2,
+        difficulty: 4.8,
+      },
     },
     {
       id: 4,
       code: "CS 401",
       name: "Advanced Algorithms",
       department: "Computer Science",
-      instructor: "Dr. Emily Davis",
-      instructorEmail: "e.davis@university.edu",
-      instructorId: "inst_004",
-      enrollment: 20,
-      maxEnrollment: 25,
-      waitlist: 5,
-      taPositions: 2,
-      filledTaPositions: 1,
-      openTaPositions: 1,
-      status: "Draft",
+      instructor: {
+        name: "Dr. Emily Davis",
+        email: "e.davis@university.edu",
+        phone: "(555) 456-7890",
+        avatar: "/placeholder.svg?height=40&width=40",
+        rating: 4.6,
+        experience: "8 years",
+      },
+      enrollment: {
+        current: 20,
+        max: 25,
+        waitlist: 5,
+        dropRate: "15%",
+      },
+      taPositions: {
+        total: 2,
+        filled: 1,
+        pending: 12,
+        deadline: "2024-03-01",
+      },
+      status: "Pending Approval",
       semester: "Spring 2025",
       credits: 3,
-      schedule: "TTh 11:00-12:30 PM",
-      room: "CS Building 301",
-      building: "Computer Science Building",
-      prerequisites: "CS 201, CS 221",
+      schedule: {
+        days: "TTh",
+        time: "11:00-12:30 PM",
+        room: "CS Building 301",
+        capacity: 25,
+      },
+      prerequisites: ["CS 201", "CS 221"],
+      description: "Advanced algorithmic techniques, complexity analysis, and optimization methods.",
       lastModified: "2024-01-08",
-      applicationDeadline: "2024-03-01",
-      priority: "Medium",
-      budget: 16000,
-      budgetUsed: 0,
-      courseType: "Advanced",
-      level: "Graduate",
-      format: "In-Person",
-      approvalStatus: "Under Review",
-      createdBy: "admin_003",
-      createdDate: "2024-01-01",
-      lastUpdated: "2024-01-08",
-      enrollmentTrend: "New",
-      satisfactionRating: null,
-      completionRate: null,
-      averageGrade: null,
-      taApplications: 3,
-      pendingApplications: 3,
+      priority: "High",
+      budget: "$16,000",
+      approvalStatus: "Pending",
+      createdBy: "Dr. Davis",
+      tags: ["Advanced", "Algorithms", "Graduate"],
+      performance: {
+        passRate: "88%",
+        satisfaction: 4.5,
+        difficulty: 4.3,
+      },
     },
     {
       id: 5,
       code: "CHEM 101",
       name: "General Chemistry",
       department: "Chemistry",
-      instructor: "Dr. Lisa Wang",
-      instructorEmail: "l.wang@university.edu",
-      instructorId: "inst_005",
-      enrollment: 60,
-      maxEnrollment: 65,
-      waitlist: 15,
-      taPositions: 4,
-      filledTaPositions: 3,
-      openTaPositions: 1,
+      instructor: {
+        name: "Dr. Lisa Wang",
+        email: "l.wang@university.edu",
+        phone: "(555) 567-8901",
+        avatar: "/placeholder.svg?height=40&width=40",
+        rating: 4.8,
+        experience: "18 years",
+      },
+      enrollment: {
+        current: 60,
+        max: 65,
+        waitlist: 15,
+        dropRate: "6%",
+      },
+      taPositions: {
+        total: 4,
+        filled: 3,
+        pending: 7,
+        deadline: "2024-01-30",
+      },
       status: "Active",
       semester: "Fall 2024",
       credits: 4,
-      schedule: "MWF 9:00-10:00 AM, Lab: T 2:00-5:00 PM",
-      room: "Chemistry Building 101",
-      building: "Chemistry Building",
-      prerequisites: "None",
+      schedule: {
+        days: "MWF + Lab",
+        time: "9:00-10:00 AM, Lab: T 2:00-5:00 PM",
+        room: "Chemistry Building 101",
+        capacity: 65,
+      },
+      prerequisites: ["None"],
+      description: "Fundamental principles of chemistry including atomic structure, bonding, and reactions.",
       lastModified: "2024-01-14",
-      applicationDeadline: "2024-01-30",
       priority: "High",
-      budget: 22000,
-      budgetUsed: 19500,
-      courseType: "Core",
-      level: "Undergraduate",
-      format: "In-Person",
+      budget: "$22,000",
       approvalStatus: "Approved",
-      createdBy: "admin_002",
-      createdDate: "2023-10-01",
-      lastUpdated: "2024-01-14",
-      enrollmentTrend: "+15%",
-      satisfactionRating: 4.1,
-      completionRate: 87,
-      averageGrade: "B",
-      taApplications: 25,
-      pendingApplications: 2,
+      createdBy: "Dr. Wang",
+      tags: ["Core", "Laboratory", "Science"],
+      performance: {
+        passRate: "91%",
+        satisfaction: 4.7,
+        difficulty: 3.5,
+      },
+    },
+    {
+      id: 6,
+      code: "ENG 102",
+      name: "Advanced Composition",
+      department: "English",
+      instructor: {
+        name: "Prof. Jennifer Martinez",
+        email: "j.martinez@university.edu",
+        phone: "(555) 678-9012",
+        avatar: "/placeholder.svg?height=40&width=40",
+        rating: 4.5,
+        experience: "10 years",
+      },
+      enrollment: {
+        current: 28,
+        max: 30,
+        waitlist: 2,
+        dropRate: "4%",
+      },
+      taPositions: {
+        total: 1,
+        filled: 1,
+        pending: 2,
+        deadline: "2024-02-15",
+      },
+      status: "Active",
+      semester: "Fall 2024",
+      credits: 3,
+      schedule: {
+        days: "MW",
+        time: "3:00-4:30 PM",
+        room: "Humanities 204",
+        capacity: 30,
+      },
+      prerequisites: ["ENG 101"],
+      description: "Advanced writing techniques, research methods, and critical analysis skills.",
+      lastModified: "2024-01-11",
+      priority: "Medium",
+      budget: "$8,000",
+      approvalStatus: "Approved",
+      createdBy: "Prof. Martinez",
+      tags: ["Writing", "Core", "Communication"],
+      performance: {
+        passRate: "95%",
+        satisfaction: 4.3,
+        difficulty: 3.8,
+      },
     },
   ]
 
-  // Admin-specific statistics
-  const adminStats = [
+  const courseStats = [
     {
       title: "Total Courses",
       value: "156",
@@ -277,16 +365,14 @@ export default function AdminCourseManagement() {
       icon: BookOpen,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      trend: "up",
     },
     {
-      title: "Total Budget",
-      value: "$2.4M",
-      change: "78% utilized",
-      icon: TrendingUp,
+      title: "Total Enrollment",
+      value: "3,247",
+      change: "+12% from last term",
+      icon: Users,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      trend: "up",
     },
     {
       title: "TA Positions",
@@ -295,7 +381,6 @@ export default function AdminCourseManagement() {
       icon: UserCheck,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      trend: "stable",
     },
     {
       title: "Pending Approvals",
@@ -304,24 +389,17 @@ export default function AdminCourseManagement() {
       icon: Clock,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
-      trend: "down",
     },
-  ]
-
-  const departmentStats = [
-    { name: "Computer Science", courses: 45, enrollment: 1250, budget: 680000, utilization: 92 },
-    { name: "Mathematics", courses: 38, enrollment: 980, budget: 520000, utilization: 87 },
-    { name: "Physics", courses: 28, enrollment: 720, budget: 450000, utilization: 78 },
-    { name: "Chemistry", courses: 32, enrollment: 890, budget: 580000, utilization: 85 },
-    { name: "Biology", courses: 25, enrollment: 650, budget: 420000, utilization: 82 },
   ]
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
       case "Active":
         return "default"
-      case "Draft":
+      case "Pending Approval":
         return "secondary"
+      case "Draft":
+        return "outline"
       case "Archived":
         return "outline"
       case "Cancelled":
@@ -331,16 +409,16 @@ export default function AdminCourseManagement() {
     }
   }
 
-  const getApprovalStatusBadge = (status) => {
+  const getApprovalBadge = (status) => {
     const variants = {
-      Approved: { variant: "default", color: "text-green-600" },
-      Pending: { variant: "secondary", color: "text-yellow-600" },
-      "Under Review": { variant: "outline", color: "text-blue-600" },
-      Rejected: { variant: "destructive", color: "text-red-600" },
+      Approved: { variant: "default", icon: CheckCircle, color: "text-green-600" },
+      Pending: { variant: "secondary", icon: Clock, color: "text-yellow-600" },
+      Rejected: { variant: "destructive", icon: XCircle, color: "text-red-600" },
     }
     const config = variants[status] || variants.Pending
     return (
-      <Badge variant={config.variant} className={config.color}>
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <config.icon className="h-3 w-3" />
         {status}
       </Badge>
     )
@@ -361,25 +439,18 @@ export default function AdminCourseManagement() {
     )
   }
 
-  const getEnrollmentStatus = (enrolled, max, waitlist) => {
-    const percentage = (enrolled / max) * 100
+  const getEnrollmentStatus = (current, max, waitlist) => {
+    const percentage = (current / max) * 100
     if (percentage >= 95) return { color: "text-red-600", status: "Full", bgColor: "bg-red-100" }
     if (percentage >= 85) return { color: "text-yellow-600", status: "Nearly Full", bgColor: "bg-yellow-100" }
     return { color: "text-green-600", status: "Available", bgColor: "bg-green-100" }
-  }
-
-  const getBudgetUtilization = (used, total) => {
-    const percentage = (used / total) * 100
-    if (percentage >= 90) return { color: "text-red-600", status: "High" }
-    if (percentage >= 70) return { color: "text-yellow-600", status: "Medium" }
-    return { color: "text-green-600", status: "Low" }
   }
 
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
       course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.instructor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.department.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDepartment = departmentFilter === "all" || course.department === departmentFilter
     const matchesStatus = statusFilter === "all" || course.status === statusFilter
@@ -414,7 +485,7 @@ export default function AdminCourseManagement() {
 
   return (
     <SidebarProvider>
-      <AdminSidebar activePage="Course Management" />
+      <AdminSidebar activePage="Admin Course Management" />
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -423,7 +494,7 @@ export default function AdminCourseManagement() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/admin/dashboard">Admin Dashboard</BreadcrumbLink>
+                <BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -435,15 +506,11 @@ export default function AdminCourseManagement() {
           <div className="ml-auto flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={handleExportCourses}>
               <Download className="h-4 w-4 mr-2" />
-              Export Data
+              Export
             </Button>
             <Button variant="outline" size="sm">
               <Upload className="h-4 w-4 mr-2" />
-              Import Courses
-            </Button>
-            <Button variant="outline" size="sm">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
+              Import
             </Button>
             <Button onClick={() => setShowCreateForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -457,17 +524,17 @@ export default function AdminCourseManagement() {
           {/* Page Header */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-2">
-              <GraduationCap className="h-6 w-6 text-blue-600" />
+              <BookOpen className="h-6 w-6 text-blue-600" />
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Course Management</h1>
             </div>
             <p className="text-muted-foreground">
-              Comprehensive administrative control over all courses, budgets, approvals, and academic operations
+              Comprehensive administrative control over all courses, instructors, and academic programs
             </p>
           </div>
 
-          {/* Admin Statistics */}
+          {/* Course Stats */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {adminStats.map((stat, index) => (
+            {courseStats.map((stat, index) => (
               <Card key={index} className="hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
@@ -477,36 +544,33 @@ export default function AdminCourseManagement() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    {stat.trend === "up" && <TrendingUp className="h-3 w-3 text-green-500" />}
-                    {stat.change}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{stat.change}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          {/* Tabs for different admin views */}
+          {/* Tabs for different views */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="overview">Course Overview</TabsTrigger>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="approvals">Approvals</TabsTrigger>
-              <TabsTrigger value="budget">Budget Management</TabsTrigger>
-              <TabsTrigger value="departments">Departments</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="budget">Budget</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
-              {/* Create Course Dialog */}
-              <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Create New Course</DialogTitle>
-                    <DialogDescription>
-                      Add a new course to the system with comprehensive administrative details
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-6">
+              {/* Create Course Form */}
+              {showCreateForm && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Create New Course</CardTitle>
+                    <CardDescription>
+                      Add a new course to the academic catalog with full administrative details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="courseCode">Course Code *</Label>
@@ -527,6 +591,7 @@ export default function AdminCourseManagement() {
                             <SelectItem value="Mathematics">Mathematics</SelectItem>
                             <SelectItem value="Physics">Physics</SelectItem>
                             <SelectItem value="Chemistry">Chemistry</SelectItem>
+                            <SelectItem value="English">English</SelectItem>
                             <SelectItem value="Biology">Biology</SelectItem>
                           </SelectContent>
                         </Select>
@@ -543,6 +608,7 @@ export default function AdminCourseManagement() {
                             <SelectItem value="dr-chen">Dr. Robert Chen</SelectItem>
                             <SelectItem value="dr-davis">Dr. Emily Davis</SelectItem>
                             <SelectItem value="dr-wang">Dr. Lisa Wang</SelectItem>
+                            <SelectItem value="prof-martinez">Prof. Jennifer Martinez</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -562,46 +628,6 @@ export default function AdminCourseManagement() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="level">Course Level *</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Undergraduate">Undergraduate</SelectItem>
-                            <SelectItem value="Graduate">Graduate</SelectItem>
-                            <SelectItem value="Doctoral">Doctoral</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="courseType">Course Type *</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Core">Core</SelectItem>
-                            <SelectItem value="Elective">Elective</SelectItem>
-                            <SelectItem value="Advanced">Advanced</SelectItem>
-                            <SelectItem value="Research">Research</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="format">Course Format *</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select format" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="In-Person">In-Person</SelectItem>
-                            <SelectItem value="Online">Online</SelectItem>
-                            <SelectItem value="Hybrid">Hybrid</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="maxEnrollment">Max Enrollment *</Label>
                         <Input id="maxEnrollment" type="number" placeholder="50" />
                       </div>
@@ -610,8 +636,8 @@ export default function AdminCourseManagement() {
                         <Input id="taPositions" type="number" placeholder="2" />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="budget">Course Budget ($)</Label>
-                        <Input id="budget" type="number" placeholder="15000" />
+                        <Label htmlFor="budget">Course Budget</Label>
+                        <Input id="budget" placeholder="$15,000" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="semester">Semester *</Label>
@@ -647,18 +673,14 @@ export default function AdminCourseManagement() {
                         <Label htmlFor="room">Room Assignment</Label>
                         <Input id="room" placeholder="e.g., CS Building 101" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="prerequisites">Prerequisites</Label>
-                        <Input id="prerequisites" placeholder="e.g., CS 101, MATH 101" />
-                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="prerequisites">Prerequisites</Label>
+                      <Input id="prerequisites" placeholder="e.g., CS 101, MATH 101" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">Course Description</Label>
                       <Textarea id="description" placeholder="Enter detailed course description" rows={4} />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch id="autoApprove" />
-                      <Label htmlFor="autoApprove">Auto-approve course (skip approval process)</Label>
                     </div>
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" onClick={() => setShowCreateForm(false)}>
@@ -667,9 +689,9 @@ export default function AdminCourseManagement() {
                       <Button variant="outline">Save as Draft</Button>
                       <Button>Create & Submit for Approval</Button>
                     </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Filters and Search */}
               <Card>
@@ -677,18 +699,9 @@ export default function AdminCourseManagement() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>All Courses</CardTitle>
-                      <CardDescription>
-                        Comprehensive administrative view of all courses across departments
-                      </CardDescription>
+                      <CardDescription>Comprehensive administrative view of all courses and programs</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setViewMode(viewMode === "table" ? "grid" : "table")}
-                      >
-                        {viewMode === "table" ? "Grid View" : "Table View"}
-                      </Button>
                       {selectedCourses.length > 0 && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -736,7 +749,7 @@ export default function AdminCourseManagement() {
                         <SelectItem value="Mathematics">Mathematics</SelectItem>
                         <SelectItem value="Physics">Physics</SelectItem>
                         <SelectItem value="Chemistry">Chemistry</SelectItem>
-                        <SelectItem value="Biology">Biology</SelectItem>
+                        <SelectItem value="English">English</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -746,6 +759,7 @@ export default function AdminCourseManagement() {
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Pending Approval">Pending</SelectItem>
                         <SelectItem value="Draft">Draft</SelectItem>
                         <SelectItem value="Archived">Archived</SelectItem>
                       </SelectContent>
@@ -763,7 +777,7 @@ export default function AdminCourseManagement() {
                     </Select>
                   </div>
 
-                  {/* Courses Table */}
+                  {/* Enhanced Courses Table */}
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
@@ -783,23 +797,22 @@ export default function AdminCourseManagement() {
                           <TableHead>Course Details</TableHead>
                           <TableHead>Instructor</TableHead>
                           <TableHead>Enrollment</TableHead>
-                          <TableHead>TA Management</TableHead>
+                          <TableHead>TA Positions</TableHead>
                           <TableHead>Budget</TableHead>
+                          <TableHead>Performance</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Approval</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredCourses.map((course) => {
                           const enrollmentStatus = getEnrollmentStatus(
-                            course.enrollment,
-                            course.maxEnrollment,
-                            course.waitlist,
+                            course.enrollment.current,
+                            course.enrollment.max,
+                            course.enrollment.waitlist,
                           )
-                          const budgetUtil = getBudgetUtilization(course.budgetUsed, course.budget)
                           return (
-                            <TableRow key={course.id}>
+                            <TableRow key={course.id} className="hover:bg-muted/50">
                               <TableCell>
                                 <input
                                   type="checkbox"
@@ -815,31 +828,56 @@ export default function AdminCourseManagement() {
                               </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
-                                  <div className="font-medium flex items-center gap-2">
-                                    {course.code}
+                                  <div className="flex items-center gap-2">
+                                    <div className="font-medium">{course.code}</div>
                                     {getPriorityBadge(course.priority)}
                                   </div>
                                   <div className="text-sm text-muted-foreground">{course.name}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    {course.department} • {course.credits} credits • {course.level}
+                                    {course.department} • {course.credits} credits • {course.semester}
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {course.courseType} • {course.format} • {course.semester}
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {course.schedule.room} • {course.schedule.days} {course.schedule.time}
+                                  </div>
+                                  <div className="flex gap-1 mt-1">
+                                    {course.tags.map((tag, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {tag}
+                                      </Badge>
+                                    ))}
                                   </div>
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div>
-                                  <div className="font-medium">{course.instructor}</div>
-                                  <div className="text-sm text-muted-foreground">{course.instructorEmail}</div>
-                                  <div className="text-xs text-muted-foreground">ID: {course.instructorId}</div>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={course.instructor.avatar || "/placeholder.svg"} />
+                                    <AvatarFallback>
+                                      {course.instructor.name
+                                        .split(" ")
+                                        .map((n) => n[0])
+                                        .join("")}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium">{course.instructor.name}</div>
+                                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                      <Mail className="h-3 w-3" />
+                                      {course.instructor.email}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                      {course.instructor.rating} • {course.instructor.experience}
+                                    </div>
+                                  </div>
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="space-y-1">
+                                <div className="space-y-2">
                                   <div className="flex items-center gap-2">
                                     <span className={`font-medium ${enrollmentStatus.color}`}>
-                                      {course.enrollment}/{course.maxEnrollment}
+                                      {course.enrollment.current}/{course.enrollment.max}
                                     </span>
                                     <Badge variant="outline" className={`text-xs ${enrollmentStatus.bgColor}`}>
                                       {enrollmentStatus.status}
@@ -849,97 +887,68 @@ export default function AdminCourseManagement() {
                                     <div
                                       className="bg-blue-600 h-1.5 rounded-full"
                                       style={{
-                                        width: `${(course.enrollment / course.maxEnrollment) * 100}%`,
+                                        width: `${(course.enrollment.current / course.enrollment.max) * 100}%`,
                                       }}
                                     ></div>
                                   </div>
-                                  {course.waitlist > 0 && (
-                                    <div className="text-xs text-muted-foreground">{course.waitlist} on waitlist</div>
+                                  {course.enrollment.waitlist > 0 && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {course.enrollment.waitlist} waitlisted
+                                    </div>
                                   )}
-                                  {course.enrollmentTrend && (
-                                    <div className="text-xs text-green-600">Trend: {course.enrollmentTrend}</div>
-                                  )}
+                                  <div className="text-xs text-muted-foreground">
+                                    Drop rate: {course.enrollment.dropRate}
+                                  </div>
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium">
-                                      {course.filledTaPositions}/{course.taPositions}
+                                      {course.taPositions.filled}/{course.taPositions.total}
                                     </span>
                                     <Badge
                                       variant={
-                                        course.filledTaPositions === course.taPositions ? "default" : "secondary"
+                                        course.taPositions.filled === course.taPositions.total ? "default" : "secondary"
                                       }
                                     >
-                                      {course.openTaPositions === 0 ? "Full" : `${course.openTaPositions} Open`}
+                                      {course.taPositions.filled === course.taPositions.total ? "Full" : "Open"}
                                     </Badge>
                                   </div>
                                   <div className="text-xs text-muted-foreground">
-                                    Applications: {course.taApplications}
+                                    {course.taPositions.pending} applications
                                   </div>
                                   <div className="text-xs text-muted-foreground">
-                                    Pending: {course.pendingApplications}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Deadline: {course.applicationDeadline}
+                                    Deadline: {course.taPositions.deadline}
                                   </div>
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
-                                  <div className="font-medium">
-                                    ${course.budgetUsed.toLocaleString()} / ${course.budget.toLocaleString()}
+                                  <div className="font-medium text-green-600">{course.budget}</div>
+                                  <div className="text-xs text-muted-foreground">Created by: {course.createdBy}</div>
+                                  <div className="text-xs text-muted-foreground">Modified: {course.lastModified}</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <div className="text-sm">
+                                    Pass:{" "}
+                                    <span className="font-medium text-green-600">{course.performance.passRate}</span>
                                   </div>
-                                  <div className="w-20 bg-gray-200 rounded-full h-1.5">
-                                    <div
-                                      className={`h-1.5 rounded-full ${
-                                        budgetUtil.color.includes("red")
-                                          ? "bg-red-500"
-                                          : budgetUtil.color.includes("yellow")
-                                            ? "bg-yellow-500"
-                                            : "bg-green-500"
-                                      }`}
-                                      style={{
-                                        width: `${(course.budgetUsed / course.budget) * 100}%`,
-                                      }}
-                                    ></div>
+                                  <div className="text-sm flex items-center gap-1">
+                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                    <span>{course.performance.satisfaction}</span>
                                   </div>
-                                  <div className={`text-xs ${budgetUtil.color}`}>
-                                    {Math.round((course.budgetUsed / course.budget) * 100)}% used
+                                  <div className="text-xs text-muted-foreground">
+                                    Difficulty: {course.performance.difficulty}/5
                                   </div>
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
                                   <Badge variant={getStatusBadgeVariant(course.status)}>{course.status}</Badge>
-                                  <div className="text-xs text-muted-foreground">Updated: {course.lastUpdated}</div>
-                                  <div className="text-xs text-muted-foreground">By: {course.createdBy}</div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="space-y-1">
-                                  {getApprovalStatusBadge(course.approvalStatus)}
-                                  {course.approvalStatus === "Pending" && (
-                                    <div className="flex gap-1 mt-1">
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-6 px-2 text-xs text-green-600 bg-transparent"
-                                        onClick={() => handleApproveCourse(course.id)}
-                                      >
-                                        Approve
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-6 px-2 text-xs text-red-600 bg-transparent"
-                                        onClick={() => handleRejectCourse(course.id)}
-                                      >
-                                        Reject
-                                      </Button>
-                                    </div>
-                                  )}
+                                  {getApprovalBadge(course.approvalStatus)}
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
@@ -950,7 +959,7 @@ export default function AdminCourseManagement() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Course Actions</DropdownMenuLabel>
+                                    <DropdownMenuLabel>Admin Actions</DropdownMenuLabel>
                                     <DropdownMenuItem>
                                       <Eye className="mr-2 h-4 w-4" />
                                       View Full Details
@@ -959,31 +968,39 @@ export default function AdminCourseManagement() {
                                       <Edit className="mr-2 h-4 w-4" />
                                       Edit Course
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                      <Users className="mr-2 h-4 w-4" />
-                                      Manage Enrollment
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                      <UserCheck className="mr-2 h-4 w-4" />
-                                      Manage TAs
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                      <TrendingUp className="mr-2 h-4 w-4" />
-                                      Budget Management
-                                    </DropdownMenuItem>
+                                    {course.approvalStatus === "Pending" && (
+                                      <>
+                                        <DropdownMenuItem onClick={() => handleApproveCourse(course.id)}>
+                                          <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                                          Approve Course
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleRejectCourse(course.id)}>
+                                          <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                                          Reject Course
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem>
+                                      <UserCheck className="mr-2 h-4 w-4" />
+                                      Manage TA Assignments
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      <Users className="mr-2 h-4 w-4" />
+                                      View Enrollment Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
                                       <FileText className="mr-2 h-4 w-4" />
-                                      View Applications
+                                      View TA Applications
                                     </DropdownMenuItem>
                                     <DropdownMenuItem>
                                       <BarChart3 className="mr-2 h-4 w-4" />
-                                      Course Analytics
+                                      Performance Analytics
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem>
                                       <Settings className="mr-2 h-4 w-4" />
-                                      Advanced Settings
+                                      Course Settings
                                     </DropdownMenuItem>
                                     <DropdownMenuItem className="text-red-600">
                                       <Trash2 className="mr-2 h-4 w-4" />
@@ -1006,61 +1023,12 @@ export default function AdminCourseManagement() {
               <Card>
                 <CardHeader>
                   <CardTitle>Course Approvals</CardTitle>
-                  <CardDescription>Review and approve pending course requests and modifications</CardDescription>
+                  <CardDescription>Review and approve pending course submissions and modifications</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8 text-muted-foreground">
-                    <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Course approval interface coming soon...</p>
-                    <p className="text-sm">Review pending courses, budget requests, and instructor assignments</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="budget" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Budget Management</CardTitle>
-                  <CardDescription>Monitor and manage course budgets across all departments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Budget management dashboard coming soon...</p>
-                    <p className="text-sm">Track spending, allocate resources, and manage financial approvals</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="departments" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Department Overview</CardTitle>
-                  <CardDescription>Monitor course distribution and performance across departments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4">
-                    {departmentStats.map((dept, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-blue-50 rounded-lg">
-                            <Building className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <div className="font-medium">{dept.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {dept.courses} courses • {dept.enrollment} students
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">${dept.budget.toLocaleString()}</div>
-                          <div className="text-sm text-muted-foreground">{dept.utilization}% utilized</div>
-                        </div>
-                      </div>
-                    ))}
+                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Course approval workflow coming soon...</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1071,14 +1039,47 @@ export default function AdminCourseManagement() {
                 <CardHeader>
                   <CardTitle>Course Analytics</CardTitle>
                   <CardDescription>
-                    Comprehensive analytics and reporting for administrative decision making
+                    Comprehensive analytics on course performance, enrollment trends, and resource utilization
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Advanced analytics dashboard coming soon...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="budget" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Budget Management</CardTitle>
+                  <CardDescription>
+                    Monitor and manage course budgets, resource allocation, and financial planning
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8 text-muted-foreground">
                     <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Advanced analytics dashboard coming soon...</p>
-                    <p className="text-sm">Enrollment trends, performance metrics, and predictive insights</p>
+                    <p>Budget management tools coming soon...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reports" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Administrative Reports</CardTitle>
+                  <CardDescription>
+                    Generate comprehensive reports for academic planning and institutional analysis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Report generation system coming soon...</p>
                   </div>
                 </CardContent>
               </Card>
