@@ -157,10 +157,12 @@ export default function ProfilePage() {
       employeeNumber: data.student_profile?.ubc_employee_id || '',
       avatar: data.avatar || "/placeholder.svg?height=120&width=120",
 
+      
+
       // Transform arrays appropriately
       coursePreference: data.course_preferences?.map(pref => pref.course_code) || [],
       experience: transformExperiences(data.experiences),
-      availability: data.availability || [],
+      availability: transformAvailability(data.availability),
 
       // Handle skills - separate by type
       technicalSkills: data.skills?.filter(skill => skill.skill_type === 'technical')
@@ -175,6 +177,34 @@ export default function ProfilePage() {
       },
     };
   };
+
+  const transformAvailability = (availability) => {
+      if (!availability) {
+        return []; // Return empty array if null or undefined
+      }
+      if (Array.isArray(availability)) {
+        return availability; // Already in the correct format
+      }
+      // If it's an object (availability_grid), transform it
+      if (typeof availability === 'object' && availability !== null) {
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+        const times = ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm'];
+        const newAvailability = Array(50).fill(false); // 5 days * 10 time slots
+
+        days.forEach((day, dayIndex) => {
+          if (availability[day]) {
+            availability[day].forEach(time => {
+              const timeIndex = times.indexOf(time);
+              if (timeIndex !== -1) {
+                newAvailability[dayIndex * 10 + timeIndex] = true;
+              }
+            });
+          }
+        });
+        return newAvailability;
+      }
+      return []; // Default to empty array
+    };
 
   const transformSkillsToBackend = (technicalSkills, softSkills) => {
     const skills = [];

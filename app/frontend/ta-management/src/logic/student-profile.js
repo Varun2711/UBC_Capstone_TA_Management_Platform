@@ -22,9 +22,10 @@ const getAuthHeaders = () => {
  */
 export const getProfile = async () => {
   try {
-    const response = await axios.get(`${API_URL}/profile/me/`, {
-      headers: getAuthHeaders()
-    });
+    const headers = getAuthHeaders();
+    console.log("Sending headers:", headers); // Debugging log
+    const response = await axios.get(`${API_URL}/profile/me/`, { headers });
+    console.log("API response:", response.data); // Debugging log
     return response.data;
   } catch (error) {
     console.error("Error fetching profile:", error.response?.data || error.message);
