@@ -11,8 +11,8 @@ export const ROUTES = [
         authorizedRoles: ["student"],
     },
     {
-        name: "application",
-        path: "/application",
+        name: "apply",
+        path: "/apply",
         authorizedRoles: ["student"],
     },
 
@@ -42,6 +42,16 @@ export const ROUTES = [
     {
         name: "course management",
         path: "/course-management",
+        authorizedRoles: ["scheduler"],
+    },
+    {
+        name: "instructor management",
+        path: "/instructor-management",
+        authorizedRoles: ["scheduler"],
+    },
+    {
+        name: "manage applications",
+        path: "/manage-applications",
         authorizedRoles: ["scheduler"],
     },
 

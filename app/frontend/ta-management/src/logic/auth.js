@@ -92,3 +92,13 @@ export function navigateToUserDashboard(user_type, navigate) {
         navigate(DASHBOARD_ROUTES.admin)
     }
 }
+
+/*
+Utility function to execute logout operation, which consists of
+1) clear all stored tokens/other session info and 2) redirect user 
+to landing page
+*/
+export function logout(navigate) {
+    sessionStorage.clear()
+    navigate("/") // navigate to dashboard
+}
