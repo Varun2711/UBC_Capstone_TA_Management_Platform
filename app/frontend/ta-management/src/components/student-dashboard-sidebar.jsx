@@ -75,6 +75,8 @@ export function AppSidebar({ name, email, avatar }) {
     navigate(url);
   };
 
+  console.log("AppSidebar rendered with name:", name, "email:", email, "avatar:", avatar);
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -121,10 +123,8 @@ export function AppSidebar({ name, email, avatar }) {
                     <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">Sarah Johnson</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      sarahj@mail.com
-                    </span>
+                    <span className="truncate font-medium">{name}</span>
+                    <span className="truncate text-xs text-muted-foreground">{email}</span>
                   </div>
                   <MoreVerticalIcon className="ml-auto size-4" />
                 </SidebarMenuButton>
