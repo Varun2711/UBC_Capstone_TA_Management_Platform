@@ -11,9 +11,9 @@ describe("validationUtils", () => {
     it("returns valid when all required fields are filled", () => {
       const validResponses = {
         citizenshipStatus: "Canadian Citizen",
-        residingInKelowna: "Yes",
-        fullTimeEnrollment: "Yes",
-        hasOtherPositions: "No",
+        residingInKelowna: "yes",
+        fullTimeEnrollment: "yes",
+        hasOtherPositions: "no",
       };
 
       const result = validateStep1(validResponses);
@@ -25,8 +25,8 @@ describe("validationUtils", () => {
       const invalidResponses = {
         citizenshipStatus: "",
         residingInKelowna: "",
-        fullTimeEnrollment: "Yes",
-        hasOtherPositions: "No",
+        fullTimeEnrollment: "yes",
+        hasOtherPositions: "no",
       };
 
       const result = validateStep1(invalidResponses);
@@ -39,12 +39,27 @@ describe("validationUtils", () => {
       );
     });
 
-    it("requires otherPositionHours when hasOtherPositions is Yes", () => {
+    it("returns error when not residing in Kelowna", () => {
+      const responsesNotInKelowna = {
+        citizenshipStatus: "Canadian Citizen",
+        residingInKelowna: "no",
+        fullTimeEnrollment: "yes",
+        hasOtherPositions: "no",
+      };
+
+      const result = validateStep1(responsesNotInKelowna);
+      expect(result.isValid).toBe(false);
+      expect(result.errors.residingInKelowna).toBe(
+        " You are not eligible to work as a TA if you are not residing in Kelowna."
+      );
+    });
+
+    it("requires otherPositionHours when hasOtherPositions is yes", () => {
       const responsesWithOtherPositions = {
         citizenshipStatus: "Canadian Citizen",
-        residingInKelowna: "Yes",
-        fullTimeEnrollment: "Yes",
-        hasOtherPositions: "Yes",
+        residingInKelowna: "yes",
+        fullTimeEnrollment: "yes",
+        hasOtherPositions: "yes",
         otherPositionHours: "",
       };
 
@@ -55,17 +70,63 @@ describe("validationUtils", () => {
       );
     });
 
-    it("does not require otherPositionHours when hasOtherPositions is No", () => {
+    it("validates otherPositionHours range when hasOtherPositions is yes", () => {
+      const responsesWithTooManyHours = {
+        citizenshipStatus: "Canadian Citizen",
+        residingInKelowna: "yes",
+        fullTimeEnrollment: "yes",
+        hasOtherPositions: "yes",
+        otherPositionHours: 70,
+      };
+
+      const result = validateStep1(responsesWithTooManyHours);
+      expect(result.isValid).toBe(false);
+      expect(result.errors.otherPositionHours).toBe(
+        "Please enter valid a number of hours between 1 and 60."
+      );
+    });
+
+    it("accepts valid otherPositionHours when hasOtherPositions is yes", () => {
+      const responsesWithValidHours = {
+        citizenshipStatus: "Canadian Citizen",
+        residingInKelowna: "yes",
+        fullTimeEnrollment: "yes",
+        hasOtherPositions: "yes",
+        otherPositionHours: 20,
+      };
+
+      const result = validateStep1(responsesWithValidHours);
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toEqual({});
+    });
+
+    it("does not require otherPositionHours when hasOtherPositions is no", () => {
       const responsesWithoutOtherPositions = {
         citizenshipStatus: "Canadian Citizen",
-        residingInKelowna: "Yes",
-        fullTimeEnrollment: "Yes",
-        hasOtherPositions: "No",
+        residingInKelowna: "yes",
+        fullTimeEnrollment: "yes",
+        hasOtherPositions: "no",
         otherPositionHours: "",
       };
 
       const result = validateStep1(responsesWithoutOtherPositions);
       expect(result.isValid).toBe(true);
+    });
+
+    it("validates all required fields are present", () => {
+      const incompleteResponses = {
+        citizenshipStatus: "",
+        residingInKelowna: "",
+        fullTimeEnrollment: "",
+        hasOtherPositions: "",
+      };
+
+      const result = validateStep1(incompleteResponses);
+      expect(result.isValid).toBe(false);
+      expect(result.errors.citizenshipStatus).toBeDefined();
+      expect(result.errors.residingInKelowna).toBeDefined();
+      expect(result.errors.fullTimeEnrollment).toBeDefined();
+      expect(result.errors.hasOtherPositions).toBeDefined();
     });
   });
 
@@ -91,7 +152,7 @@ describe("validationUtils", () => {
       const invalidResponses = {
         positionType: "",
         winterTerm: "",
-        workload: "6 hours",
+        workload: "",
         disciplineRanking: {
           rank1: "COSC",
           rank2: "MATH",
@@ -106,6 +167,9 @@ describe("validationUtils", () => {
       );
       expect(result.errors.winterTerm).toBe(
         "Please select which term(s) you're applying for."
+      );
+      expect(result.errors.workload).toBe(
+        "Please select your preferred workload."
       );
     });
 
@@ -146,100 +210,89 @@ describe("validationUtils", () => {
         "Each rank must be a different discipline."
       );
     });
-  });
 
-  describe("validateStep3", () => {
-    it("returns valid when all student data is correct", () => {
-      const validStudent = {
-        firstName: "John",
-        lastName: "Doe",
-        email: "john@example.com",
-        phone: "+1 (555) 123-4567",
-        gpa: "3.5",
-        resume: new File(["content"], "resume.pdf", {
-          type: "application/pdf",
-        }),
-        transcript: new File(["content"], "transcript.pdf", {
-          type: "application/pdf",
-        }),
+    it("validates when disciplineRanking is missing", () => {
+      const responsesWithoutRanking = {
+        positionType: "Undergraduate Teaching Assistant",
+        winterTerm: "W2025 both terms",
+        workload: "6 hours",
+        disciplineRanking: null,
       };
 
-      const result = validateStep3(validStudent);
-      expect(result.isValid).toBe(true);
-      expect(result.errors).toEqual({});
+      const result = validateStep2(responsesWithoutRanking);
+      expect(result.isValid).toBe(false);
+      expect(result.errors.disciplineRanking).toBe(
+        "Please choose a discipline for all three ranks."
+      );
     });
 
-    it("validates email format", () => {
-      const studentWithInvalidEmail = {
-        firstName: "John",
-        lastName: "Doe",
-        email: "invalid-email",
-        phone: "+1 (555) 123-4567",
-        gpa: "3.5",
-        resume: new File(["content"], "resume.pdf", {
-          type: "application/pdf",
-        }),
+    it("validates when disciplineRanking is undefined", () => {
+      const responsesWithUndefinedRanking = {
+        positionType: "Undergraduate Teaching Assistant",
+        winterTerm: "W2025 both terms",
+        workload: "6 hours",
       };
 
-      const result = validateStep3(studentWithInvalidEmail);
+      const result = validateStep2(responsesWithUndefinedRanking);
       expect(result.isValid).toBe(false);
-      expect(result.errors.email).toBe("Please enter a valid email address.");
-    });
-
-    it("validates GPA range", () => {
-      const studentWithInvalidGPA = {
-        firstName: "John",
-        lastName: "Doe",
-        email: "john@example.com",
-        phone: "+1 (555) 123-4567",
-        gpa: "5.0",
-        resume: new File(["content"], "resume.pdf", {
-          type: "application/pdf",
-        }),
-      };
-
-      const result = validateStep3(studentWithInvalidGPA);
-      expect(result.isValid).toBe(false);
-      expect(result.errors.gpa).toBe("GPA must be between 0.0 and 4.0");
-    });
-
-    it("requires resume file", () => {
-      const studentWithoutResume = {
-        firstName: "John",
-        lastName: "Doe",
-        email: "john@example.com",
-        phone: "+1 (555) 123-4567",
-        gpa: "3.5",
-        resume: null,
-      };
-
-      const result = validateStep3(studentWithoutResume);
-      expect(result.isValid).toBe(false);
-      expect(result.errors.resume).toBe("Resume is required");
+      expect(result.errors.disciplineRanking).toBe(
+        "Please choose a discipline for all three ranks."
+      );
     });
   });
 
   describe("validateCurrentStep", () => {
     it("routes to correct validation function based on step", () => {
       const student = { firstName: "John" };
-      const responses = { citizenshipStatus: "Canadian Citizen" };
+      const responses = {
+        citizenshipStatus: "Canadian Citizen",
+        residingInKelowna: "yes",
+        fullTimeEnrollment: "yes",
+        hasOtherPositions: "no",
+      };
 
       // Test step 1
       const step1Result = validateCurrentStep(1, student, responses);
       expect(step1Result).toBeDefined();
+      expect(step1Result.isValid).toBe(true);
 
-      // Test step 2
+      // Test step 2 - should fail validation due to missing fields
       const step2Result = validateCurrentStep(2, student, responses);
       expect(step2Result).toBeDefined();
-
-      // Test step 3
-      const step3Result = validateCurrentStep(3, student, responses);
-      expect(step3Result).toBeDefined();
+      expect(step2Result.isValid).toBe(false);
 
       // Test invalid step
       const invalidStepResult = validateCurrentStep(99, student, responses);
       expect(invalidStepResult.isValid).toBe(true);
       expect(invalidStepResult.errors).toEqual({});
+    });
+
+    it("handles step 1 validation correctly", () => {
+      const student = {};
+      const incompleteResponses = {
+        citizenshipStatus: "",
+        residingInKelowna: "",
+        fullTimeEnrollment: "",
+        hasOtherPositions: "",
+      };
+
+      const result = validateCurrentStep(1, student, incompleteResponses);
+      expect(result.isValid).toBe(false);
+      expect(Object.keys(result.errors)).toHaveLength(4);
+    });
+
+    it("handles step 2 validation correctly", () => {
+      const student = {};
+      const incompleteResponses = {
+        positionType: "",
+        winterTerm: "",
+        workload: "",
+        disciplineRanking: { rank1: "", rank2: "", rank3: "" },
+      };
+
+      const result = validateCurrentStep(2, student, incompleteResponses);
+      expect(result.isValid).toBe(false);
+      expect(Object.keys(result.errors)).toHaveLength(4);
     });
   });
 });

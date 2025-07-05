@@ -181,12 +181,12 @@ export default function PersonalDetails({ student, setStudent, errors = {} }) {
         {/* Supporting Documents*/}
         <div className="col-span-2">
           <p className="text-lg">Supporting Documents</p>
-          <DocumentField
+          {/* <DocumentField
             label="Resume"
             file={student.resume}
             setFile={(file) => setStudent({ ...student, resume: file })}
           />
-          <ErrorMessage error={errors.resume} />
+          <ErrorMessage error={errors.resume} /> */}
 
           <DocumentField
             label="Transcript"

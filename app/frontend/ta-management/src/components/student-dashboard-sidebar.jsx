@@ -1,7 +1,19 @@
-
-
-import { BookOpen, Calendar, FileText, Home, Settings, Upload, UserCheck, Plus, CheckCircle, User, MoreVerticalIcon, GraduationCap } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import {
+  BookOpen,
+  Calendar,
+  FileText,
+  Home,
+  Settings,
+  Upload,
+  UserCheck,
+  Plus,
+  CheckCircle,
+  PlusCircle,
+  User,
+  MoreVerticalIcon,
+  GraduationCap,
+} from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -14,8 +26,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,19 +35,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 const navigationItems = [
   {
     title: "Dashboard",
     icon: Home,
-    url: "#",
-    isActive: true,
+    url: "/student-dashboard",
   },
   {
-    title: "My Applications",
-    icon: FileText,
-    url: "#",
+    title: "Apply",
+    icon: PlusCircle,
+    url: "/apply",
   },
   {
     title: "Schedule",
@@ -45,21 +56,24 @@ const navigationItems = [
   {
     title: "Profile",
     icon: User,
-    url: "#",
+    url: "/profile",
   },
   {
     title: "Settings",
     icon: Settings,
     url: "#",
   },
-]
+];
 
-
-export function AppSidebar({ name, email, avatar }) {
-  
+export function AppSidebar(props) {
   // Using useNavigate from react-router-dom to handle navigation
   const navigate = useNavigate();
-  
+  const location = useLocation();
+
+  const handleNav = (url) => {
+    navigate(url);
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -76,11 +90,17 @@ export function AppSidebar({ name, email, avatar }) {
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={item.isActive}>
-                    <a href={item.url}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === item.url}
+                  >
+                    <button
+                      onClick={() => handleNav(item.url)}
+                      className="flex items-center gap-2 w-full"
+                    >
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -93,29 +113,39 @@ export function AppSidebar({ name, email, avatar }) {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild className = "h-10">
+              <DropdownMenuTrigger asChild className="h-10">
                 <SidebarMenuButton className="bg-background text-foreground hover:bg-muted">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={avatar || "/placeholder.svg"} alt={name}/>
                     <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{name}</span>
-                    <span className="truncate text-xs text-muted-foreground">{email}</span>
+                    <span className="truncate font-medium">Sarah Johnson</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      sarahj@mail.com
+                    </span>
                   </div>
                   <MoreVerticalIcon className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-popper-anchor-width]"
+              >
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem> <button>My Profile</button></DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/")}><button>Logout </button></DropdownMenuItem>
+                <DropdownMenuItem>
+                  {" "}
+                  <button>My Profile</button>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/")}>
+                  <button>Logout </button>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
