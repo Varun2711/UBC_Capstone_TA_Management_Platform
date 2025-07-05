@@ -243,6 +243,10 @@ export default function StudentDashboard() {
     return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
   }
 
+  if (isLoading || !userData) {
+    return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
