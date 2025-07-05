@@ -65,7 +65,7 @@ const navigationItems = [
   },
 ];
 
-export function AppSidebar(props) {
+export function AppSidebar({ name, email, avatar }) {
   // Using useNavigate from react-router-dom to handle navigation
   const navigate = useNavigate();
   const location = useLocation();
