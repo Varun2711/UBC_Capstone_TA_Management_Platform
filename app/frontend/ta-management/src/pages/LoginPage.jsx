@@ -25,7 +25,7 @@ export default function LoginPage() {
   useEffect(() => {
     // if already logged in, send them to correct dashboard based on user type
     if(isAlreadyLoggedIn()) {
-      const user_type = localStorage.getItem('user_type')
+      const user_type = sessionStorage.getItem('user_type')
       navigateToUserDashboard(user_type, navigate)
     }
   }, [navigate])
@@ -36,9 +36,9 @@ export default function LoginPage() {
     // on login form submission, attempt to login
     try {
       const response = await requestLogin(email, password)
-      localStorage.setItem('accessToken', response.access)
-      localStorage.setItem('refreshToken', response.refresh)
-      localStorage.setItem('user_type', response.user_type)
+      sessionStorage.setItem('accessToken', response.access)
+      sessionStorage.setItem('refreshToken', response.refresh)
+      sessionStorage.setItem('user_type', response.user_type)
 
       const user_type = response.user_type
 

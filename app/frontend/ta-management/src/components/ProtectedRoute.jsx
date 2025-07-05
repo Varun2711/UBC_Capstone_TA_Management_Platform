@@ -29,7 +29,7 @@ function ProtectedRoute({ children, authorizedRoles }) {
     */
     const auth = async () => {
         // do we have a token? if so, check if it's expired or not
-        const token = localStorage.getItem("accessToken")
+        const token = sessionStorage.getItem("accessToken")
 
         // no token = unauthorized
         if(!token) {
@@ -67,15 +67,15 @@ function ProtectedRoute({ children, authorizedRoles }) {
     function above.
     */
     const refresh = async () => {
-        const token = localStorage.getItem("refreshToken")
+        const token = sessionStorage.getItem("refreshToken")
         try {
             // attempt to get a new token (api call to auth/token/refresh)
             const response = await requestTokenRefresh(token)
 
-            if(response.status === 200) {            
+            if(response.data.access) {            
                 // successful request that contains access token,
                 // store the new token and say they are authorized
-                localStorage.setItem("accessToken", response.data.access)
+                sessionStorage.setItem("accessToken", response.data.access)
                 setIsAuthorized(true)
             } else {
                 // some sort of error, did not get an access token = unauthorized

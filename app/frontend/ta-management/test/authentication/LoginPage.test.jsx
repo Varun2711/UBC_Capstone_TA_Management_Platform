@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
-import LoginPage from "../src/pages/LoginPage"
+import LoginPage from "../../src/pages/LoginPage"
 import axios from "axios"
-import { USERS } from "./test-utils/testUsers"
+import { USERS } from "../test-utils/testUsers"
 
 // Mocking
 const mockNavigate = vi.fn()
@@ -36,7 +36,7 @@ const renderLoginPage = () => {
 describe("LoginPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorage.clear()
+    sessionStorage.clear()
   })
 
   // Basic form behavior
@@ -102,8 +102,8 @@ describe("LoginPage", () => {
       await user.click(submitButton)
     
       // check that tokens were stored
-      expect(localStorage.getItem('accessToken')).toBe(ACCESS_TOKEN)
-      expect(localStorage.getItem('refreshToken')).toBe(REFERSH_TOKEN)
+      expect(sessionStorage.getItem('accessToken')).toBe(ACCESS_TOKEN)
+      expect(sessionStorage.getItem('refreshToken')).toBe(REFERSH_TOKEN)
 
       // check that navigated to correct dashboard
       await waitFor(() => {
@@ -137,8 +137,8 @@ describe("LoginPage", () => {
       expect(screen.getByRole("alert")).toHaveTextContent(/login failed/i);
 
       // check that does NOT have access tokens
-      expect(localStorage.getItem("accessToken")).toBeNull();
-      expect(localStorage.getItem("refreshToken")).toBeNull();
+      expect(sessionStorage.getItem("accessToken")).toBeNull();
+      expect(sessionStorage.getItem("refreshToken")).toBeNull();
   })
 
   // Already logged-in user should not be permitted to login again
@@ -157,9 +157,9 @@ describe("LoginPage", () => {
       })
 
       // simulate user already logged in
-      localStorage.setItem("accessToken", ACCESS_TOKEN)
-      localStorage.setItem("refreshToken", REFERSH_TOKEN)
-      localStorage.setItem("user_type", type)
+      sessionStorage.setItem("accessToken", ACCESS_TOKEN)
+      sessionStorage.setItem("refreshToken", REFERSH_TOKEN)
+      sessionStorage.setItem("user_type", type)
       
       renderLoginPage()
       

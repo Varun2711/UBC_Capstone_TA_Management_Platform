@@ -22,12 +22,12 @@ export function renderWithAuth({
 } = {}) {
     // if user_type given, simulate logged-in user
     if(userType) {
-        localStorage.setItem("accessToken", ACCESS_TOKEN)
-        localStorage.setItem("refreshToken", REFERSH_TOKEN)
-        localStorage.setItem("user_type", userType)
+        sessionStorage.setItem("accessToken", ACCESS_TOKEN)
+        sessionStorage.setItem("refreshToken", REFERSH_TOKEN)
+        sessionStorage.setItem("user_type", userType)
     // if no user_type, simulate non-logged-in user
     } else {
-        localStorage.clear()
+        sessionStorage.clear()
     }
 
     // mock request to validate token

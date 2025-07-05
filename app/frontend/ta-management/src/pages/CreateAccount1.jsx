@@ -21,8 +21,8 @@ export default function CreateAccount1() {
   useEffect(() => {
     // if already logged in, send them to correct dashboard based on user type
     if(isAlreadyLoggedIn()) {
-      const user_type = localStorage.getItem('user_type')
-      navigateToUserDashboard(user_type)
+      const user_type = sessionStorage.getItem('user_type')
+      navigateToUserDashboard(user_type, navigate)
     }
   }, [navigate])
 

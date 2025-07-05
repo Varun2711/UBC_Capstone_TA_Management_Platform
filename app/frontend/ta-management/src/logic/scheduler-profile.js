@@ -6,7 +6,7 @@ const API_URL = 'http://localhost:8080/api';
 
 // Helper function to get the auth token from local storage
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('accessToken');
+  const token = sessionStorage.getItem('accessToken');
   if (!token) {
     console.error("Access token not found in local storage.");
     return {};

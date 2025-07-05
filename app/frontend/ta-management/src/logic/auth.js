@@ -66,7 +66,7 @@ Returns true if user is currently logged in AND has been given
 a user type. Returns false otherwise.
 */
 export async function isAlreadyLoggedIn() {
-    const token = localStorage.getItem('accessToken')
+    const token = sessionStorage.getItem('accessToken')
     const response = await requestTokenValidation(token)
 
     if(response) {
