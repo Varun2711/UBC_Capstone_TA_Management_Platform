@@ -250,6 +250,7 @@ export default function ApplicationForm() {
   const [supportingDocs, setSupportingDocs] = useState([]); // Array of documents
   const navigate = useNavigate();
 
+  console.log("Posting ID:", postingId);
   //const studentNumber = 20241002; //hardcoded from the backend
 
   //http://localhost:8080/api/profile/find-user/?student_number=20241002
