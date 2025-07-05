@@ -114,6 +114,38 @@ export default function ProfilePage() {
   // State for success message
   const [successMessage, setSuccessMessage] = useState("");
 
+  const transformAvailability = (availability) => {
+    if (!availability || typeof availability !== 'object') {
+      return Array(50).fill(false);
+    }
+    // If it's already a valid array, return it.
+    if (Array.isArray(availability) && availability.length === 50) {
+      return availability;
+    }
+    // If it's already a valid array, return it.
+    if (Array.isArray(availability) && availability.length === 50) {
+      return availability;
+    }
+
+    // If it's an object (the availability_grid from the backend), transform it.
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const times = ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm'];
+    const newAvailability = Array(50).fill(false);
+
+    days.forEach((day, dayIndex) => {
+      // Check if the day exists in the backend object
+      if (availability[day] && Array.isArray(availability[day])) {
+        availability[day].forEach(time => {
+          const timeIndex = times.indexOf(time);
+          if (timeIndex !== -1) {
+            newAvailability[dayIndex * 10 + timeIndex] = true;
+          }
+        });
+      }
+    });
+    return newAvailability;
+  };
+
   // Helper functions for data transformation
   const transformBackendDataToFrontend = (data) => {
     // Transform experiences from backend format to frontend format
@@ -157,7 +189,7 @@ export default function ProfilePage() {
       employeeNumber: data.student_profile?.ubc_employee_id || '',
       avatar: data.avatar || "/placeholder.svg?height=120&width=120",
 
-      
+
 
       // Transform arrays appropriately
       coursePreference: data.course_preferences?.map(pref => pref.course_code) || [],
@@ -178,33 +210,7 @@ export default function ProfilePage() {
     };
   };
 
-  const transformAvailability = (availability) => {
-      if (!availability) {
-        return []; // Return empty array if null or undefined
-      }
-      if (Array.isArray(availability)) {
-        return availability; // Already in the correct format
-      }
-      // If it's an object (availability_grid), transform it
-      if (typeof availability === 'object' && availability !== null) {
-        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-        const times = ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm'];
-        const newAvailability = Array(50).fill(false); // 5 days * 10 time slots
 
-        days.forEach((day, dayIndex) => {
-          if (availability[day]) {
-            availability[day].forEach(time => {
-              const timeIndex = times.indexOf(time);
-              if (timeIndex !== -1) {
-                newAvailability[dayIndex * 10 + timeIndex] = true;
-              }
-            });
-          }
-        });
-        return newAvailability;
-      }
-      return []; // Default to empty array
-    };
 
   const transformSkillsToBackend = (technicalSkills, softSkills) => {
     const skills = [];
@@ -314,7 +320,14 @@ export default function ProfilePage() {
           softSkills: [...profileData.softSkills]
         });
         setCoursePreference([...profileData.coursePreference]);
-        setAvailabilityData([...profileData.availability]);
+
+        const availabilityArray = profileData.availability;
+        if (Array.isArray(availabilityArray) && availabilityArray.length === 50) {
+          setAvailabilityData([...availabilityArray]);
+        } else {
+          // If not valid, create a new 50-element array
+          setAvailabilityData(Array(50).fill(false));
+        }
 
       } catch (error) {
         setFetchError("Could not load your profile. Please try again later.");
@@ -639,6 +652,13 @@ export default function ProfilePage() {
 
   // handleSave for Availability
   const handleSaveAvailability = async () => {
+    console.log("=== DEBUG AVAILABILITY SAVE ===");
+    console.log("availabilityData:", availabilityData);
+    console.log("availabilityData type:", typeof availabilityData);
+    console.log("availabilityData length:", availabilityData?.length);
+    console.log("Is array?", Array.isArray(availabilityData));
+    console.log("First 5 elements:", availabilityData?.slice(0, 5));
+    console.log("================================");
     setIsSaving(true);
     setErrors({});
 
@@ -689,7 +709,7 @@ export default function ProfilePage() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar 
+        <AppSidebar
           name={`${userData.firstName} ${userData.lastName}`}
           email={userData.email}
           avatar={userData.avatar}
@@ -1574,7 +1594,7 @@ export default function ProfilePage() {
                         <Button
                           onClick={() => {
                             setIsEditingAvailability(false)
-                            setAvailabilityData(originalUserData.availability || [])
+                            setAvailabilityData(originalUserData.availability || Array(50).fill(false))
                             setErrors({})
                           }}
                           variant="outline"
@@ -1587,8 +1607,15 @@ export default function ProfilePage() {
                     ) : (
                       <Button
                         onClick={() => {
-                          setAvailabilityData(userData.availability || [])
-                          setIsEditingAvailability(true)
+                          // FIX 
+                          if (Array.isArray(availabilityData) && availabilityData.length === 50) {
+                            // Use existing valid data
+                            setIsEditingAvailability(true);
+                          } else {
+                            // Create new valid data if current data is invalid
+                            setAvailabilityData(Array(50).fill(false));
+                            setIsEditingAvailability(true);
+                          }
                         }}
                         className="gap-2"
                       >

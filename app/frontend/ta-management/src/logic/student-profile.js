@@ -160,34 +160,43 @@ export const updateAvailability = async (availabilityData) => {
   try {
     const headers = getAuthHeaders();
 
-    // Convert availabilityData to the format expected by backend
-    const formattedAvailability = {};
+    // define structure for backend conversion
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const times = ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm'];
 
-    // Assuming availabilityData is an array of time slots by day
-    if (Array.isArray(availabilityData)) {
-      // Format for array-based availability
-      formattedAvailability.availability = availabilityData;
-    } else {
-      // Format for object-based availability (day => slots mapping)
-      const availabilityGrid = {};
+    const availabilityGrid = {
+      monday: [],
+      tuesday: [],
+      wednesday: [],
+      thursday: [],
+      friday: [],
+    };
 
-      for (const day in availabilityData) {
-        if (availabilityData[day]) {
-          availabilityGrid[day.toLowerCase()] = [];
-
-          for (const timeSlot in availabilityData[day]) {
-            if (availabilityData[day][timeSlot]) {
-              availabilityGrid[day.toLowerCase()].push(timeSlot);
-            }
-          }
+    // Convert the flat boolean array into the object structure the backend expects
+    if (Array.isArray(availabilityData) && availabilityData.length === 50) {
+      availabilityData.forEach((isAvailable, index) => {
+        if (isAvailable) {
+          const dayIndex = Math.floor(index / 10);
+          const timeIndex = index % 10;
+          const day = days[dayIndex];
+          const time = times[timeIndex];
+          availabilityGrid[day].push(time);
         }
-      }
-
-      formattedAvailability.availability_grid = availabilityGrid;
+      });
+    } else {
+      console.error("Invalid availability data format provided to updateAvailability.");
+      // Avoid sending malformed data
+      return; 
     }
+    
+    // The final payload should be wrapped in an object with the key "availability_grid"
+    const formattedPayload = {
+      availability_grid: availabilityGrid
+    };
 
-    const response = await axios.put(`${API_URL}/profile/me/availability/`,
-      formattedAvailability,
+    // Use PATCH as specified by your API documentation
+    const response = await axios.patch(`${API_URL}/profile/me/availability/`,
+      formattedPayload,
       { headers }
     );
     return response.data;
@@ -196,6 +205,7 @@ export const updateAvailability = async (availabilityData) => {
     throw error;
   }
 };
+
 /**
  * Updates user course preferences.
  * @param {Array} coursePreferences - Course preferences array.
