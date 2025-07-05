@@ -172,6 +172,9 @@ export const updateAvailability = async (availabilityData) => {
       friday: [],
     };
 
+    console.log("Availability is array:", Array.isArray(availabilityData)); // Debugging log
+    console.log("Availability data length:", availabilityData.length); // Debugging log
+    console.log("Availability data:", availabilityData); // Debugging log
     // Convert the flat boolean array into the object structure the backend expects
     if (Array.isArray(availabilityData) && availabilityData.length === 50) {
       availabilityData.forEach((isAvailable, index) => {
