@@ -82,9 +82,9 @@ export const updateAcademicInfo = async (academicData) => {
 
 /**
  * Updates or creates student skills.
- * @param {object} skillsData - Skills to update.
+ * @param {Array} skillsArray - Array of skill objects with skill_name and skill_type.
  */
-export const updateSkills = async (skillsData) => {
+export const updateSkills = async (skillsArray) => {
   try {
     const headers = getAuthHeaders();
 
@@ -96,8 +96,8 @@ export const updateSkills = async (skillsData) => {
     }
 
     // Add skills one by one, which is what the API expects
-    if (skillsData.skills && skillsData.skills.length > 0) {
-      for (const skill of skillsData.skills) {
+    if (skillsArray && skillsArray.length > 0) {
+      for (const skill of skillsArray) {
         await axios.post(`${API_URL}/profile/me/skills/`, {
           skill_type: skill.skill_type,
           name: skill.skill_name

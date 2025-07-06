@@ -243,32 +243,6 @@ export default function ProfilePage() {
     };
   };
 
-
-
-  const transformSkillsToBackend = (technicalSkills, softSkills) => {
-    const skills = [];
-
-    technicalSkills.forEach(skill => {
-      if (skill.trim()) {
-        skills.push({
-          skill_name: skill.trim(),
-          skill_type: 'technical'
-        });
-      }
-    });
-
-    softSkills.forEach(skill => {
-      if (skill.trim()) {
-        skills.push({
-          skill_name: skill.trim(),
-          skill_type: 'soft'
-        });
-      }
-    });
-
-    return skills;
-  };
-
   // Show success message with auto-dismiss
   const showSuccessMessage = (message) => {
     setSuccessMessage(message);
@@ -632,6 +606,82 @@ export default function ProfilePage() {
       setIsSaving(false);
     }
   };
+
+  // Add this function with your other handle functions
+  // Update the handleSaveSkills function
+const handleSaveSkills = async () => {
+  // Validate skills data
+  const hasEmptyTechnicalSkills = editedSkills.technicalSkills.some(skill => skill.trim() === "");
+  const hasEmptySoftSkills = editedSkills.softSkills.some(skill => skill.trim() === "");
+
+  if (hasEmptyTechnicalSkills || hasEmptySoftSkills) {
+    setErrors({ skills: "Each skill must contain text. Remove empty fields or fill them in." });
+    return;
+  }
+
+  setIsSaving(true);
+  setErrors({});
+
+  try {
+    // Transform skills to backend format - UPDATED
+    const skillsArray = [];
+    
+    // Add technical skills
+    editedSkills.technicalSkills
+      .filter(skill => skill.trim() !== "")
+      .forEach(skill => {
+        skillsArray.push({
+          skill_name: skill.trim(),
+          skill_type: 'technical'
+        });
+      });
+    
+    // Add soft skills
+    editedSkills.softSkills
+      .filter(skill => skill.trim() !== "")
+      .forEach(skill => {
+        skillsArray.push({
+          skill_name: skill.trim(),
+          skill_type: 'soft'
+        });
+      });
+
+    console.log("Skills data being sent:", skillsArray); // Debug log
+
+    // Use the specialized skills update function
+    await updateSkills(skillsArray);
+
+    // After successful update, refresh the profile data
+    const updatedProfile = await getProfile();
+    const transformedProfile = transformBackendDataToFrontend(updatedProfile);
+
+    // Update local state
+    setUserData(prev => ({
+      ...prev,
+      technicalSkills: transformedProfile.technicalSkills,
+      softSkills: transformedProfile.softSkills
+    }));
+
+    setOriginalUserData(prev => ({
+      ...prev,
+      technicalSkills: transformedProfile.technicalSkills,
+      softSkills: transformedProfile.softSkills
+    }));
+
+    // Update the edited skills state with the fresh data
+    setEditedSkills({
+      technicalSkills: [...transformedProfile.technicalSkills],
+      softSkills: [...transformedProfile.softSkills]
+    });
+
+    setSkillsEdit(false);
+    showSuccessMessage("Skills updated successfully");
+  } catch (error) {
+    handleApiError(error, "Failed to save skills. Please try again.");
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   // handleSave for Course Preferences
   const handleSaveCourses = async () => {
