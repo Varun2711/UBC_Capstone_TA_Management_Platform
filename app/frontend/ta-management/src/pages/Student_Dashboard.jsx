@@ -174,8 +174,9 @@ export default function StudentDashboard() {
         setIsLoading(false);
       }
     };
-    fetchUserData();
-  }, []);
+
+    fetchApplications();
+  }, [userData]); // ✅ Runs only when userData is updated
 
   useEffect(() => {
     const fetchApplications = async () => {
