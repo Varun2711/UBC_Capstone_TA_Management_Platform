@@ -67,10 +67,14 @@ export default function CreateAccount3() {
       // Format data to match the StudentRegistrationSerializer
       const registerData = {
         student_number: step1Data.ubcStudentNumber,
-        name: `${step1Data.firstName} ${step1Data.lastName}`,
+        name: `${step1Data.firstName} ${step1Data.lastName}`, // Concatenate first and last name
         email: formData.email,
         password: formData.password,
-        study_level: step2Data.degreeProgram
+        study_level: step2Data.degreeProgram,
+        // for step 2 info
+        program: step2Data.majorProgram,
+        minor: step2Data.minorProgram || '',  // Send to auth service
+        year_degree_start: step2Data.yearOfDegreeStart ? parseInt(step2Data.yearOfDegreeStart) : null
       }
 
       console.log("Sending account data to backend:", registerData)

@@ -57,6 +57,9 @@ import {
   updateAvailability,
   updateCoursePreferences
 } from "@/logic/student-profile"
+import axios from "axios"
+
+const API_URL = 'http://localhost:8080';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -182,6 +185,7 @@ export default function ProfilePage() {
   // Helper functions for data transformation
   const transformBackendDataToFrontend = (data) => {
     // Transform experiences from backend format to frontend format
+
     const transformExperiences = (backendExperiences) => {
       return backendExperiences?.map(exp => ({
         course: exp.position_title?.replace('TA for ', '') || '',
@@ -209,9 +213,41 @@ export default function ProfilePage() {
       }
     };
 
+    let firstName = '';
+    let lastName = '';
+
+    // Check if backend returns a single 'name' field (expected)
+    if (data.name) {
+      console.log("Using name field:", data.name);
+      const nameParts = data.name.trim().split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    }
+    // Fallback: if backend returns first_name and last_name separately
+    else if (data.first_name || data.last_name) {
+      console.log("Using first_name and last_name fields");
+      if (data.first_name && data.last_name && data.last_name.trim() !== '') {
+        // Both fields exist and are not empty
+        firstName = data.first_name;
+        lastName = data.last_name;
+      } else if (data.first_name) {
+        // Only first_name exists, split it
+        const nameParts = data.first_name.trim().split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+    }
+    // Try student_info if available
+    else if (data.student_info?.name) {
+      const nameParts = data.student_info.name.trim().split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    }
+
     return {
-      firstName: data.first_name || '',
-      lastName: data.last_name || '',
+      // USE THE PARSED NAMES:
+      firstName: firstName,
+      lastName: lastName,
       email: data.email || '',
       studentId: data.student_info?.student_number || '',
       phone: data.student_info?.phone || '',
@@ -221,8 +257,6 @@ export default function ProfilePage() {
       minor: data.student_profile?.minor || '',
       employeeNumber: data.student_profile?.ubc_employee_id || '',
       avatar: data.avatar || "/placeholder.svg?height=120&width=120",
-
-
 
       // Transform arrays appropriately
       coursePreference: data.course_preferences?.map(pref => pref.course_code) || [],
@@ -242,6 +276,7 @@ export default function ProfilePage() {
       },
     };
   };
+
 
   // Show success message with auto-dismiss
   const showSuccessMessage = (message) => {
@@ -266,7 +301,7 @@ export default function ProfilePage() {
         if (error.response && error.response.status === 404) {
           await axios.patch(
             `${API_URL}/api/profile/me/update/`,
-            { first_name: "", last_name: "" },
+            { name: "" },
             { headers: { Authorization: `Bearer ${token}` } }
           );
           return true;
@@ -354,21 +389,39 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
+      // Send separate first_name and last_name instead of concatenated name
       const updatedData = {
         first_name: userData.firstName.trim(),
         last_name: userData.lastName.trim(),
         email: userData.email,
+        
+        student_number: userData.studentId,
+        phone: userData.phone || '',
+        
         student_profile: {
-          phone: userData.phone,
-          student_number: userData.studentId,
           ubc_employee_id: userData.employeeNumber
         }
       };
 
-      const response = await updateProfile(updatedData);
+      console.log("=== SAVE DEBUG ===");
+      console.log("userData before save:", userData);
+      console.log("Sending to backend:", updatedData);
+      console.log("==================");
 
-      // Update the original data
-      setOriginalUserData({ ...userData });
+      const response = await updateProfile(updatedData);
+      console.log("Backend response:", response);
+
+      // After successful save, refresh the profile data from backend
+      const refreshedData = await getProfile();
+      console.log("Refreshed data from backend:", refreshedData);
+
+      const transformedData = transformBackendDataToFrontend(refreshedData);
+      console.log("Transformed refreshed data:", transformedData);
+
+      // Update both original and current data
+      setOriginalUserData(transformedData);
+      setUserData(transformedData);
+
       setIsEditing(false);
       showSuccessMessage("Personal information updated successfully");
     } catch (error) {
@@ -377,7 +430,11 @@ export default function ProfilePage() {
         const formattedErrors = {};
 
         for (const field in backendErrors) {
-          formattedErrors[field] = backendErrors[field][0];
+          if (Array.isArray(backendErrors[field])) {
+            formattedErrors[field] = backendErrors[field][0];
+          } else {
+            formattedErrors[field] = backendErrors[field];
+          }
         }
         setErrors(formattedErrors);
       } else {
@@ -390,7 +447,13 @@ export default function ProfilePage() {
   };
 
   const handleInputChange = (field, value) => {
-    setUserData((prev) => ({ ...prev, [field]: value }));
+    console.log(`Input change: ${field} = "${value}"`);
+    setUserData((prev) => {
+      const updated = { ...prev, [field]: value };
+      console.log("Updated userData:", updated);
+      return updated;
+    });
+
     const error = validateField(field, value);
     setErrors((prev) => ({ ...prev, [field]: error }));
   };
@@ -430,11 +493,12 @@ export default function ProfilePage() {
 
   const isFormValid = () => {
     if (!userData) return false;
-    return (
-      (userData.firstName?.trim().length >= 2 || (originalUserData && originalUserData.firstName?.trim().length >= 2)) &&
-      (userData.lastName?.trim().length >= 2 || (originalUserData && originalUserData.lastName?.trim().length >= 2)) &&
-      (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email?.trim() || '') || (originalUserData && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(originalUserData.email?.trim() || '')))
-    );
+
+    const firstNameValid = userData.firstName?.trim().length >= 2;
+    const lastNameValid = userData.lastName?.trim().length >= 2;
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email?.trim() || '');
+
+    return firstNameValid && lastNameValid && emailValid;
   };
 
   // Add this function to ProfilePage.jsx
@@ -923,7 +987,7 @@ export default function ProfilePage() {
                         <Input
                           id="studentId"
                           value={userData.studentId}
-                          onChange={(e) => setUserData({ ...userData, studentId: e.target.value })}
+                          onChange={(e) => handleInputChange("studentId", e.target.value)}
                         />
                       ) : (
                         <p className="text-sm">{userData.studentId}</p>
@@ -936,7 +1000,7 @@ export default function ProfilePage() {
                         <Input
                           id="UBCEmployeeId"
                           value={userData.employeeNumber}
-                          onChange={(e) => setUserData({ ...userData, employeeNumber: e.target.value })}
+                          onChange={(e) => handleInputChange("employeeNumber", e.target.value)}
                         />
                       ) : (
                         <p className="text-sm">{userData.employeeNumber}</p>
@@ -995,7 +1059,7 @@ export default function ProfilePage() {
                         <Input
                           id="phone"
                           value={userData.phone}
-                          onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
+                          onChange={(e) => handleInputChange("phone", e.target.value)}
                         />
                       ) : (
                         <p className="text-sm">{userData.phone}</p>

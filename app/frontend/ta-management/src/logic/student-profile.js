@@ -38,13 +38,33 @@ export const getProfile = async () => {
  * @param {object} profileData - The user data to update.
  */
 export const updateProfile = async (profileData) => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
   try {
-    const response = await axios.patch(`${API_URL}/profile/me/update/`, profileData, {
-      headers: getAuthHeaders()
-    });
+    console.log("updateProfile called with:", profileData);
+    
+    const response = await axios.patch(
+      `${API_URL}/profile/me/update/`,
+      profileData,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log("updateProfile response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error updating profile:", error.response?.data || error.message);
+    console.error('Update profile error details:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
     throw error;
   }
 };

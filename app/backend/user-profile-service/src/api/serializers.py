@@ -73,45 +73,116 @@ class AdminProfileSerializer(serializers.ModelSerializer):
 
 class UpdateStudentProfileSerializer(serializers.ModelSerializer):
     student_profile = StudentProfileSerializer()
+    student_number = serializers.CharField(required = False)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'student_profile']
+        fields = ['first_name', 'last_name', 'email', 'student_profile', 'student_number', 'phone']
     
     def update(self, instance, validated_data):
-        # Extract nested data
+    # Extract nested and Student model data
         profile_data = validated_data.pop('student_profile', None)
+        student_number = validated_data.pop('student_number', None)
+        phone = validated_data.pop('phone', None)
+
+        print(f"After extraction:")
+        print(f"student_number: {student_number}")
+        print(f"phone: {phone}")
+        print(f"profile_data: {profile_data}")
+        print(f"remaining validated_data: {validated_data}")
         
-        # Update User fields
+        # Store old email before updating
+        old_email = instance.email
+        
+        # Update User fields (first_name, last_name, email)
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
+        new_email = validated_data.get('email', instance.email)
+        instance.email = new_email
+        instance.username = new_email  # Keep username and email synchronized
+
+        print(f"Updated User fields:")
+        print(f"first_name: {instance.first_name}")
+        print(f"last_name: {instance.last_name}")
+        print(f"email: {instance.email} (was: {old_email})")
+        print(f"username: {instance.username}")
+        
         instance.save()
         
-        # Update StudentProfile if data provided
+        # Update Student model - handle email change
+        try:
+            # Try to find student by old email first, then new email
+            student = None
+            if old_email != new_email:
+                try:
+                    student = Student.objects.get(email=old_email)
+                    print(f"Found student with old email: {old_email}")
+                except Student.DoesNotExist:
+                    pass
+            
+            if not student:
+                student = Student.objects.get(email=new_email)
+                print(f"Found student with new email: {new_email}")
+            
+            print(f"Found student: {student}")
+            
+            old_student_number = student.student_number
+            old_phone = student.phone
+            
+            # Update all fields including email
+            if new_email != old_email:
+                student.email = new_email
+                print(f"Updated student email from {old_email} to {new_email}")
+            
+            if student_number is not None:
+                student.student_number = student_number
+                print(f"Updated student_number from {old_student_number} to {student_number}")
+            if phone is not None:
+                student.phone = phone
+                print(f"Updated phone from {old_phone} to {phone}")
+            
+            student.save()
+            print(f"Student saved successfully")
+            
+        except Student.DoesNotExist:
+            print(f"Student with email {old_email} or {new_email} does not exist, creating new one")
+            new_student = Student.objects.create(
+                email=new_email,  # Use new email
+                name=f"{instance.first_name} {instance.last_name}",
+                student_number=student_number or '',
+                phone=phone or '',
+                study_level='Undergraduate'
+            )
+            print(f"Created new student: {new_student}")
+        except Exception as e:
+            print(f"Error updating Student: {e}")
+        
+        # Rest of your StudentProfile update code remains the same...
         if profile_data:
             try:
-                # Try multiple ways to get the profile
                 student_profile = None
-                
-                # Method 1: Direct attribute
                 if hasattr(instance, 'student_profile'):
                     student_profile = instance.student_profile
-                # Method 2: Related name
                 elif hasattr(instance, 'studentprofile'):
                     student_profile = instance.studentprofile
-                # Method 3: Query explicitly
                 else:
                     student_profile = StudentProfile.objects.get(user=instance)
                 
-                # Update the profile fields
                 if student_profile:
+                    print(f"Updating StudentProfile: {profile_data}")
                     for attr, value in profile_data.items():
+                        old_value = getattr(student_profile, attr, None)
                         setattr(student_profile, attr, value)
+                        print(f"Updated {attr} from {old_value} to {value}")
                     student_profile.save()
+                    print(f"StudentProfile saved successfully")
             except StudentProfile.DoesNotExist:
-                # Create profile if it doesn't exist
+                print(f"Creating new StudentProfile: {profile_data}")
                 StudentProfile.objects.create(user=instance, **profile_data)
         
+        print(f"=== END BACKEND DEBUG ===")
         return instance
     
 class UpdateInstructorSerializer(serializers.ModelSerializer):

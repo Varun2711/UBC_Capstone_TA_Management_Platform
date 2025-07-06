@@ -92,7 +92,7 @@ export default function CreateAccount2() {
     navigate("/create-account/step1")
   }
 
-  const degreePrograms = ["BSc or BA", "MSc", "PhD", "Other (please specify)"]
+  const degreePrograms = ["Undergraduate", "Graduate"]
 
   const years = ["2019", "2020", "2021", "2022", "2023", "2024"]
 
@@ -122,7 +122,7 @@ export default function CreateAccount2() {
 
           <div className="space-y-2">
             <Label htmlFor="degreeProgram" className="text-sm font-medium text-gray-700">
-              Degree currently in progress *
+              Type of Degree your pursuing *
             </Label>
             <select
               id="degreeProgram"
