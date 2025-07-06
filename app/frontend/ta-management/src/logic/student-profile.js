@@ -87,14 +87,14 @@ export const updateAcademicInfo = async (academicData) => {
 export const updateSkills = async (skillsData) => {
   try {
     const headers = getAuthHeaders();
-    
+
     // Delete existing skills first
     try {
       await axios.delete(`${API_URL}/profile/me/skills/`, { headers });
     } catch (deleteError) {
       console.warn("No skills to delete or delete failed:", deleteError);
     }
-    
+
     // Add skills one by one, which is what the API expects
     if (skillsData.skills && skillsData.skills.length > 0) {
       for (const skill of skillsData.skills) {
@@ -105,7 +105,7 @@ export const updateSkills = async (skillsData) => {
       }
       return { success: true };
     }
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error updating skills:", error.response?.data || error.message);
@@ -154,16 +154,14 @@ export const updateExperience = async (experienceData) => {
 
 /**
  * Updates user availability.
- * @param {Array} availabilityData - Availability data.
+ * @param {Array} availabilityData - Availability data from WeeklyAvailabilityCalendar.
  */
 export const updateAvailability = async (availabilityData) => {
   try {
     const headers = getAuthHeaders();
 
-    // define structure for backend conversion
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-    const times = ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm'];
-
+    
     const availabilityGrid = {
       monday: [],
       tuesday: [],
@@ -172,36 +170,57 @@ export const updateAvailability = async (availabilityData) => {
       friday: [],
     };
 
-    console.log("Availability is array:", Array.isArray(availabilityData)); // Debugging log
-    console.log("Availability data length:", availabilityData.length); // Debugging log
-    console.log("Availability data:", availabilityData); // Debugging log
-    // Convert the flat boolean array into the object structure the backend expects
-    if (Array.isArray(availabilityData) && availabilityData.length === 50) {
-      availabilityData.forEach((isAvailable, index) => {
-        if (isAvailable) {
-          const dayIndex = Math.floor(index / 10);
-          const timeIndex = index % 10;
-          const day = days[dayIndex];
-          const time = times[timeIndex];
-          availabilityGrid[day].push(time);
-        }
-      });
-    } else {
-      console.error("Invalid availability data format provided to updateAvailability.");
-      // Avoid sending malformed data
-      return; 
+    if (Array.isArray(availabilityData)) {
+      const stringSlots = availabilityData.filter(slot => typeof slot === 'string' && slot.includes('-'));
+      
+      if (stringSlots.length > 0) {
+        stringSlots.forEach(slot => {
+          const parts = slot.split('-');
+          if (parts.length >= 3) {
+            const dayName = parts[0].toLowerCase();
+            const timeSlot = parts[1];
+            const halfSlot = parts[2];
+            
+            // Extended time map to include slots up to 9:30 PM
+            const timeMap = {
+              '8': { top: '8:00am', bottom: '8:30am' },
+              '9': { top: '9:00am', bottom: '9:30am' },
+              '10': { top: '10:00am', bottom: '10:30am' },
+              '11': { top: '11:00am', bottom: '11:30am' },
+              '12': { top: '12:00pm', bottom: '12:30pm' },
+              '13': { top: '1:00pm', bottom: '1:30pm' },
+              '14': { top: '2:00pm', bottom: '2:30pm' },
+              '15': { top: '3:00pm', bottom: '3:30pm' },
+              '16': { top: '4:00pm', bottom: '4:30pm' },
+              '17': { top: '5:00pm', bottom: '5:30pm' },
+              '18': { top: '6:00pm', bottom: '6:30pm' },
+              '19': { top: '7:00pm', bottom: '7:30pm' },
+              '20': { top: '8:00pm', bottom: '8:30pm' },
+              '21': { top: '9:00pm', bottom: '9:30pm' }
+            };
+            
+            const timeString = timeMap[timeSlot]?.[halfSlot];
+            
+            if (days.includes(dayName) && timeString && !availabilityGrid[dayName].includes(timeString)) {
+              availabilityGrid[dayName].push(timeString);
+            }
+          }
+        });
+      }
     }
     
-    // The final payload should be wrapped in an object with the key "availability_grid"
     const formattedPayload = {
       availability_grid: availabilityGrid
     };
 
-    // Use PATCH as specified by your API documentation
+    console.log("Formatted payload:", formattedPayload);
+
     const response = await axios.patch(`${API_URL}/profile/me/availability/`,
       formattedPayload,
       { headers }
     );
+
+    console.log("API response successful:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error updating availability:", error.response?.data || error.message);

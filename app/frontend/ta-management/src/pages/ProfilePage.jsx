@@ -115,37 +115,70 @@ export default function ProfilePage() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const transformAvailability = (availability) => {
+    console.log("Transforming availability from backend:", availability);
+
     if (!availability || typeof availability !== 'object') {
-      return Array(50).fill(false);
+      return [];
     }
-    // If it's already a valid array, return it.
-    if (Array.isArray(availability) && availability.length === 50) {
-      return availability;
-    }
-    // If it's already a valid array, return it.
-    if (Array.isArray(availability) && availability.length === 50) {
+
+    if (Array.isArray(availability)) {
       return availability;
     }
 
-    // If it's an object (the availability_grid from the backend), transform it.
+    const availabilityGrid = availability.availability_grid || availability;
+    console.log("Extracted availability_grid:", availabilityGrid);
+
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-    const times = ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm'];
-    const newAvailability = Array(50).fill(false);
 
-    days.forEach((day, dayIndex) => {
-      // Check if the day exists in the backend object
-      if (availability[day] && Array.isArray(availability[day])) {
-        availability[day].forEach(time => {
-          const timeIndex = times.indexOf(time);
-          if (timeIndex !== -1) {
-            newAvailability[dayIndex * 10 + timeIndex] = true;
+    // Extended time map to handle slots up to 9:30 PM
+    const timeMap = {
+      // 30-minute slots
+      '8:00am': '8-top', '8:30am': '8-bottom',
+      '9:00am': '9-top', '9:30am': '9-bottom',
+      '10:00am': '10-top', '10:30am': '10-bottom',
+      '11:00am': '11-top', '11:30am': '11-bottom',
+      '12:00pm': '12-top', '12:30pm': '12-bottom',
+      '1:00pm': '13-top', '1:30pm': '13-bottom',
+      '2:00pm': '14-top', '2:30pm': '14-bottom',
+      '3:00pm': '15-top', '3:30pm': '15-bottom',
+      '4:00pm': '16-top', '4:30pm': '16-bottom',
+      '5:00pm': '17-top', '5:30pm': '17-bottom',
+      '6:00pm': '18-top', '6:30pm': '18-bottom',
+      '7:00pm': '19-top', '7:30pm': '19-bottom',
+      '8:00pm': '20-top', '8:30pm': '20-bottom',
+      '9:00pm': '21-top', '9:30pm': '21-bottom',
+      // Legacy 1-hour slots (create both top and bottom)
+      '8am': '8', '9am': '9', '10am': '10', '11am': '11',
+      '12pm': '12', '1pm': '13', '2pm': '14', '3pm': '15',
+      '4pm': '16', '5pm': '17', '6pm': '18', '7pm': '19',
+      '8pm': '20', '9pm': '21'
+    };
+
+    const selectedSlots = [];
+
+    days.forEach(day => {
+      if (availabilityGrid[day] && Array.isArray(availabilityGrid[day])) {
+        availabilityGrid[day].forEach(time => {
+          const timeSlot = timeMap[time];
+          if (timeSlot) {
+            const dayCapitalized = day.charAt(0).toUpperCase() + day.slice(1);
+
+            if (timeSlot.includes('-')) {
+              // 30-minute slot
+              selectedSlots.push(`${dayCapitalized}-${timeSlot}`);
+            } else {
+              // Legacy 1-hour slot - create both halves
+              selectedSlots.push(`${dayCapitalized}-${timeSlot}-top`);
+              selectedSlots.push(`${dayCapitalized}-${timeSlot}-bottom`);
+            }
           }
         });
       }
     });
-    return newAvailability;
-  };
 
+    console.log("Transformed to calendar format:", selectedSlots);
+    return selectedSlots;
+  };
   // Helper functions for data transformation
   const transformBackendDataToFrontend = (data) => {
     // Transform experiences from backend format to frontend format
@@ -298,9 +331,11 @@ export default function ProfilePage() {
         setIsLoading(true);
         const data = await getProfile();
         console.log("Fetched user data from backend:", data);
+        console.log("Raw availability from backend:", data.availability);
 
         // Transform data to match frontend structure
         const profileData = transformBackendDataToFrontend(data);
+        console.log("Transformed availability:", profileData.availability); // Add this debug line
 
         setOriginalUserData(profileData);
         setUserData(profileData);
@@ -1584,7 +1619,10 @@ export default function ProfilePage() {
                     {isEditingAvailability ? (
                       <>
                         <Button
-                          onClick={handleSaveAvailability}
+                          onClick={() => {
+                            console.log("Save button clicked!"); // Add this debug line
+                            handleSaveAvailability();
+                          }}
                           className="gap-2"
                           disabled={isSaving}
                         >
@@ -1631,11 +1669,19 @@ export default function ProfilePage() {
                     represent times that you are available for TA work, and white boxes
                     represent times that you are not.<br /><br />
                   </p>
-                  <WeeklyAvailabilityCalendar
-                    editable={isEditingAvailability}
-                    availability={availabilityData}
-                    setAvailability={setAvailabilityData}
-                  />
+                  {isEditingAvailability ? (
+                    <WeeklyAvailabilityCalendar
+                      editable={true}
+                      availability={availabilityData}
+                      setAvailability={setAvailabilityData}
+                    />
+                  ) : (
+                    <WeeklyAvailabilityCalendar
+                      editable={false}
+                      availability={userData.availability || []}
+                      setAvailability={() => { }} // Empty function since we're not editing
+                    />
+                  )}
                 </CardContent>
               </Card>
             </div>
