@@ -536,11 +536,11 @@ export default function ProfilePage() {
     setErrors({});
   };
 
-  // handleSave for Experience
+  // Replace your existing handleSaveExperience function with this:
   const handleSaveExperience = async () => {
     // Validate experience data
     const hasEmptyFields = editedExperience.some(exp =>
-      !exp.course || !exp.semester || !exp.professor
+      !exp.course.trim() || !exp.semester.trim() || !exp.professor.trim()
     );
 
     if (hasEmptyFields) {
@@ -552,14 +552,11 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      // Format experiences for API - use a better approach to handle dates
-      const currentYear = new Date().getFullYear();
-
+      // Format experiences for API
       const formattedExperiences = editedExperience.map(exp => {
         // Extract year and term from semester (e.g., "Winter 2024")
-        const semesterParts = exp.semester.split(' ');
-        const year = semesterParts.length > 1 ?
-          semesterParts[1] : currentYear.toString();
+        const semesterParts = exp.semester.trim().split(' ');
+        const year = semesterParts.length > 1 ? semesterParts[1] : new Date().getFullYear().toString();
         const term = semesterParts[0] || 'Winter';
 
         // Create a reasonable date based on term and year
@@ -579,7 +576,9 @@ export default function ProfilePage() {
         };
       });
 
-      // Use updateExperience with properly formatted data
+      console.log("Experiences data being sent:", formattedExperiences); // Debug log
+
+      // Use the specialized experience update function
       await updateExperience(formattedExperiences);
 
       // After successful update, refresh the profile data
@@ -597,7 +596,7 @@ export default function ProfilePage() {
         experience: transformedProfile.experience
       }));
 
-      setEditedExperience(transformedProfile.experience);
+      setEditedExperience([...transformedProfile.experience]);
       setIsEditingExperience(false);
       showSuccessMessage("Experience updated successfully");
     } catch (error) {
@@ -609,79 +608,79 @@ export default function ProfilePage() {
 
   // Add this function with your other handle functions
   // Update the handleSaveSkills function
-const handleSaveSkills = async () => {
-  // Validate skills data
-  const hasEmptyTechnicalSkills = editedSkills.technicalSkills.some(skill => skill.trim() === "");
-  const hasEmptySoftSkills = editedSkills.softSkills.some(skill => skill.trim() === "");
+  const handleSaveSkills = async () => {
+    // Validate skills data
+    const hasEmptyTechnicalSkills = editedSkills.technicalSkills.some(skill => skill.trim() === "");
+    const hasEmptySoftSkills = editedSkills.softSkills.some(skill => skill.trim() === "");
 
-  if (hasEmptyTechnicalSkills || hasEmptySoftSkills) {
-    setErrors({ skills: "Each skill must contain text. Remove empty fields or fill them in." });
-    return;
-  }
+    if (hasEmptyTechnicalSkills || hasEmptySoftSkills) {
+      setErrors({ skills: "Each skill must contain text. Remove empty fields or fill them in." });
+      return;
+    }
 
-  setIsSaving(true);
-  setErrors({});
+    setIsSaving(true);
+    setErrors({});
 
-  try {
-    // Transform skills to backend format - UPDATED
-    const skillsArray = [];
-    
-    // Add technical skills
-    editedSkills.technicalSkills
-      .filter(skill => skill.trim() !== "")
-      .forEach(skill => {
-        skillsArray.push({
-          skill_name: skill.trim(),
-          skill_type: 'technical'
+    try {
+      // Transform skills to backend format - UPDATED
+      const skillsArray = [];
+
+      // Add technical skills
+      editedSkills.technicalSkills
+        .filter(skill => skill.trim() !== "")
+        .forEach(skill => {
+          skillsArray.push({
+            skill_name: skill.trim(),
+            skill_type: 'technical'
+          });
         });
-      });
-    
-    // Add soft skills
-    editedSkills.softSkills
-      .filter(skill => skill.trim() !== "")
-      .forEach(skill => {
-        skillsArray.push({
-          skill_name: skill.trim(),
-          skill_type: 'soft'
+
+      // Add soft skills
+      editedSkills.softSkills
+        .filter(skill => skill.trim() !== "")
+        .forEach(skill => {
+          skillsArray.push({
+            skill_name: skill.trim(),
+            skill_type: 'soft'
+          });
         });
+
+      console.log("Skills data being sent:", skillsArray); // Debug log
+
+      // Use the specialized skills update function
+      await updateSkills(skillsArray);
+
+      // After successful update, refresh the profile data
+      const updatedProfile = await getProfile();
+      const transformedProfile = transformBackendDataToFrontend(updatedProfile);
+
+      // Update local state
+      setUserData(prev => ({
+        ...prev,
+        technicalSkills: transformedProfile.technicalSkills,
+        softSkills: transformedProfile.softSkills
+      }));
+
+      setOriginalUserData(prev => ({
+        ...prev,
+        technicalSkills: transformedProfile.technicalSkills,
+        softSkills: transformedProfile.softSkills
+      }));
+
+      // Update the edited skills state with the fresh data
+      setEditedSkills({
+        technicalSkills: [...transformedProfile.technicalSkills],
+        softSkills: [...transformedProfile.softSkills]
       });
 
-    console.log("Skills data being sent:", skillsArray); // Debug log
-
-    // Use the specialized skills update function
-    await updateSkills(skillsArray);
-
-    // After successful update, refresh the profile data
-    const updatedProfile = await getProfile();
-    const transformedProfile = transformBackendDataToFrontend(updatedProfile);
-
-    // Update local state
-    setUserData(prev => ({
-      ...prev,
-      technicalSkills: transformedProfile.technicalSkills,
-      softSkills: transformedProfile.softSkills
-    }));
-
-    setOriginalUserData(prev => ({
-      ...prev,
-      technicalSkills: transformedProfile.technicalSkills,
-      softSkills: transformedProfile.softSkills
-    }));
-
-    // Update the edited skills state with the fresh data
-    setEditedSkills({
-      technicalSkills: [...transformedProfile.technicalSkills],
-      softSkills: [...transformedProfile.softSkills]
-    });
-
-    setSkillsEdit(false);
-    showSuccessMessage("Skills updated successfully");
-  } catch (error) {
-    handleApiError(error, "Failed to save skills. Please try again.");
-  } finally {
-    setIsSaving(false);
-  }
-};
+      setSkillsEdit(false);
+      showSuccessMessage("Skills updated successfully");
+    } catch (error) {
+      handleApiError(error, "Failed to save skills. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // handleSave for Course Preferences
   const handleSaveCourses = async () => {

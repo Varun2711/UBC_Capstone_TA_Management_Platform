@@ -114,40 +114,35 @@ export const updateSkills = async (skillsArray) => {
 };
 
 /**
- * Updates student experience.
+ * Updates student experiences.
  * @param {Array} experienceData - Array of experience items.
  */
 export const updateExperience = async (experienceData) => {
   try {
     const headers = getAuthHeaders();
+    console.log("Sending experiences to backend:", experienceData); // Debug log
 
-    // The API expects specific fields for experience
-    const formattedExperiences = experienceData.map(exp => ({
-      experience_type: 'teaching', // Default to teaching for TA experience
-      position_title: exp.course || 'Teaching Assistant',
-      organization: exp.professor || 'UBC',
-      start_date: exp.semester || '2024-01-01', // Default date if not provided
-      description: exp.description || '',
-      is_current: true // Default to current
-    }));
-
-    // Delete existing experiences
+    // Delete existing experiences first
     try {
-      await axios.delete(`${API_URL}/profile/me/experiences/`, { headers });
+      const deleteResponse = await axios.delete(`${API_URL}/profile/me/experience/`, { headers });
+      console.log("Delete experiences response:", deleteResponse.status); // Debug log
     } catch (deleteError) {
       console.warn("No experiences to delete or delete failed:", deleteError);
     }
 
-    // Add new experiences
-    if (formattedExperiences.length > 0) {
-      for (const exp of formattedExperiences) {
-        await axios.post(`${API_URL}/profile/me/experiences/`, exp, { headers });
+    // Add new experiences one by one
+    if (experienceData && experienceData.length > 0) {
+      for (const exp of experienceData) {
+        console.log("Adding experience:", exp); // Debug log
+        const response = await axios.post(`${API_URL}/profile/me/experience/`, exp, { headers });
+        console.log("Experience added successfully:", response.data); // Debug log
       }
+      return { success: true };
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Error updating experience:", error.response?.data || error.message);
+    console.error("Error updating experiences:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -161,7 +156,7 @@ export const updateAvailability = async (availabilityData) => {
     const headers = getAuthHeaders();
 
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-    
+
     const availabilityGrid = {
       monday: [],
       tuesday: [],
@@ -172,7 +167,7 @@ export const updateAvailability = async (availabilityData) => {
 
     if (Array.isArray(availabilityData)) {
       const stringSlots = availabilityData.filter(slot => typeof slot === 'string' && slot.includes('-'));
-      
+
       if (stringSlots.length > 0) {
         stringSlots.forEach(slot => {
           const parts = slot.split('-');
@@ -180,7 +175,7 @@ export const updateAvailability = async (availabilityData) => {
             const dayName = parts[0].toLowerCase();
             const timeSlot = parts[1];
             const halfSlot = parts[2];
-            
+
             // Extended time map to include slots up to 9:30 PM
             const timeMap = {
               '8': { top: '8:00am', bottom: '8:30am' },
@@ -198,9 +193,9 @@ export const updateAvailability = async (availabilityData) => {
               '20': { top: '8:00pm', bottom: '8:30pm' },
               '21': { top: '9:00pm', bottom: '9:30pm' }
             };
-            
+
             const timeString = timeMap[timeSlot]?.[halfSlot];
-            
+
             if (days.includes(dayName) && timeString && !availabilityGrid[dayName].includes(timeString)) {
               availabilityGrid[dayName].push(timeString);
             }
@@ -208,7 +203,7 @@ export const updateAvailability = async (availabilityData) => {
         });
       }
     }
-    
+
     const formattedPayload = {
       availability_grid: availabilityGrid
     };
