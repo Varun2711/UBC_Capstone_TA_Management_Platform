@@ -11,13 +11,14 @@ vi.mock('@/logic/scheduler-profile', () => ({
   updateProfile: vi.fn(),
 }));
 
-vi.mock('@/components/scheduler-sidebar', () => ({
-  AppSidebar: () => <div data-testid="mock-sidebar">Mocked Sidebar</div>,
+vi.mock('@/components/instructor-dashboard-sidebar', () => ({
+  InstructorSidebar: () => <div data-testid="mock-sidebar">Mocked Sidebar</div>,
 }));
 
 // --- IMPORTS ---
 
 import { getProfile, updateProfile } from '@/logic/scheduler-profile';
+import { InstructorSidebar } from '@/components/instructor-dashboard-sidebar';
 
 // --- TEST DATA ---
 
