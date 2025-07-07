@@ -109,6 +109,12 @@ export default function ProfilePage() {
   // State for success message
   const [successMessage, setSuccessMessage] = useState("");
 
+  useEffect(() => {
+    if (userData) {
+      console.log("userData updated:", userData);
+    }
+  }, [userData]);
+
   const transformAvailability = (availability) => {
     console.log("Transforming availability from backend:", availability);
 
@@ -639,6 +645,7 @@ export default function ProfilePage() {
     if (field.includes('.')) {
       // Handle nested fields like academicInfo.degreeStart
       const [parent, child] = field.split('.');
+      console.log(`Nested field detected: parent = ${parent}, child = ${child}`);
       setUserData((prev) => ({
         ...prev,
         [parent]: {
@@ -648,6 +655,8 @@ export default function ProfilePage() {
       }));
     } else {
       // Handle top-level fields
+      console.log(`Inside else block for handleAcademicInputChange for field: ${field}`);
+      console.log(`Setting userData[${field}] to "${value}"`);
       setUserData((prev) => ({
         ...prev,
         [field]: value
@@ -1210,7 +1219,7 @@ export default function ProfilePage() {
                           </Select.ScrollUpButton>
                           <Select.Viewport className="p-1">
                             <Select.Item
-                              value="Undergraduate"
+                              value="undergraduate"
                               className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
                             >
                               <Select.ItemText>Undergraduate</Select.ItemText>
@@ -1219,7 +1228,7 @@ export default function ProfilePage() {
                               </Select.ItemIndicator>
                             </Select.Item>
                             <Select.Item
-                              value="Graduate"
+                              value="graduate"
                               className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
                             >
                               <Select.ItemText>Graduate</Select.ItemText>
