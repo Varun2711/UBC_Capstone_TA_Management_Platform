@@ -35,7 +35,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"
+import { logout } from "@/logic/auth"
 
 const navigationItems = [
   {
@@ -63,7 +64,7 @@ const navigationItems = [
     icon: Settings,
     url: "#",
   },
-];
+]
 
 export function AppSidebar({ name, email, avatar }) {
   // Using useNavigate from react-router-dom to handle navigation
@@ -114,7 +115,7 @@ export function AppSidebar({ name, email, avatar }) {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="h-10">
-                <SidebarMenuButton className="bg-background text-foreground hover:bg-muted">
+                <SidebarMenuButton className="bg-background text-foreground hover:bg-muted" aria-label="account menu">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={avatar || "/placeholder.svg"} alt={name}/>
                     <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
@@ -138,7 +139,7 @@ export function AppSidebar({ name, email, avatar }) {
                   {" "}
                   <button>My Profile</button>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/")}>
+                <DropdownMenuItem onClick={() => logout(navigate)}>
                   <button>Logout </button>
                 </DropdownMenuItem>
               </DropdownMenuContent>

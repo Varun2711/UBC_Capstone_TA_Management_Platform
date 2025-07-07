@@ -1,16 +1,12 @@
   "use client"
 
-  import { useState } from "react"
-  import { useNavigate, Link } from "react-router-dom"
-  import { Eye, EyeOff } from "lucide-react"
-
-  import { Button } from "@/components/ui/button"
-  import { Input } from "@/components/ui/input"
-  import { Label } from "@/components/ui/label"
-  import { login } from "@/logic/auth"
-  import axios from 'axios';
-
-  const API_URL = 'http://localhost:8080';
+import { useEffect, useState } from "react"
+import { useNavigate, Link } from "react-router-dom"
+import { Eye, EyeOff } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { isAlreadyLoggedIn, navigateToUserDashboard, requestLogin } from "@/logic/auth"
 
   export default function LoginPage() {
     // state handling
@@ -22,9 +18,18 @@
 
     const navigate = useNavigate()
 
-    const togglePasswordVisibility = () => {
-      setShowPassword(!showPassword)
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
+
+  // on page load, check for token and redirect user who is already logged in (cannot login again!)
+  useEffect(() => {
+    // if already logged in, send them to correct dashboard based on user type
+    if(isAlreadyLoggedIn()) {
+      const user_type = sessionStorage.getItem('user_type')
+      navigateToUserDashboard(user_type, navigate)
     }
+  }, [navigate])
 
     // This was missing - define the handleSubmit function
     const handleSubmit = async (e) => {
@@ -32,84 +37,25 @@
       setIsLoading(true)
       setLoginError("")
 
-      try {
-        const response = await login(email, password)
-        localStorage.setItem('accessToken', response.access)
-        localStorage.setItem('refreshToken', response.refresh)
-        
-        // CRITICAL: Make a profile service request to establish the connection
-        try {
-          await axios.get(`${API_URL}/api/profile/me/`, {
-            headers: {
-              Authorization: `Bearer ${response.access}`
-            }
-          })
-          console.log("Profile association successful")
-        } catch (profileError) {
-          console.warn("Profile connection error:", profileError)
-          
-          // Only try to create profile if it's a 404
-          if (profileError.response && profileError.response.status === 404) {
-            try {
-              await axios.patch(
-                `${API_URL}/api/profile/me/update/`,
-                { first_name: "", last_name: "" },
-                {
-                  headers: {
-                    Authorization: `Bearer ${response.access}`
-                  }
-                }
-              )
-              console.log("Profile created successfully")
-            } catch (createError) {
-              console.warn("Profile creation failed:", createError)
-            }
-          }
-        }
+    // on login form submission, attempt to login
+    try {
+      const response = await requestLogin(email, password)
+      sessionStorage.setItem('accessToken', response.access)
+      sessionStorage.setItem('refreshToken', response.refresh)
+      sessionStorage.setItem('user_type', response.user_type)
 
-        // todo navigate to particular dashboard depending on user_type
-        navigate("/student-dashboard")
-      } catch (error) {
-        // if anything goes wrong with login, set the error state
-        setLoginError("Login Failed. You have entered an invalid email address or password. Please try again.")
-      } finally {
-        setIsLoading(false)
-      }
-    }
+      const user_type = response.user_type
 
-    // Add this function to handle API errors
-    const handleApiError = (error, defaultMessage) => {
-      console.error("API Error:", error);
+      // navigate to particular dashboard depending on user_type
+      navigateToUserDashboard(user_type, navigate)
+
+    } catch (error) {
+      // if anything goes wrong with login, set the error state (this is used in the return to conditionally display error text)
+      setLoginError("Login Failed. You have entered an invalid email address or password. Please try again.")
+    } finally {
       
-      if (error.response) {
-        if (error.response.status === 400 && error.response.data) {
-          const backendErrors = error.response.data;
-          const formattedErrors = {};
-          
-          for (const field in backendErrors) {
-            if (Array.isArray(backendErrors[field])) {
-              formattedErrors[field] = backendErrors[field][0];
-            } else if (typeof backendErrors[field] === 'object') {
-              for (const nestedField in backendErrors[field]) {
-                formattedErrors[nestedField] = backendErrors[field][nestedField][0];
-              }
-            } else {
-              formattedErrors[field] = backendErrors[field];
-            }
-          }
-          
-          return formattedErrors;
-        } else if (error.response.status === 404) {
-          return { api: "Resource not found" };
-        } else {
-          return { api: defaultMessage };
-        }
-      } else if (error.request) {
-        return { api: "No response received from server. Please check your connection." };
-      } else {
-        return { api: defaultMessage };
-      }
-    };
+    }
+  }
 
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

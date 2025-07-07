@@ -22,6 +22,25 @@ class Department(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+    def __str__(self):
+        return self.name
+
+
+class TAScheduler(models.Model):
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
+    password = models.CharField(max_length=255)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_tascheduler'
+
+    def __str__(self):
+        return f"{self.name} ({self.employee_number})"
+
+
 class Student(models.Model):
     student_number = models.CharField(max_length=8, unique=True)
     name = models.CharField(max_length=100)
