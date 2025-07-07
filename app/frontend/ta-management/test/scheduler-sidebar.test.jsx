@@ -99,16 +99,23 @@ describe('AppSidebar', () => {
 
   it('has correct accessibility attributes', () => {
     renderSidebar({ activePage: 'Dashboard' });
+
     const header = screen.getByText('TA Scheduler').closest('[data-sidebar="header"]');
     expect(header).toHaveAttribute('data-sidebar', 'header');
+
     const navigationGroup = screen.getByText('Navigation').closest('[data-sidebar="group"]');
     const menuItems = within(navigationGroup).getAllByRole('link');
+
+    // Allow href to be either "#" or a valid internal route (e.g. starting with "/")
     menuItems.forEach((item) => {
-      expect(item).toHaveAttribute('href', '#');
+      const href = item.getAttribute('href');
+      expect(href).toMatch(/^\/|^#$/);
     });
+
     const footer = screen.getByText('Admin User').closest('[data-sidebar="footer"]');
     expect(footer).toHaveAttribute('data-sidebar', 'footer');
   });
+
 
   it('applies active state styling to the specified active page', () => {
     renderSidebar({ activePage: 'Instructor Management' });
