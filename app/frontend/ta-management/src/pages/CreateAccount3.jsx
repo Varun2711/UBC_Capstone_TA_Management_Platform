@@ -85,31 +85,39 @@ export default function CreateAccount3() {
       console.log("Account creation response:", response.data)
 
       // After registration, log in to get tokens
+      // ...existing code...
+      // After registration, log in to get tokens
       try {
         const loginResponse = await axios.post(`${API_URL}/api/auth/login/`, {
           email: formData.email,
           password: formData.password
         })
 
-        // After logging in, make a request to the profile service to ensure proper user linking
+        // After logging in, save the additional profile data
         if (loginResponse.data && loginResponse.data.access) {
           localStorage.setItem('accessToken', loginResponse.data.access)
 
-          // Make a simple profile request to trigger user association
+          // Now save the additional profile information that wasn't part of registration
           try {
-            await axios.get(`${API_URL}/api/profile/me/`, {
-              headers: {
-                Authorization: `Bearer ${loginResponse.data.access}`
+            const additionalProfileData = {
+              student_profile: {
+                minor: step2Data.minorProgram || '',
+                year_degree_start: step2Data.yearOfDegreeStart ? parseInt(step2Data.yearOfDegreeStart) : null
               }
-            })
+            };
+
+            await axios.patch(`${API_URL}/api/profile/me/update/`, additionalProfileData, {
+              headers: { Authorization: `Bearer ${loginResponse.data.access}` }
+            });
           } catch (profileError) {
-            console.warn("Profile association may need manual setup:", profileError)
+            console.warn("Additional profile data not saved, but account created successfully:", profileError);
           }
 
           // Continue with redirect
           navigate("/student-dashboard")
         }
-      } catch (loginError) {
+      }
+      catch (loginError) {
         // If login fails after registration
         setError("Account created but login failed. Please try logging in manually.")
         navigate("/login")

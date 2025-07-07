@@ -51,7 +51,6 @@ import * as Select from '@radix-ui/react-select'
 import {
   getProfile,
   updateProfile,
-  updateAcademicInfo,
   updateSkills,
   updateExperience,
   updateAvailability,
@@ -74,17 +73,10 @@ export default function ProfilePage() {
 
   // State for academic information editing
   const [isEditingAcademic, setIsEditingAcademic] = useState(false)
-  const [editedAcademicInfo, setEditedAcademicInfo] = useState({
-    major: '',
-    minor: '',
-    year: '',
-    gpa: '',
-    academicInfo: {
-      yearStanding: '',
-      degreeStart: '',
-      expectedGraduation: '',
-    }
-  })
+
+  // Add these missing state variables
+  const [isSavingAcademic, setIsSavingAcademic] = useState(false);
+  const [academicErrors, setAcademicErrors] = useState({});
 
   // State for experience editing
   const [isEditingExperience, setIsEditingExperience] = useState(false)
@@ -182,16 +174,18 @@ export default function ProfilePage() {
     console.log("Transformed to calendar format:", selectedSlots);
     return selectedSlots;
   };
-  // Helper functions for data transformation
+
+  // Update your transformBackendDataToFrontend function in ProfilePage.jsx
   const transformBackendDataToFrontend = (data) => {
     // Transform experiences from backend format to frontend format
-
     const transformExperiences = (backendExperiences) => {
       return backendExperiences?.map(exp => ({
         course: exp.position_title?.replace('TA for ', '') || '',
         semester: extractSemesterFromDate(exp.start_date),
         professor: exp.organization || '',
-        description: exp.description || ''
+        description: exp.description || '',
+        
+        
       })) || [];
     };
 
@@ -251,10 +245,12 @@ export default function ProfilePage() {
       email: data.email || '',
       studentId: data.student_info?.student_number || '',
       phone: data.student_info?.phone || '',
-      major: data.student_info?.program || '',
+
+      // ✅ FIX THESE MAPPINGS - this is the key change you need:
+      major: data.student_info?.program || '', // ✅ Map from student_info.program
       year: data.student_info?.study_level || '',
       gpa: data.student_profile?.gpa || '',
-      minor: data.student_profile?.minor || '',
+      minor: data.student_profile?.minor || '', // ✅ Map from student_profile.minor
       employeeNumber: data.student_profile?.ubc_employee_id || '',
       avatar: data.avatar || "/placeholder.svg?height=120&width=120",
 
@@ -270,10 +266,10 @@ export default function ProfilePage() {
         .map(skill => skill.name) || [],
 
       academicInfo: {
-        yearStanding: data.student_info?.year_standing?.toString() || '',
-        degreeStart: data.student_profile?.year_degree_start?.toString() || '',
-        expectedGraduation: data.student_profile?.expected_graduation || '',
-      },
+            yearStanding: data.student_info?.year_standing?.toString() || '',
+            degreeStart: data.student_profile?.year_degree_start?.toString() || '',
+            expectedGraduation: data.student_info?.expected_graduation || '',  // ✅ This should work now
+        },
     };
   };
 
@@ -334,30 +330,38 @@ export default function ProfilePage() {
   };
 
 
+  // In ProfilePage.jsx, update your existing useEffect:
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
         const data = await getProfile();
         console.log("Fetched user data from backend:", data);
-        console.log("Raw availability from backend:", data.availability);
+
+        // ✅ ADD THIS DEBUG LOGGING:
+        console.log("=== PROFILE DATA DEBUG ===");
+        console.log("Backend student_info:", data.student_info);
+        console.log("Backend student_profile:", data.student_profile);
+        console.log("Major from backend:", data.student_info?.program);
+        console.log("Minor from backend:", data.student_profile?.minor);
+        console.log("Degree start from backend:", data.student_profile?.year_degree_start);
+        console.log("=== END DEBUG ===");
 
         // Transform data to match frontend structure
         const profileData = transformBackendDataToFrontend(data);
-        console.log("Transformed availability:", profileData.availability); // Add this debug line
+        console.log("Transformed data:", profileData);
+
+        // ✅ ADD THIS DEBUG LOGGING TOO:
+        console.log("=== TRANSFORMED DATA DEBUG ===");
+        console.log("Transformed major:", profileData.major);
+        console.log("Transformed minor:", profileData.minor);
+        console.log("Transformed degreeStart:", profileData.academicInfo?.degreeStart);
+        console.log("=== END TRANSFORMED DEBUG ===");
 
         setOriginalUserData(profileData);
         setUserData(profileData);
 
-        // Initialize all edited states with fetched data
-        setEditedProfile({ ...profileData });
-        setEditedAcademicInfo({
-          major: profileData.major,
-          minor: profileData.minor,
-          year: profileData.year,
-          gpa: profileData.gpa,
-          academicInfo: { ...profileData.academicInfo }
-        });
+        // Rest of your existing logic...
         setEditedExperience([...profileData.experience]);
         setEditedSkills({
           technicalSkills: [...profileData.technicalSkills],
@@ -369,7 +373,6 @@ export default function ProfilePage() {
         if (Array.isArray(availabilityArray) && availabilityArray.length === 50) {
           setAvailabilityData([...availabilityArray]);
         } else {
-          // If not valid, create a new 50-element array
           setAvailabilityData(Array(50).fill(false));
         }
 
@@ -394,10 +397,10 @@ export default function ProfilePage() {
         first_name: userData.firstName.trim(),
         last_name: userData.lastName.trim(),
         email: userData.email,
-        
+
         student_number: userData.studentId,
         phone: userData.phone || '',
-        
+
         student_profile: {
           ubc_employee_id: userData.employeeNumber
         }
@@ -534,68 +537,126 @@ export default function ProfilePage() {
       setErrors({ api: defaultMessage });
     }
   };
+  // Add this function with your other validation functions
+  const validateAcademicForm = () => {
+    const newErrors = {};
 
-  // handleSave for Academic Information
-  const handleSaveAcademicInfo = async () => {
-    // Add validation specific to academic info fields if needed
-    if (!editedAcademicInfo.major.trim()) {
-      setErrors({ major: "Major is required." });
-      return;
+    // Validate required fields
+    if (!userData.major?.trim()) {
+      newErrors.major = "Major is required";
     }
 
-    setIsSaving(true);
-    setErrors({});
+    if (!userData.year?.trim()) {
+      newErrors.year = "Academic level is required";
+    }
+
+    if (!userData.academicInfo?.degreeStart?.trim()) {
+      newErrors.degreeStart = "Degree start year is required";
+    }
+
+    if (!userData.academicInfo?.yearStanding?.trim()) {
+      newErrors.yearStanding = "Year standing is required";
+    }
+
+    if (!userData.academicInfo?.expectedGraduation?.trim()) {
+      newErrors.expectedGraduation = "Expected graduation is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSaveAcademicInfo = async () => {
+    if (!validateAcademicForm()) return;
+    setIsSavingAcademic(true);
+    setAcademicErrors({});
 
     try {
+      // Send data in the format your backend expects
       const academicData = {
-        program: editedAcademicInfo.major,
-        minor: editedAcademicInfo.minor,
-        study_level: editedAcademicInfo.year,
-        gpa: editedAcademicInfo.gpa,
-        year_standing: editedAcademicInfo.academicInfo.yearStanding,
-        year_degree_start: editedAcademicInfo.academicInfo.degreeStart,
-        expected_graduation: editedAcademicInfo.academicInfo.expectedGraduation
+        // Student model fields (sent at top level)
+        program: userData.major,  // Major -> program
+        study_level: userData.year,  // Academic Level -> study_level
+        year_standing: userData.academicInfo.yearStanding ? parseInt(userData.academicInfo.yearStanding) : null,
+        expected_graduation: userData.academicInfo.expectedGraduation || '',  // ✅ Add this line
+
+        // StudentProfile fields (sent nested)
+        student_profile: {
+          gpa: userData.gpa || null,
+          minor: userData.minor || '',
+          year_degree_start: userData.academicInfo.degreeStart ? parseInt(userData.academicInfo.degreeStart) : null,
+        }
       };
 
-      await updateAcademicInfo(academicData);
+      console.log("=== ACADEMIC SAVE DEBUG ===");
+      console.log("Academic data to save:", academicData);
 
-      // Update local state
-      setUserData(prev => ({
-        ...prev,
-        major: editedAcademicInfo.major,
-        minor: editedAcademicInfo.minor,
-        year: editedAcademicInfo.year,
-        gpa: editedAcademicInfo.gpa,
-        academicInfo: { ...editedAcademicInfo.academicInfo }
-      }));
+      const response = await updateProfile(academicData); // Use updateProfile, not updateAcademicInfo
+      console.log("Academic update response:", response);
 
-      setOriginalUserData(prev => ({
-        ...prev,
-        major: editedAcademicInfo.major,
-        minor: editedAcademicInfo.minor,
-        year: editedAcademicInfo.year,
-        gpa: editedAcademicInfo.gpa,
-        academicInfo: { ...editedAcademicInfo.academicInfo }
-      }));
+      // Refresh profile data
+      const refreshedData = await getProfile();
+      const transformedData = transformBackendDataToFrontend(refreshedData);
+
+      setOriginalUserData(transformedData);
+      setUserData(transformedData);
 
       setIsEditingAcademic(false);
       showSuccessMessage("Academic information updated successfully");
     } catch (error) {
-      handleApiError(error, "Failed to save academic information. Please try again.");
+      console.error("Save academic info error:", error);
+      if (error.response && error.response.status === 400 && error.response.data) {
+        const backendErrors = error.response.data;
+        const formattedErrors = {};
+
+        for (const field in backendErrors) {
+          if (Array.isArray(backendErrors[field])) {
+            formattedErrors[field] = backendErrors[field][0];
+          } else {
+            formattedErrors[field] = backendErrors[field];
+          }
+        }
+        setAcademicErrors(formattedErrors);
+      } else {
+        setAcademicErrors({ api: "Failed to save academic information. Please try again." });
+      }
     } finally {
-      setIsSaving(false);
+      setIsSavingAcademic(false);
     }
+  };
+
+  // Add this function to handle academic info changes
+  const handleAcademicInputChange = (field, value) => {
+    console.log(`Academic input change: ${field} = "${value}"`);
+
+    if (field.includes('.')) {
+      // Handle nested fields like academicInfo.degreeStart
+      const [parent, child] = field.split('.');
+      setUserData((prev) => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      // Handle top-level fields
+      setUserData((prev) => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+
+    // Clear any related errors
+    const newErrors = { ...errors };
+    delete newErrors[field];
+    setErrors(newErrors);
   };
 
   // handleCancel for Academic Information
   const handleCancelAcademicInfo = () => {
-    setEditedAcademicInfo({
-      major: originalUserData.major,
-      minor: originalUserData.minor,
-      year: originalUserData.year,
-      gpa: originalUserData.gpa,
-      academicInfo: { ...originalUserData.academicInfo }
-    });
+    // Reset userData to original values instead of editedAcademicInfo
+    setUserData({ ...originalUserData });
     setIsEditingAcademic(false);
     setErrors({});
   };
@@ -1096,13 +1157,6 @@ export default function ProfilePage() {
                   <Button
                     size="sm"
                     onClick={() => {
-                      setEditedAcademicInfo({
-                        major: userData.major,
-                        minor: userData.minor,
-                        year: userData.year,
-                        gpa: userData.gpa,
-                        academicInfo: { ...userData.academicInfo }
-                      });
                       setIsEditingAcademic(true);
                     }}
                   >
@@ -1119,21 +1173,21 @@ export default function ProfilePage() {
                     <Label>Major<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
-                        value={editedAcademicInfo.major}
-                        onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, major: e.target.value })}
+                        value={userData.major || ''}
+                        onChange={(e) => handleAcademicInputChange("major", e.target.value)}
                       />
                     ) : (
                       <p className="text-sm">{userData.major}</p>
                     )}
+                    {errors.major && <p className="text-red-500 text-xs">{errors.major}</p>}
                   </div>
+
                   <div className="space-y-2">
                     <Label>Academic Level<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Select.Root
-                        value={editedAcademicInfo.year}
-                        onValueChange={(value) =>
-                          setEditedAcademicInfo({ ...editedAcademicInfo, year: value })
-                        }
+                        value={userData.year || ''}
+                        onValueChange={(value) => handleAcademicInputChange("year", value)}
                       >
                         <Select.Trigger className="flex items-center justify-between w-full border rounded px-3 py-2 text-sm">
                           <Select.Value placeholder="Select Academic Level" />
@@ -1146,15 +1200,6 @@ export default function ProfilePage() {
                             <ChevronUp className="h-4 w-4" />
                           </Select.ScrollUpButton>
                           <Select.Viewport className="p-1">
-                            <Select.Item
-                              value=" "
-                              className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-500"
-                            >
-                              <Select.ItemText>Select Academic Level</Select.ItemText>
-                              <Select.ItemIndicator>
-                                <Check className="h-4 w-4" />
-                              </Select.ItemIndicator>
-                            </Select.Item>
                             <Select.Item
                               value="Undergraduate"
                               className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
@@ -1182,81 +1227,66 @@ export default function ProfilePage() {
                     ) : (
                       <p className="text-sm">{userData.year}</p>
                     )}
+                    {errors.year && <p className="text-red-500 text-xs">{errors.year}</p>}
                   </div>
+
                   <div className="space-y-2">
                     <Label>GPA (Optional)</Label>
                     {isEditingAcademic ? (
                       <Input
-                        value={editedAcademicInfo.gpa}
-                        onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, gpa: e.target.value })}
+                        value={userData.gpa || ''}
+                        onChange={(e) => handleAcademicInputChange("gpa", e.target.value)}
                       />
                     ) : (
                       <p className="text-sm">{userData.gpa}</p>
                     )}
                   </div>
+
                   <div className="space-y-2">
                     <Label>Expected Graduation<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
-                        value={editedAcademicInfo.academicInfo.expectedGraduation}
-                        onChange={(e) =>
-                          setEditedAcademicInfo({
-                            ...editedAcademicInfo,
-                            academicInfo: {
-                              ...editedAcademicInfo.academicInfo,
-                              expectedGraduation: e.target.value
-                            }
-                          })
-                        }
+                        value={userData.academicInfo?.expectedGraduation || ''}
+                        onChange={(e) => handleAcademicInputChange("academicInfo.expectedGraduation", e.target.value)}
                       />
                     ) : (
-                      <p className="text-sm">{userData.academicInfo.expectedGraduation}</p>
+                      <p className="text-sm">{userData.academicInfo?.expectedGraduation}</p>
                     )}
+                    {errors.expectedGraduation && <p className="text-red-500 text-xs">{errors.expectedGraduation}</p>}
                   </div>
+
                   <div className="space-y-2">
                     <Label>Degree Start<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
-                        value={editedAcademicInfo.academicInfo.degreeStart}
-                        onChange={(e) =>
-                          setEditedAcademicInfo({
-                            ...editedAcademicInfo,
-                            academicInfo: {
-                              ...editedAcademicInfo.academicInfo,
-                              degreeStart: e.target.value
-                            }
-                          })
-                        }
+                        value={userData.academicInfo?.degreeStart || ''}
+                        onChange={(e) => handleAcademicInputChange("academicInfo.degreeStart", e.target.value)}
                       />
                     ) : (
-                      <p className="text-sm">{userData.academicInfo.degreeStart}</p>
+                      <p className="text-sm">{userData.academicInfo?.degreeStart}</p>
                     )}
+                    {errors.degreeStart && <p className="text-red-500 text-xs">{errors.degreeStart}</p>}
                   </div>
+
                   <div className="space-y-2">
                     <Label>Year Standing<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
                       <Input
-                        value={editedAcademicInfo.academicInfo.yearStanding}
-                        onChange={(e) =>
-                          setEditedAcademicInfo({
-                            ...editedAcademicInfo,
-                            academicInfo: {
-                              ...editedAcademicInfo.academicInfo,
-                              yearStanding: e.target.value
-                            }
-                          })
-                        }
+                        value={userData.academicInfo?.yearStanding || ''}
+                        onChange={(e) => handleAcademicInputChange("academicInfo.yearStanding", e.target.value)}
                       />
                     ) : (
-                      <p className="text-sm">{userData.academicInfo.yearStanding}</p>
+                      <p className="text-sm">{userData.academicInfo?.yearStanding}</p>
                     )}
+                    {errors.yearStanding && <p className="text-red-500 text-xs">{errors.yearStanding}</p>}
                   </div>
+
                   <div className="space-y-2">
                     <Label>Minor (Optional)</Label>
                     {isEditingAcademic ? (
                       <Input
-                        value={editedAcademicInfo.minor}
-                        onChange={(e) => setEditedAcademicInfo({ ...editedAcademicInfo, minor: e.target.value })}
+                        value={userData.minor || ''}
+                        onChange={(e) => handleAcademicInputChange("minor", e.target.value)}
                       />
                     ) : (
                       <p className="text-sm">{userData.minor}</p>

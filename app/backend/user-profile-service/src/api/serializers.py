@@ -73,19 +73,29 @@ class AdminProfileSerializer(serializers.ModelSerializer):
 
 class UpdateStudentProfileSerializer(serializers.ModelSerializer):
     student_profile = StudentProfileSerializer()
-    student_number = serializers.CharField(required = False)
+    student_number = serializers.CharField(required=False)
     phone = serializers.CharField(required=False, allow_blank=True)
-    
+    year_standing = serializers.IntegerField(required=False)  # ✅ Add this line
+    expected_graduation = serializers.CharField(required=False, allow_blank=True)  # ✅ Add this line
+    program = serializers.CharField(required=False, allow_blank=True)  # ✅ Add this too
+    study_level = serializers.CharField(required=False, allow_blank=True)  # ✅ Add this too
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'student_profile', 'student_number', 'phone']
+        fields = [
+            'first_name', 'last_name', 'email', 'student_profile', 
+            'student_number', 'phone', 'year_standing', 'expected_graduation',  # ✅ Add these
+            'program', 'study_level'  # ✅ Add these
+        ]
     
     def update(self, instance, validated_data):
     # Extract nested and Student model data
         profile_data = validated_data.pop('student_profile', None)
         student_number = validated_data.pop('student_number', None)
         phone = validated_data.pop('phone', None)
+
+        year_standing = validated_data.pop('year_standing', None)
+        expected_graduation = validated_data.pop('expected_graduation', None)
 
         print(f"After extraction:")
         print(f"student_number: {student_number}")
@@ -142,6 +152,13 @@ class UpdateStudentProfileSerializer(serializers.ModelSerializer):
             if phone is not None:
                 student.phone = phone
                 print(f"Updated phone from {old_phone} to {phone}")
+            if year_standing is not None:
+                student.year_standing = year_standing
+                print(f"Updated year_standing to {year_standing}")
+            if expected_graduation is not None:
+                student.expected_graduation = expected_graduation
+                print(f"Updated expected_graduation to {expected_graduation}")
+            
             
             student.save()
             print(f"Student saved successfully")
@@ -312,7 +329,8 @@ class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
                 'program': student.program,
                 'year_standing': student.year_standing,
                 'study_level': student.study_level,
-                'phone': student.phone
+                'phone': student.phone,
+                'expected_graduation': student.expected_graduation
             }
         except Student.DoesNotExist:
             return None

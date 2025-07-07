@@ -77,22 +77,27 @@ export const updateAcademicInfo = async (academicData) => {
   try {
     // Format academic data to match backend structure
     const formattedData = {
-      student_info: {
-        program: academicData.program,
-        study_level: academicData.study_level,
-        year_standing: academicData.year_standing,
-      },
+      // Student model fields
+      program: academicData.major,  // Major -> program
+      study_level: academicData.academicLevel,  // Academic Level -> study_level
+      year_standing: academicData.yearStanding ? parseInt(academicData.yearStanding) : null,
+      
+      // StudentProfile fields
       student_profile: {
-        gpa: academicData.gpa,
-        minor: academicData.minor,
-        year_degree_start: academicData.year_degree_start,
-        expected_graduation: academicData.expected_graduation
+        gpa: academicData.gpa || null,
+        minor: academicData.minor || '',
+        year_degree_start: academicData.degreeStart ? parseInt(academicData.degreeStart) : null,
+        expected_graduation: academicData.expectedGraduation || ''
       }
     };
+
+    console.log("Sending academic data to backend:", formattedData);
 
     const response = await axios.patch(`${API_URL}/profile/me/update/`, formattedData, {
       headers: getAuthHeaders()
     });
+    
+    console.log("Academic update response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error updating academic info:", error.response?.data || error.message);
