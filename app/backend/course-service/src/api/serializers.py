@@ -96,60 +96,28 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
     academic_term = AcademicTermSerializer(read_only=True)
     instructor = serializers.StringRelatedField(read_only=True)
-    time_slots = TimeSlotSerializer(many=True, read_only=True)
 
     class Meta:
         model = CourseOffering
         fields = [
             'course_offering_id', 'course', 'section_number', 'academic_term',
-            'instructor', 'time_slots'
+            'instructor'
         ]
 
 class CourseOfferingCreateSerializer(serializers.ModelSerializer):
-    time_slots = TimeSlotCreateSerializer(many=True, required=False)
-
     class Meta:
         model = CourseOffering
         fields = [
             'course', 'section_number', 'academic_term',
-            'instructor', 'time_slots'
+            'instructor'
         ]
 
-    def create(self, validated_data):
-        time_slots_data = validated_data.pop('time_slots', [])
-
-        # Create the CourseOffering
-        course_offering = CourseOffering.objects.create(**validated_data)
-
-        # Add time slots (create or reuse)
-        for slot_data in time_slots_data:
-            slot_obj, _ = TimeSlot.objects.get_or_create(
-                day=slot_data['day'],
-                start_time=slot_data['start_time'],
-                end_time=slot_data['end_time']
+    def validate_section_number(self, value):
+        """Validate section number format"""
+        import re
+        if not re.match(r'^[A-Z0-9]{1,3}$', value):
+            raise serializers.ValidationError(
+                "Section number must be 1-3 characters, alphanumeric (e.g., '001', 'L01')"
             )
-            course_offering.time_slots.add(slot_obj)
-
-        return course_offering
-
-    def update(self, instance, validated_data):
-        time_slots_data = validated_data.pop('time_slots', None)
-        
-        # Update basic fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        # Update time slots if provided
-        if time_slots_data is not None:
-            instance.time_slots.clear()
-            for slot_data in time_slots_data:
-                slot_obj, _ = TimeSlot.objects.get_or_create(
-                    day=slot_data['day'],
-                    start_time=slot_data['start_time'],
-                    end_time=slot_data['end_time']
-                )
-                instance.time_slots.add(slot_obj)
-
-        return instance
+        return value
 

@@ -155,8 +155,8 @@ class TimeSlotViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def available_slots(self, request):
-        """Custom action to get available time slots (not assigned to any course offering)"""
-        available_slots = TimeSlot.objects.filter(course_offerings__isnull=True)
+        """Custom action to get all time slots (since time slots are no longer directly linked to course offerings)"""
+        available_slots = TimeSlot.objects.all()
         serializer = TimeSlotSerializer(available_slots, many=True)
         return Response(serializer.data)
 
