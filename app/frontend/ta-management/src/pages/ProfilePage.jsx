@@ -261,7 +261,7 @@ export default function ProfilePage() {
       // Transform arrays appropriately
       coursePreference: data.course_preferences?.map(pref => pref.course_code) || [],
       experience: transformExperiences(data.experiences),
-      availability: transformAvailability(data.availability),
+      availability: transformAvailability(data.availability) || [],
 
       // Handle skills - separate by type
       technicalSkills: data.skills?.filter(skill => skill.skill_type === 'technical')
@@ -978,7 +978,7 @@ export default function ProfilePage() {
                 {isEditing ? (
                   <div className="flex gap-2">
                     <Button
-                      onClick={handleSavePersonalInfo(userData)}
+                      onClick={() => handleSavePersonalInfo(userData)}
                       className="gap-2"
                       disabled={isSaving || !isFormValid()}
                     >
@@ -993,7 +993,9 @@ export default function ProfilePage() {
                 ) : (
                   <Button
                     onClick={() => {
+                      console.log("Edit button clicked, setting userData to editedProfile");
                       setEditedProfile({ ...userData });
+                      console.log("EditedProfile finished");
                       setIsEditing(true);
                     }}
                     className="gap-2"
@@ -1146,7 +1148,7 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={handleSaveAcademicInfo(userData)}
+                      onClick={() => handleSaveAcademicInfo(userData)}
                       disabled={isSaving}
                     >
                       {isSaving ? "Saving..." : "Save"}
@@ -1313,7 +1315,7 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={handleSaveExperience(editedExperience)}
+                      onClick={() => handleSaveExperience(editedExperience)}
                       disabled={isSaving}
                     >
                       {isSaving ? "Saving..." : "Save"}
@@ -1470,7 +1472,7 @@ export default function ProfilePage() {
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            onClick={handleSaveSkills(editedSkills)}
+                            onClick={() => handleSaveSkills(editedSkills)}
                             disabled={isSaving}
                           >
                             {isSaving ? "Saving..." : "Save"}
@@ -1666,7 +1668,7 @@ export default function ProfilePage() {
                           {isEditingCourses ? (
                             <>
                               <Button
-                                onClick={handleSaveCourses(coursePreference)}
+                                onClick={() => handleSaveCourses(coursePreference)}
                                 className="gap-2"
                                 disabled={isSaving}
                               >
