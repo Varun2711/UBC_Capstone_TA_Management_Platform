@@ -96,6 +96,10 @@ class UpdateStudentProfileSerializer(serializers.ModelSerializer):
 
         year_standing = validated_data.pop('year_standing', None)
         expected_graduation = validated_data.pop('expected_graduation', None)
+        
+        #talk to Reyhan about this line and the one on line 166
+        #study_level = validated_data.pop('study_level', None)  # Add this near your other pops
+
 
         print(f"After extraction:")
         print(f"student_number: {student_number}")
@@ -159,7 +163,11 @@ class UpdateStudentProfileSerializer(serializers.ModelSerializer):
                 student.expected_graduation = expected_graduation
                 print(f"Updated expected_graduation to {expected_graduation}")
             
-            
+            #talk to Reyhan about this line
+            if study_level is not None:
+                student.study_level = study_level
+                print(f"Updated study_level to {study_level}")
+
             student.save()
             print(f"Student saved successfully")
             
