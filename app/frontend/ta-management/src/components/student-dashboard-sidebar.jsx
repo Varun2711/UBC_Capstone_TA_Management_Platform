@@ -75,8 +75,6 @@ export function AppSidebar({ name, email, avatar }) {
     navigate(url);
   };
 
-  console.log("AppSidebar rendered with name:", name, "email:", email, "avatar:", avatar);
-
   return (
     <Sidebar>
       <SidebarHeader>

@@ -65,25 +65,8 @@
     }
   },
   {
-    "model": "myapp.student",
-    "pk": 2,
-    "fields": {
-      "student_number": "20241002",
-      "name": "Alex Chen",
-      "phone": "+1-250-555-0102",
-      "program": "Computer Science",
-      "year_standing": 4,
-      "study_level": "PhD",
-      "department": 1,
-      "sin": "987654321",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "email": "alex.chen@student.ubc.ca",
-      "is_active": true
-    }
-  },
-  {
     "model" : "myapp.student",
-    "pk": 3,
+    "pk": 2,
     "fields": {
       "student_number": "20241003",
       "name": "Aadil Sh",
