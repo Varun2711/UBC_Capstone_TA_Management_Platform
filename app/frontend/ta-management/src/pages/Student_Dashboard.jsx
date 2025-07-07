@@ -132,7 +132,8 @@ export default function StudentDashboard() {
   const [error, setError] = useState([]);
 
   // State for loading and error handling
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isLoadingApplications, setIsLoadingApplications] = useState(true);
   const [fetchError, setFetchError] = useState(null);
 
   // State for current user data (displayed and modified)
@@ -158,7 +159,7 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        setIsLoading(true);
+        setIsLoadingProfile(true);
         const data = await getProfile();
         console.log("Fetched user data:", data);
         console.log("ID of student data:", data.id);
@@ -171,15 +172,17 @@ export default function StudentDashboard() {
         setFetchError("Could not load your profile. Please try again later.");
         console.error("Fetch profile error:", error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingProfile(false);
       }
     };
 
-    fetchApplications();
-  }, [userData]); // ✅ Runs only when userData is updated
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     const fetchApplications = async () => {
+
+      setIsLoadingApplications(true);
 
       console.log("In useEffect: fetchApplications has started");
       console.log("Current userData:", userData);
@@ -225,6 +228,9 @@ export default function StudentDashboard() {
         console.log("Using mock data for submitted applications");
         setSubmittedApplications(mockSubmittedApplications);
       }
+      finally {
+        setIsLoadingApplications(false);
+      }
     };
 
     fetchApplications();
@@ -240,11 +246,7 @@ export default function StudentDashboard() {
     });
   };
 
-  if (isLoading || !userData) {
-    return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
-  }
-
-  if (isLoading || !userData) {
+  if (isLoadingProfile || isLoadingApplications || !userData) {
     return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
   }
 

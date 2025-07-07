@@ -193,9 +193,13 @@ export default function ProfilePage() {
     const extractSemesterFromDate = (dateString) => {
       if (!dateString) return '';
       try {
+        console.log("dateString is:", dateString);
         const date = new Date(dateString);
+        console.log("dateString to date becomes :", date);
         const year = date.getFullYear();
         const month = date.getMonth();
+        console.log("Extracted semester info:", { year, month });
+
 
         let term = 'Winter';
         if (month >= 4 && month <= 7) term = 'Summer';
@@ -386,7 +390,7 @@ export default function ProfilePage() {
     fetchUserData();
   }, []);
 
-  const handleSavePersonalInfo = async () => {
+  const handleSavePersonalInfo = async (userData) => {
     if (!validateForm()) return;
     setIsSaving(true);
     setErrors({});
@@ -422,7 +426,10 @@ export default function ProfilePage() {
       console.log("Transformed refreshed data:", transformedData);
 
       // Update both original and current data
+      console.log("About to update originalUserData by calling setOriginalUserData function");
       setOriginalUserData(transformedData);
+
+      console.log("About to update userData by calling setUserData function");
       setUserData(transformedData);
 
       setIsEditing(false);
@@ -566,7 +573,7 @@ export default function ProfilePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSaveAcademicInfo = async () => {
+  const handleSaveAcademicInfo = async (userData) => {
     if (!validateAcademicForm()) return;
     setIsSavingAcademic(true);
     setAcademicErrors({});
@@ -662,7 +669,7 @@ export default function ProfilePage() {
   };
 
   // Replace your existing handleSaveExperience function with this:
-  const handleSaveExperience = async () => {
+  const handleSaveExperience = async (editedExperience) => {
     // Validate experience data
     const hasEmptyFields = editedExperience.some(exp =>
       !exp.course.trim() || !exp.semester.trim() || !exp.professor.trim()
@@ -686,9 +693,9 @@ export default function ProfilePage() {
 
         // Create a reasonable date based on term and year
         let startDate = `${year}-`;
-        if (term.toLowerCase().includes('winter')) startDate += '01-01';
-        else if (term.toLowerCase().includes('summer')) startDate += '05-01';
-        else if (term.toLowerCase().includes('fall')) startDate += '09-01';
+        if (term.toLowerCase().includes('winter')) startDate += '01-02';
+        else if (term.toLowerCase().includes('summer')) startDate += '05-02';
+        else if (term.toLowerCase().includes('fall')) startDate += '09-02';
         else startDate += '01-01';
 
         return {
@@ -733,7 +740,7 @@ export default function ProfilePage() {
 
   // Add this function with your other handle functions
   // Update the handleSaveSkills function
-  const handleSaveSkills = async () => {
+  const handleSaveSkills = async (editedSkills) => {
     // Validate skills data
     const hasEmptyTechnicalSkills = editedSkills.technicalSkills.some(skill => skill.trim() === "");
     const hasEmptySoftSkills = editedSkills.softSkills.some(skill => skill.trim() === "");
@@ -808,7 +815,7 @@ export default function ProfilePage() {
   };
 
   // handleSave for Course Preferences
-  const handleSaveCourses = async () => {
+  const handleSaveCourses = async (coursePreference) => {
     const hasEmptyCoursePreference = coursePreference.some(course => course.trim() === "");
     if (hasEmptyCoursePreference) {
       setErrors({ courses: "Each course preference must contain text." });
@@ -860,7 +867,7 @@ export default function ProfilePage() {
   };
 
   // handleSave for Availability
-  const handleSaveAvailability = async () => {
+  const handleSaveAvailability = async (availabilityData) => {
     console.log("=== DEBUG AVAILABILITY SAVE ===");
     console.log("availabilityData:", availabilityData);
     console.log("availabilityData type:", typeof availabilityData);
@@ -971,7 +978,7 @@ export default function ProfilePage() {
                 {isEditing ? (
                   <div className="flex gap-2">
                     <Button
-                      onClick={handleSavePersonalInfo}
+                      onClick={handleSavePersonalInfo(userData)}
                       className="gap-2"
                       disabled={isSaving || !isFormValid()}
                     >
@@ -1139,7 +1146,7 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={handleSaveAcademicInfo}
+                      onClick={handleSaveAcademicInfo(userData)}
                       disabled={isSaving}
                     >
                       {isSaving ? "Saving..." : "Save"}
@@ -1306,7 +1313,7 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={handleSaveExperience}
+                      onClick={handleSaveExperience(editedExperience)}
                       disabled={isSaving}
                     >
                       {isSaving ? "Saving..." : "Save"}
@@ -1463,7 +1470,7 @@ export default function ProfilePage() {
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            onClick={handleSaveSkills}
+                            onClick={handleSaveSkills(editedSkills)}
                             disabled={isSaving}
                           >
                             {isSaving ? "Saving..." : "Save"}
@@ -1659,7 +1666,7 @@ export default function ProfilePage() {
                           {isEditingCourses ? (
                             <>
                               <Button
-                                onClick={handleSaveCourses}
+                                onClick={handleSaveCourses(coursePreference)}
                                 className="gap-2"
                                 disabled={isSaving}
                               >
@@ -1764,7 +1771,7 @@ export default function ProfilePage() {
                         <Button
                           onClick={() => {
                             console.log("Save button clicked!"); // Add this debug line
-                            handleSaveAvailability();
+                            handleSaveAvailability(availabilityData);
                           }}
                           className="gap-2"
                           disabled={isSaving}
