@@ -48,7 +48,7 @@ export default function CreateAccount1() {
     setError("") // Clear error before proceeding
 
     // Store form data in localStorage or context
-    localStorage.setItem("createAccount1", JSON.stringify(formData))
+    sessionStorage.setItem("createAccount1", JSON.stringify(formData))
     navigate("/create-account/step2")
   }
 

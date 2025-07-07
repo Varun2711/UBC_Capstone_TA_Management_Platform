@@ -24,8 +24,8 @@ export default function CreateAccount3() {
 
   useEffect(() => {
     // Check if previous steps data exists
-    const step1Data = localStorage.getItem("createAccount1")
-    const step2Data = localStorage.getItem("createAccount2")
+    const step1Data = sessionStorage.getItem("createAccount1")
+    const step2Data = sessionStorage.getItem("createAccount2")
     if (!step1Data || !step2Data) {
       navigate("/create-account/step1")
     }
@@ -61,8 +61,8 @@ export default function CreateAccount3() {
 
     try {
       // Combine all form data
-      const step1Data = JSON.parse(localStorage.getItem("createAccount1"))
-      const step2Data = JSON.parse(localStorage.getItem("createAccount2"))
+      const step1Data = JSON.parse(sessionStorage.getItem("createAccount1"))
+      const step2Data = JSON.parse(sessionStorage.getItem("createAccount2"))
 
       // Format data to match the StudentRegistrationSerializer
       const registerData = {
@@ -95,7 +95,7 @@ export default function CreateAccount3() {
 
         // After logging in, save the additional profile data
         if (loginResponse.data && loginResponse.data.access) {
-          localStorage.setItem('accessToken', loginResponse.data.access)
+          sessionStorage.setItem('accessToken', loginResponse.data.access)
 
           // Now save the additional profile information that wasn't part of registration
           try {

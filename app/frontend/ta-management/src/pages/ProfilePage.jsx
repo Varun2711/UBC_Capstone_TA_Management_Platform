@@ -284,7 +284,7 @@ export default function ProfilePage() {
 
   const checkProfileAssociation = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = sessionStorage.getItem('accessToken');
       if (!token) return false;
 
       try {

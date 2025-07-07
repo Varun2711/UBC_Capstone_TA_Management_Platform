@@ -257,7 +257,7 @@ export default function ApplicationForm() {
 
   useEffect(() => {
     const fetchStudentProfile = async (studentId) => {
-      const accessToken = localStorage.getItem("accessToken");
+      const accessToken = sessionStorage.getItem("accessToken");
 
       //if we can't find the accces token, then for the demo, use the mock student profile data
       if (!accessToken) {
@@ -359,7 +359,7 @@ export default function ApplicationForm() {
 
       console.log(applicationData);
 
-      const accessToken = localStorage.getItem("accessToken"); //get the access token for the student profile update
+      const accessToken = sessionStorage.getItem("accessToken"); //get the access token for the student profile update
 
       const profileData = transformStudentToApiFormat(student); //format the data to fit the student profile
 

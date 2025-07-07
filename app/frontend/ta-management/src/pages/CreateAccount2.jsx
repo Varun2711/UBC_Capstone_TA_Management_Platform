@@ -21,7 +21,7 @@ export default function CreateAccount2() {
 
   useEffect(() => {
     // Check if step 1 data exists
-    const step1Data = localStorage.getItem("createAccount1")
+    const step1Data = sessionStorage.getItem("createAccount1")
     if (!step1Data) {
       navigate("/create-account/step1")
     }
@@ -84,7 +84,7 @@ export default function CreateAccount2() {
     }
 
     setError("")
-    localStorage.setItem("createAccount2", JSON.stringify(formData))
+    sessionStorage.setItem("createAccount2", JSON.stringify(formData))
     navigate("/create-account/step3")
   }
 
