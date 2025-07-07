@@ -29,7 +29,7 @@ import { logout } from "@/logic/auth"
 const navigationItems = [
   {
     title: "Dashboard",
-    url: "/TAdashboard",
+    url: "/scheduler-dashboard",
     icon: Home,
   },
   {
@@ -167,5 +167,5 @@ export function AppSidebar({ activePage, ...props }) {
       </SidebarFooter>
     </Sidebar>
   );
-  );
+  
 }
