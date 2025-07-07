@@ -90,41 +90,110 @@ const studentProfile = {
 };
 
 const cleanApiDataFormat = (apiData) => {
-  return {
+  // ✅ SIMPLIFIED availability transformation that matches ProfilePage.jsx
+  const transformAvailability = (availability) => {
+    console.log("=== AVAILABILITY TRANSFORM DEBUG ===");
+    console.log("Input availability:", availability);
+
+    // If it's already an array (from ProfilePage format), return as-is
+    if (Array.isArray(availability)) {
+      console.log("Already array format, returning as-is");
+      return availability;
+    }
+
+    // If no availability data, return empty array
+    if (!availability || typeof availability !== 'object') {
+      console.log("No availability data, returning empty array");
+      return [];
+    }
+
+    // Extract availability grid
+    const availabilityGrid = availability.availability_grid || availability;
+    console.log("Extracted grid:", availabilityGrid);
+
+    if (!availabilityGrid || typeof availabilityGrid !== 'object') {
+      return [];
+    }
+
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const selectedSlots = [];
+
+    // ✅ SIMPLIFIED: Use the same logic as ProfilePage.jsx
+    const timeMap = {
+      '8:00am': '8-top', '8:30am': '8-bottom',
+      '9:00am': '9-top', '9:30am': '9-bottom',
+      '10:00am': '10-top', '10:30am': '10-bottom',
+      '11:00am': '11-top', '11:30am': '11-bottom',
+      '12:00pm': '12-top', '12:30pm': '12-bottom',
+      '1:00pm': '13-top', '1:30pm': '13-bottom',
+      '2:00pm': '14-top', '2:30pm': '14-bottom',
+      '3:00pm': '15-top', '3:30pm': '15-bottom',
+      '4:00pm': '16-top', '4:30pm': '16-bottom',
+      '5:00pm': '17-top', '5:30pm': '17-bottom',
+      '6:00pm': '18-top', '6:30pm': '18-bottom',
+      '7:00pm': '19-top', '7:30pm': '19-bottom',
+      '8:00pm': '20-top', '8:30pm': '20-bottom',
+      '9:00pm': '21-top', '9:30pm': '21-bottom',
+    };
+
+    days.forEach(day => {
+      if (availabilityGrid[day] && Array.isArray(availabilityGrid[day])) {
+        availabilityGrid[day].forEach(time => {
+          const timeSlot = timeMap[time];
+          if (timeSlot) {
+            const dayCapitalized = day.charAt(0).toUpperCase() + day.slice(1);
+            selectedSlots.push(`${dayCapitalized}-${timeSlot}`);
+          }
+        });
+      }
+    });
+
+    console.log("Transformed slots:", selectedSlots);
+    console.log("=== END AVAILABILITY DEBUG ===");
+    return selectedSlots;
+  };
+
+  // ✅ SIMPLIFIED data transformation
+  const result = {
     id: apiData.id,
-    name: `${apiData.first_name} ${apiData.last_name}`,
+    name: `${apiData.first_name || ''} ${apiData.last_name || ''}`.trim(),
     email: apiData.email,
     studentId: apiData.student_info?.student_number || "N/A",
     UBCEmployeeId: apiData.student_profile?.ubc_employee_id || "N/A",
     major: apiData.student_info?.program || "N/A",
     minor: apiData.student_profile?.minor || "N/A",
-    year: apiData.student_info?.year_standing || "N/A",
+    year: apiData.student_info?.study_level || "N/A",
     gpa: apiData.student_profile?.gpa || "N/A",
     phone: apiData.student_info?.phone || "N/A",
     avatar: "/placeholder.svg?height=120&width=120",
-    coursePreference:
-      apiData.course_preferences?.map((pref) => pref.course_code) || [],
+    coursePreference: apiData.course_preferences?.map((pref) => pref.course_code) || [],
     academicInfo: {
-      yearStanding: apiData.student_info?.year_standing || "N/A",
-      degreeStart: apiData.student_profile?.year_degree_start || "N/A",
-      expectedGraduation: "May 2026", // This might need to be calculated
+      yearStanding: apiData.student_info?.year_standing?.toString() || "N/A",
+      degreeStart: apiData.student_profile?.year_degree_start?.toString() || "N/A",
+      expectedGraduation: apiData.student_info?.expected_graduation || "N/A",
     },
-    experience:
-      apiData.experiences?.map((exp) => ({
-        course: exp.organization,
-        semester: `${exp.start_date} to ${exp.end_date}`,
-        professor: "Dr. Unknown", // This data might not be in the API
-        description: exp.description,
-      })) || [],
-    technicalSkills:
-      apiData.skills
-        ?.filter((skill) => skill.skill_type === "technical")
-        .map((skill) => skill.name) || [],
-    softSkills:
-      apiData.skills
-        ?.filter((skill) => skill.skill_type === "soft")
-        .map((skill) => skill.name) || [],
+    experience: apiData.experiences?.map((exp) => ({
+      course: exp.position_title?.replace('TA for ', '') || exp.organization || '',
+      semester: `${exp.start_date || ''} to ${exp.end_date || ''}`,
+      professor: exp.organization || "Unknown",
+      description: exp.description || '',
+    })) || [],
+    technicalSkills: apiData.skills
+      ?.filter((skill) => skill.skill_type === "technical")
+      .map((skill) => skill.name) || [],
+    softSkills: apiData.skills
+      ?.filter((skill) => skill.skill_type === "soft")
+      .map((skill) => skill.name) || [],
+    
+    // ✅ Use the simplified availability transformation
+    availability: transformAvailability(apiData.availability),
   };
+
+  console.log("=== FINAL CLEANED DATA ===");
+  console.log("Availability in result:", result.availability);
+  console.log("=== END FINAL DATA ===");
+  
+  return result;
 };
 
 const transformStudentToApiFormat = (studentData) => {
