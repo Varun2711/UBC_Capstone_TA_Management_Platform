@@ -13,12 +13,27 @@ import ErrorMessage from "@/components/ErrorMessage";
 
 const disciplines = ["ASTR", "COSC", "DATA", "MATH", "PHYS", "STAT"];
 const currentApplicationYear = 2025;
+//
+const positionTypeOptions = [
+  { value: "UTA", label: "Undergraduate Teaching Assistant" },
+  { value: "GTA2", label: "Graduate Teaching Assistant 2 (Masters)" },
+  { value: "GTA1", label: "Graduate Teaching Assistant 1 (Ph.D)" },
+];
+
+const workloadOptions = [
+  { value: "6", label: "6 hours" },
+  { value: "12", label: "12 hours" },
+];
 
 /* A helper function used to validate ranked selections for Discplines
  * Ensuring that values can't be repeated
  * Ensuring that the user selects a disicpline for each rank
  */
 export const validateSelections = (rankObj) => {
+  if (!rankObj || typeof rankObj !== "object") {
+    return "Please choose a discipline for all three ranks.";
+  }
+
   const { rank1, rank2, rank3 } = rankObj;
 
   if (!rank1 || !rank2 || !rank3) {
@@ -31,12 +46,6 @@ export const validateSelections = (rankObj) => {
   }
   return null;
 };
-
-// Simple error message component
-// const ErrorMessage = ({ error }) => {
-//   if (!error) return null;
-//   return <p className="text-red-600 text-sm mt-1">{error}</p>;
-// };
 
 export default function Selections({ selections, setSelections, errors = {} }) {
   const [error, setError] = useState("");
@@ -67,14 +76,10 @@ export default function Selections({ selections, setSelections, errors = {} }) {
             setSelections({ ...selections, positionType: val })
           }
         >
-          {[
-            "Undergraduate Teaching Assistant",
-            "Graduate Teaching Assistant 2 (Master's Student)",
-            "Graduate Teaching Assistant 1 (Ph.D student)",
-          ].map((option) => (
-            <Label key={option} className="flex items-center gap-2">
-              <RadioGroupItem value={option} />
-              {option}
+          {positionTypeOptions.map((option) => (
+            <Label key={option.value} className="flex items-center gap-2">
+              <RadioGroupItem value={option.value} />
+              {option.label}
             </Label>
           ))}
         </RadioGroup>
@@ -122,10 +127,10 @@ export default function Selections({ selections, setSelections, errors = {} }) {
             setSelections({ ...selections, workload: val })
           }
         >
-          {["6 hours", "12 hours"].map((option) => (
-            <Label key={option} className="flex items-center gap-2">
-              <RadioGroupItem value={option} />
-              {option}
+          {workloadOptions.map((option) => (
+            <Label key={option.value} className="flex items-center gap-2">
+              <RadioGroupItem value={option.value} />
+              {option.label}
             </Label>
           ))}
         </RadioGroup>

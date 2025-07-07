@@ -23,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { logout } from "@/logic/auth"
 
 const navigationItems = [
   {
@@ -94,7 +95,7 @@ export function InstructorSidebar({ activePage, ...props }) {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="h-10">
-                <SidebarMenuButton className="bg-background text-foreground hover:bg-muted">
+                <SidebarMenuButton className="bg-background text-foreground hover:bg-muted" aria-label="account menu">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src="/placeholder.svg" alt="Ronnie Smith" />
                     <AvatarFallback>RS</AvatarFallback>
@@ -112,7 +113,7 @@ export function InstructorSidebar({ activePage, ...props }) {
                 <DropdownMenuItem>
                   <button>My Profile</button>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/")}>
+                <DropdownMenuItem onClick={() => logout(navigate)}>
                   <button>Logout</button>
                 </DropdownMenuItem>
               </DropdownMenuContent>

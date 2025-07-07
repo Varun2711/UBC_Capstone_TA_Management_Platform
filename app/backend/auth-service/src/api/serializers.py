@@ -31,18 +31,26 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 class InstructorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
-        fields = ['employee_number', 'name', 'faculty', 'email', 'password']
+        fields = ['employee_number', 'name', 'faculty_id', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
+    
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
 
 class TASchedulerSerializer(serializers.ModelSerializer):
     class Meta:
         model = TAScheduler
-        fields = ['employee_number', 'name', 'email', 'department', 'password']
+        fields = ['employee_number', 'name', 'email', 'department_id', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
+    
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
 
 class AdminSerializer(serializers.ModelSerializer):
     class Meta:

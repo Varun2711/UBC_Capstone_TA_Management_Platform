@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,7 +23,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"
+import { logout } from "@/logic/auth"
 
 const navigationItems = [
   {
@@ -42,7 +44,7 @@ const navigationItems = [
   },
   {
     title: "Applications",
-    url: "/applications",
+    url: "/manage-applications",
     icon: FileText,
   },
   {
@@ -142,14 +144,21 @@ export function AppSidebar({ activePage, ...props }) {
                   <MoreVerticalIcon className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-popper-anchor-width]"
+              >
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/user-profile-scheduler')}>
+                  
                   <button>My Profile</button>
+                
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/")}>
+                <DropdownMenuItem onClick={() => logout(navigate)}>
+                  
                   <button>Logout</button>
+                
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -157,5 +166,6 @@ export function AppSidebar({ activePage, ...props }) {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+  );
   );
 }

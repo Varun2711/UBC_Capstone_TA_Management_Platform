@@ -2,14 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
-import LoginPage from "../src/pages/LoginPage"
+import LoginPage from "../../src/pages/LoginPage"
 import axios from "axios"
-
-// Test logn credentials for student (todo: probably put these somewhere else as we have more of them)
-const validEmail = "asmith@capstone.ca"
-const validPassword = "password123"
-const invalidEmail = "zendaya@gmail.com"
-const invalidPassword = "cupcake"
+import { USERS } from "../test-utils/testUsers"
 
 // Mocking
 const mockNavigate = vi.fn()
@@ -24,7 +19,11 @@ vi.mock("react-router-dom", async () => {
   }
 })
 
-// Wrap component with MemoryRouter for testing
+// Constants to mock access tokens
+const ACCESS_TOKEN = "ACCESS_TOKEN"
+const REFERSH_TOKEN = "REFRESH_TOKEN"
+
+// Set up helper fn. that wraps component with MemoryRouter (for testing)
 const renderLoginPage = () => {
   return render(
     <MemoryRouter initialEntries={["/login"]}>
@@ -33,11 +32,14 @@ const renderLoginPage = () => {
   )
 }
 
+// Start of tests
 describe("LoginPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorage.clear()
+    sessionStorage.clear()
   })
+
+  // Basic form behavior
 
   it("renders the login form correctly", () => {
     renderLoginPage()
@@ -75,48 +77,44 @@ describe("LoginPage", () => {
     expect(passwordInput).toHaveAttribute("required")
   })
 
-  describe("login with valid credentials", () => {    
-    // todo: add test cases for other user groups once we are able to test them
-    // currently, just tests student
-
-    beforeEach(() => {
-      vi.clearAllMocks()
-      localStorage.clear()
-    })
-
-    it("if student account, stores access tokens and navigates to student dashboard", async () => {
-      renderLoginPage()
-      const user = userEvent.setup()
-
+  // Valid login for each user type
+  it.each(USERS)(
+    "logs in $type with valid credentials and navigates to $type dashboard",
+    async ({ type, email, password, dashboardRoute }) => {
       // mock a normal response from /auth
       axios.post.mockResolvedValue({
         data: {
-          access: 'ACCESS_TOKEN',
-          refresh: 'REFRESH_TOKEN',
+          access: ACCESS_TOKEN,
+          refresh: REFERSH_TOKEN,
+          user_type: type
         },
       })
       
+      renderLoginPage()
+      const user = userEvent.setup()
+
       const emailInput = screen.getByLabelText(/email address/i)
       const passwordInput = screen.getByLabelText(/password/i)
       const submitButton = screen.getByRole("button", { name: /login/i })
 
-      await user.type(emailInput, validEmail)
-      await user.type(passwordInput, validPassword)
+      await user.type(emailInput, email)
+      await user.type(passwordInput, password)
       await user.click(submitButton)
     
       // check that tokens were stored
-      expect(localStorage.getItem('accessToken')).toBe('ACCESS_TOKEN')
-      expect(localStorage.getItem('refreshToken')).toBe('REFRESH_TOKEN')
+      expect(sessionStorage.getItem('accessToken')).toBe(ACCESS_TOKEN)
+      expect(sessionStorage.getItem('refreshToken')).toBe(REFERSH_TOKEN)
 
       // check that navigated to correct dashboard
-      expect(mockNavigate).toHaveBeenCalledWith("/student-dashboard")
-    })
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(dashboardRoute)
+      })
+    }
+  )
 
-  })
-
-  describe("login with invalid credentials", () => {
-    it("displays an error message and does not store access tokens", async () => {
-      renderLoginPage()
+  // Bad login credentials
+  it("displays error on login with invalid credentials", async () => {
+    renderLoginPage()
       const user = userEvent.setup()
       
       // mock an error response from /auth
@@ -131,16 +129,45 @@ describe("LoginPage", () => {
       const passwordInput = screen.getByLabelText(/password/i)
       const submitButton = screen.getByRole("button", { name: /login/i })
 
-      await user.type(emailInput, invalidEmail)
-      await user.type(passwordInput, invalidPassword)
+      await user.type(emailInput, "notanemail@gmail.com")
+      await user.type(passwordInput, "unicorn")
       await user.click(submitButton)
 
       // check for error message
       expect(screen.getByRole("alert")).toHaveTextContent(/login failed/i);
 
-      // check that does not have access tokens
-      expect(localStorage.getItem("accessToken")).toBeNull();
-      expect(localStorage.getItem("refreshToken")).toBeNull();
-    })
+      // check that does NOT have access tokens
+      expect(sessionStorage.getItem("accessToken")).toBeNull();
+      expect(sessionStorage.getItem("refreshToken")).toBeNull();
   })
+
+  // Already logged-in user should not be permitted to login again
+  it.each(USERS)(
+    "redirects $type to $type dashboard if already logged in",
+    async ({ type, email, name, user_id, dashboardRoute }) => {
+      // mock a normal response from /validate
+      axios.get.mockResolvedValue({
+        data: {
+          valid: "true",
+          user_id: user_id,
+          user_type: type,
+          name: name,
+          email: email
+        },
+      })
+
+      // simulate user already logged in
+      sessionStorage.setItem("accessToken", ACCESS_TOKEN)
+      sessionStorage.setItem("refreshToken", REFERSH_TOKEN)
+      sessionStorage.setItem("user_type", type)
+      
+      renderLoginPage()
+      
+      // expect redirect since already logged in and cannot login again
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(dashboardRoute)
+      })
+    }
+  )
+
 })
