@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Camera,
   Edit,
@@ -97,15 +97,15 @@ export default function StudentProfileForm({
     } = profileData;
 
     if (
-      !name.trim() ||
-      !studentId.trim() ||
-      !email.trim() ||
-      !major.trim() ||
-      !year.trim() ||
-      !password.trim() ||
-      !academicInfo.expectedGraduation.trim() ||
-      !academicInfo.degreeStart.trim() ||
-      !academicInfo.yearStanding.trim()
+      !(name || "").trim() ||
+      !(studentId || "").trim() ||
+      !(email || "").trim() ||
+      !(major || "").trim() ||
+      !(year || "").trim() ||
+      !(password || "").trim() ||
+      !((academicInfo?.expectedGraduation || "").trim()) ||
+      !((academicInfo?.degreeStart || "").trim()) ||
+      !((academicInfo?.yearStanding || "").trim())
     ) {
       alert("Please fill out all required fields.");
       return false;
@@ -118,6 +118,10 @@ export default function StudentProfileForm({
     setProfile(profileData); // Reset to original data
     setIsEditing(false);
   };
+
+  useEffect(() => {
+    setAvailabilityData(profile.availability || []);
+  }, [profile.availability]);
 
   return (
     <div>
