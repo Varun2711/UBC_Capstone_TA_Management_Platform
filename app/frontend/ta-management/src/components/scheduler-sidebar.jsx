@@ -119,7 +119,7 @@ export function AppSidebar({ activePage, ...props }) {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="h-10" disabled={isLoading}>
-                <SidebarMenuButton className="bg-background text-foreground hover:bg-muted">
+                <SidebarMenuButton aria-label = "account menu" className="bg-background text-foreground hover:bg-muted">
                   {isLoading || !user ? (
                     <>
                       <Avatar className="h-6 w-6 bg-muted" />

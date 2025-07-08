@@ -119,7 +119,7 @@ describe('AppSidebar', () => {
 
     const dashboardLink = screen.getByText('Dashboard');
     await user.click(dashboardLink);
-    expect(mockNavigate).toHaveBeenCalledWith('/TAdashboard');
+    expect(mockNavigate).toHaveBeenCalledWith('/scheduler-dashboard');
 
     const allocationsLink = screen.getByText('Allocations');
     await user.click(allocationsLink);
@@ -131,7 +131,7 @@ describe('AppSidebar', () => {
     renderSidebar();
     await waitFor(() => expect(screen.getByText('Jane Doe')).toBeInTheDocument());
     
-    const dropdownTrigger = screen.getByRole('button', { name: /jane doe/i });
+    const dropdownTrigger = screen.getByLabelText('account menu');
     await user.click(dropdownTrigger);
     
     const profileButton = await screen.findByRole('menuitem', { name: /my profile/i });
@@ -147,7 +147,7 @@ describe('AppSidebar', () => {
     renderSidebar();
     await waitFor(() => expect(screen.getByText('Jane Doe')).toBeInTheDocument());
       
-    const dropdownTrigger = screen.getByRole('button', { name: /jane doe/i });
+    const dropdownTrigger = screen.getByLabelText('account menu');
     await user.click(dropdownTrigger);
     
     const logoutButton = await screen.findByRole('menuitem', { name: /logout/i });
@@ -167,7 +167,7 @@ describe('AppSidebar', () => {
         // A good way is to wait for something that proves the loading is over.
         // In this case, the dropdown trigger becomes enabled after loading.
         await waitFor(() => {
-          const dropdownTrigger = screen.getByRole('button', { name: /loading/i });
+          const dropdownTrigger = screen.getByLabelText('account menu');
           expect(dropdownTrigger).not.toBeDisabled();
         });
         
