@@ -202,7 +202,7 @@ export default function CourseManagement() {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar activePage = "Course Management"/>
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
