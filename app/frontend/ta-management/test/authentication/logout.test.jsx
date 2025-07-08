@@ -1,44 +1,50 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import { screen, waitFor } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { USERS } from "../test-utils/testUsers"
-import { renderWithAuth } from "../test-utils/renderWithAuth"
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { USERS } from "../test-utils/testUsers";
+import { renderWithAuth } from "../test-utils/renderWithAuth";
+import { getProfile } from "@/logic/scheduler-profile";
+
+// Mock the module that contains the API call
+vi.mock("@/logic/scheduler-profile", () => ({
+  getProfile: vi.fn(),
+}));
 
 describe("Logout", () => {
-    // for each user_type
-    it.each(USERS)(
-        "logs out $type who is currently logged-in and redirects to landing page",
-        async({ type, dashboardRoute }) => {
-            // render the user-specific dashboard as if we are logged in as that user type
-            renderWithAuth({
-                route: dashboardRoute,
-                userType: type
-            })
+  beforeEach(() => {
+    // Provide a successful mock response for the API call
+    getProfile.mockResolvedValue({ name: 'Test User', email: 'test@user.com' });
+  });
 
-            const user = userEvent.setup()
-            // spy on sessionStorage.clear so that i can check if it was called
-            const clearStorageSpy = vi.spyOn(window.sessionStorage.__proto__, "clear")
+  it.each(USERS)(
+    "logs out $type who is currently logged-in and redirects to landing page",
+    async ({ type, dashboardRoute }) => {
+      renderWithAuth({
+        route: dashboardRoute,
+        userType: type,
+      });
 
-            // 1. Find the account menu dropdown and click on it
-            await waitFor(() => {
-                const dropdownTrigger = screen.getByLabelText(/account menu/i)
-                user.click(dropdownTrigger)
-            })
-            
-            // 2. Find the logout button (inside the dropdown) and click on it
-            const logoutButton = await screen.findByRole("button", { name: /logout/i })
-            await user.click(logoutButton)
+      const user = userEvent.setup();
+      const clearStorageSpy = vi.spyOn(window.sessionStorage.__proto__, "clear");
 
-            // 3. Test for redirection to landing page
-            await waitFor(() => {
-                expect(screen.getByText(/login/i)).toBeInTheDocument()
-            })
+      // 1. Wait for the account menu dropdown to appear and then click it.
+      // `findBy*` queries wait for the element to be in the DOM.
+      const dropdownTrigger = await screen.findByLabelText(/account menu/i);
+      
+      // `user.click` will also wait for the element to be enabled.
+      await user.click(dropdownTrigger);
+      
+      // 2. Find the logout button (menuitem) and click it
+      const logoutButton = await screen.findByRole("menuitem", { name: /logout/i });
+      await user.click(logoutButton);
 
-            // 4. Test that tokens, user_type, etc. were cleared out
-            expect(clearStorageSpy).toHaveBeenCalled()
+      // 3. Test for redirection and storage clearing
+      await waitFor(() => {
+        expect(screen.getByText(/login/i)).toBeInTheDocument();
+      });
+      expect(clearStorageSpy).toHaveBeenCalled();
 
-            // Reset mocks so doesn't affect other tests
-            clearStorageSpy.mockRestore()
-        }
-    )
-})
+      clearStorageSpy.mockRestore();
+    }
+  );
+});
