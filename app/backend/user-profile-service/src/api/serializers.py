@@ -5,8 +5,8 @@ from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, Stu
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = ['name']
-        read_only_fields = ['name']
+        fields = ['id', 'name']  
+        read_only_fields = ['id', 'name']  
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
