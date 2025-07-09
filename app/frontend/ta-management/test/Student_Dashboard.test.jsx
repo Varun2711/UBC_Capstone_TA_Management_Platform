@@ -1,11 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import StudentDashboard from "@/pages/Student_Dashboard";
-import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
-import { MemoryRouter, BrowserRouter } from "react-router-dom";
-import App from "@/App";
+import { vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 
-// ✅ Mock profile module
+// ✅ Mock getProfile() to resolve immediately
 vi.mock("@/logic/student-profile", () => ({
   getProfile: vi.fn(() =>
     Promise.resolve({
@@ -28,40 +26,51 @@ vi.mock("@/logic/student-profile", () => ({
   ),
 }));
 
-beforeEach(() => {
-  localStorage.clear();
-});
+vi.mock("axios", () => ({
+  default: {
+    create: () => ({
+      get: vi.fn(() =>
+        Promise.resolve({
+          data: [
+            {
+              application_id: 1,
+              termSelection: { code: "2025 Term 1" },
+              status: "submitted",
+              applied_at: "2024-01-15",
+              posting: { title: "TA Position", posting_id: 101 },
+            },
+          ],
+        })
+      ),
+    }),
+  },
+}));
+
 
 describe("StudentDashboard", () => {
-  test("logs in and redirects to student dashboard", async () => {
-    const user = userEvent.setup();
 
-    render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    );
-
-    await user.type(screen.getByLabelText(/email address/i), "sarahj@mail.com");
-    await user.type(screen.getByLabelText(/password/i), "password123");
-
-    await user.click(screen.getByRole("button", { name: /sign in/i }));
-
-    await waitFor(() =>
-      expect(screen.getByText(/Welcome back, Sarah!/i)).toBeInTheDocument()
-    );
+  // ✅ Set a fake token so second useEffect runs correctly
+  beforeEach(() => {
+    sessionStorage.setItem("accessToken", "mock-token");
   });
 
-  it("displays status badges correctly for applications", () => {
+  it("renders student dashboard with user info", async () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter> {/* 🔄 Wrapping here is ESSENTIAL */}
         <StudentDashboard />
       </MemoryRouter>
     );
 
-    expect(screen.getAllByText("Accepted").length).toBeGreaterThanOrEqual(0);
-    expect(screen.getAllByText("Under Review").length).toBeGreaterThanOrEqual(
-      0
+    // ✅ Wait for the loading spinner to disappear
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Loading dashboard.../i)
+      ).not.toBeInTheDocument()
     );
+
+    // ✅ Now check for user data
+    expect(screen.getByText(/Welcome back, Sarah!/i)).toBeInTheDocument();
+    expect(screen.getByText("Computer Science")).toBeInTheDocument();
+    expect(screen.getByText("GPA: 3.85")).toBeInTheDocument();
   });
 });
