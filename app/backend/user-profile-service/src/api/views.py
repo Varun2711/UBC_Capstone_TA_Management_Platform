@@ -408,6 +408,20 @@ class StudentCoursePreferenceListCreateView(generics.ListCreateAPIView):
             user = self.request.user
         serializer.save(user=user)
 
+    def delete(self, request, *args, **kwargs):
+        """Delete all course preferences for the user"""
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            student = get_object_or_404(Student, student_number=student_id)
+            user = get_object_or_404(User, email=student.email)
+        else:
+            user = self.request.user
+        
+        deleted_count = StudentCoursePreference.objects.filter(user=user).delete()[0]
+        return Response({
+            'message': f'Deleted {deleted_count} course preferences successfully'
+        }, status=status.HTTP_200_OK)
+
 class StudentCoursePreferenceDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudentCoursePreferenceSerializer
     permission_classes = [IsAuthenticated]
