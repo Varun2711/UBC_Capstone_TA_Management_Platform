@@ -190,8 +190,8 @@ export default function ProfilePage() {
         semester: extractSemesterFromDate(exp.start_date),
         professor: exp.organization || '',
         description: exp.description || '',
-        
-        
+
+
       })) || [];
     };
 
@@ -276,10 +276,10 @@ export default function ProfilePage() {
         .map(skill => skill.name) || [],
 
       academicInfo: {
-            yearStanding: data.student_info?.year_standing?.toString() || '',
-            degreeStart: data.student_profile?.year_degree_start?.toString() || '',
-            expectedGraduation: data.student_info?.expected_graduation || '',  // ✅ This should work now
-        },
+        yearStanding: data.student_info?.year_standing?.toString() || '',
+        degreeStart: data.student_profile?.year_degree_start?.toString() || '',
+        expectedGraduation: data.student_info?.expected_graduation || '',  // ✅ This should work now
+      },
     };
   };
 
@@ -763,65 +763,51 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      // Transform skills to backend format - UPDATED
-      const skillsArray = [];
+    // Build the payload
+    const skillsArray = []
+    editedSkills.technicalSkills
+      .filter(s => s.trim() !== "")
+      .forEach(s => skillsArray.push({ skill_name: s.trim(), skill_type: "technical" }))
+    editedSkills.softSkills
+      .filter(s => s.trim() !== "")
+      .forEach(s => skillsArray.push({ skill_name: s.trim(), skill_type: "soft" }))
 
-      // Add technical skills
-      editedSkills.technicalSkills
-        .filter(skill => skill.trim() !== "")
-        .forEach(skill => {
-          skillsArray.push({
-            skill_name: skill.trim(),
-            skill_type: 'technical'
-          });
-        });
+    // 1) Send update and grab the returned skills list
+    const response = await updateSkills(skillsArray)
+    const returned = response.data.skills
 
-      // Add soft skills
-      editedSkills.softSkills
-        .filter(skill => skill.trim() !== "")
-        .forEach(skill => {
-          skillsArray.push({
-            skill_name: skill.trim(),
-            skill_type: 'soft'
-          });
-        });
+    // 2) Map that into just names
+    const newTechnical = returned
+      .filter(sk => sk.skill_type === "technical")
+      .map(sk => sk.name)
+    const newSoft = returned
+      .filter(sk => sk.skill_type === "soft")
+      .map(sk => sk.name)
 
-      console.log("Skills data being sent:", skillsArray); // Debug log
+    // 3) Update all the relevant state
+    setUserData(prev => ({
+      ...prev,
+      technicalSkills: newTechnical,
+      softSkills:      newSoft
+    }))
+    setOriginalUserData(prev => ({
+      ...prev,
+      technicalSkills: newTechnical,
+      softSkills:      newSoft
+    }))
+    setEditedSkills({
+      technicalSkills: [...newTechnical],
+      softSkills:      [...newSoft]
+    })
 
-      // Use the specialized skills update function
-      await updateSkills(skillsArray);
-
-      // After successful update, refresh the profile data
-      const updatedProfile = await getProfile();
-      const transformedProfile = transformBackendDataToFrontend(updatedProfile);
-
-      // Update local state
-      setUserData(prev => ({
-        ...prev,
-        technicalSkills: transformedProfile.technicalSkills,
-        softSkills: transformedProfile.softSkills
-      }));
-
-      setOriginalUserData(prev => ({
-        ...prev,
-        technicalSkills: transformedProfile.technicalSkills,
-        softSkills: transformedProfile.softSkills
-      }));
-
-      // Update the edited skills state with the fresh data
-      setEditedSkills({
-        technicalSkills: [...transformedProfile.technicalSkills],
-        softSkills: [...transformedProfile.softSkills]
-      });
-
-      setSkillsEdit(false);
-      showSuccessMessage("Skills updated successfully");
-    } catch (error) {
-      handleApiError(error, "Failed to save skills. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    setSkillsEdit(false)
+    showSuccessMessage("Skills updated successfully")
+  } catch (error) {
+    handleApiError(error, "Failed to save skills. Please try again.")
+  } finally {
+    setIsSaving(false)
+  }
+}
 
   // handleSave for Course Preferences
   const handleSaveCourses = async (coursePreference) => {
@@ -1564,7 +1550,11 @@ export default function ProfilePage() {
                                 ) : (
                                   <div className="flex flex-wrap gap-2">
                                     {userData.technicalSkills.map((skill, index) => (
-                                      <Badge key={index} variant="secondary">
+                                      <Badge
+                                        key={index}
+                                        variant="secondary"
+                                        data-testid="technical-skill"
+                                      >
                                         {skill}
                                       </Badge>
                                     ))}

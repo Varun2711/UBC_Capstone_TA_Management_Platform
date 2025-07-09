@@ -6,6 +6,17 @@ import { MemoryRouter } from 'react-router-dom'
 import ProfilePage from '@/pages/ProfilePage'
 import WeeklyAvailabilityCalendar from '@/components/WeeklyAvailabilityCalendar'
 import axios from 'axios'
+import * as profileLogic from "@/logic/student-profile"
+
+vi.spyOn(profileLogic, "updateSkills").mockResolvedValue({
+  data: {
+    skills: [
+      { name: "Communication", skill_type: "soft" },
+      { name: "TypeScript",    skill_type: "technical" }
+    ]
+  }
+})
+
 
 axios.get = vi.fn();
 axios.post = vi.fn();

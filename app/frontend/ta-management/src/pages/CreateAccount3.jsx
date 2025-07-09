@@ -64,6 +64,12 @@ export default function CreateAccount3() {
       const step1Data = JSON.parse(sessionStorage.getItem("createAccount1"))
       const step2Data = JSON.parse(sessionStorage.getItem("createAccount2"))
 
+      // 1) extract "3rd Year" → 3, then compute startYear = currentYear - 3
+      const rawYear = step2Data.yearOfDegree || ""          // e.g. "3rd Year"
+      const years = parseInt(rawYear, 10) || 0            // → 3
+      const currentYear = new Date().getFullYear()              // → 2025
+      const startYear = currentYear - years                   // → 2022
+
       // Format data to match the StudentRegistrationSerializer
       const registerData = {
         student_number: step1Data.ubcStudentNumber,
@@ -74,7 +80,7 @@ export default function CreateAccount3() {
         // for step 2 info
         program: step2Data.majorProgram,
         minor: step2Data.minorProgram || '',  // Send to auth service
-        year_degree_start: step2Data.yearOfDegreeStart ? parseInt(step2Data.yearOfDegreeStart) : null
+        year_degree_start: startYear
       }
 
       console.log("Sending account data to backend:", registerData)
@@ -102,7 +108,7 @@ export default function CreateAccount3() {
             const additionalProfileData = {
               student_profile: {
                 minor: step2Data.minorProgram || '',
-                year_degree_start: step2Data.yearOfDegreeStart ? parseInt(step2Data.yearOfDegreeStart) : null
+                year_degree_start: startYear,
               }
             };
 
