@@ -5,40 +5,42 @@ import { USERS } from "../test-utils/testUsers"
 import { renderWithAuth } from "../test-utils/renderWithAuth"
 
 describe("Logout", () => {
-    // for each user_type
     it.each(USERS)(
         "logs out $type who is currently logged-in and redirects to landing page",
-        async({ type, dashboardRoute }) => {
-            // render the user-specific dashboard as if we are logged in as that user type
+        async({ type, dashboardRoute, name }) => { // <--- Pass 'name' from USERS
             renderWithAuth({
                 route: dashboardRoute,
                 userType: type
             })
 
             const user = userEvent.setup()
-            // spy on sessionStorage.clear so that i can check if it was called
             const clearStorageSpy = vi.spyOn(window.sessionStorage.__proto__, "clear")
 
-            // 1. Find the account menu dropdown and click on it
+            // IMPORTANT: Wait for a specific element that signifies the dashboard is fully loaded.
+            // Use the user's name from your USERS data, as it's present in the SidebarMenuButton's children.
+            // This ensures the entire SidebarFooter (including the account menu) is mounted.
             await waitFor(() => {
-                const dropdownTrigger = screen.getByLabelText(/account menu/i)
-                user.click(dropdownTrigger)
-            })
+                expect(screen.getByText(name)).toBeInTheDocument();
+            }, { timeout: 5000 }); // Increase timeout if needed, default is 1000ms
+
+            // Now that we've waited for the dashboard to render the user's name,
+            // the 'account menu' button should definitely be in the document.
+            const dropdownTrigger = screen.getByRole('button', { name: /account menu/i });
+            await user.click(dropdownTrigger);
             
             // 2. Find the logout button (inside the dropdown) and click on it
-            const logoutButton = await screen.findByRole("button", { name: /logout/i })
-            await user.click(logoutButton)
+            const logoutButton = await screen.findByRole("button", { name: /logout/i });
+            await user.click(logoutButton);
 
             // 3. Test for redirection to landing page
             await waitFor(() => {
-                expect(screen.getByText(/login/i)).toBeInTheDocument()
-            })
+                expect(screen.getByText(/login/i)).toBeInTheDocument();
+            });
 
             // 4. Test that tokens, user_type, etc. were cleared out
-            expect(clearStorageSpy).toHaveBeenCalled()
+            expect(clearStorageSpy).toHaveBeenCalled();
 
-            // Reset mocks so doesn't affect other tests
-            clearStorageSpy.mockRestore()
+            clearStorageSpy.mockRestore();
         }
     )
 })
