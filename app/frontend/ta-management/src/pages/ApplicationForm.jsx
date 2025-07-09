@@ -24,6 +24,63 @@ const instance = axios.create({
   baseURL: "http://localhost:8080/api",
 });
 
+// Add this helper function at the top of ApplicationForm.jsx (same as ProfilePage)
+// Replace the extractSemesterFromDate function in StudentProfileForm.jsx:
+const extractSemesterFromDate = (dateString) => {
+  if (!dateString) return '';
+  
+  // If it's already in "Fall 2022" format, return as-is
+  if (dateString.match(/^(Fall|Winter|Summer)\s+\d{4}$/)) {
+    console.log("Already in semester format:", dateString);
+    return dateString;
+  }
+  
+  // Handle the "2022-09-02 to " format from ApplicationForm
+  if (dateString.includes(' to ')) {
+    const datePart = dateString.split(' to ')[0];
+    if (datePart) {
+      dateString = datePart;
+    }
+  }
+  
+  try {
+    console.log("dateString is:", dateString);
+    
+    // Only try to parse if it looks like a date
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
+      const date = new Date(dateString);
+      console.log("dateString to date becomes:", date);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.log("Invalid date, returning original string");
+        return dateString;
+      }
+      
+      const year = date.getFullYear();
+      const month = date.getMonth(); // 0-indexed: Jan=0, Sep=8, Dec=11
+      
+      console.log("Extracted semester info:", { year, month });
+
+      let term = 'Winter';
+      if (month >= 4 && month <= 7) term = 'Summer';  // May-Aug
+      else if (month >= 8) term = 'Fall';             // Sep-Dec
+      // Jan-Apr stays as Winter
+
+      const result = `${term} ${year}`;
+      console.log("Final result:", result);
+      return result;
+    }
+    
+    // If it doesn't look like a date, return as-is
+    console.log("Not a date format, returning original:", dateString);
+    return dateString;
+    
+  } catch (e) {
+    console.error("Date parsing error:", e);
+    return dateString;
+  }
+};
 // Mock data
 const studentProfile = {
   id: 2, //the student pk is needed for the application db table
@@ -174,7 +231,7 @@ const cleanApiDataFormat = (apiData) => {
     },
     experience: apiData.experiences?.map((exp) => ({
       course: exp.position_title?.replace('TA for ', '') || exp.organization || '',
-      semester: `${exp.start_date || ''} to ${exp.end_date || ''}`,
+      semester: extractSemesterFromDate(exp.start_date), // ✅ Use the same logic as ProfilePage
       professor: exp.organization || "Unknown",
       description: exp.description || '',
     })) || [],
@@ -184,7 +241,7 @@ const cleanApiDataFormat = (apiData) => {
     softSkills: apiData.skills
       ?.filter((skill) => skill.skill_type === "soft")
       .map((skill) => skill.name) || [],
-    
+
     // ✅ Use the simplified availability transformation
     availability: transformAvailability(apiData.availability),
   };
@@ -192,7 +249,7 @@ const cleanApiDataFormat = (apiData) => {
   console.log("=== FINAL CLEANED DATA ===");
   console.log("Availability in result:", result.availability);
   console.log("=== END FINAL DATA ===");
-  
+
   return result;
 };
 

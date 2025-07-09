@@ -33,13 +33,71 @@ import {
 } from "@/components/ui/select";
 
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar";
-import { 
-  updateProfile, 
-  updateSkills, 
-  updateExperience, 
-  updateAvailability, 
-  updateCoursePreferences 
+import {
+  updateProfile,
+  updateSkills,
+  updateExperience,
+  updateAvailability,
+  updateCoursePreferences
 } from "@/logic/student-profile";
+
+// Add this helper function at the top of StudentProfileForm.jsx
+// Replace the extractSemesterFromDate function in StudentProfileForm.jsx:
+const extractSemesterFromDate = (dateString) => {
+  if (!dateString) return '';
+  
+  // If it's already in "Fall 2022" format, return as-is
+  if (dateString.match(/^(Fall|Winter|Summer)\s+\d{4}$/)) {
+    console.log("Already in semester format:", dateString);
+    return dateString;
+  }
+  
+  // Handle the "2022-09-02 to " format from ApplicationForm
+  if (dateString.includes(' to ')) {
+    const datePart = dateString.split(' to ')[0];
+    if (datePart) {
+      dateString = datePart;
+    }
+  }
+  
+  try {
+    console.log("dateString is:", dateString);
+    
+    // Only try to parse if it looks like a date
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
+      const date = new Date(dateString);
+      console.log("dateString to date becomes:", date);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.log("Invalid date, returning original string");
+        return dateString;
+      }
+      
+      const year = date.getFullYear();
+      const month = date.getMonth(); // 0-indexed: Jan=0, Sep=8, Dec=11
+      
+      console.log("Extracted semester info:", { year, month });
+
+      let term = 'Winter';
+      if (month >= 4 && month <= 7) term = 'Summer';  // May-Aug
+      else if (month >= 8) term = 'Fall';             // Sep-Dec
+      // Jan-Apr stays as Winter
+
+      const result = `${term} ${year}`;
+      console.log("Final result:", result);
+      return result;
+    }
+    
+    // If it doesn't look like a date, return as-is
+    console.log("Not a date format, returning original:", dateString);
+    return dateString;
+    
+  } catch (e) {
+    console.error("Date parsing error:", e);
+    return dateString;
+  }
+};
 
 export default function StudentProfileForm({
   // Data props
@@ -69,11 +127,15 @@ export default function StudentProfileForm({
     academicInfo: { ...profile.academicInfo },
   });
 
-  // State for experience editing
+  // Update the state initialization for experience
   const [isEditingExperience, setIsEditingExperience] = useState(false);
-  const [editedExperience, setEditedExperience] = useState([
-    ...profile.experience,
-  ]);
+  const [editedExperience, setEditedExperience] = useState(
+    profile.experience?.map(exp => ({
+      ...exp,
+      semester: extractSemesterFromDate(exp.semester) || exp.semester || ''
+    })) || []
+  );
+
 
   // State for availability editing
   const [isEditingAvailability, setIsEditingAvailability] = useState(false);
@@ -82,7 +144,7 @@ export default function StudentProfileForm({
   // State for course preference editing
   const [isEditingCourses, setIsEditingCourses] = useState(false);
   const [coursePreference, setCoursePreference] = useState(
-    profile.coursePreference
+    Array.isArray(profile.coursePreference) ? [...profile.coursePreference] : []
   );
 
   // State for password visibility
@@ -140,13 +202,13 @@ export default function StudentProfileForm({
         email: email,
         student_number: studentId,
         phone: phone || '',
-        
+
         // Student model fields
         program: major,
         study_level: year,
         year_standing: academicInfo?.yearStanding ? parseInt(academicInfo.yearStanding) : null,
         expected_graduation: academicInfo?.expectedGraduation || '',
-        
+
         // StudentProfile nested fields
         student_profile: {
           gpa: gpa ? parseFloat(gpa) : null,
@@ -158,7 +220,7 @@ export default function StudentProfileForm({
 
       console.log("Saving profile data:", backendData);
       await updateProfile(backendData);
-      
+
       console.log("Profile saved successfully");
       return true;
     } catch (error) {
@@ -191,7 +253,7 @@ export default function StudentProfileForm({
         study_level: editedAcademicInfo.year,
         year_standing: editedAcademicInfo.academicInfo?.yearStanding ? parseInt(editedAcademicInfo.academicInfo.yearStanding) : null,
         expected_graduation: editedAcademicInfo.academicInfo?.expectedGraduation || '',
-        
+
         student_profile: {
           gpa: editedAcademicInfo.gpa ? parseFloat(editedAcademicInfo.gpa) : null,
           minor: editedAcademicInfo.minor || '',
@@ -201,7 +263,7 @@ export default function StudentProfileForm({
 
       console.log("Saving academic info:", backendData);
       await updateProfile(backendData);
-      
+
       setProfile(updatedProfile);
       setIsEditingAcademic(false);
       console.log("Academic info saved successfully");
@@ -250,7 +312,7 @@ export default function StudentProfileForm({
 
       console.log("Saving experiences:", formattedExperiences);
       await updateExperience(formattedExperiences);
-      
+
       setProfile(prev => ({
         ...prev,
         experience: editedExperience
@@ -302,7 +364,7 @@ export default function StudentProfileForm({
 
       console.log("Saving skills:", skillsArray);
       await updateSkills(skillsArray);
-      
+
       setProfile((prev) => ({
         ...prev,
         technicalSkills: editedSkills.technicalSkills,
@@ -318,23 +380,26 @@ export default function StudentProfileForm({
 
   // Course Preferences Save Handler
   const handleSaveCoursePreferences = async () => {
-    const hasEmptyCoursePreference = coursePreference.some(
-      course => course.trim() === ""
-    );
-    
-    if (hasEmptyCoursePreference) {
-      alert("Each course preference must contain text.");
+    // Filter out empty courses before validation
+    const validCourses = coursePreference.filter(course => course.trim() !== "");
+
+    if (validCourses.length === 0) {
+      alert("Please add at least one course preference.");
       return;
     }
 
     try {
-      console.log("Saving course preferences:", coursePreference);
-      await updateCoursePreferences(coursePreference);
-      
+      console.log("Saving course preferences:", validCourses);
+      await updateCoursePreferences(validCourses);
+
+      // Update the profile state with the valid courses
       setProfile((prev) => ({
         ...prev,
-        coursePreference: [...coursePreference],
+        coursePreference: [...validCourses],
       }));
+
+      // Update the local state to match
+      setCoursePreference([...validCourses]);
       setIsEditingCourses(false);
       console.log("Course preferences saved successfully");
     } catch (error) {
@@ -348,7 +413,7 @@ export default function StudentProfileForm({
     try {
       console.log("Saving availability:", availabilityData);
       await updateAvailability(availabilityData);
-      
+
       setProfile(prev => ({
         ...prev,
         availability: [...availabilityData]
@@ -364,6 +429,24 @@ export default function StudentProfileForm({
   useEffect(() => {
     setAvailabilityData(profile.availability || []);
   }, [profile.availability]);
+
+  // Add this useEffect to handle profile changes
+  useEffect(() => {
+    if (profile?.experience) {
+      const transformedExperience = profile.experience.map(exp => ({
+        ...exp,
+        semester: extractSemesterFromDate(exp.semester) || exp.semester || ''
+      }));
+      setEditedExperience(transformedExperience);
+    }
+  }, [profile?.experience]);
+
+  // Also update course preferences when profile changes
+  useEffect(() => {
+    if (Array.isArray(profile.coursePreference)) {
+      setCoursePreference([...profile.coursePreference]);
+    }
+  }, [profile.coursePreference]);
 
   return (
     <div>
