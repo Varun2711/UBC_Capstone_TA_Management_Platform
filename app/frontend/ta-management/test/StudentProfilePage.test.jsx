@@ -51,10 +51,15 @@ describe('ProfilePage', () => {
     )
   })
 
-  it('renders the profile header', () => {
-    expect(screen.getByText('My Profile')).toBeInTheDocument()
-    expect(screen.getByText(/Manage your personal information/i)).toBeInTheDocument()
-  })
+  it('renders the profile header', async () => {
+    await waitFor(() => {
+      expect(screen.getByText('My Profile')).toBeInTheDocument()
+    });
+
+    expect(
+      screen.getByText(/Manage your personal information/i)
+    ).toBeInTheDocument()
+  });
 
   it('displays basic information fields', async () => {
     // Wait for the profile content to appear after loading, using a unique element
@@ -71,13 +76,10 @@ describe('ProfilePage', () => {
   it('enables editing mode when clicking "Edit Personal Information"', async () => {
     const user = userEvent.setup()
 
-    // --- ADD THIS WAITFOR BLOCK ---
     // Wait for the profile page to finish loading and display relevant content
     await waitFor(() => {
       expect(screen.getByText('My Profile')).toBeInTheDocument(); // Wait for the main heading
-      // Or: expect(screen.getByText('Sarah Johnson')).toBeInTheDocument(); // Wait for a user detail
     });
-    // --- END ADDITION ---
 
     await user.click(screen.getByText(/Edit Personal Information/i))
     // Now look for First Name and Last Name textboxes explicitly
@@ -124,17 +126,27 @@ describe('ProfilePage', () => {
 
     const techSkillsSection = screen.getByText('Technical Skills').closest('div')
 
-    const javaScriptInput = within(techSkillsSection).getByDisplayValue('JavaScript');
+    const javaScriptInput = await within(techSkillsSection).findByDisplayValue('JavaScript');
     expect(javaScriptInput).toBeInTheDocument();
 
     await user.clear(javaScriptInput);
     await user.type(javaScriptInput, 'TypeScript');
 
+    axios.post.mockResolvedValue({
+      data: {
+        skills: [
+          { name: 'Communication', skill_type: 'soft' },
+          { name: 'TypeScript', skill_type: 'technical' }
+        ]
+      }
+    });
+
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
-        const updatedTechSkillInput = within(techSkillsSection).getByDisplayValue('TypeScript');
-        expect(updatedTechSkillInput).toBeInTheDocument();
+      const techBadges = screen.getAllByTestId('technical-skill');
+      const badgeTexts = techBadges.map((b) => b.textContent);
+      expect(badgeTexts).toContain('TypeScript');
     });
   })
 
