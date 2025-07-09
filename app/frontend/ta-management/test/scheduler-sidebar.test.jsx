@@ -5,6 +5,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AppSidebar } from '@/components/scheduler-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
+// Import the mocked functions after setting up mocks
+import { getProfile } from '@/logic/scheduler-profile';
+import { logout } from '@/logic/auth';
 
 // --- MOCKS ---
 
@@ -39,9 +42,7 @@ vi.mock('lucide-react', () => ({
   MoreVerticalIcon: () => <svg data-testid="more-vertical-icon" />,
 }));
 
-// Import the mocked functions after setting up mocks
-import { getProfile } from '@/logic/scheduler-profile';
-import { logout } from '@/logic/auth';
+
 
 // --- TEST SETUP ---
 
