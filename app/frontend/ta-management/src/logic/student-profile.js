@@ -121,17 +121,27 @@ export const updateSkills = async (skillsArray) => {
     }
 
     // Add skills one by one, which is what the API expects
+    const addedSkills = [];
     if (skillsArray && skillsArray.length > 0) {
       for (const skill of skillsArray) {
-        await axios.post(`${API_URL}/profile/me/skills/`, {
+        const response = await axios.post(`${API_URL}/profile/me/skills/`, {
           skill_type: skill.skill_type,
           name: skill.skill_name
         }, { headers });
+        
+        // Collect the added skills
+        if (response.data) {
+          addedSkills.push(response.data);
+        }
       }
-      return { success: true };
     }
 
-    return { success: true };
+    // Return the skills in the expected format that ProfilePage expects
+    return { 
+      data: { 
+        skills: addedSkills 
+      }
+    };
   } catch (error) {
     console.error("Error updating skills:", error.response?.data || error.message);
     throw error;
