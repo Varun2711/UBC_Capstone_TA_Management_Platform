@@ -36,7 +36,7 @@ export default function InstructorProfile() {
           lastName: lastNameParts.join(' ') || '',
           email: data.email,
           instructorId: data.employee_number, 
-          department: data.department || '', 
+          department: data.department_name || '', 
         };
 
         setOriginalUserData(profile);
