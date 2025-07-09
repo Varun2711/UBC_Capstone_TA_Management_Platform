@@ -4,17 +4,22 @@ import axios from "axios";
 
 const API_URL = 'http://localhost:8080/api';
 
-// Helper function to get the auth token from local storage
+// Helper function to get the auth token from session storage
 const getAuthHeaders = () => {
-  const token = sessionStorage.getItem('accessToken');
-  if (!token) {
-    console.error("Access token not found in local storage.");
-    return {};
+  // 🎯 THE FIX: Check if we are in a browser environment
+  if (typeof window !== 'undefined') {
+    const token = sessionStorage.getItem('accessToken');
+    if (token) {
+      return {
+        'Authorization': `Bearer ${token}`
+      };
+    }
   }
-  return {
-    'Authorization': `Bearer ${token}`
-  };
+  
+  // If not in a browser, or if no token is found, return empty headers.
+  return {};
 };
+
 
 /**
  * Fetches the current user's profile data from the backend.
