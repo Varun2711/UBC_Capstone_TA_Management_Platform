@@ -1,13 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { login } from "@/logic/auth"
+import { isAlreadyLoggedIn, navigateToUserDashboard, requestLogin } from "@/logic/auth"
 
 export default function LoginPage() {
   // state handling
@@ -22,19 +21,30 @@ export default function LoginPage() {
     setShowPassword(!showPassword)
   }
 
+  // on page load, check for token and redirect user who is already logged in (cannot login again!)
+  useEffect(() => {
+    // if already logged in, send them to correct dashboard based on user type
+    if(isAlreadyLoggedIn()) {
+      const user_type = sessionStorage.getItem('user_type')
+      navigateToUserDashboard(user_type, navigate)
+    }
+  }, [navigate])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     // on login form submission, attempt to login
     try {
-      const response = await login(email, password)
-      localStorage.setItem('accessToken', response.access)
-      localStorage.setItem('refreshToken', response.refresh)
-      console.log("user_type: " + response.user_type) // for testing, todo: delete
+      const response = await requestLogin(email, password)
+      sessionStorage.setItem('accessToken', response.access)
+      sessionStorage.setItem('refreshToken', response.refresh)
+      sessionStorage.setItem('user_type', response.user_type)
 
-      // todo navigate to particular dashboard depending on user_type
-      navigate("/student-dashboard")
-      console.log("Login form submitted")
+      const user_type = response.user_type
+
+      // navigate to particular dashboard depending on user_type
+      navigateToUserDashboard(user_type, navigate)
+
     } catch (error) {
       // if anything goes wrong with login, set the error state (this is used in the return to conditionally display error text)
       setLoginError("Login Failed. You have entered an invalid email address or password. Please try again.")

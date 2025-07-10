@@ -27,7 +27,7 @@ class TermSerializer(serializers.ModelSerializer):
     class Meta:
         model = Term 
         fields = [
-            'code'
+            'code', 'description'
         ] 
 
 # Serializers for JobPosting which nests Department and TAScheduler serializers, as job posting questions
@@ -94,11 +94,6 @@ class JobPostingSerializer(serializers.ModelSerializer):
 
         return instance
     
-class FacultySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Faculty
-        fields = ['name']
-
 
 class StudentSerializer(serializers.ModelSerializer):
    # department = DepartmentSerializer(read_only=True)
@@ -107,7 +102,7 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = [
-            'student_number', 'name'            
+            'id', 'name', 'student_number'            
         ]
 
 

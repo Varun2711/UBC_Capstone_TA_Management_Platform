@@ -88,6 +88,13 @@ class ApplicationFilter(django_filters.FilterSet):
     termSelection = django_filters.NumberFilter()
     workload = django_filters.CharFilter()
     hasOtherPositions = django_filters.CharFilter()
+
+    #allow filtering on term code
+    term_code = django_filters.CharFilter(
+        field_name='termSelection__code',
+        lookup_expr='iexact',
+        help_text='Filter by term code (e.g., W2025)'
+    )
     
     # Now, we specifically want to TA scheduler to be able to filter by  discipline 
     discipline = django_filters.CharFilter(
@@ -112,7 +119,7 @@ class ApplicationFilter(django_filters.FilterSet):
         model = Application
         fields = [
             'status', 'positionType', 'fullTimeEnrollment', 
-            'termSelection', 'workload', 'hasOtherPositions'
+            'termSelection', 'workload', 'hasOtherPositions', 'discipline', 'term_code'
         ]
 
 
@@ -173,3 +180,16 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         applications = self.queryset.filter(posting_id=posting_id)
         serializer = self.get_serializer(applications, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path=r'by-id/(?P<application_id>\d+)')    
+    def by_id(self, request, application_id=None):
+     #Get a specific application by ID
+        try:
+            application = Application.objects.get(application_id=application_id)
+            serializer = self.get_serializer(application)
+            return Response(serializer.data)
+        except Application.DoesNotExist:
+            return Response(
+            {"detail": "Application not found"}, 
+            status=status.HTTP_404_NOT_FOUND
+        )

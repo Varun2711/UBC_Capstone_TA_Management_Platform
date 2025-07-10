@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
+import { USER_TYPES } from "./data/user-types";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
+
 import LoginPage from "./pages/LoginPage";
-import MockDashboard from "./pages/MockDashboard";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
-import Application from "./pages/Application";
+import ApplicationForm from "./pages/ApplicationForm";
 import StudentDashboard from "./pages/Student_Dashboard";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/ProfilePage2";
 import AdminDashboard from "./pages/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
 import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
-
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -17,36 +19,162 @@ import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
+import ViewJobPostings from "./pages/ViewJobPostings_Student";
 import InstructorDashboard from "./pages/InstructorDashboard";
+import ManageApplications from "./pages/Coordinator_ManageApplications";
+import ViewStudentApplication from "./pages/Coordinator_ViewApplication";
+import InstructorProfile from "./pages/Instructor/instructor-profile";
 
 
 function App() {
-
   return (
     // React Router setup
-    // Initial test to check router functionlity below
     <Routes>
+      {/* Accessible to: everyone --------------- */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+      {/* Accessible to: non-logged-in user ----- */}
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/TAdashboard" element={<TASchedulerDashboard />} />
-      <Route path="/MockDashboard" element={<MockDashboard />} />
       <Route path="/create-account/step1" element={<CreateAccount1 />} />
       <Route path="/create-account/step2" element={<CreateAccount2 />} />
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/student-dashboard" element={<StudentDashboard />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/user-profile-scheduler" element={<UserProfile />} />
-      <Route path="/instructor-dashboard" element={<InstructorDashboard/>} />
-      <Route path="/application" element={<Application />} />
-      <Route path="/ta-coordinator-allocation" element={<TaCoordinatorAllocationPage />} />
-      <Route path="/course-management" element={<CourseManagement />} />
-      <Route path="/instructor-management" element={<InstructorRequirements />} />
 
+    {/* Accessible to: student ---------------- */}
+      <Route 
+        path="/student-dashboard" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <StudentDashboard />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ProfilePage />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route
+        path="/apply/jobposting/:postingId"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ApplicationForm />
+          </ProtectedRoute>
+        }
+      />
+          
+      <Route 
+        path="/apply" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ViewJobPostings />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Accessible to: instructor -------------- */}
+      <Route 
+        path="/instructor-dashboard" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <InstructorDashboard />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/instructor-profile" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <InstructorProfile />
+          </ProtectedRoute>
+        } 
+      />
+
+
+
+      {/* Accessible to: scheduler --------------- */}
+      <Route 
+        path="/scheduler-dashboard" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <TASchedulerDashboard />
+          </ProtectedRoute> 
+        } 
+      />
+      
+      <Route 
+        path="/user-profile-scheduler" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <UserProfile />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/ta-coordinator-allocation" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <TaCoordinatorAllocationPage />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/course-management" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <CourseManagement />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route
+        path="/instructor-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <InstructorRequirements />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route 
+        path="/manage-applications" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}> 
+            <ManageApplications />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route
+        path="manage-applications/view/:applicationid"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <ViewStudentApplication />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Accessible to: admin ------------------- */}
+      <Route 
+        path="/admin-dashboard" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+   
       {/* Add more routes if needed */}
     </Routes>
-    // <TASchedulerDashboard />
   );
 }
 export default App;

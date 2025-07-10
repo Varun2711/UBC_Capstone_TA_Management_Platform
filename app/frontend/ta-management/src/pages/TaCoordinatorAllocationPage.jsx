@@ -503,7 +503,7 @@ export default function TAAllocationPage() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar activePage="TA Allocation"/>
+        <AppSidebar activePage="Allocations"/>
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center gap-4 border-b bg-background px-6">

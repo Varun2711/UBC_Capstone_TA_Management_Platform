@@ -8,6 +8,13 @@ import ErrorMessage from "@/components/ErrorMessage";
 /* This component step collects user's Eligbility response
  * as per the UI mock ups on Figma and also per the Qualtrix form
  */
+
+const citizenshipOptions = [
+  { value: "citizen", label: "Yes - Canadian Citizen" },
+  { value: "pr", label: "Yes - Permanent Resident" },
+  { value: "international", label: "No - International Student" },
+];
+
 export default function Eligbility({ responses, setResponses, errors = {} }) {
   return (
     <div className="col-span-full">
@@ -22,39 +29,16 @@ export default function Eligbility({ responses, setResponses, errors = {} }) {
             setResponses({ ...responses, citizenshipStatus: value })
           }
         >
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="citizen">
-              <RadioGroupItem
-                className="mr-2 mb-2"
-                value="Canadian Citizen"
-                id="citizen"
-              />
-              Yes - Canadian Citizen
+          {citizenshipOptions.map((option) => (
+            <Label key={option.value} className="flex items-center gap-2">
+              <RadioGroupItem value={option.value} />
+              {option.label}
             </Label>
-
-            <Label htmlFor="pr">
-              {" "}
-              <RadioGroupItem
-                className="mr-2 mb-2"
-                value="Permanent Resident"
-                id="pr"
-              />
-              Yes - Permanent Resident
-            </Label>
-
-            <Label htmlFor="intl">
-              <RadioGroupItem
-                className="mr-2 mb-2"
-                value="International Student"
-                id="intl"
-              />
-              No - International Student
-            </Label>
-          </div>
+          ))}
         </RadioGroup>
         <ErrorMessage error={errors.citizenshipStatus} />
 
-        {responses.citizenshipStatus === "International Student" && (
+        {responses.citizenshipStatus === "international" && (
           <p className="text-sm text-muted-foreground mt-2">
             If you are an international student, you must submit a valid study
             permit when requested.
@@ -79,7 +63,7 @@ export default function Eligbility({ responses, setResponses, errors = {} }) {
               {" "}
               <RadioGroupItem
                 className="mb-2 mr-2"
-                value="Yes"
+                value="yes"
                 id="kelowna-yes"
               />
               Yes
@@ -89,7 +73,7 @@ export default function Eligbility({ responses, setResponses, errors = {} }) {
               {" "}
               <RadioGroupItem
                 className="mb-2 mr-2"
-                value="No"
+                value="no"
                 id="kelowna-no"
               />
               No
@@ -122,7 +106,7 @@ export default function Eligbility({ responses, setResponses, errors = {} }) {
               {" "}
               <RadioGroupItem
                 className="mr-2 mb-2"
-                value="Yes"
+                value="yes"
                 id="fulltime-yes"
               />
               Yes
@@ -132,7 +116,7 @@ export default function Eligbility({ responses, setResponses, errors = {} }) {
               {" "}
               <RadioGroupItem
                 className="mr-2 mb-2"
-                value="No"
+                value="no"
                 id="fulltime-no"
               />
               No
@@ -160,7 +144,7 @@ export default function Eligbility({ responses, setResponses, errors = {} }) {
               hasOtherPositions: value,
               // Reset hours if they switch from Yes to No
               otherPositionHours:
-                value === "No" ? "" : responses.otherPositionHours,
+                value === "no" ? "" : responses.otherPositionHours,
             })
           }
         >
@@ -169,14 +153,14 @@ export default function Eligbility({ responses, setResponses, errors = {} }) {
               {" "}
               <RadioGroupItem
                 className="mr-2 mb-2"
-                value="Yes"
+                value="yes"
                 id="other-yes"
               />
               Yes
             </Label>
 
             <Label htmlFor="other-no">
-              <RadioGroupItem className="mr-2 mb-2" value="No" id="other-no" />
+              <RadioGroupItem className="mr-2 mb-2" value="no" id="other-no" />
               No
             </Label>
           </div>
@@ -184,7 +168,7 @@ export default function Eligbility({ responses, setResponses, errors = {} }) {
         <ErrorMessage error={errors.hasOtherPositions} />
 
         {/* Conditional Hours - Other Student Positions */}
-        {responses.hasOtherPositions === "Yes" && (
+        {responses.hasOtherPositions === "yes" && (
           <div className="mt-4">
             <Label htmlFor="otherPositionHours">
               Please indicate how many hours per week:
