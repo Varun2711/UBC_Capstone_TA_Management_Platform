@@ -4,4 +4,165 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.http import JsonResponse
 from django.db import models
-from .models import AcademicTerm, Course, TimeSlot, CourseOffering
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+
+# Import all models
+from .models import (
+    Term,
+    Faculty,
+    Instructor,
+    Department,
+    TimeSlot,
+    Course,
+    CourseOffering,
+    SharedSession,
+    InstructorRequest
+)
+
+# Import all serializers
+from .serializers import (
+    TermSerializer,
+    FacultySerializer,
+    InstructorSerializer,
+    DepartmentSerializer,
+    TimeSlotSerializer,
+    CourseSerializer,
+    CourseOfferingSerializer,
+    SharedSessionSerializer,
+    InstructorRequestSerializer
+)
+
+# Term ViewSet
+class TermViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Term model with full CRUD operations.
+    Provides filtering, searching, and ordering capabilities.
+    """
+    queryset = Term.objects.all()
+    serializer_class = TermSerializer
+    permission_classes = [AllowAny]  # Adjust based on your auth requirements
+    
+    # Enable filtering, searching, and ordering
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    # Define filterable fields
+    filterset_fields = {
+        'is_active': ['exact'],
+        'term_type': ['exact', 'in'],
+        'startCalendarYear': ['exact', 'gte', 'lte'],
+        'endCalendarYear': ['exact', 'gte', 'lte'],
+        'start': ['exact', 'gte', 'lte'],
+        'end': ['exact', 'gte', 'lte'],
+        'academicYear': ['exact', 'icontains'],
+    }
+    
+    # Define searchable fields
+    search_fields = ['code', 'description', 'academicYear']
+    
+    # Define ordering fields
+    ordering_fields = ['code', 'start', 'end', 'startCalendarYear', 'createdAt']
+    ordering = ['-startCalendarYear', 'start']  # Default ordering
+    
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """
+        Get all active terms.
+        """
+        active_terms = self.queryset.filter(is_active=True)
+        serializer = self.get_serializer(active_terms, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def current(self, request):
+        """
+        Get currently active terms (based on date range).
+        """
+        from django.utils import timezone
+        today = timezone.now().date()
+        current_terms = self.queryset.filter(
+            start__lte=today,
+            end__gte=today,
+            is_active=True
+        )
+        serializer = self.get_serializer(current_terms, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_year(self, request):
+        """
+        Get terms by calendar year.
+        Usage: /terms/by_year/?year=2025
+        """
+        year = request.query_params.get('year')
+        if not year:
+            return Response(
+                {'error': 'Year parameter is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            year = int(year)
+            terms = self.queryset.filter(startCalendarYear=year)
+            serializer = self.get_serializer(terms, many=True)
+            return Response(serializer.data)
+        except ValueError:
+            return Response(
+                {'error': 'Invalid year format'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['get'])
+    def subterms(self, request, pk=None):
+        """
+        Get all subterms of a specific term.
+        """
+        term = self.get_object()
+        subterms = term.get_subterms()
+        serializer = self.get_serializer(subterms, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def course_offerings(self, request, pk=None):
+        """
+        Get all course offerings for a specific term.
+        """
+        term = self.get_object()
+        from .serializers import CourseOfferingSerializer
+        course_offerings = term.course_offerings.all()
+        serializer = CourseOfferingSerializer(course_offerings, many=True)
+        return Response(serializer.data)
+    
+    def perform_create(self, serializer):
+        """
+        Custom create logic if needed.
+        """
+        serializer.save()
+    
+    def perform_update(self, serializer):
+        """
+        Custom update logic if needed.
+        """
+        serializer.save()
+    
+    def perform_destroy(self, instance):
+        """
+        Custom delete logic - check for dependencies before deletion.
+        """
+        # Check if term has associated course offerings
+        if instance.course_offerings.exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                "Cannot delete term with associated course offerings. "
+                "Please remove course offerings first."
+            )
+        
+        # Check if term has associated lab sections
+        if instance.lab_sections.exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                "Cannot delete term with associated lab sections. "
+                "Please remove lab sections first."
+            )
+        
+        instance.delete()
