@@ -10,7 +10,6 @@ from rest_framework import filters
 # Import all models
 from .models import (
     Term,
-    Faculty,
     Instructor,
     Department,
     TimeSlot,
@@ -23,7 +22,6 @@ from .models import (
 # Import all serializers
 from .serializers import (
     TermSerializer,
-    FacultySerializer,
     InstructorSerializer,
     DepartmentSerializer,
     TimeSlotSerializer,
