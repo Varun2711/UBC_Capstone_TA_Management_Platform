@@ -94,11 +94,6 @@ class JobPostingSerializer(serializers.ModelSerializer):
 
         return instance
     
-class FacultySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Faculty
-        fields = ['name']
-
 
 class StudentSerializer(serializers.ModelSerializer):
    # department = DepartmentSerializer(read_only=True)

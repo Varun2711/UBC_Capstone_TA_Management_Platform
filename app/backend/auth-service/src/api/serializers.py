@@ -33,7 +33,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 class InstructorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
-        fields = ['employee_number', 'name', 'faculty_id', 'email', 'password']
+        fields = ['employee_number', 'name', 'department_id', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
