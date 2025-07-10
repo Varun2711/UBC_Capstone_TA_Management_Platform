@@ -36,7 +36,7 @@ class Term(models.Model):
     ], null=True, blank=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'myapp_term'  
       
 

@@ -166,3 +166,67 @@ class TermViewSet(viewsets.ModelViewSet):
             )
         
         instance.delete()
+
+# API Root View
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request, format=None):
+    """
+    API Root - Shows all available endpoints for the Course Service API.
+    """
+    return Response({
+        'message': 'Welcome to the Course Service API',
+        'version': '1.0',
+        'endpoints': {
+            'terms': {
+                'list': {
+                    'url': '/api/course-term-service/terms/',
+                    'methods': ['GET', 'POST'],
+                    'description': 'List all terms or create a new term'
+                },
+                'detail': {
+                    'url': '/api/course-term-service/terms/{id}/',
+                    'methods': ['GET', 'PUT', 'PATCH', 'DELETE'],
+                    'description': 'Retrieve, update, or delete a specific term'
+                },
+                'active': {
+                    'url': '/api/course-term-service/terms/active/',
+                    'methods': ['GET'],
+                    'description': 'Get all active terms'
+                },
+                'current': {
+                    'url': '/api/course-term-service/terms/current/',
+                    'methods': ['GET'],
+                    'description': 'Get currently active terms (based on date range)'
+                },
+                'by_year': {
+                    'url': '/api/course-term-service/terms/by_year/?year=2025',
+                    'methods': ['GET'],
+                    'description': 'Get terms by calendar year (year parameter required)'
+                },
+                'subterms': {
+                    'url': '/api/course-term-service/terms/{id}/subterms/',
+                    'methods': ['GET'],
+                    'description': 'Get all subterms of a specific term'
+                },
+                'course_offerings': {
+                    'url': '/api/course-term-service/terms/{id}/course_offerings/',
+                    'methods': ['GET'],
+                    'description': 'Get all course offerings for a specific term'
+                }
+            }
+        },
+        'features': {
+            'filtering': 'Endpoints support filtering with query parameters',
+            'searching': 'Use ?search=query to search across relevant fields',
+            'ordering': 'Use ?ordering=field_name or ?ordering=-field_name for sorting',
+            'pagination': 'Results are paginated by default'
+        },
+        'examples': {
+            'filter_active_terms': '/api/course-term-service/terms/?is_active=true',
+            'search_terms': '/api/course-term-service/terms/?search=winter',
+            'order_by_year': '/api/course-term-service/terms/?ordering=-startCalendarYear',
+            'filter_winter_terms': '/api/course-term-service/terms/?term_type=winter&startCalendarYear=2025'
+        },
+        'note': 'More endpoints will be added as additional ViewSets are implemented'
+    })
