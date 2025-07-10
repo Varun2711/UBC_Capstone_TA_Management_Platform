@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.utils import timezone
 
 # Create your models here.
 
@@ -7,6 +8,57 @@ from django.db import models
 #### REFERENCED HERE BUT managed = False
 
 # faculty model
+
+class Term(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    description = models.TextField(null=True, blank=True)
+    
+    # Self-referential FK for hierarchical terms (e.g., "W2025 Term 1" is subset of "W2025 Both Terms")
+    subsetOf = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subterms')
+    
+    # Use DateField instead of CharField for proper date handling
+    start = models.DateField(help_text="Term start date")
+    end = models.DateField(help_text="Term end date")
+    
+    startCalendarYear = models.IntegerField()
+    endCalendarYear = models.IntegerField()
+    academicYear = models.CharField(max_length=10, help_text="e.g., '2025/26'")
+    
+    # Auto-set created timestamp
+    createdAt = models.DateTimeField(default=timezone.now)
+    
+    # Add some useful fields
+    is_active = models.BooleanField(default=True)
+    term_type = models.CharField(max_length=20, choices=[
+        ('winter', 'Winter'),
+        ('summer', 'Summer'),       
+        ('full_year', 'Full Year'),
+    ], null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_term'  
+      
+
+    def __str__(self):
+        return f"{self.code}"
+    
+    @property
+    def is_current(self):
+        """Check if the term is currently active"""
+        today = timezone.now().date()
+        return self.start <= today <= self.end
+    
+    
+    def get_subterms(self):
+        """Get all subterms of this term"""
+        return self.subterms.all()
+    
+    def is_subset_of(self, other_term):
+        """Check if this term is a subset of another term"""
+        return self.subsetOf == other_term
+
+
 class Faculty(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
@@ -37,53 +89,6 @@ class Department(models.Model):
         db_table = 'myapp_department'
 
 #### MODELS CREATED HERE
-
-# Academic terms model
-class AcademicTerm(models.Model):
-    """
-    An academic term is identified by an academic term id.
-    An academic term has the term number (1, 2), year, and term (winter, summer)
-    """
-    TERM_CHOICES = [
-        ('winter', 'Winter'),
-        ('summer', 'Summer'),
-    ]
-    
-    TERM_NUMBER_CHOICES = [
-        ('1', 'Term 1'),
-        ('2', 'Term 2'),
-    ]
-
-    term_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    year = models.CharField(max_length=4, help_text="Academic year (e.g., 2024)")
-    term_number = models.CharField(
-        max_length=1, 
-        choices=TERM_NUMBER_CHOICES,
-        help_text="Term number within the academic year"
-    )
-    term = models.CharField(
-        max_length=7, 
-        choices=TERM_CHOICES,
-        help_text="Term season"
-    )
-    start_date = models.DateField(help_text="Term start date")
-    end_date = models.DateField(help_text="Term end date")
-
-    class Meta:
-        managed = True
-        db_table = 'academic_terms'
-        ordering = ['-year', 'term_number']
-        unique_together = ['year', 'term_number', 'term']
-
-    def __str__(self):
-        return f"{self.get_term_display()} {self.year} - Term {self.term_number}"
-
-    def clean(self):
-        """Validate that end_date is after start_date."""
-        from django.core.exceptions import ValidationError
-        if self.start_date and self.end_date and self.start_date >= self.end_date:
-            raise ValidationError("End date must be after start date.")
-
 
 # Time slot model
 class TimeSlot(models.Model):
