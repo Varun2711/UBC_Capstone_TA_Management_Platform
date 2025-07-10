@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentAvailability, StudentCoursePreference, StudentSkill, Faculty
+from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentAvailability, StudentCoursePreference, StudentSkill, Department
 
-class FacultySerializer(serializers.ModelSerializer):
+class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Faculty
-        fields = ['name']
-        read_only_fields = ['name']
+        model = Department
+        fields = ['id', 'name']  
+        read_only_fields = ['id', 'name']  
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -60,11 +60,11 @@ class TASchedulerProfileSerializer(serializers.ModelSerializer):
         fields = ['employee_number', 'name', 'email', 'department', 'department_name']
 
 class InstructorProfileSerializer(serializers.ModelSerializer):
-    faculty_name = serializers.CharField(source='faculty.name', read_only=True)
+    department_name = serializers.CharField(source='department.name', read_only=True)
     
     class Meta:
         model = Instructor
-        fields = ['employee_number', 'name', 'email', 'faculty', 'faculty_name']
+        fields = ['employee_number', 'name', 'email', 'department', 'department_name']
 
 class AdminProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -217,7 +217,7 @@ class UpdateInstructorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = ['name', 'email']
-        read_only_fields = ['employee_number', 'faculty', 'is_active']
+        read_only_fields = ['employee_number', 'department', 'is_active']
         
     def validate_email(self, value):
         """Ensure email is not already in use by another instructor"""
@@ -346,7 +346,7 @@ class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
             return None
         
 class CreateInstructorSerializer(serializers.Serializer):
-    FACULTY_CHOICES = [
+    DEPARTMENT_CHOICES = [
         ('astr', 'Astronomy'),
         ('math', 'Mathematics'),
         ('phy', 'Physics'),
@@ -355,7 +355,7 @@ class CreateInstructorSerializer(serializers.Serializer):
         ('cosc', 'Computer Science'),
         # based on current ta application form
     ]
-    faculty = serializers.ChoiceField(choices=FACULTY_CHOICES)
+    department = serializers.ChoiceField(choices=DEPARTMENT_CHOICES)
     first_name = serializers.CharField(max_length=30)
     last_name = serializers.CharField(max_length=30)
     email = serializers.EmailField()

@@ -3,13 +3,12 @@ from rest_framework import status
 from django.urls import reverse
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Student, Faculty, Department, StudentProfile, StudentExperience, StudentSkill, StudentCoursePreference, Instructor, TAScheduler, Admin
+from .models import Student, Department, StudentProfile, StudentExperience, StudentSkill, StudentCoursePreference, Instructor, TAScheduler, Admin
 
 class UserProfileAPITest(APITestCase):
     def setUp(self):
         # Create basic test data
-        self.faculty, _ = Faculty.objects.get_or_create(name="Computer Science")
-        self.department, _ = Department.objects.get_or_create(name="Computer Science", faculty=self.faculty)
+        self.department, _ = Department.objects.get_or_create(name="Computer Science")
         
         self.user = User.objects.create_user(
             username='testuser',
@@ -200,7 +199,7 @@ class AdminAPITest(APITestCase):
             'first_name': 'John',
             'last_name': 'Professor',
             'email': 'prof@ubc.ca',
-            'faculty': 'cosc'  # Use faculty name directly  
+            'department': 'cosc'  # Use faculty name directly  
         }
         print(f"DEBUG: Request data: {data}")
 

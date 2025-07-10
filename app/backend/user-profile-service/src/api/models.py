@@ -2,17 +2,9 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 # all models related to user profiles, including students, instructors, and TA schedulers
-class Faculty(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
-    class Meta:
-        
-        managed = True
-        db_table = 'myapp_faculty'
 
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='departments')
 
     class Meta:
         managed = True
@@ -39,7 +31,7 @@ class Student(models.Model):
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='instructors')
     email = models.EmailField()
     password = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)

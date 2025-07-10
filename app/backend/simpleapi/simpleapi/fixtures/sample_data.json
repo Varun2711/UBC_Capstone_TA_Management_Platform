@@ -1,53 +1,5 @@
 [
   {
-    "model": "myapp.faculty",
-    "pk": 1,
-    "fields": {
-      "name": "Faculty of Science"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 5,
-    "fields": {
-      "name": "COSC",
-      "faculty": 1
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 6,
-    "fields": {
-      "name": "MATH",
-      "faculty": 1
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 7,
-    "fields": {
-      "name": "DATA",
-      "faculty": 1
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 8,
-    "fields": {
-      "name": "PHYS",
-      "faculty": 1
-    }
-  },
-
-  {
-    "model": "myapp.department",
-    "pk": 1,
-    "fields": {
-      "name": "CMPS",
-      "faculty": 1
-    }
-  },
-  {
     "model": "myapp.student",
     "pk": 1,
     "fields": {
@@ -57,7 +9,7 @@
       "program": "Computer Science",
       "year_standing": 3,
       "study_level": "MSc",
-      "department": 1,
+      "department": 6,
       "sin": "123456789",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "sarah.johnson@student.ubc.ca",
@@ -85,24 +37,22 @@
     "model" : "myapp.student",
     "pk": 3,
     "fields": {
-      "id": 1,
       "student_number": 12345678,
       "name": "Chad Davis",
       "email": "chad.davis@gmail.com",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "department_id": 1
+      "department": 1
     }
   },
   {
     "model": "myapp.instructor",
     "pk": 1,
     "fields": {
-      "id": 1,
       "employee_number": 87654321,
       "name": "Naman Arora",
       "email": "naman.arora@gmail.com",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "faculty_id": 1
+      "department": 6
     }
   },
 
@@ -291,7 +241,6 @@
       "post_date": "2024-11-15",
       "deadline_date": "2024-12-15",
       "department": 1,
-      "faculty": 1,
       "created_by": 1,
       "term": 1,
       "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
@@ -307,7 +256,6 @@
       "post_date": "2024-11-20",
       "deadline_date": "2024-12-20",
       "department": 1,
-      "faculty": 1,
       "created_by": 1,
       "term": 2,
       "requirements": " Must be a registered student. ",
