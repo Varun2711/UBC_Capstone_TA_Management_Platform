@@ -1007,15 +1007,6 @@ export default function ProfilePage() {
                       <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={`${userData.firstName} ${userData.lastName}`} />
                       <AvatarFallback className="text-2xl">{`${userData.firstName?.charAt(0) || ''}${userData.lastName?.charAt(0) || ''}`}</AvatarFallback>
                     </Avatar>
-                    {isEditing && (
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
-                      >
-                        <Camera className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -1397,6 +1388,9 @@ export default function ProfilePage() {
                           />
                         ) : (
                           <p className="text-sm">{exp.semester}</p>
+                        )}
+                        {isEditingExperience && (
+                        <p className="text-xs text-muted-foreground">Accepted formats are Fall 2023, Winter 2024, Summer 2021</p>
                         )}
                       </div>
 

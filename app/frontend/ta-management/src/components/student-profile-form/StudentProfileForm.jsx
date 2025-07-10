@@ -474,7 +474,7 @@ export default function StudentProfileForm({
           )}
         </div>
 
-        {/* Profile Picture and Personal Info */}
+        {/* Personal Info */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Personal Information</CardTitle>
@@ -526,15 +526,6 @@ export default function StudentProfileForm({
                     />
                     <AvatarFallback className="text-2xl">SJ</AvatarFallback>
                   </Avatar>
-                  {isEditing && (
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
-                    >
-                      <Camera className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
               )}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -953,6 +944,9 @@ export default function StudentProfileForm({
                       />
                     ) : (
                       <p className="text-sm">{exp.semester}</p>
+                    )}
+                    {isEditingExperience && (
+                        <p className="text-xs text-muted-foreground">Accepted formats are Fall 2023, Winter 2024, Summer 2021</p>
                     )}
                   </div>
 
