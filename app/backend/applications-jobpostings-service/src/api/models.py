@@ -18,7 +18,7 @@ class TAScheduler(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, related_name='ta_schedulers', null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, related_name='ta_schedulers', null=True, db_constraint =False)
 
     class Meta:
         managed = False
@@ -109,6 +109,85 @@ class Term(models.Model):
     def is_subset_of(self, other_term):
         """Check if this term is a subset of another term"""
         return self.subsetOf == other_term
+    
+
+#adding new models to service    
+
+class FormTemplate(models.Model):
+    """Template for application forms that can be reused across job postings"""
+    template_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_formtemplate'
+    
+    def __str__(self):
+        return self.name
+
+class FormSection(models.Model):
+    """Sections within a form (e.g., Eligibility, Selections, etc.)"""
+    SECTION_TYPES = [
+        ('eligibility', 'Eligibility'),
+        ('selections', 'Selections'), 
+        ('personal_details', 'Personal Details'),
+        ('documents', 'Supporting Documents'),
+        ('custom', 'Custom Section'),
+    ]
+    
+    section_id = models.AutoField(primary_key=True)
+    template = models.ForeignKey(FormTemplate, on_delete=models.CASCADE, related_name='sections')
+    name = models.CharField(max_length=100)
+    section_type = models.CharField(max_length=20, choices=SECTION_TYPES)
+    order = models.PositiveIntegerField()
+    is_required = models.BooleanField(default=True)
+    description = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_formsection'
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.template.name} - {self.name}"
+
+class FormQuestion(models.Model):
+    """Individual questions within form sections"""
+    QUESTION_TYPES = [
+        ('radio', 'Radio Button'),
+        ('checkbox', 'Checkbox'),
+        ('text', 'Text Input'),
+        ('textarea', 'Text Area'),
+        ('select', 'Dropdown Select'),
+        ('number', 'Number Input'),
+        ('email', 'Email Input'),
+        ('file', 'File Upload'),
+        ('ranking', 'Ranking/Ordering'),
+    ]
+    
+    question_id = models.AutoField(primary_key=True)
+    section = models.ForeignKey(FormSection, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    field_name = models.CharField(max_length=100)  # For mapping to response data
+    order = models.PositiveIntegerField()
+    is_required = models.BooleanField(default=False)
+    help_text = models.TextField(null=True, blank=True)
+    validation_rules = models.JSONField(null=True, blank=True)  # Store validation rules
+    options = models.JSONField(null=True, blank=True)  # For select/radio options
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_formquestion'
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.section.name} - {self.question_text[:50]}"
+
 
 class JobPosting(models.Model):
     
@@ -132,6 +211,15 @@ class JobPosting(models.Model):
         ('draft', 'Draft'),
         ('archived', 'Archived'),
     ], default='draft')
+    
+    # reference the template used for the job posting
+    form_template = models.ForeignKey(
+        FormTemplate, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        help_text="Custom form template for this job posting"
+    )
 
     class Meta:
         managed = True
@@ -144,6 +232,7 @@ class JobPosting(models.Model):
     def is_expired(self):        
         return self.deadline_date < timezone.now().date()
     
+
 
 class JobPostingQuestion(models.Model):
     question_id = models.AutoField(primary_key=True)
@@ -228,7 +317,23 @@ class Application(models.Model):
     def can_withdraw(self):
         """Check if application can be withdrawn"""
         return self.status in ['submitted', 'under_review']     
+
+
+ # Here we're storing dynamic application responses
+class ApplicationResponse(models.Model):
+    """Store responses to dynamic form questions"""
+    response_id = models.AutoField(primary_key=True)
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='responses')
+    question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE)
+    response_data = models.JSONField()  # Store the actual response
     
+    class Meta:
+        managed = True
+        db_table = 'myapp_applicationresponse'
+        unique_together = ('application', 'question')
+    
+    def __str__(self):
+        return f"Response to {self.question.question_text[:30]} for {self.application}"   
    
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)

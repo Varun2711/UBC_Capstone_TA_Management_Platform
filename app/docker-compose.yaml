@@ -110,15 +110,15 @@ services:
     networks:
       - app-networks
 
-  frontend:
-    build:
-      context: ./frontend/ta-management
-    ports:
-      - "5173:5173"
-    command: npm run dev -- --host
-    # set app-networks as the current network
-    networks:
-      - app-networks
+  # frontend:
+  #   build:
+  #     context: ./frontend/ta-management
+  #   ports:
+  #     - "5173:5173"
+  #   command: npm run dev -- --host
+  #   # set app-networks as the current network
+  #   networks:
+  #     - app-networks
 
   # postgres database service
   # This service uses the official postgres image and sets up a database with the specified user and password.
@@ -167,20 +167,20 @@ services:
     networks:
       - app-networks
 
-  nginx:
-    build:
-      context: ./nginx
-    ports:
-      - "8080:80"
-    # set app-networks as the current network
-    networks:
-      - app-networks
-    # do not start the reverse proxy until all other services have been activated
-    depends_on:
-      - frontend
-      - backend
-      - user-profile-service
-      - auth-service
+  # nginx:
+  #   build:
+  #     context: ./nginx
+  #   ports:
+  #     - "8080:80"
+  #   # set app-networks as the current network
+  #   networks:
+  #     - app-networks
+  #   # do not start the reverse proxy until all other services have been activated
+  #   depends_on:
+  #     - frontend
+  #     - backend
+  #     - user-profile-service
+  #     - auth-service
 
 volumes:
   db_data:

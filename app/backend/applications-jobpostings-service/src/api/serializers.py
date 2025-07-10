@@ -30,6 +30,57 @@ class TermSerializer(serializers.ModelSerializer):
             'code', 'description'
         ] 
 
+
+# Adding the Dynamic Form Serializers to match changes in models.py
+class FormQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FormQuestion
+        fields = [
+            'question_id', 'question_text', 'question_type', 'field_name',
+            'order', 'is_required', 'help_text', 'validation_rules', 'options'
+        ]
+
+class FormSectionSerializer(serializers.ModelSerializer):
+    questions = FormQuestionSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = FormSection
+        fields = [
+            'section_id', 'name', 'section_type', 'order', 
+            'is_required', 'description', 'questions'
+        ]
+
+class FormTemplateSerializer(serializers.ModelSerializer):
+    sections = FormSectionSerializer(many=True, read_only=True)
+    created_by = TAschedulerSerializer(read_only=True)
+    
+    # Add write-only field for creating templates
+    created_by_id = serializers.PrimaryKeyRelatedField(
+        queryset=TAScheduler.objects.all(),
+        source='created_by',
+        write_only=True,
+        required=False
+    )
+    
+    class Meta:
+        model = FormTemplate
+        fields = [
+            'template_id', 'name', 'description', 'created_by', 'created_by_id',
+            'created_at', 'is_active', 'sections'
+        ]
+
+class ApplicationResponseSerializer(serializers.ModelSerializer):
+    question = FormQuestionSerializer(read_only=True)
+    question_id = serializers.PrimaryKeyRelatedField(
+        queryset=FormQuestion.objects.all(),
+        source='question',
+        write_only=True
+    )
+    
+    class Meta:
+        model = ApplicationResponse
+        fields = ['response_id', 'question_id', 'question', 'response_data']
+
 # Serializers for JobPosting which nests Department and TAScheduler serializers, as job posting questions
 class JobPostingSerializer(serializers.ModelSerializer):   
     #fields for writes and updates
@@ -51,17 +102,29 @@ class JobPostingSerializer(serializers.ModelSerializer):
         write_only=True
     ) 
 
+     # Form template associated with the job post
+    form_template_id = serializers.PrimaryKeyRelatedField(
+        queryset=FormTemplate.objects.all(),
+        source='form_template',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
+
     #read only fields  
     department = DepartmentSerializer(read_only=True)  
     term = TermSerializer(read_only = True)   
     created_by = TAschedulerSerializer(read_only=True)      
     posting_questions = JobPostingQuestionSerializer(many=True)
+    form_template = FormTemplateSerializer(read_only=True)
     
     class Meta:
         model = JobPosting
         fields = ['posting_id', 'title', 'status', 'description', 'term_id', 'term',
                   'post_date' ,'department_id', 'department', 'deadline_date',  
-                  'created_by', 'created_by_id', 'requirements', 'posting_questions'] #fields to include in the serializer
+                  'created_by', 'created_by_id', 'requirements', 'posting_questions',
+                  'form_template_id', 'form_template'] #fields to include in the serializer
     # Note: 'posting_questions' is read-only here, as it will be handled separately in the create method
     
     def create(self, validated_data):
@@ -125,6 +188,8 @@ class ApplicationSerializer(serializers.ModelSerializer):
         source = 'termSelection',
         write_only = True
     )
+
+    responses = ApplicationResponseSerializer(many=True, read_only=True)
     
     # For read operations - use nested serializers
     student = StudentSerializer(read_only=True)
@@ -146,7 +211,30 @@ class ApplicationSerializer(serializers.ModelSerializer):
             'positionType', 'workload', 'disciplineRankings',
             # Eligibility fields
             'citizenshipStatus', 'residingInKelowna', 'fullTimeEnrollment',
-            'hasOtherPositions', 'otherPositionHours'
+            'hasOtherPositions', 'otherPositionHours',
+            'responses'
         ]
+
+class ApplicationWithResponsesSerializer(serializers.Serializer):
+    """Serializer for the submit_with_responses custom action"""
+    application = ApplicationSerializer()
+    responses = serializers.DictField(
+        child=serializers.JSONField(),
+        required=False,
+        help_text="Dictionary of field_name: response_value pairs"
+    )
+    template_id = serializers.IntegerField(
+        required=False,
+        help_text="ID of the form template (required if responses provided)"
+    )
     
+    def validate(self, data):
+        """Validate that template_id is provided if responses are given"""
+        if data.get('responses') and not data.get('template_id'):
+            raise serializers.ValidationError(
+                "template_id is required when responses are provided"
+            )
+        return data
     
+
+

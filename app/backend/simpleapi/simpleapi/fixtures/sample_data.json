@@ -1,5 +1,12 @@
 [
   {
+    "model": "myapp.department",
+    "pk": 1,
+    "fields": {
+      "name": "CMPS"
+    }
+  },
+  {
     "model": "myapp.student",
     "pk": 1,
     "fields": {
@@ -9,7 +16,7 @@
       "program": "Computer Science",
       "year_standing": 3,
       "study_level": "MSc",
-      "department": 6,
+      "department": 1,
       "sin": "123456789",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "sarah.johnson@student.ubc.ca",
@@ -52,7 +59,7 @@
       "name": "Naman Arora",
       "email": "naman.arora@gmail.com",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "department": 6
+      "department": 1
     }
   },
 

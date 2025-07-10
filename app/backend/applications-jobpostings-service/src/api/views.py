@@ -10,7 +10,7 @@ from .models import *
 from .serializers import *
 import django_filters
 from django.utils import timezone
-
+from django.db import transaction
 
 
 
@@ -164,7 +164,69 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             {"detail": "Updates to applications are not currently in scope."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
-
+    
+    @action(detail=False, methods=['post'])
+    def submit_with_responses(self, request):
+        """Submit application with dynamic form responses in one call"""
+        serializer = ApplicationWithResponsesSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        validated_data = serializer.validated_data
+        application_data = validated_data['application']
+        responses_data = validated_data.get('responses', {})
+        template_id = validated_data.get('template_id')
+        
+        try:
+            with transaction.atomic():  # Ensure atomicity
+                # Create the application
+                application_serializer = ApplicationSerializer(data=application_data)
+                if not application_serializer.is_valid():
+                    return Response(
+                        application_serializer.errors, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                application = application_serializer.save()
+                
+                # If template_id provided, handle dynamic responses
+                if template_id and responses_data:
+                    template = FormTemplate.objects.get(pk=template_id)
+                    
+                    # Create mapping of field_name to question_id
+                    field_to_question = {}
+                    for section in template.sections.all():
+                        for question in section.questions.all():
+                            field_to_question[question.field_name] = question.question_id
+                    
+                    # Create responses
+                    response_objects = []
+                    for field_name, response_value in responses_data.items():
+                        if field_name in field_to_question:
+                            question_id = field_to_question[field_name]
+                            response_obj = ApplicationResponse.objects.create(
+                                application=application,
+                                question_id=question_id,
+                                response_data=response_value
+                            )
+                            response_objects.append(response_obj)
+                
+                # Return the complete application with responses
+                complete_serializer = ApplicationSerializer(application)
+                return Response(complete_serializer.data, status=status.HTTP_201_CREATED)
+                
+        except FormTemplate.DoesNotExist:
+            return Response(
+                {"error": "Form template not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
     @action(detail=False, methods=['get'], url_path=r'by-student/(?P<student_id>\d+)') 
     #get method using the student_id
     def by_student(self, request, student_id=None):
@@ -193,3 +255,122 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             {"detail": "Application not found"}, 
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+# Add these ViewSets to your views.py
+
+class FormTemplateViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing form templates"""
+    queryset = FormTemplate.objects.all()
+    serializer_class = FormTemplateSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['name', 'description']
+    filterset_fields = ['is_active', 'created_by']
+    
+    def perform_create(self, serializer):
+        # Set created_by to current user if authenticated and is a TA scheduler
+        if hasattr(self.request.user, 'tascheduler'):
+            serializer.save(created_by=self.request.user.tascheduler)
+        else:
+            serializer.save()
+    
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        """Create a copy of an existing template"""
+        original = self.get_object()
+        
+        try:
+            with transaction.atomic():
+                # Create new template
+                new_template = FormTemplate.objects.create(
+                    name=f"{original.name} (Copy)",
+                    description=original.description,
+                    created_by=request.user.tascheduler if hasattr(request.user, 'tascheduler') else None
+                )
+                
+                # Copy sections and questions
+                for section in original.sections.all():
+                    new_section = FormSection.objects.create(
+                        template=new_template,
+                        name=section.name,
+                        section_type=section.section_type,
+                        order=section.order,
+                        is_required=section.is_required,
+                        description=section.description
+                    )
+                    
+                    for question in section.questions.all():
+                        FormQuestion.objects.create(
+                            section=new_section,
+                            question_text=question.question_text,
+                            question_type=question.question_type,
+                            field_name=f"{question.field_name}_copy",  # Ensure unique field names
+                            order=question.order,
+                            is_required=question.is_required,
+                            help_text=question.help_text,
+                            validation_rules=question.validation_rules,
+                            options=question.options
+                        )
+                
+                serializer = self.get_serializer(new_template)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to duplicate template: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class FormSectionViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing form sections"""
+    queryset = FormSection.objects.all()
+    serializer_class = FormSectionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['template', 'section_type']
+
+class FormQuestionViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing individual form questions"""
+    queryset = FormQuestion.objects.all()
+    serializer_class = FormQuestionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['section', 'question_type', 'is_required']
+    
+    @action(detail=False, methods=['post'])
+    def bulk_create(self, request):
+        """Create multiple questions at once"""
+        serializer = self.get_serializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['patch'])
+    def reorder(self, request):
+        """Reorder questions within a section"""
+        question_orders = request.data.get('questions', [])
+        
+        try:
+            with transaction.atomic():
+                for item in question_orders:
+                    question = FormQuestion.objects.get(pk=item['question_id'])
+                    question.order = item['order']
+                    question.save()
+                    
+            return Response({"message": "Questions reordered successfully"})
+        except FormQuestion.DoesNotExist:
+            return Response(
+                {"error": "One or more questions not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to reorder questions: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class ApplicationResponseViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing application responses"""
+    queryset = ApplicationResponse.objects.all()
+    serializer_class = ApplicationResponseSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['application', 'question']
