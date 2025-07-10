@@ -197,7 +197,7 @@ class CourseOffering(models.Model):
     class Meta:
         managed = True
         db_table = 'course_offerings'
-        ordering = ['-academic_term__year', 'course__course_number', 'section_number']
+        ordering = ['-academic_term__startCalendarYear', 'course__course_number', 'section_number']
         unique_together = ['course', 'section_number', 'academic_term']
 
     def __str__(self):
@@ -245,7 +245,7 @@ class SharedSession(models.Model):
     class Meta:
         managed = True
         db_table = 'lab_sections'
-        ordering = ['-academic_term__year', 'course__course_number', 'section_number']
+        ordering = ['-academic_term__startCalendarYear', 'course__course_number', 'section_number']
         unique_together = ['course', 'section_number', 'academic_term']
 
     def __str__(self):
