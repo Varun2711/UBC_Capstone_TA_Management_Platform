@@ -124,6 +124,9 @@ services:
       db:
         condition: service_healthy
         restart: true
+      application-service:
+        condition: service_healthy
+        restart: true
       user-profile-service:
         condition: service_healthy
         restart: true

@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import (
     Term,
-    Faculty,
     Instructor,
     Department,
     TimeSlot,
@@ -83,115 +82,23 @@ class TermSerializer(serializers.ModelSerializer):
         
         return data
 
-# Faculty Serializer
-class FacultySerializer(serializers.ModelSerializer):
-    """
-    Serializer for Faculty model with CRUD operations support.
-    Even though managed=False, we can perform CRUD operations on shared database.
-    """
-    # Include related departments
-    departments = serializers.StringRelatedField(many=True, read_only=True)
-    
-    class Meta:
-        model = Faculty
-        fields = [
-            'id',
-            'name',
-            'departments'
-        ]
-        read_only_fields = ['id', 'departments']
-    
-    def validate_name(self, value):
-        """
-        Validate that faculty name is not empty and is unique.
-        """
-        if not value or not value.strip():
-            raise serializers.ValidationError("Faculty name cannot be empty.")
-        return value.strip()
-
 
 # Instructor Serializer
 class InstructorSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Instructor model with CRUD operations support.
-    Even though managed=False, we can perform CRUD operations on shared database.
-    """
-    # Nested serialization for faculty
-    faculty_name = serializers.StringRelatedField(source='faculty', read_only=True)
-    faculty_id = serializers.PrimaryKeyRelatedField(
-        source='faculty',
-        queryset=Faculty.objects.all(),
-        write_only=True
-    )
-    
     class Meta:
         model = Instructor
-        fields = [
-            'id',
-            'employee_number',
-            'name',
-            'faculty_name',
-            'faculty_id',
-            'email'
-        ]
-        read_only_fields = ['id', 'faculty_name']
-    
-    def validate_employee_number(self, value):
-        """
-        Validate that employee number is not empty.
-        """
-        if not value or not value.strip():
-            raise serializers.ValidationError("Employee number cannot be empty.")
-        return value.strip()
-    
-    def validate_name(self, value):
-        """
-        Validate that instructor name is not empty.
-        """
-        if not value or not value.strip():
-            raise serializers.ValidationError("Instructor name cannot be empty.")
-        return value.strip()
-    
-    def validate_email(self, value):
-        """
-        Validate email format.
-        """
-        if not value or not value.strip():
-            raise serializers.ValidationError("Email cannot be empty.")
-        return value.strip().lower()
+        fields = '__all__'
+        # Exclude password in responses
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
 
-# Department Serializer
 class DepartmentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Department model with CRUD operations support.
-    Even though managed=False, we can perform CRUD operations on shared database.
-    """
-    # Nested serialization for faculty
-    faculty_name = serializers.StringRelatedField(source='faculty', read_only=True)
-    faculty_id = serializers.PrimaryKeyRelatedField(
-        source='faculty',
-        queryset=Faculty.objects.all(),
-        write_only=True
-    )
-    
     class Meta:
         model = Department
-        fields = [
-            'id',
-            'name',
-            'faculty_name',
-            'faculty_id'
-        ]
-        read_only_fields = ['id', 'faculty_name']
-    
-    def validate_name(self, value):
-        """
-        Validate that department name is not empty and is unique.
-        """
-        if not value or not value.strip():
-            raise serializers.ValidationError("Department name cannot be empty.")
-        return value.strip()
+        fields = ['id', 'name']  
+        read_only_fields = ['id', 'name']  
 
 # TimeSlot Serializer
 class TimeSlotSerializer(serializers.ModelSerializer):

@@ -2,12 +2,13 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-# Create your models here.
+# department model
+class Department(models.Model):
+    name = models.CharField(max_length=100, unique=True)
 
-#### MODELS ALREADY CREATED IN OTHER APIs
-#### REFERENCED HERE BUT managed = False
-
-# faculty model
+    class Meta:
+        managed = False
+        db_table = 'myapp_department'
 
 class Term(models.Model):
     code = models.CharField(max_length=20, unique=True)
@@ -59,35 +60,19 @@ class Term(models.Model):
         return self.subsetOf == other_term
 
 
-class Faculty(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
-    class Meta:
-        
-        managed = False
-        db_table = 'myapp_faculty'
-
 # instructor model
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='instructors')
     email = models.EmailField()
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = False
         db_table = 'myapp_instructor'
 
-# department model
-class Department(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='departments')
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_department'
-
-#### MODELS CREATED HERE
 
 # Time slot model
 class TimeSlot(models.Model):
