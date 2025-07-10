@@ -102,7 +102,7 @@ class Term(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'myapp_term'  
+        db_table = 'academic_terms'  
       
 
     def __str__(self):
