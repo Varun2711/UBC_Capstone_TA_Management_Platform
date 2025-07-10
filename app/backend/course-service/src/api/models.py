@@ -262,4 +262,4 @@ class InstructorRequest(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'intstructor_requests'
+        db_table = 'instructor_requests'
