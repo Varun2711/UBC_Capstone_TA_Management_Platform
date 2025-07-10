@@ -3,21 +3,8 @@ from django.utils import timezone
 import os
 
 
-
-class Faculty(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_faculty'
-
-    def __str__(self):
-        return self.name
-
-
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, related_name='departments', null=True)
 
     class Meta:
         managed = False
@@ -48,7 +35,7 @@ class Student(models.Model):
     program = models.CharField(max_length=100, null=True, blank=True)
     year_standing = models.IntegerField(null=True, blank=True)
     study_level = models.CharField(max_length=20)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
@@ -63,7 +50,7 @@ class Student(models.Model):
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
     email = models.EmailField()
 
     class Meta: 
@@ -130,12 +117,11 @@ class JobPosting(models.Model):
     description = models.TextField(null=True, blank=True)
     post_date = models.DateField()
     deadline_date = models.DateField()
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
-    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True, db_constraint=False)
 
     #term that this position is advertising for
-    term = models.ForeignKey('Term', on_delete = models.SET_NULL, null=True)     
+    term = models.ForeignKey('Term', on_delete = models.SET_NULL, null=True, db_constraint=False)     
 
     requirements = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[
@@ -237,7 +223,7 @@ class Application(models.Model):
         db_table = 'myapp_application'        
         
     def __str__(self):
-        return f"Application {self.application_id} - Student {self.student}  for {self.posting}"
+        return f"Application {self.application_id} - {self.student}  for {self.posting}"
        
     def can_withdraw(self):
         """Check if application can be withdrawn"""
@@ -246,7 +232,7 @@ class Application(models.Model):
    
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
-    application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True)
+    application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
     file_name = models.CharField(max_length=255)
     file_type = models.CharField(max_length=50)

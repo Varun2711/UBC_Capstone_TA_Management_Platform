@@ -9,27 +9,26 @@ from utils.permissions import admin_required, IsAdminUser, IsSchedulerUser, IsAd
 from django.utils.decorators import method_decorator
 from utils.password_utils import generate_secure_password
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.core.exceptions import PermissionDenied
-from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Faculty, Department
+
+from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Department
 from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
-                          StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, FacultySerializer)
+                          StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, DepartmentSerializer)
 
 from utils.profile_utils import get_user_by_id, get_user_by_email
 from utils.response_utils import success_response, error_response
 from utils.logging_utils import log_user_activity
-
-
-class FacultyListView(generics.ListAPIView):
+    
+class DepartmentListView(generics.ListAPIView):
     """
-    Endpoint to list all available faculties - no authentication required
+    Endpoint to list all available departments - no authentication required
     """
-    queryset = Faculty.objects.all()
-    serializer_class = FacultySerializer
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
     permission_classes = [AllowAny]
     
     def get(self, request, *args, **kwargs):
-        faculties = Faculty.objects.all()
-        serializer = FacultySerializer(faculties, many=True)
+        departments = Department.objects.all()
+        serializer = DepartmentSerializer(departments, many=True)
         return Response(serializer.data)
     
 class StudentViewSet(viewsets.ModelViewSet):
@@ -531,10 +530,10 @@ class CreateInstructorView(generics.CreateAPIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Get faculty object
-                print(f"DEBUG: Looking for faculty: {serializer.validated_data['faculty']}")
-                faculty_code = serializer.validated_data['faculty']
-                faculty_name_map = {
+                # Get department object
+                print(f"DEBUG: Looking for department: {serializer.validated_data['department']}")
+                department_code = serializer.validated_data['department']
+                department_name_map = {
                     'astr': 'Astronomy',
                     'math': 'Mathematics',
                     'phy': 'Physics',
@@ -542,13 +541,13 @@ class CreateInstructorView(generics.CreateAPIView):
                     'stat': 'Statistics',
                     'cosc': 'Computer Science'
                 }
-                faculty_name = faculty_name_map.get(faculty_code)
-                if not faculty_name:
+                department_name = department_name_map.get(department_code)
+                if not department_name:
                     return Response(
-                        error_response("Invalid faculty code"),
+                        error_response("Invalid department code"),
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                faculty = Faculty.objects.get(name__iexact=faculty_name)
+                department = Department.objects.get(name__iexact=department_name)  # Changed from Faculty
                 
                 # Generate secure temporary password
                 temp_password = generate_secure_password()
@@ -558,7 +557,7 @@ class CreateInstructorView(generics.CreateAPIView):
                     employee_number=serializer.validated_data['employee_number'],
                     name=f"{serializer.validated_data['first_name']} {serializer.validated_data['last_name']}",
                     email=serializer.validated_data['email'],
-                    faculty=faculty,
+                    department=department, 
                     password=temp_password
                 )
                 
@@ -577,9 +576,9 @@ class CreateInstructorView(generics.CreateAPIView):
                     status=status.HTTP_201_CREATED
                 )
                 
-            except Faculty.DoesNotExist:
+            except Department.DoesNotExist:
                 return Response(
-                    error_response("Faculty not found"),
+                    error_response("Department not found"),
                     status=status.HTTP_400_BAD_REQUEST
                 )
             except Exception as e:
@@ -818,6 +817,7 @@ def api_root(request):
 
             # Scheduler endpoints
             'scheduler_create_instructor': '/api/profile/scheduler/create-instructor/',
+            'departments': '/api/profile/departments/',
             
             # Student profile endpoints
             'my_profile': '/api/profile/me/',

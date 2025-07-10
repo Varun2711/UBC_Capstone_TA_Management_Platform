@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (StudentViewSet, InstructorViewSet, TASchedulerViewSet, find_user, api_root, CreateInstructorView, CreateSchedulerView, UserManagementView,
                     ProfileDetailView, ProfileUpdateView, StudentTAExperienceListCreateView, StudentExperienceDetailView,StudentSkillListCreateView, 
-                    StudentSkillDetailView, StudentAvailabilityView, StudentCoursePreferenceListCreateView, StudentCoursePreferenceDetailView, FacultyListView)
+                    StudentSkillDetailView, StudentAvailabilityView, StudentCoursePreferenceListCreateView, StudentCoursePreferenceDetailView, DepartmentListView)
 
 router = DefaultRouter()
 router.include_root_view = False
@@ -19,10 +19,7 @@ urlpatterns = [
     path('admin/create-instructor/', CreateInstructorView.as_view(), name='create-instructor'),
     path('admin/create-scheduler/', CreateSchedulerView.as_view(), name='create-scheduler'),
     path('admin/user-management/', UserManagementView.as_view(), name='user-management'),
-    path('faculties/', FacultyListView.as_view(), name='faculty-list'),
-
-    # Scheduler endpoints
-    path('scheduler/create-instructor/', CreateInstructorView.as_view(), name='scheduler-create-instructor'),
+    path('departments/', DepartmentListView.as_view(), name='department-list'),
     
     # Student Profile Management
     path('me/', ProfileDetailView.as_view(), name='my-profile'),
