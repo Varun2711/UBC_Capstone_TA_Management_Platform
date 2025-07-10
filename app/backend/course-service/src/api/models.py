@@ -78,7 +78,6 @@ class Instructor(models.Model):
         managed = False
         db_table = 'myapp_instructor'
 
-
 # department model
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -181,7 +180,7 @@ class CourseOffering(models.Model):
         help_text="Section number (e.g., '001', 'L01')"
     )
     academic_term = models.ForeignKey(
-        AcademicTerm,
+        Term,
         on_delete=models.CASCADE,
         related_name='course_offerings',
         help_text="Academic term when this course is offered"
@@ -205,12 +204,13 @@ class CourseOffering(models.Model):
         return f'{self.course.course_number} {self.section_number} ({self.academic_term})'
 
 # lab sections model
-class LabSection(models.Model):
+class SharedSession(models.Model):
     """
     A Lab section is similar to a course offering but specifically for lab/tutorial sessions.
     Lab sections are associated with a course and academic term, similar to course offerings.
     """
-    lab_section_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    shared_session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    session_type = models.CharField(max_length=10, blank=False, null=False)
     course = models.ForeignKey(
         Course, 
         on_delete=models.CASCADE,
@@ -222,7 +222,7 @@ class LabSection(models.Model):
         help_text="Lab section number (e.g., 'L01', 'T01')"
     )
     academic_term = models.ForeignKey(
-        AcademicTerm,
+        Term,
         on_delete=models.CASCADE,
         related_name='lab_sections',
         help_text="Academic term when this lab section is offered"
@@ -251,3 +251,15 @@ class LabSection(models.Model):
     def __str__(self):
         return f'{self.course.course_number} {self.section_number} ({self.academic_term}) - Lab'
     
+
+## placed after due to referencing errors:
+class InstructorRequest(models.Model):
+    request_id = models.AutoField(primary_key=True)
+    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+    course_offering = models.ForeignKey(CourseOffering, on_delete=models.SET_NULL, null=True, blank=True)
+    request_date = models.DateField()
+    request_description = models.TextField()
+
+    class Meta:
+        managed = True
+        db_table = 'intstructor_requests'
