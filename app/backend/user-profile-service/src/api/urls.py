@@ -20,6 +20,9 @@ urlpatterns = [
     path('admin/create-scheduler/', CreateSchedulerView.as_view(), name='create-scheduler'),
     path('admin/user-management/', UserManagementView.as_view(), name='user-management'),
     path('faculties/', FacultyListView.as_view(), name='faculty-list'),
+
+    # Scheduler endpoints
+    path('scheduler/create-instructor/', CreateInstructorView.as_view(), name='scheduler-create-instructor'),
     
     # Student Profile Management
     path('me/', ProfileDetailView.as_view(), name='my-profile'),
