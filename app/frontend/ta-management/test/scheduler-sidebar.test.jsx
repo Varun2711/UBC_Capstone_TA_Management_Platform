@@ -1,12 +1,51 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
-import { AppSidebar } from '@/components/scheduler-sidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { AppSidebar } from '@/components/scheduler-sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
+// Import the mocked functions after setting up mocks
+import { getProfile } from '@/logic/scheduler-profile';
+import { logout } from '@/logic/auth';
 
-// ✅ Correct render helper with MemoryRouter + SidebarProvider
+// --- MOCKS ---
+
+// Mock the profile logic module
+vi.mock('@/logic/scheduler-profile', () => ({
+  getProfile: vi.fn(),
+}));
+
+// Mock the auth logic module
+vi.mock('@/logic/auth', () => ({
+  logout: vi.fn(),
+}));
+
+// Mock the navigate function from react-router-dom
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+// Mock lucide-react icons for simplicity
+vi.mock('lucide-react', () => ({
+  Home: () => <svg data-testid="home-icon" />,
+  BookOpen: () => <svg data-testid="book-open-icon" />,
+  UserCheck: () => <svg data-testid="user-check-icon" />,
+  FileText: () => <svg data-testid="file-text-icon" />,
+  CheckCircle: () => <svg data-testid="check-circle-icon" />,
+  Calendar: () => <svg data-testid="calendar-icon" />,
+  MoreVerticalIcon: () => <svg data-testid="more-vertical-icon" />,
+}));
+
+
+
+// --- TEST SETUP ---
+
 const renderSidebar = (props = {}) => {
   return render(
     <MemoryRouter>
@@ -17,121 +56,126 @@ const renderSidebar = (props = {}) => {
   );
 };
 
-// ✅ Mock the useIsMobile hook
-vi.mock('@/hooks/use-mobile', () => ({
-  useIsMobile: vi.fn(() => false),
-}));
-
-// ✅ Mock icons from lucide-react
-vi.mock('lucide-react', () => ({
-  Home: () => <svg data-testid="home-icon" />,
-  BookOpen: () => <svg data-testid="book-open-icon" />,
-  UserCheck: () => <svg data-testid="user-check-icon" />,
-  FileText: () => <svg data-testid="file-text-icon" />,
-  CheckCircle: () => <svg data-testid="check-circle-icon" />,
-  Plus: () => <svg data-testid="plus-icon" />,
-  Upload: () => <svg data-testid="upload-icon" />,
-  Settings: () => <svg data-testid="settings-icon" />,
-  Calendar: () => <svg data-testid="calendar-icon" />,
-  MoreVerticalIcon: () => <svg data-testid="more-vertical-icon" />,
-}));
-
 describe('AppSidebar', () => {
-  it('renders the sidebar with header, content, and footer', () => {
-    renderSidebar({ activePage: 'Dashboard' });
-    expect(screen.getByText('TA Scheduler')).toBeInTheDocument();
-    expect(screen.getByText('Admin Portal')).toBeInTheDocument();
-    expect(screen.getByTestId('calendar-icon')).toBeInTheDocument();
-    expect(screen.getByText('Navigation')).toBeInTheDocument();
-    expect(screen.getByText('Quick Actions')).toBeInTheDocument();
-    expect(screen.getByText('System')).toBeInTheDocument();
-    expect(screen.getByText('Admin User')).toBeInTheDocument();
-    expect(screen.getByText('admin@university.edu')).toBeInTheDocument();
+  const mockUser = {
+    name: 'Jane Doe',
+    email: 'jane.doe@university.edu',
+  };
+
+  beforeEach(() => {
+    // Reset mocks before each test to ensure isolation
+    vi.clearAllMocks();
+    // Default mock implementation for a successful data fetch
+    getProfile.mockResolvedValue(mockUser);
   });
 
-  it('renders all navigation items correctly', () => {
-    renderSidebar({ activePage: 'Course Management' });
-    const navigationItems = [
-      { title: 'Dashboard', icon: 'home-icon' },
-      { title: 'Course Management', icon: 'book-open-icon', isActive: true },
-      { title: 'Instructor Management', icon: 'user-check-icon' },
-      { title: 'Applications', icon: 'file-text-icon' },
-      { title: 'Appointments', icon: 'check-circle-icon' },
-    ];
-    const navigationGroup = screen.getByText('Navigation').closest('[data-sidebar="group"]');
-    navigationItems.forEach((item) => {
-      const menuItem = within(navigationGroup).getByText(item.title);
-      expect(menuItem).toBeInTheDocument();
-      expect(within(navigationGroup).getByTestId(item.icon)).toBeInTheDocument();
-      if (item.isActive) {
-        expect(menuItem.closest('[data-active="true"]')).toBeInTheDocument();
-      } else {
-        expect(menuItem.closest('[data-active="true"]')).not.toBeInTheDocument();
-      }
-    });
-  });
+  // --- TESTS ---
 
-  it('renders all quick actions correctly', () => {
+  it('should render the header and initial loading state, then display user data', async () => {
     renderSidebar();
-    const quickActions = [
-      { title: 'Add Course', icon: 'plus-icon' },
-      { title: 'Create Position', icon: 'user-check-icon' },
-      { title: 'Import Data', icon: 'upload-icon' },
-    ];
-    const quickActionsGroup = screen.getByText('Quick Actions').closest('[data-sidebar="group"]');
-    quickActions.forEach((item) => {
-      const menuItem = within(quickActionsGroup).getByText(item.title);
-      expect(menuItem).toBeInTheDocument();
-      expect(within(quickActionsGroup).getByTestId(item.icon)).toBeInTheDocument();
-    });
+
+    // Assert the static header content is present
+    expect(screen.getByText('TA Scheduler')).toBeInTheDocument();
+    
+    // Assert the initial loading state is visible before data fetch completes
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+
+    // Wait for the asynchronous operation to complete and the UI to update
+    // `findBy` queries are async and perfect for this purpose
+    await screen.findByText('Jane Doe');
+
+    // Assert that the loading text is gone and user data is now displayed
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    expect(screen.getByText('jane.doe@university.edu')).toBeInTheDocument();
   });
 
-  it('renders system items correctly', () => {
-    renderSidebar({ activePage: 'Settings' });
-    const systemItems = [{ title: 'Settings', icon: 'settings-icon' }];
-    const systemGroup = screen.getByText('System').closest('[data-sidebar="group"]');
-    systemItems.forEach((item) => {
-      const menuItem = within(systemGroup).getByText(item.title);
-      expect(menuItem).toBeInTheDocument();
-      expect(within(systemGroup).getByTestId(item.icon)).toBeInTheDocument();
-    });
+  it('should display the correct avatar fallback from user initials', async () => {
+    renderSidebar();
+    // Wait for the user data to be loaded before checking for the avatar
+    await screen.findByText('Jane Doe');
+    expect(screen.getByText('JD')).toBeInTheDocument();
   });
 
-  it('has correct accessibility attributes', () => {
-    renderSidebar({ activePage: 'Dashboard' });
-    const header = screen.getByText('TA Scheduler').closest('[data-sidebar="header"]');
-    expect(header).toHaveAttribute('data-sidebar', 'header');
-    const navigationGroup = screen.getByText('Navigation').closest('[data-sidebar="group"]');
-    const menuItems = within(navigationGroup).getAllByRole('link');
-    menuItems.forEach((item) => {
-      expect(item).toHaveAttribute('href', '#');
+  it('should render all navigation items and apply the active state correctly', async () => {
+    renderSidebar({ activePage: 'Course Management' });
+    
+    // Wait for loading to finish before interacting
+    await screen.findByText('Jane Doe');
+    
+    const navItems = ['Dashboard', 'Course Management', 'Instructor Management', 'Applications', 'Allocations'];
+    navItems.forEach((item) => {
+      expect(screen.getByText(item)).toBeInTheDocument();
     });
-    const footer = screen.getByText('Admin User').closest('[data-sidebar="footer"]');
-    expect(footer).toHaveAttribute('data-sidebar', 'footer');
-  });
 
-  it('applies active state styling to the specified active page', () => {
-    renderSidebar({ activePage: 'Instructor Management' });
-    const activeItem = screen.getByText('Instructor Management').closest('[data-active="true"]');
+    // Check for active state based on the `data-active` attribute
+    const activeItem = screen.getByText('Course Management').closest('button');
     expect(activeItem).toHaveAttribute('data-active', 'true');
-    const inactiveItem = screen.getByText('Dashboard').closest('[data-active="true"]');
-    expect(inactiveItem).not.toBeInTheDocument();
+
+    const inactiveItem = screen.getByText('Dashboard').closest('button');
+    expect(inactiveItem).toHaveAttribute('data-active', 'false');
   });
 
-  it('renders avatar with correct fallback', () => {
-    renderSidebar({ activePage: 'Dashboard' });
-    const avatar = screen.getByText('Admin User').closest('[data-sidebar="menu-button"]');
-    const avatarFallback = within(avatar).getByText('AD');
-    expect(avatarFallback).toBeInTheDocument();
-    expect(avatarFallback).toHaveClass('bg-muted');
+  it('should navigate to the correct URL when a navigation item is clicked', async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+    
+    // Wait for loading to finish
+    await screen.findByText('Jane Doe');
+
+    // Click and assert navigation for each item
+    await user.click(screen.getByText('Dashboard'));
+    expect(mockNavigate).toHaveBeenCalledWith('/scheduler-dashboard');
+
+    await user.click(screen.getByText('Allocations'));
+    expect(mockNavigate).toHaveBeenCalledWith('/ta-coordinator-allocation');
   });
 
-  it('renders the dropdown menu in the footer with correct items', async () => {
-    renderSidebar({ activePage: 'Dashboard' });
-    const dropdownTrigger = screen.getByRole('button');
-    await userEvent.click(dropdownTrigger);
-    expect(await screen.findByText('My Account')).toBeInTheDocument();
-    expect(screen.getByText('My Profile')).toBeInTheDocument();
-    expect(screen.getByText('Logout')).toBeInTheDocument();
+  it('should open the dropdown and navigate when "My Profile" is clicked', async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+
+    // Wait for the component to be ready
+    await screen.findByText('Jane Doe');
+    
+    const dropdownTrigger = screen.getByLabelText('account menu');
+    await user.click(dropdownTrigger);
+    
+    // Find and click the profile menu item
+    const profileButton = await screen.findByRole('menuitem', { name: /my profile/i });
+    await user.click(profileButton);
+    
+    expect(mockNavigate).toHaveBeenCalledWith('/user-profile-scheduler');
+  });
+
+  it('should call the logout function when "Logout" is clicked', async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+
+    await screen.findByText('Jane Doe');
+      
+    const dropdownTrigger = screen.getByLabelText('account menu');
+    await user.click(dropdownTrigger);
+    
+    const logoutButton = await screen.findByRole('menuitem', { name: /logout/i });
+    await user.click(logoutButton);
+      
+    // Assert that our mocked logout function was called with the navigate function
+    expect(logout).toHaveBeenCalledWith(mockNavigate);
+  });
+
+  it('should handle API failure gracefully', async () => {
+    // Override the default mock to simulate a network error for this test
+    getProfile.mockRejectedValue(new Error('API Error'));
+    renderSidebar();
+
+    // Wait for the loading to complete (the `finally` block in the component)
+    // The dropdown trigger becomes enabled after loading, making it a good element to wait for.
+    await waitFor(() => {
+      expect(screen.getByLabelText('account menu')).not.toBeDisabled();
+    });
+    
+    // After a failed API call, the user is null, so it should still show "Loading..."
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument();
   });
 });

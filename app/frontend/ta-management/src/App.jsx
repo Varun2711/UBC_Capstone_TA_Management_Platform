@@ -24,6 +24,8 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Coordinator_ManageApplications";
 import ViewStudentApplication from "./pages/Coordinator_ViewApplication";
 import InstructorTARequirements from "./pages/instructor-ta-requirements";
+import InstructorProfile from "./pages/Instructor/instructor-profile";
+
 
 function App() {
   return (
@@ -95,6 +97,17 @@ function App() {
           </ProtectedRoute>
         } 
       />
+
+
+      <Route 
+        path="/instructor-profile" 
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <InstructorProfile />
+          </ProtectedRoute>
+        } 
+      />
+
 
 
       {/* Accessible to: scheduler --------------- */}
