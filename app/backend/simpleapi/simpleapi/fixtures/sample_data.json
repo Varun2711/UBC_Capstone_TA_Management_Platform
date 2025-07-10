@@ -38,7 +38,6 @@
     "pk": 3,
     "fields": {
       "student_number": 12345678,
-      "employee_number": 12345678,
       "name": "Chad Davis",
       "email": "chad.davis@gmail.com",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
