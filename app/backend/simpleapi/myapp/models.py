@@ -114,6 +114,10 @@ class InstructorRequest(models.Model):
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.SET_NULL, null=True, blank=True)
     request_date = models.DateField()
     request_description = models.TextField()
+    
+    class Meta:
+        managed = False
+        db_table = 'instructor_requests'
 
 
 class Availability(models.Model):
