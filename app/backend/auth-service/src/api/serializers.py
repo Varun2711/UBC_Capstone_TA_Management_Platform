@@ -18,10 +18,12 @@ class TokenSerializer(serializers.Serializer):
 class StudentRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
-        fields = ['student_number', 'name', 'email', 'password', 'study_level']
+        fields = ['student_number', 'name', 'email', 'password', 'study_level', 'program', 'expected_graduation']  # ✅ Add expected_graduation
         extra_kwargs = {
             'password': {'write_only': True},
-            'study_level': {'required': True}
+            'study_level': {'required': True},
+            'program': {'required': False},
+            'expected_graduation': {'required': False}  # ✅ Add this
         }
     
     def create(self, validated_data):
@@ -31,18 +33,26 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 class InstructorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
-        fields = ['employee_number', 'name', 'faculty', 'email', 'password']
+        fields = ['employee_number', 'name', 'department_id', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
+    
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
 
 class TASchedulerSerializer(serializers.ModelSerializer):
     class Meta:
         model = TAScheduler
-        fields = ['employee_number', 'name', 'email', 'department', 'password']
+        fields = ['employee_number', 'name', 'email', 'department_id', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
+    
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
 
 class AdminSerializer(serializers.ModelSerializer):
     class Meta:

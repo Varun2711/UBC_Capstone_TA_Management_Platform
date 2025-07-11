@@ -12,6 +12,7 @@ class Student(models.Model):
     password = models.CharField(max_length=255)
     email = models.EmailField()
     is_active = models.BooleanField(default=True)
+    expected_graduation = models.CharField(max_length=20, null=True, blank=True)  # Add this line
     
     class Meta:
         managed = False  
@@ -20,7 +21,7 @@ class Student(models.Model):
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    faculty_id = models.IntegerField() #changed to faculty_id for consistency
+    department_id = models.IntegerField(null=True, db_column='department_id')
     email = models.EmailField()
     password = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)

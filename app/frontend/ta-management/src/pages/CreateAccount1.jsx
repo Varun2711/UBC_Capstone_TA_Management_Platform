@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+import { isAlreadyLoggedIn, navigateToUserDashboard } from "@/logic/auth"
 
 export default function CreateAccount1() {
   const navigate = useNavigate()
@@ -15,6 +16,15 @@ export default function CreateAccount1() {
   })
 
   const [error, setError] = useState("") // ADDED: Error state for validation
+
+  // on page load, check for token and redirect user who is already logged in (cannot create an account!)
+  useEffect(() => {
+    // if already logged in, send them to correct dashboard based on user type
+    if(isAlreadyLoggedIn()) {
+      const user_type = sessionStorage.getItem('user_type')
+      navigateToUserDashboard(user_type, navigate)
+    }
+  }, [navigate])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -38,7 +48,7 @@ export default function CreateAccount1() {
     setError("") // Clear error before proceeding
 
     // Store form data in localStorage or context
-    localStorage.setItem("createAccount1", JSON.stringify(formData))
+    sessionStorage.setItem("createAccount1", JSON.stringify(formData))
     navigate("/create-account/step2")
   }
 
