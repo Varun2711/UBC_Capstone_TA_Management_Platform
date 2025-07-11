@@ -249,6 +249,9 @@ class SharedSessionSerializer(serializers.ModelSerializer):
     Serializer for SharedSession model with full CRUD operations.
     Includes nested information and many-to-many time slots.
     """
+    # Display field for session type
+    session_type_display = serializers.CharField(source='get_session_type_display', read_only=True)
+    
     # Nested serialization for related objects
     course_info = serializers.StringRelatedField(source='course', read_only=True)
     course_id = serializers.PrimaryKeyRelatedField(
@@ -288,6 +291,7 @@ class SharedSessionSerializer(serializers.ModelSerializer):
         fields = [
             'shared_session_id',
             'session_type',
+            'session_type_display',
             'course_info',
             'course_id',
             'section_number',
@@ -298,15 +302,26 @@ class SharedSessionSerializer(serializers.ModelSerializer):
             'time_slots_info',
             'time_slot_ids'
         ]
-        read_only_fields = ['shared_session_id', 'course_info', 'term_info', 'instructor_info', 'time_slots_info']
+        read_only_fields = ['shared_session_id', 'session_type_display', 'course_info', 'term_info', 'instructor_info', 'time_slots_info']
     
     def validate_session_type(self, value):
         """
-        Validate that session type is not empty.
+        Validate that session type is a valid choice.
         """
         if not value or not value.strip():
             raise serializers.ValidationError("Session type cannot be empty.")
-        return value.strip().upper()
+        
+        # Convert to lowercase for validation
+        value = value.strip().lower()
+        
+        # Check if the value is in the valid choices
+        valid_choices = [choice[0] for choice in SharedSession.SESSION_TYPE_CHOICES]
+        if value not in valid_choices:
+            raise serializers.ValidationError(
+                f"Invalid session type. Must be one of: {', '.join(valid_choices)}"
+            )
+        
+        return value
     
     def validate_section_number(self, value):
         """

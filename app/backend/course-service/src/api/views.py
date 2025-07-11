@@ -623,6 +623,19 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
         serializer = TimeSlotSerializer(time_slots, many=True)
         return Response(serializer.data)
     
+    @action(detail=False, methods=['get'])
+    def session_types(self, request):
+        """
+        Get available session type choices.
+        """
+        from .models import SharedSession
+        choices = [{'value': choice[0], 'display': choice[1]} 
+                  for choice in SharedSession.SESSION_TYPE_CHOICES]
+        return Response({
+            'session_types': choices,
+            'description': 'Available session type choices for shared sessions'
+        })
+    
     def perform_create(self, serializer):
         """
         Custom create logic if needed.
@@ -793,6 +806,11 @@ def api_root(request, format=None):
                     'url': '/api/course-term-service/shared-sessions/by_session_type/?session_type={session_type}',
                     'methods': ['GET'],
                     'description': 'Get shared sessions by session type (session_type parameter required)'
+                },
+                'session_types': {
+                    'url': '/api/course-term-service/shared-sessions/session_types/',
+                    'methods': ['GET'],
+                    'description': 'Get available session type choices'
                 },
                 'by_year': {
                     'url': '/api/course-term-service/shared-sessions/by_year/?year={year}',
