@@ -261,6 +261,8 @@ export default function TAAllocationPage() {
   const [taList, setTaList] = useState(availableTAs)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState(null)
+  const [activeOffers, setActiveOffers] = useState([])
+
 
   const selectedTA = taList.find((ta) => ta.id === selectedTAId)
 
@@ -276,20 +278,19 @@ export default function TAAllocationPage() {
 
     if (alreadyAssigned) return
 
-    setAssignments((prevAssignments) => [
-      ...prevAssignments,
-      {
-        taName: selectedTA.name,
-        taStudentId: selectedTA.studentId,
-        courseCode: selectedCourse.code,
-        courseName: selectedCourse.name,
-        section: selectedCourse.section,
-        instructor: selectedCourse.instructor,
-        semester: selectedCourse.semester,
-        type: selectedCourse.type,
-        time: selectedCourse.time,
-      },
-    ])
+    const newAssignment = {
+      taName: selectedTA.name,
+      taStudentId: selectedTA.studentId,
+      courseCode: selectedCourse.code,
+      courseName: selectedCourse.name,
+      section: selectedCourse.section,
+      instructor: selectedCourse.instructor,
+      semester: selectedCourse.semester,
+      type: selectedCourse.type,
+      time: selectedCourse.time,
+    }
+
+    setActiveOffers((prevOffers) => [...prevOffers, newAssignment])
   }
 
   const handleDeleteAssignment = (assignmentToDelete) => {
@@ -301,6 +302,17 @@ export default function TAAllocationPage() {
             a.courseCode === assignmentToDelete.courseCode &&
             a.section === assignmentToDelete.section
           )
+      )
+    )
+    
+    setActiveOffers((prevOffers) =>
+    prevOffers.filter(
+      (a) =>
+        !(
+          a.taStudentId === assignmentToDelete.taStudentId &&
+          a.courseCode === assignmentToDelete.courseCode &&
+          a.section === assignmentToDelete.section
+        )
       )
     )
 
@@ -524,7 +536,9 @@ export default function TAAllocationPage() {
             <Tabs defaultValue="allocate" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="allocate">Allocate TAs</TabsTrigger>
+                <TabsTrigger value="active-offers">Active Offers</TabsTrigger>
                 <TabsTrigger value="allocated">Allocated TAs</TabsTrigger>
+
               </TabsList>
 
               {/* Allocate Tab */}
@@ -797,6 +811,45 @@ export default function TAAllocationPage() {
                     </CardContent>
                   </Card>
                 )}
+              </TabsContent>
+
+              {/* Active Offers Tab */}
+              <TabsContent value="active-offers" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Active TA Offers</CardTitle>
+                    <CardDescription>
+                      These are the TA assignments that have been sent as offers to the students.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {activeOffers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center">
+                        No active offers at the moment.
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {activeOffers.map((offer, index) => (
+                          <div
+                            key={index}
+                            className="p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div>
+                                  <p className="font-medium">{offer.taName}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {offer.courseCode} - {offer.courseName} - Section {offer.section}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* Allocated TAs Tab */}
