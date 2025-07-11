@@ -1,0 +1,42 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [ development ]
+    paths:
+      - 'app/frontend/**'  # ⬅️ Only trigger on frontend changes
+
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'app/frontend/ta-management/**'  # ⬅️ Only trigger on frontend changes
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Set the default directory for all 'run' commands in this job
+    defaults:
+      run:
+        working-directory: ./app/frontend/ta-management # ⬅️ Set working directory
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: app/frontend/ta-management/package-lock.json # ⬅️ Point to the correct lock file
+
+    - name: Install dependencies
+      run: npm ci # This will run in ./app/frontend
+
+    - name: Run tests
+      run: npm test # This will also run in ./app/frontend
