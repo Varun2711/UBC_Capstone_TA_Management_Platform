@@ -194,8 +194,13 @@ class SharedSession(models.Model):
     A Lab section is similar to a course offering but specifically for lab/tutorial sessions.
     Lab sections are associated with a course and academic term, similar to course offerings.
     """
+
+    session_types = ['Lab', 'Tutorial']
+
     shared_session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    session_type = models.CharField(max_length=10, blank=False, null=False)
+
+    
+    session_type = models.CharField(max_length=10, blank=False, null=False, choices=session_types)
     course = models.ForeignKey(
         Course, 
         on_delete=models.CASCADE,
