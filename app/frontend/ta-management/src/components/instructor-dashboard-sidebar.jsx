@@ -29,12 +29,12 @@ const navigationItems = [
   {
     title: "Dashboard",
     icon: Home,
-    url: "#",
+    url: "/instructor-dashboard",
   },
   {
     title: "My Courses",
     icon: BookOpen,
-    url: "#",
+    url: "/my-courses",
   },
   {
     title: "Schedule",
@@ -44,7 +44,7 @@ const navigationItems = [
   {
     title: "Profile",
     icon: GraduationCap,
-    url: "#",
+    url: "/instructor-profile",
   },
   {
     title: "Settings",
