@@ -17,27 +17,27 @@
     }
   },
   {
-    "model": "myapp.student",
+    "model" : "myapp.student",
     "pk": 2,
     "fields": {
-      "student_number": "20241002",
-      "name": "Alex Chen",
-      "phone": "+1-250-555-0102",
+      "student_number": "20241003",
+      "name": "Aadil Sh",
+      "phone": "+1-250-555-0103",
       "program": "Computer Science",
       "year_standing": 4,
-      "study_level": "PhD",
+      "study_level": "Graduate",
       "department": 1,
-      "sin": "987654321",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "email": "alex.chen@student.ubc.ca",
+      "sin": "987654322",
+      "password" : "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "aadil.sh@student.ubc.ca",
       "is_active": true
-    }
+  }
   },
   {
-    "model": "myapp.tascheduler",
-    "pk": 1,
+    "model" : "myapp.student",
+    "pk": 3,
     "fields": {
-      "employee_number": 12345678,
+      "student_number": 12345678,
       "name": "Chad Davis",
       "email": "chad.davis@gmail.com",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",

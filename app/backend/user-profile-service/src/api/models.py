@@ -22,6 +22,7 @@ class Student(models.Model):
     password = models.CharField(max_length=255)
     email = models.EmailField()
     is_active = models.BooleanField(default=True)
+    expected_graduation = models.CharField(max_length=20, null=True, blank=True)  # Add this line
 
     class Meta:
         managed = True
