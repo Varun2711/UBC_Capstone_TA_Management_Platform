@@ -319,6 +319,8 @@ class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
     availability = StudentAvailabilitySerializer(read_only=True)
     course_preferences = StudentCoursePreferenceSerializer(many=True, read_only=True)
     
+    # Override the ID to return the Student model ID instead of User model ID
+    id = serializers.SerializerMethodField()
     student_info = serializers.SerializerMethodField()
     
     
@@ -329,6 +331,14 @@ class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
             'student_info','student_profile', 'experiences', 'skills', 
             'availability', 'course_preferences'
         ]
+
+    def get_id(self, obj):
+        """Return the Student model ID instead of User model ID"""
+        try:
+            student = Student.objects.get(email=obj.email)
+            return student.id
+        except Student.DoesNotExist:
+            return obj.id  # Fallback to User ID if no Student found
 
     def get_student_info(self, obj):
         """Get student info from the custom Student model"""
