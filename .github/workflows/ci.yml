@@ -7,7 +7,7 @@ on:
       - 'app/frontend/**'  # ⬅️ Only trigger on frontend changes
 
   pull_request:
-    branches: [ main ]
+    branches: [ development ]
     paths:
       - 'app/frontend/ta-management/**'  # ⬅️ Only trigger on frontend changes
 
