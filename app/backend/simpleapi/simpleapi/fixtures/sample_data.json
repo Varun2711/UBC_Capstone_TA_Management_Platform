@@ -70,10 +70,10 @@
   },
   {
     "model": "myapp.course",
-    "pk": "COSC101",
+    "pk": 1,
     "fields": {
-      "title": "Introduction to Programming",
-      "description": "Fundamental concepts of programming using Python. Variables, control structures, functions, and basic data structures.",
+      "course_name": "Introduction to Programming",
+      "course_description": "Fundamental concepts of programming using Python. Variables, control structures, functions, and basic data structures.",
       "department": 1,
       "is_active": true,
       "created_at": "2024-08-01T10:00:00Z",
@@ -82,7 +82,7 @@
   },
   {
     "model": "myapp.course",
-    "pk": "COSC201",
+    "pk": 2,
     "fields": {
       "title": "Data Structures and Algorithms",
       "description": "Advanced programming concepts including arrays, linked lists, trees, graphs, and algorithmic analysis.",
@@ -93,7 +93,7 @@
     }
   },
   {
-    "model": "myapp.term",
+    "model": "myapp.academic_term",
     "pk": 1,
     "fields": {
       "code": "W2025T1",
@@ -110,7 +110,7 @@
     }
   },
   {
-    "model": "myapp.term",
+    "model": "myapp.academic_term",
     "pk": 2,
     "fields": {
       "code": "W2025T2",

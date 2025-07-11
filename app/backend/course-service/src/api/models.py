@@ -241,12 +241,12 @@ class SharedSession(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'lab_sections'
+        db_table = 'myapp_sharedsessions'
         ordering = ['-academic_term__startCalendarYear', 'course__course_number', 'section_number']
         unique_together = ['course', 'section_number', 'academic_term']
 
     def __str__(self):
-        return f'{self.course.course_number} {self.section_number} ({self.academic_term}) - Lab'
+        return f'{self.course.course_number} {self.section_number} ({self.academic_term}) - {self.session_type}'
     
 
 ## placed after due to referencing errors:
