@@ -14,20 +14,6 @@ class Department(models.Model):
         return self.name
 
 
-class TAScheduler(models.Model):
-    employee_number = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, related_name='ta_schedulers', null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_tascheduler'
-
-    def __str__(self):
-        return f"{self.name} ({self.employee_number})"
-
-
 class Student(models.Model):
     student_number = models.CharField(max_length=8, unique=True)
     name = models.CharField(max_length=100)
@@ -35,30 +21,40 @@ class Student(models.Model):
     program = models.CharField(max_length=100, null=True, blank=True)
     year_standing = models.IntegerField(null=True, blank=True)
     study_level = models.CharField(max_length=20)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
+    is_active = models.BooleanField(default=True)
+    expected_graduation = models.CharField(max_length=20, null=True, blank=True)  # Add this line
 
     class Meta:
         managed = False
         db_table = 'myapp_student'
 
-    def __str__(self):
-        return f"{self.name}"
-
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='instructors')
     email = models.EmailField()
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
 
-    class Meta: 
+    class Meta:
         managed = False
         db_table = 'myapp_instructor'
 
-    def __str__(self):
-        return f"{self.name}"
+class TAScheduler(models.Model):
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_tascheduler'
 
 
 class Term(models.Model):
@@ -89,7 +85,7 @@ class Term(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'myapp_academic_terms'  
+        db_table = 'myapp_term'  
       
 
     def __str__(self):

@@ -38,7 +38,7 @@ class Term(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'myapp_academic_terms'  
+        db_table = 'myapp_term'  
       
 
     def __str__(self):
@@ -135,6 +135,7 @@ class Course(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
     course_description = models.TextField(max_length=500, blank=True, null=True)
     course_level = models.CharField(max_length=4, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return f'{self.course_number} {self.course_name}'
