@@ -94,6 +94,9 @@ services:
       user-profile-service:
         condition: service_healthy
         restart: true
+      courses-terms-service:
+        condition: service_healthy
+        restart: true
     healthcheck:
       test:
         [
@@ -122,9 +125,6 @@ services:
       - ./backend/course-service:/app
     depends_on:
       db:
-        condition: service_healthy
-        restart: true
-      application-service:
         condition: service_healthy
         restart: true
       user-profile-service:

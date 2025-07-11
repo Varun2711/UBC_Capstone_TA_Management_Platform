@@ -116,7 +116,7 @@ class TermViewSet(viewsets.ModelViewSet):
         Get all subterms of a specific term.
         """
         term = self.get_object()
-        subterms = term.get_subterms()
+        subterms = term.subterms.all()  # Use the related name from the model
         serializer = self.get_serializer(subterms, many=True)
         return Response(serializer.data)
     
@@ -259,6 +259,96 @@ class CourseViewSet(viewsets.ModelViewSet):
         )
         serializer = CourseOfferingSerializer(current_offerings, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def full_details(self, request, pk=None):
+        """
+        Get complete course details with offerings and shared sessions organized by term.
+        Returns data in the format: course info + offerings + sharedSessions grouped by term-year.
+        """
+        course = self.get_object()
+        
+        # Get all course offerings for this course
+        offerings = course.offerings.select_related('academic_term', 'instructor').all()
+        
+        # Get all shared sessions for this course
+        shared_sessions = course.lab_sections.select_related(
+            'academic_term', 'instructor'
+        ).prefetch_related('time_slots').all()
+        
+        # Build the response data
+        response_data = {
+            'id': course.course_number,  # Using course_number as ID like in example
+            'code': course.course_number,
+            'title': course.course_name,
+            'department': course.department.name,
+            'description': course.course_description or '',
+            'offerings': [],
+            'sharedSessions': {}
+        }
+        
+        # Process course offerings
+        for offering in offerings:
+            offering_data = {
+                'id': str(offering.course_offering_id),
+                'year': str(offering.academic_term.startCalendarYear),
+                'term': offering.academic_term.code,
+                'instructor': offering.instructor.name if offering.instructor else None,
+                'section': offering.section_number,
+                'requirements': {
+                    'specialRequirements': []  # This would need to be added to model if needed
+                }
+            }
+            response_data['offerings'].append(offering_data)
+        
+        # Process shared sessions, grouped by term-year
+        for session in shared_sessions:
+            term_year_key = f"{session.academic_term.code}-{session.academic_term.startCalendarYear}"
+            
+            # Initialize term-year group if not exists
+            if term_year_key not in response_data['sharedSessions']:
+                response_data['sharedSessions'][term_year_key] = {
+                    'labs': [],
+                    'tutorials': [],
+                    'seminars': [],
+                    'workshops': []
+                }
+            
+            # Get time slot information
+            time_slots = session.time_slots.all()
+            time_info = []
+            location = "TBD"  # Location would need to be added to model if needed
+            
+            for slot in time_slots:
+                time_info.append({
+                    'day': slot.get_day_display(),
+                    'time': f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
+                })
+            
+            # Build session data
+            session_data = {
+                'id': str(session.shared_session_id),
+                'section': session.section_number,
+                'day': time_info[0]['day'] if time_info else 'TBD',
+                'time': time_info[0]['time'] if time_info else 'TBD',
+                'location': location,
+                'taAssigned': session.instructor.name if session.instructor else None,
+                'forOfferings': [str(offering.course_offering_id) for offering in offerings 
+                               if offering.academic_term_id == session.academic_term_id]
+            }
+            
+            # Add to appropriate session type list
+            session_type = session.session_type.lower()
+            if session_type == 'lab':
+                response_data['sharedSessions'][term_year_key]['labs'].append(session_data)
+            elif session_type == 'tutorial':
+                response_data['sharedSessions'][term_year_key]['tutorials'].append(session_data)
+            elif session_type == 'seminar':
+                response_data['sharedSessions'][term_year_key]['seminars'].append(session_data)
+            elif session_type == 'workshop':
+                response_data['sharedSessions'][term_year_key]['workshops'].append(session_data)
+        
+        return Response(response_data)
     
     def perform_create(self, serializer):
         """
@@ -732,6 +822,11 @@ def api_root(request, format=None):
                     'url': '/api/course-term-service/courses/{id}/current_offerings/',
                     'methods': ['GET'],
                     'description': 'Get current course offerings for a specific course (active terms)'
+                },
+                'full_details': {
+                    'url': '/api/course-term-service/courses/{id}/full_details/',
+                    'methods': ['GET'],
+                    'description': 'Get complete course details with offerings and shared sessions organized by term-year'
                 }
             },
             'course_offerings': {
