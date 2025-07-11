@@ -23,7 +23,7 @@ import ViewJobPostings from "./pages/ViewJobPostings_Student";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Coordinator_ManageApplications";
 import ViewStudentApplication from "./pages/Coordinator_ViewApplication";
-import InstructorTARequirements from "./pages/instructor-ta-requirements";
+import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
 import InstructorProfile from "./pages/Instructor/instructor-profile";
 
 
