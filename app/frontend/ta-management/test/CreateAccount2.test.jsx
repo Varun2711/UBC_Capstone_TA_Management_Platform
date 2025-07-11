@@ -48,7 +48,7 @@ describe("CreateAccount2", () => {
 
     expect(screen.getByText("Create an Account (2/3)")).toBeInTheDocument()
     expect(screen.getByText("2. About Your Degree")).toBeInTheDocument()
-    expect(screen.getByLabelText(/degree currently in progress/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/type of degree your pursuing/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/year of degree start/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/major program of study/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/minor program of study/i)).toBeInTheDocument()
@@ -69,31 +69,14 @@ describe("CreateAccount2", () => {
     const user = userEvent.setup()
     renderStep2()
 
-    const degreeProgramSelect = screen.getByLabelText(/degree currently in progress/i)
+    const degreeProgramSelect = screen.getByLabelText(/type of degree your pursuing/i)
     const yearSelect = screen.getByLabelText(/year of degree start/i)
 
-    await user.selectOptions(degreeProgramSelect, "BSc or BA")
+    await user.selectOptions(degreeProgramSelect, "Undergraduate")
     await user.selectOptions(yearSelect, "2023")
 
-    expect(degreeProgramSelect).toHaveValue("BSc or BA")
+    expect(degreeProgramSelect).toHaveValue("Undergraduate")
     expect(yearSelect).toHaveValue("2023")
-  })
-
-  // Show the "Other degree" input field when user selects 'Other' option
-  it("shows other degree input when 'Other' is selected", async () => {
-    const user = userEvent.setup()
-    renderStep2()
-
-    const degreeProgramSelect = screen.getByLabelText(/degree currently in progress/i)
-
-    // Confirm other degree input is not initially present
-    expect(screen.queryByLabelText(/please specify your degree/i)).not.toBeInTheDocument()
-
-    await user.selectOptions(degreeProgramSelect, "Other (please specify)")
-
-    // Other degree input should now appear
-    expect(screen.getByLabelText(/please specify your degree/i)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/enter your degree program/i)).toBeInTheDocument()
   })
 
   // Hide "Other degree" input when user switches away from 'Other' option
@@ -101,12 +84,9 @@ describe("CreateAccount2", () => {
     const user = userEvent.setup()
     renderStep2()
 
-    const degreeProgramSelect = screen.getByLabelText(/degree currently in progress/i)
+    const degreeProgramSelect = screen.getByLabelText(/type of degree your pursuing/i)
 
-    await user.selectOptions(degreeProgramSelect, "Other (please specify)")
-    expect(screen.getByLabelText(/please specify your degree/i)).toBeInTheDocument()
-
-    await user.selectOptions(degreeProgramSelect, "BSc or BA")
+    await user.selectOptions(degreeProgramSelect, "Undergraduate")
     expect(screen.queryByLabelText(/please specify your degree/i)).not.toBeInTheDocument()
   })
 
@@ -126,48 +106,21 @@ describe("CreateAccount2", () => {
     const user = userEvent.setup()
     renderStep2()
 
-    const degreeProgramSelect = screen.getByLabelText(/degree currently in progress/i)
+    const degreeProgramSelect = screen.getByLabelText(/type of degree your pursuing/i)
     const yearSelect = screen.getByLabelText(/year of degree start/i)
     const majorSelect = screen.getByLabelText(/major program of study/i)
     const nextButton = screen.getByRole("button", { name: /next/i })
 
-    await user.selectOptions(degreeProgramSelect, "BSc or BA")
+    await user.selectOptions(degreeProgramSelect, "Undergraduate")
     await user.selectOptions(yearSelect, "2023")
     await user.selectOptions(majorSelect, "Computer Science")
 
     await user.click(nextButton)
 
-    const savedData = JSON.parse(localStorage.getItem("createAccount2"))
-    expect(savedData.degreeProgram).toBe("BSc or BA")
+    const savedData = JSON.parse(sessionStorage.getItem("createAccount2"))
+    expect(savedData.degreeProgram).toBe("Undergraduate")
     expect(savedData.yearOfDegreeStart).toBe("2023")
     expect(savedData.majorProgram).toBe("Computer Science")
-    expect(mockNavigate).toHaveBeenCalledWith("/create-account/step3")
-  })
-
-  // Save the "Other" degree input when user specifies it and submits the form
-  it("saves custom degree when 'Other' is selected and specified", async () => {
-    const user = userEvent.setup()
-    renderStep2()
-
-    const degreeProgramSelect = screen.getByLabelText(/degree currently in progress/i)
-    const yearSelect = screen.getByLabelText(/year of degree start/i)
-    const majorSelect = screen.getByLabelText(/major program of study/i)
-    const nextButton = screen.getByRole("button", { name: /next/i })
-
-    await user.selectOptions(degreeProgramSelect, "Other (please specify)")
-
-    const otherDegreeInput = screen.getByLabelText(/please specify your degree/i)
-    await user.type(otherDegreeInput, "Bachelor of Fine Arts")
-
-    await user.selectOptions(yearSelect, "2022")
-    await user.selectOptions(majorSelect, "Computer Science")
-
-    await user.click(nextButton)
-
-    const savedData = JSON.parse(localStorage.getItem("createAccount2"))
-    expect(savedData.degreeProgram).toBe("Other (please specify)")
-    expect(savedData.otherDegreeProgram).toBe("Bachelor of Fine Arts")
-    expect(savedData.yearOfDegreeStart).toBe("2022")
     expect(mockNavigate).toHaveBeenCalledWith("/create-account/step3")
   })
 
@@ -176,13 +129,13 @@ describe("CreateAccount2", () => {
     const user = userEvent.setup()
     renderStep2()
 
-    const degreeProgramSelect = screen.getByLabelText(/degree currently in progress/i)
+    const degreeProgramSelect = screen.getByLabelText(/type of degree your pursuing/i)
     const yearSelect = screen.getByLabelText(/year of degree start/i)
     const majorSelect = screen.getByLabelText(/major program of study/i)
     const minorSelect = screen.getByLabelText(/minor program of study/i)
     const nextButton = screen.getByRole("button", { name: /next/i })
 
-    await user.selectOptions(degreeProgramSelect, "BSc or BA")
+    await user.selectOptions(degreeProgramSelect, "Undergraduate")
     await user.selectOptions(yearSelect, "2023")
     await user.selectOptions(majorSelect, "Computer Science")
     await user.selectOptions(minorSelect, "Computer Science")
@@ -198,14 +151,14 @@ describe("CreateAccount2", () => {
     const user = userEvent.setup()
     renderStep2()
 
-    const degreeProgramSelect = screen.getByLabelText(/degree currently in progress/i)
+    const degreeProgramSelect = screen.getByLabelText(/type of degree your pursuing/i)
     const yearSelect = screen.getByLabelText(/year of degree start/i)
     const majorSelect = screen.getByLabelText(/major program of study/i)
     const minorSelect = screen.getByLabelText(/minor program of study/i)
     const nextButton = screen.getByRole("button", { name: /next/i })
 
     // Create the error first
-    await user.selectOptions(degreeProgramSelect, "BSc or BA")
+    await user.selectOptions(degreeProgramSelect, "Undergraduate")
     await user.selectOptions(yearSelect, "2023")
     await user.selectOptions(majorSelect, "Computer Science")
     await user.selectOptions(minorSelect, "Computer Science")
@@ -224,13 +177,13 @@ describe("CreateAccount2", () => {
     const user = userEvent.setup()
     renderStep2()
 
-    const degreeProgramSelect = screen.getByLabelText(/degree currently in progress/i)
+    const degreeProgramSelect = screen.getByLabelText(/type of degree your pursuing/i)
     const yearSelect = screen.getByLabelText(/year of degree start/i)
     const majorSelect = screen.getByLabelText(/major program of study/i)
     const minorSelect = screen.getByLabelText(/minor program of study/i)
     const nextButton = screen.getByRole("button", { name: /next/i })
 
-    await user.selectOptions(degreeProgramSelect, "BSc or BA")
+    await user.selectOptions(degreeProgramSelect, "Undergraduate")
     await user.selectOptions(yearSelect, "2023")
     await user.selectOptions(majorSelect, "Computer Science")
     await user.selectOptions(minorSelect, "Mathematics")

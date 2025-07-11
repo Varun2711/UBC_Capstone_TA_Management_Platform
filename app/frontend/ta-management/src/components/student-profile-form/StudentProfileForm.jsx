@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Camera,
   Edit,
@@ -33,6 +33,71 @@ import {
 } from "@/components/ui/select";
 
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar";
+import {
+  updateProfile,
+  updateSkills,
+  updateExperience,
+  updateAvailability,
+  updateCoursePreferences
+} from "@/logic/student-profile";
+
+// Add this helper function at the top of StudentProfileForm.jsx
+// Replace the extractSemesterFromDate function in StudentProfileForm.jsx:
+const extractSemesterFromDate = (dateString) => {
+  if (!dateString) return '';
+  
+  // If it's already in "Fall 2022" format, return as-is
+  if (dateString.match(/^(Fall|Winter|Summer)\s+\d{4}$/)) {
+    console.log("Already in semester format:", dateString);
+    return dateString;
+  }
+  
+  // Handle the "2022-09-02 to " format from ApplicationForm
+  if (dateString.includes(' to ')) {
+    const datePart = dateString.split(' to ')[0];
+    if (datePart) {
+      dateString = datePart;
+    }
+  }
+  
+  try {
+    console.log("dateString is:", dateString);
+    
+    // Only try to parse if it looks like a date
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
+      const date = new Date(dateString);
+      console.log("dateString to date becomes:", date);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.log("Invalid date, returning original string");
+        return dateString;
+      }
+      
+      const year = date.getFullYear();
+      const month = date.getMonth(); // 0-indexed: Jan=0, Sep=8, Dec=11
+      
+      console.log("Extracted semester info:", { year, month });
+
+      let term = 'Winter';
+      if (month >= 4 && month <= 7) term = 'Summer';  // May-Aug
+      else if (month >= 8) term = 'Fall';             // Sep-Dec
+      // Jan-Apr stays as Winter
+
+      const result = `${term} ${year}`;
+      console.log("Final result:", result);
+      return result;
+    }
+    
+    // If it doesn't look like a date, return as-is
+    console.log("Not a date format, returning original:", dateString);
+    return dateString;
+    
+  } catch (e) {
+    console.error("Date parsing error:", e);
+    return dateString;
+  }
+};
 
 export default function StudentProfileForm({
   // Data props
@@ -43,8 +108,6 @@ export default function StudentProfileForm({
   // Display control props
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  // const [profile, setProfile] = useState(studentProfile);
-
   const [editedProfile, setEditedProfile] = useState({ ...profile });
 
   // State for skills editing
@@ -64,11 +127,15 @@ export default function StudentProfileForm({
     academicInfo: { ...profile.academicInfo },
   });
 
-  // State for experience editing
+  // Update the state initialization for experience
   const [isEditingExperience, setIsEditingExperience] = useState(false);
-  const [editedExperience, setEditedExperience] = useState([
-    ...profile.experience,
-  ]);
+  const [editedExperience, setEditedExperience] = useState(
+    profile.experience?.map(exp => ({
+      ...exp,
+      semester: extractSemesterFromDate(exp.semester) || exp.semester || ''
+    })) || []
+  );
+
 
   // State for availability editing
   const [isEditingAvailability, setIsEditingAvailability] = useState(false);
@@ -77,13 +144,14 @@ export default function StudentProfileForm({
   // State for course preference editing
   const [isEditingCourses, setIsEditingCourses] = useState(false);
   const [coursePreference, setCoursePreference] = useState(
-    profile.coursePreference
+    Array.isArray(profile.coursePreference) ? [...profile.coursePreference] : []
   );
 
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSave = (profileData) => {
+  // Updated handleSave function that actually saves to backend
+  const handleSave = async (profileData) => {
     const {
       name,
       studentId,
@@ -94,30 +162,291 @@ export default function StudentProfileForm({
       year,
       academicInfo,
       experience,
+      phone,
+      gpa,
+      minor,
     } = profileData;
 
-    if (
-      !name.trim() ||
-      !studentId.trim() ||
-      !email.trim() ||
-      !major.trim() ||
-      !year.trim() ||
-      !password.trim() ||
-      !academicInfo.expectedGraduation.trim() ||
-      !academicInfo.degreeStart.trim() ||
-      !academicInfo.yearStanding.trim()
-    ) {
+    // Validation - skip password validation in application mode
+    const requiredFields = [
+      !(name || "").trim(),
+      !(studentId || "").trim(),
+      !(email || "").trim(),
+      !(major || "").trim(),
+      !(year || "").trim(),
+      !((academicInfo?.expectedGraduation || "").trim()),
+      !((academicInfo?.degreeStart || "").trim()),
+      !((academicInfo?.yearStanding || "").trim())
+    ];
+
+    // Only validate password in profile mode
+    if (mode === "profile") {
+      requiredFields.push(!(password || "").trim());
+    }
+
+    if (requiredFields.some(field => field)) {
       alert("Please fill out all required fields.");
       return false;
     }
-    console.log("Profile validated successfully:", profileData);
-    return true;
+
+    try {
+      // Parse name into first and last name
+      const nameParts = name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      // Format data for backend
+      const backendData = {
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        student_number: studentId,
+        phone: phone || '',
+
+        // Student model fields
+        program: major,
+        study_level: year,
+        year_standing: academicInfo?.yearStanding ? parseInt(academicInfo.yearStanding) : null,
+        expected_graduation: academicInfo?.expectedGraduation || '',
+
+        // StudentProfile nested fields
+        student_profile: {
+          gpa: gpa ? parseFloat(gpa) : null,
+          minor: minor || '',
+          year_degree_start: academicInfo?.degreeStart ? parseInt(academicInfo.degreeStart) : null,
+          ubc_employee_id: UBCEmployeeId || ''
+        }
+      };
+
+      console.log("Saving profile data:", backendData);
+      await updateProfile(backendData);
+
+      console.log("Profile saved successfully");
+      return true;
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+      alert("Failed to save profile. Please try again.");
+      return false;
+    }
   };
 
   const handleCancel = (profileData) => {
-    setProfile(profileData); // Reset to original data
+    setEditedProfile({ ...profile }); // Reset to original data
     setIsEditing(false);
   };
+
+  // Academic Information Save Handler
+  const handleSaveAcademicInfo = async () => {
+    const updatedProfile = {
+      ...profile,
+      major: editedAcademicInfo.major,
+      minor: editedAcademicInfo.minor,
+      year: editedAcademicInfo.year,
+      gpa: editedAcademicInfo.gpa,
+      academicInfo: { ...editedAcademicInfo.academicInfo },
+    };
+
+    try {
+      // Format data for backend
+      const backendData = {
+        program: editedAcademicInfo.major,
+        study_level: editedAcademicInfo.year,
+        year_standing: editedAcademicInfo.academicInfo?.yearStanding ? parseInt(editedAcademicInfo.academicInfo.yearStanding) : null,
+        expected_graduation: editedAcademicInfo.academicInfo?.expectedGraduation || '',
+
+        student_profile: {
+          gpa: editedAcademicInfo.gpa ? parseFloat(editedAcademicInfo.gpa) : null,
+          minor: editedAcademicInfo.minor || '',
+          year_degree_start: editedAcademicInfo.academicInfo?.degreeStart ? parseInt(editedAcademicInfo.academicInfo.degreeStart) : null,
+        }
+      };
+
+      console.log("Saving academic info:", backendData);
+      await updateProfile(backendData);
+
+      setProfile(updatedProfile);
+      setIsEditingAcademic(false);
+      console.log("Academic info saved successfully");
+    } catch (error) {
+      console.error("Failed to save academic info:", error);
+      alert("Failed to save academic information. Please try again.");
+    }
+  };
+
+  // Experience Save Handler
+  const handleSaveExperience = async () => {
+    // Validate experience data
+    const hasEmptyFields = editedExperience.some(exp =>
+      !exp.course.trim() || !exp.semester.trim() || !exp.professor.trim()
+    );
+
+    if (hasEmptyFields) {
+      alert("Please fill in all required fields for each experience.");
+      return;
+    }
+
+    try {
+      // Format experiences for API
+      const formattedExperiences = editedExperience.map(exp => {
+        // Extract year and term from semester (e.g., "Winter 2024")
+        const semesterParts = exp.semester.trim().split(' ');
+        const year = semesterParts.length > 1 ? semesterParts[1] : new Date().getFullYear().toString();
+        const term = semesterParts[0] || 'Winter';
+
+        // Create a reasonable date based on term and year
+        let startDate = `${year}-`;
+        if (term.toLowerCase().includes('winter')) startDate += '01-02';
+        else if (term.toLowerCase().includes('summer')) startDate += '05-02';
+        else if (term.toLowerCase().includes('fall')) startDate += '09-02';
+        else startDate += '01-01';
+
+        return {
+          experience_type: 'teaching',
+          position_title: `TA for ${exp.course}`,
+          organization: exp.professor,
+          start_date: startDate,
+          description: exp.description || `TA position for ${exp.course} with ${exp.professor}`,
+          is_current: false
+        };
+      });
+
+      console.log("Saving experiences:", formattedExperiences);
+      await updateExperience(formattedExperiences);
+
+      setProfile(prev => ({
+        ...prev,
+        experience: editedExperience
+      }));
+      setIsEditingExperience(false);
+      console.log("Experience saved successfully");
+    } catch (error) {
+      console.error("Failed to save experience:", error);
+      alert("Failed to save experience. Please try again.");
+    }
+  };
+
+  // Skills Save Handler
+  const handleSaveSkills = async () => {
+    const hasEmptyTechnical = editedSkills.technicalSkills.some(
+      (skill) => skill.trim() === ""
+    );
+    const hasEmptySoft = editedSkills.softSkills.some(
+      (skill) => skill.trim() === ""
+    );
+
+    if (hasEmptyTechnical || hasEmptySoft) {
+      alert("Each skill must contain text.");
+      return;
+    }
+
+    try {
+      const skillsArray = [];
+
+      // Add technical skills
+      editedSkills.technicalSkills
+        .filter(skill => skill.trim() !== "")
+        .forEach(skill => {
+          skillsArray.push({
+            skill_name: skill.trim(),
+            skill_type: 'technical'
+          });
+        });
+
+      // Add soft skills
+      editedSkills.softSkills
+        .filter(skill => skill.trim() !== "")
+        .forEach(skill => {
+          skillsArray.push({
+            skill_name: skill.trim(),
+            skill_type: 'soft'
+          });
+        });
+
+      console.log("Saving skills:", skillsArray);
+      await updateSkills(skillsArray);
+
+      setProfile((prev) => ({
+        ...prev,
+        technicalSkills: editedSkills.technicalSkills,
+        softSkills: editedSkills.softSkills,
+      }));
+      setSkillsEdit(false);
+      console.log("Skills saved successfully");
+    } catch (error) {
+      console.error("Failed to save skills:", error);
+      alert("Failed to save skills. Please try again.");
+    }
+  };
+
+  // Course Preferences Save Handler
+  const handleSaveCoursePreferences = async () => {
+    // Filter out empty courses before validation
+    const validCourses = coursePreference.filter(course => course.trim() !== "");
+
+    if (validCourses.length === 0) {
+      alert("Please add at least one course preference.");
+      return;
+    }
+
+    try {
+      console.log("Saving course preferences:", validCourses);
+      await updateCoursePreferences(validCourses);
+
+      // Update the profile state with the valid courses
+      setProfile((prev) => ({
+        ...prev,
+        coursePreference: [...validCourses],
+      }));
+
+      // Update the local state to match
+      setCoursePreference([...validCourses]);
+      setIsEditingCourses(false);
+      console.log("Course preferences saved successfully");
+    } catch (error) {
+      console.error("Failed to save course preferences:", error);
+      alert("Failed to save course preferences. Please try again.");
+    }
+  };
+
+  // Availability Save Handler
+  const handleSaveAvailability = async () => {
+    try {
+      console.log("Saving availability:", availabilityData);
+      await updateAvailability(availabilityData);
+
+      setProfile(prev => ({
+        ...prev,
+        availability: [...availabilityData]
+      }));
+      setIsEditingAvailability(false);
+      console.log("Availability saved successfully");
+    } catch (error) {
+      console.error("Failed to save availability:", error);
+      alert("Failed to save availability. Please try again.");
+    }
+  };
+
+  useEffect(() => {
+    setAvailabilityData(profile.availability || []);
+  }, [profile.availability]);
+
+  // Add this useEffect to handle profile changes
+  useEffect(() => {
+    if (profile?.experience) {
+      const transformedExperience = profile.experience.map(exp => ({
+        ...exp,
+        semester: extractSemesterFromDate(exp.semester) || exp.semester || ''
+      }));
+      setEditedExperience(transformedExperience);
+    }
+  }, [profile?.experience]);
+
+  // Also update course preferences when profile changes
+  useEffect(() => {
+    if (Array.isArray(profile.coursePreference)) {
+      setCoursePreference([...profile.coursePreference]);
+    }
+  }, [profile.coursePreference]);
 
   return (
     <div>
@@ -145,19 +474,19 @@ export default function StudentProfileForm({
           )}
         </div>
 
-        {/* Profile Picture and Personal Info */}
+        {/* Personal Info */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Personal Information</CardTitle>
             {isEditing ? (
               <div className="flex gap-2">
                 <Button
-                  onClick={() => {
-                    const isValid = handleSave(editedProfile); // ✅ validate the latest state
+                  onClick={async () => {
+                    const isValid = await handleSave(editedProfile);
                     if (!isValid) return;
 
-                    setProfile(editedProfile); // ✅ update profile with validated data
-                    setIsEditing(false); // ✅ only close edit mode if validation passed
+                    setProfile(editedProfile);
+                    setIsEditing(false);
                   }}
                   className="gap-2"
                 >
@@ -176,7 +505,7 @@ export default function StudentProfileForm({
             ) : (
               <Button
                 onClick={() => {
-                  setEditedProfile({ ...profile }); // deep copy of profile
+                  setEditedProfile({ ...profile });
                   setIsEditing(true);
                 }}
                 className="gap-2"
@@ -197,15 +526,6 @@ export default function StudentProfileForm({
                     />
                     <AvatarFallback className="text-2xl">SJ</AvatarFallback>
                   </Avatar>
-                  {isEditing && (
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
-                    >
-                      <Camera className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
               )}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -352,22 +672,7 @@ export default function StudentProfileForm({
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={() => {
-                    const updatedProfile = {
-                      ...profile,
-                      major: editedAcademicInfo.major,
-                      minor: editedAcademicInfo.minor,
-                      year: editedAcademicInfo.year,
-                      gpa: editedAcademicInfo.gpa,
-                      academicInfo: { ...editedAcademicInfo.academicInfo },
-                    };
-
-                    const isValid = handleSave(updatedProfile);
-                    if (!isValid) return;
-
-                    setProfile(updatedProfile);
-                    setIsEditingAcademic(false);
-                  }}
+                  onClick={handleSaveAcademicInfo}
                 >
                   <Save className="h-4 w-4" />
                   Save
@@ -422,7 +727,7 @@ export default function StudentProfileForm({
                   Academic Level<span className="text-red-500">*</span>
                 </Label>
                 {isEditingAcademic ? (
-                  <Select.Root
+                  <Select
                     value={editedAcademicInfo.year}
                     onValueChange={(value) =>
                       setEditedAcademicInfo({
@@ -431,55 +736,14 @@ export default function StudentProfileForm({
                       })
                     }
                   >
-                    <Select.Trigger className="flex items-center justify-between w-full border rounded px-3 py-2 text-sm">
-                      <Select.Value placeholder="Select Academic Level" />
-                      <Select.Icon>
-                        <ChevronDown className="h-4 w-4" />
-                      </Select.Icon>
-                    </Select.Trigger>
-                    <Select.Content className="border rounded shadow bg-white">
-                      <Select.ScrollUpButton className="flex items-center justify-center">
-                        <ChevronUp className="h-4 w-4" />
-                      </Select.ScrollUpButton>
-                      <Select.Viewport className="p-1">
-                        {/* Empty selection option */}
-                        <Select.Item
-                          value=" "
-                          className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-500"
-                        >
-                          <Select.ItemText>
-                            Select Academic Level
-                          </Select.ItemText>
-                          <Select.ItemIndicator>
-                            <Check className="h-4 w-4" />
-                          </Select.ItemIndicator>
-                        </Select.Item>
-
-                        {/* Actual academic level options */}
-                        <Select.Item
-                          value="Undergraduate"
-                          className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
-                        >
-                          <Select.ItemText>Undergraduate</Select.ItemText>
-                          <Select.ItemIndicator>
-                            <Check className="h-4 w-4" />
-                          </Select.ItemIndicator>
-                        </Select.Item>
-                        <Select.Item
-                          value="Graduate"
-                          className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
-                        >
-                          <Select.ItemText>Graduate</Select.ItemText>
-                          <Select.ItemIndicator>
-                            <Check className="h-4 w-4" />
-                          </Select.ItemIndicator>
-                        </Select.Item>
-                      </Select.Viewport>
-                      <Select.ScrollDownButton className="flex items-center justify-center">
-                        <ChevronDown className="h-4 w-4" />
-                      </Select.ScrollDownButton>
-                    </Select.Content>
-                  </Select.Root>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Academic Level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Undergraduate">Undergraduate</SelectItem>
+                      <SelectItem value="Graduate">Graduate</SelectItem>
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <p className="text-sm">{profile.year}</p>
                 )}
@@ -584,6 +848,7 @@ export default function StudentProfileForm({
             </div>
           </CardContent>
         </Card>
+
         {/* Past TA Experiences */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -594,13 +859,7 @@ export default function StudentProfileForm({
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={() => {
-                    setProfile({
-                      ...profile,
-                      experience: editedExperience,
-                    });
-                    setIsEditingExperience(false);
-                  }}
+                  onClick={handleSaveExperience}
                 >
                   <Save className="h-4 w-4" />
                   Save
@@ -624,7 +883,7 @@ export default function StudentProfileForm({
                 onClick={() => {
                   setEditedExperience(
                     profile.experience.map((exp) => ({ ...exp }))
-                  ); // deep copy
+                  );
                   setIsEditingExperience(true);
                 }}
               >
@@ -685,6 +944,9 @@ export default function StudentProfileForm({
                       />
                     ) : (
                       <p className="text-sm">{exp.semester}</p>
+                    )}
+                    {isEditingExperience && (
+                        <p className="text-xs text-muted-foreground">Accepted formats are Fall 2023, Winter 2024, Summer 2021</p>
                     )}
                   </div>
 
@@ -756,26 +1018,7 @@ export default function StudentProfileForm({
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => {
-                          const hasEmptyTechnical =
-                            editedSkills.technicalSkills.some(
-                              (skill) => skill.trim() === ""
-                            );
-                          const hasEmptySoft = editedSkills.softSkills.some(
-                            (skill) => skill.trim() === ""
-                          );
-
-                          if (hasEmptyTechnical || hasEmptySoft) {
-                            alert("Each skill must contain text.");
-                            return;
-                          }
-                          setProfile((prev) => ({
-                            ...prev,
-                            technicalSkills: editedSkills.technicalSkills,
-                            softSkills: editedSkills.softSkills,
-                          }));
-                          setSkillsEdit(false);
-                        }}
+                        onClick={handleSaveSkills}
                       >
                         <Save className="h-4 w-4" />
                         Save
@@ -797,7 +1040,6 @@ export default function StudentProfileForm({
                   ) : (
                     <Button
                       size="sm"
-                      //onClick={() => setSkillsEdit(true)}
                       onClick={() => {
                         setEditedSkills({
                           technicalSkills: [...profile.technicalSkills],
@@ -977,25 +1219,7 @@ export default function StudentProfileForm({
                       {isEditingCourses ? (
                         <>
                           <Button
-                            onClick={() => {
-                              const hasEmptyCoursePreference =
-                                coursePreference.some(
-                                  (coursePreference) =>
-                                    coursePreference.trim() === ""
-                                );
-
-                              if (hasEmptyCoursePreference) {
-                                alert(
-                                  "Each course preference must contain text."
-                                );
-                                return;
-                              }
-                              setProfile((prev) => ({
-                                ...prev,
-                                coursePreference: [...coursePreference],
-                              }));
-                              setIsEditingCourses(false);
-                            }}
+                            onClick={handleSaveCoursePreferences}
                             className="gap-2"
                           >
                             <Save className="h-4 w-4" />
@@ -1006,7 +1230,7 @@ export default function StudentProfileForm({
                               setIsEditingCourses(false);
                               setCoursePreference([
                                 ...profile.coursePreference,
-                              ]); // Reset to original
+                              ]);
                             }}
                             variant="outline"
                             className="gap-2"
@@ -1018,7 +1242,7 @@ export default function StudentProfileForm({
                       ) : (
                         <Button
                           onClick={() => {
-                            setCoursePreference([...profile.coursePreference]); // deep copy
+                            setCoursePreference([...profile.coursePreference]);
                             setIsEditingCourses(true);
                           }}
                           className="gap-2"
@@ -1090,7 +1314,7 @@ export default function StudentProfileForm({
                 {isEditingAvailability ? (
                   <>
                     <Button
-                      onClick={() => setIsEditingAvailability(false)}
+                      onClick={handleSaveAvailability}
                       className="gap-2"
                     >
                       <Save className="h-4 w-4" />
@@ -1099,7 +1323,7 @@ export default function StudentProfileForm({
                     <Button
                       onClick={() => {
                         setIsEditingAvailability(false);
-                        setAvailabilityData([]); // or reset to original data if available
+                        setAvailabilityData(profile.availability || []);
                       }}
                       variant="outline"
                       className="gap-2"

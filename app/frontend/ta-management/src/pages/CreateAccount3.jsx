@@ -6,6 +6,9 @@ import { Eye, EyeOff } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+import axios from "axios"
+
+const API_URL = 'http://localhost:8080';
 
 export default function CreateAccount3() {
   const navigate = useNavigate()
@@ -16,11 +19,13 @@ export default function CreateAccount3() {
     password: "",
     confirmPassword: "",
   })
+  const [error, setError] = useState("") // Add error state
+  const [isSubmitting, setIsSubmitting] = useState(false) // Add loading state
 
   useEffect(() => {
     // Check if previous steps data exists
-    const step1Data = localStorage.getItem("createAccount1")
-    const step2Data = localStorage.getItem("createAccount2")
+    const step1Data = sessionStorage.getItem("createAccount1")
+    const step2Data = sessionStorage.getItem("createAccount2")
     if (!step1Data || !step2Data) {
       navigate("/create-account/step1")
     }
@@ -42,33 +47,124 @@ export default function CreateAccount3() {
     setShowConfirmPassword(!showConfirmPassword)
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+  e.preventDefault()
+  setError("")
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!")
-      return
-    }
-
-    // Combine all form data
-    const step1Data = JSON.parse(localStorage.getItem("createAccount1"))
-    const step2Data = JSON.parse(localStorage.getItem("createAccount2"))
-
-    const completeFormData = {
-      ...step1Data,
-      ...step2Data,
-      ...formData,
-    }
-
-    console.log("Account creation completed:", completeFormData)
-
-    // Clear localStorage
-    localStorage.removeItem("createAccount1")
-    localStorage.removeItem("createAccount2")
-
-    // Navigate to success page or login
-    navigate("/student-dashboard")
+  if (formData.password !== formData.confirmPassword) {
+    setError("Passwords don't match!")
+    return
   }
+
+  // Set loading state
+  setIsSubmitting(true)
+
+  try {
+    // Combine all form data
+    const step1Data = JSON.parse(sessionStorage.getItem("createAccount1"))
+    const step2Data = JSON.parse(sessionStorage.getItem("createAccount2"))
+
+    const actualMajor = step2Data.majorProgram === "Other (please specify)" 
+      ? step2Data.otherMajorProgram 
+      : step2Data.majorProgram;
+  
+    const actualMinor = step2Data.minorProgram === "Other (please specify)" 
+      ? step2Data.otherMinorProgram 
+      : step2Data.minorProgram;
+
+    // Format data to match the StudentRegistrationSerializer
+    const registerData = {
+      student_number: step1Data.ubcStudentNumber,
+      name: `${step1Data.firstName} ${step1Data.lastName}`, // Concatenate first and last name
+      email: formData.email,
+      password: formData.password,
+      study_level: step2Data.degreeProgram,
+      // for step 2 info
+      program: actualMajor,
+      minor: actualMinor || '',  // Send to auth service
+      year_degree_start: parseInt(step2Data.yearOfDegreeStart, 10) // ✅ FIX: Use actual year from step2Data
+    }
+
+    console.log("Sending account data to backend:", registerData)
+
+    // Send request to backend with the CORRECT endpoint
+    const response = await axios.post(`${API_URL}/api/auth/register/`, registerData)
+
+    console.log("Account creation response:", response.data)
+
+    // After registration, log in to get tokens
+    try {
+      const loginResponse = await axios.post(`${API_URL}/api/auth/login/`, {
+        email: formData.email,
+        password: formData.password
+      })
+
+      // After logging in, save the additional profile data
+      if (loginResponse.data && loginResponse.data.access) {
+        sessionStorage.setItem('accessToken', loginResponse.data.access)
+
+        // Now save the additional profile information that wasn't part of registration
+        try {
+          const additionalProfileData = {
+            student_profile: {
+              minor: step2Data.minorProgram || '',
+              year_degree_start: parseInt(step2Data.yearOfDegreeStart, 10), // ✅ FIX: Use actual year here too
+            }
+          };
+
+          await axios.patch(`${API_URL}/api/profile/me/update/`, additionalProfileData, {
+            headers: { Authorization: `Bearer ${loginResponse.data.access}` }
+          });
+        } catch (profileError) {
+          console.warn("Additional profile data not saved, but account created successfully:", profileError);
+        }
+
+        // Continue with redirect
+        navigate("/student-dashboard")
+      }
+    }
+    catch (loginError) {
+      // If login fails after registration
+      setError("Account created but login failed. Please try logging in manually.")
+      navigate("/login")
+    }
+  } catch (error) {
+    console.error("Account creation error:", error)
+
+    // Handle various error responses
+    if (error.response) {
+      if (error.response.status === 400) {
+        // Format validation errors
+        const backendErrors = error.response.data
+        const errorMessages = []
+
+        // Extract error messages from response
+        for (const field in backendErrors) {
+          if (Array.isArray(backendErrors[field])) {
+            errorMessages.push(`${field}: ${backendErrors[field].join(', ')}`)
+          } else if (typeof backendErrors[field] === 'object') {
+            // Handle nested errors (like in student_profile)
+            for (const nestedField in backendErrors[field]) {
+              errorMessages.push(`${nestedField}: ${backendErrors[field][nestedField].join(', ')}`)
+            }
+          } else {
+            errorMessages.push(`${field}: ${backendErrors[field]}`)
+          }
+        }
+
+        setError(errorMessages.join('. ') || "Invalid form data. Please check your entries.")
+      } else if (error.response.status === 409) {
+        setError("An account with this email already exists.")
+      } else {
+        setError("Failed to create account. Please try again later.")
+      }
+    } else {
+      setError("Network error. Please check your connection and try again.")
+    }
+  } finally {
+    setIsSubmitting(false)
+  }
+}
 
   const handlePrev = () => {
     navigate("/create-account/step2")
@@ -81,6 +177,13 @@ export default function CreateAccount3() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Create an Account (3/3)</h1>
           <h2 className="text-xl font-semibold text-gray-700 mb-8">3. Account Details</h2>
         </div>
+
+        {/* Show error message if there is one */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
 
         <form className="space-y-6" onSubmit={handleSubmit} role="form">
           <div className="space-y-2">
@@ -159,14 +262,16 @@ export default function CreateAccount3() {
               type="button"
               onClick={handlePrev}
               className="px-8 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 rounded-md transition duration-200"
+              disabled={isSubmitting}
             >
               Prev
             </Button>
             <Button
               type="submit"
               className="px-8 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-md transition duration-200"
+              disabled={isSubmitting}
             >
-              Done
+              {isSubmitting ? "Creating Account..." : "Done"}
             </Button>
           </div>
         </form>

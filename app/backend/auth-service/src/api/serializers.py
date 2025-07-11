@@ -18,10 +18,12 @@ class TokenSerializer(serializers.Serializer):
 class StudentRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
-        fields = ['student_number', 'name', 'email', 'password', 'study_level']
+        fields = ['student_number', 'name', 'email', 'password', 'study_level', 'program', 'expected_graduation']  # ✅ Add expected_graduation
         extra_kwargs = {
             'password': {'write_only': True},
-            'study_level': {'required': True}
+            'study_level': {'required': True},
+            'program': {'required': False},
+            'expected_graduation': {'required': False}  # ✅ Add this
         }
     
     def create(self, validated_data):
