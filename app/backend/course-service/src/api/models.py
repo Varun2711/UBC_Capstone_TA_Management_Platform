@@ -38,7 +38,7 @@ class Term(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'academic_terms'  
+        db_table = 'myapp_academic_terms'  
       
 
     def __str__(self):
@@ -142,7 +142,7 @@ class Course(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'courses'
+        db_table = 'myapp_courses'
 
 
 # Course offerings model
@@ -181,7 +181,7 @@ class CourseOffering(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'course_offerings'
+        db_table = 'myapp_course_offerings'
         ordering = ['-academic_term__startCalendarYear', 'course__course_number', 'section_number']
         unique_together = ['course', 'section_number', 'academic_term']
 
@@ -259,4 +259,4 @@ class InstructorRequest(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'instructor_requests'
+        db_table = 'myapp_instructor_requests'
