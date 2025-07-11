@@ -1,4 +1,4 @@
-"use client"
+  "use client"
 
 import { useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
@@ -8,14 +8,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { isAlreadyLoggedIn, navigateToUserDashboard, requestLogin } from "@/logic/auth"
 
-export default function LoginPage() {
-  // state handling
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loginError, setLoginError] = useState("")
+  export default function LoginPage() {
+    // state handling
+    const [showPassword, setShowPassword] = useState(false)
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    const [loginError, setLoginError] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
 
-  const navigate = useNavigate()
+    const navigate = useNavigate()
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
@@ -30,8 +31,11 @@ export default function LoginPage() {
     }
   }, [navigate])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+    // This was missing - define the handleSubmit function
+    const handleSubmit = async (e) => {
+      e.preventDefault()
+      setIsLoading(true)
+      setLoginError("")
 
     // on login form submission, attempt to login
     try {
@@ -53,84 +57,92 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900">Login</h1>
+            <p className="mt-2 text-gray-600">Welcome back! Please sign in to your account.</p>
+          </div>
+
           {loginError && (
-            <div role="alert" className="text-red-600 text-sm">
-              {loginError}
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+              <span className="block sm:inline">{loginError}</span>
             </div>
           )}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">Login</h1>
-        </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-              Email address
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setLoginError("") // clear error when user starts typing
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-              Password
-            </Label>
-            <div className="relative">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                Email address
+              </Label>
               <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  setLoginError("") // clear error when user starts typing
-                }}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                id="email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={togglePasswordVisibility}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                ) : (
-                  <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                )}
-              </button>
             </div>
-          </div>
 
-          <div className="flex justify-between text-sm">
-            <Link to="/forgot-password" className="text-gray-600 hover:text-gray-900 underline">
-              Forgot password
-            </Link>
-            <Link to="/create-account/step1" className="text-gray-600 hover:text-gray-900 underline">
-              Create an account
-            </Link>
-          </div>
-          <div className="flex justify-center">
-            <Button
-              type="submit"
-              className="w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200"
-            >
-              Login
-            </Button>
-          </div>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                  Forgot your password?
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <Button
+                type="submit"
+                className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition duration-200"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
+            </div>
+
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{" "}
+                <Link to="/create-account/step1" className="font-medium text-blue-600 hover:text-blue-500">
+                  Create an account
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }

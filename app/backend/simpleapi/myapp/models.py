@@ -1,19 +1,8 @@
 from django.db import models
 from django.utils import timezone
 
-class Faculty(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_faculty'
-
-    def __str__(self):
-        return f"{self.name}"
-
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='departments')
 
     class Meta:
         managed = False
@@ -64,7 +53,7 @@ class Student(models.Model):
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, db_constraint=False)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, db_constraint=False)
     email = models.EmailField()
     password = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
@@ -221,7 +210,6 @@ class JobPosting(models.Model):
     post_date = models.DateField()
     deadline_date = models.DateField()
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
-    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
     created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True, db_constraint=False)
 
     #term that this position is advertising for

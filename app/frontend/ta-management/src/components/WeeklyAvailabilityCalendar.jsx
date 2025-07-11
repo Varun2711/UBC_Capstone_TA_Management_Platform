@@ -3,7 +3,7 @@ import "./WeeklyAvailabilityCalendar.css"
 
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 const startHour = 8
-const endHour = 21
+const endHour = 22
 
 // Generate time slots per hour
 const generateTimeSlots = () => {

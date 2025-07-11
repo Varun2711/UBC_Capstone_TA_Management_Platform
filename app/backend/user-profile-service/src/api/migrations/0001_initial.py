@@ -5,52 +5,24 @@ import uuid
 from django.conf import settings
 from django.db import migrations, models
 
+def create_departments(apps, schema_editor):
+    """Create departments directly"""
+    Department = apps.get_model('api', 'Department')
 
-def add_faculties(apps, schema_editor):
-    """Add faculty entries"""
-    Faculty = apps.get_model('api', 'Faculty')
-    
-    faculties = [
+    departments = [
         'Astronomy',
-        'Mathematics',
+        'Mathematics', 
         'Physics',
         'Data Science',
         'Statistics',
         'Computer Science',
     ]
     
-    for name in faculties:
-        Faculty.objects.get_or_create(name=name)
-
-def remove_faculties(apps, schema_editor):
-    """Remove faculties when migration is reversed"""
-    Faculty = apps.get_model('api', 'Faculty')
-    Faculty.objects.all().delete()
-
-def create_departments(apps, schema_editor):
-    Faculty = apps.get_model('api', 'Faculty')
-    Department = apps.get_model('api', 'Department')
-
-    # Get or create faculties first
-    faculty_map = {
-        'Astronomy': Faculty.objects.get_or_create(name='Astronomy')[0],
-        'Mathematics': Faculty.objects.get_or_create(name='Mathematics')[0],
-        'Physics': Faculty.objects.get_or_create(name='Physics')[0],
-        'Data Science': Faculty.objects.get_or_create(name='Data Science')[0],
-        'Statistics': Faculty.objects.get_or_create(name='Statistics')[0],
-        'Computer Science': Faculty.objects.get_or_create(name='Computer Science')[0],
-    }
-
-    Department.objects.bulk_create([
-        Department(name='Astronomy', faculty=faculty_map['Astronomy']),
-        Department(name='Mathematics', faculty=faculty_map['Mathematics']),
-        Department(name='Physics', faculty=faculty_map['Physics']),
-        Department(name='Data Science', faculty=faculty_map['Data Science']),
-        Department(name='Statistics', faculty=faculty_map['Statistics']),
-        Department(name='Computer Science', faculty=faculty_map['Computer Science']),
-    ])
+    for name in departments:
+        Department.objects.get_or_create(name=name)
 
 def remove_departments(apps, schema_editor):
+    """Remove departments when migration is reversed"""
     Department = apps.get_model('api', 'Department')
     Department.objects.all().delete()
 
@@ -81,23 +53,10 @@ class Migration(migrations.Migration):
         ),
 
         migrations.CreateModel(
-            name='Faculty',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True)),
-            ],
-            options={
-                'db_table': 'myapp_faculty',
-                'managed': True,
-            },
-        ),
-
-        migrations.CreateModel(
             name='Department',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100, unique=True)),
-                ('faculty', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='departments', to='api.faculty')),
             ],
             options={
                 'db_table': 'myapp_department',
@@ -113,7 +72,7 @@ class Migration(migrations.Migration):
                 ('email', models.EmailField(max_length=254)),
                 ('password', models.CharField(max_length=255)),
                 ('is_active', models.BooleanField(default=True)),
-                ('faculty', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.faculty')),
+                ('department', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.department')),  # Changed
             ],
             options={
                 'db_table': 'myapp_instructor',
@@ -243,7 +202,6 @@ class Migration(migrations.Migration):
                 'unique_together': {('user', 'name')},
             },
         ),
-        migrations.RunPython(add_faculties, remove_faculties),
         migrations.RunPython(create_departments, remove_departments),
     ]
     
