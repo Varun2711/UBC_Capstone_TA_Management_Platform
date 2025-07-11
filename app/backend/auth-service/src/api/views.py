@@ -58,7 +58,6 @@ def find_user_by_email(email, password):
     except Admin.DoesNotExist:
         pass
 
-
     return None, None, None # if not found in student, instructor, or ta scheduler, user does not exist
         
 
@@ -99,6 +98,7 @@ def login_view(request):
         }
         
         return Response(TokenSerializer(response_data).data)
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])

@@ -30,7 +30,7 @@ describe("CreateAccount1", () => {
   // Reset mocks and clear localStorage before each test to avoid test interference
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorage.clear()
+    sessionStorage.clear()
   })
 
   // Test to verify that the form renders all expected elements
@@ -91,7 +91,7 @@ describe("CreateAccount1", () => {
     await user.click(nextButton)
 
     // Verify localStorage has the expected saved data
-    const savedData = JSON.parse(localStorage.getItem("createAccount1"))
+    const savedData = JSON.parse(sessionStorage.getItem("createAccount1"))
     expect(savedData).toEqual({
       firstName: "John",
       lastName: "Doe",

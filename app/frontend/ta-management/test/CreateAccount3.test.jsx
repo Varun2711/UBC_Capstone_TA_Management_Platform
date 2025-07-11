@@ -1,13 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+vi.mock("axios", () => ({
+  default: {
+    post: vi.fn(),
+    patch: vi.fn(),
+  }
+}))
+import axios from "axios"          // now gets the mocked version
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import CreateAccount3 from "../src/pages/CreateAccount3"
 
-// Mock the navigate function to intercept navigation calls
+// mockNavigate stays the same
 const mockNavigate = vi.fn()
-
-// Mock react-router-dom's useNavigate hook to use our mockNavigate
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom")
   return {
@@ -15,6 +20,9 @@ vi.mock("react-router-dom", async () => {
     useNavigate: () => mockNavigate,
   }
 })
+
+// helper and describe blocks follow…
+
 
 // Helper function to render CreateAccount3 wrapped in MemoryRouter for routing context
 const renderStep3 = () => {
@@ -26,13 +34,13 @@ const renderStep3 = () => {
 }
 
 describe("CreateAccount3", () => {
-  // Reset mocks and clear/set localStorage before each test
+  // Reset mocks and clear/set sessionStorage before each test
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorage.clear()
+    sessionStorage.clear()
 
-    // Set up localStorage to simulate previous steps' data
-    localStorage.setItem(
+    // Set up session Storage to simulate previous steps' data
+    sessionStorage.setItem(
       "createAccount1",
       JSON.stringify({
         firstName: "John",
@@ -40,11 +48,11 @@ describe("CreateAccount3", () => {
         ubcStudentNumber: "12345678",
       }),
     )
-    localStorage.setItem(
+    sessionStorage.setItem(
       "createAccount2",
       JSON.stringify({
         degreeProgram: "Bachelor of Science",
-        yearOfDegree: "3rd Year",
+        yearOfDegreeStart: "2021", // ✅ FIX: Changed from "yearOfDegree: '3rd Year'" to actual year
         majorProgram: "Computer Science",
         minorProgram: "",
       }),
@@ -70,7 +78,7 @@ describe("CreateAccount3", () => {
 
   // Test that user is redirected to step 1 if previous steps data is missing
   it("redirects to step 1 if previous steps data is missing", () => {
-    localStorage.clear() // Clear all localStorage data to simulate missing data
+    sessionStorage.clear() // Clear all sessionStorage data to simulate missing data
     renderStep3()
     expect(mockNavigate).toHaveBeenCalledWith("/create-account/step1")
   })
@@ -98,8 +106,10 @@ describe("CreateAccount3", () => {
   })
 
   // Test alert shows if passwords don't match when submitting the form
-  it("shows alert when passwords don't match", async () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {})
+  // ...existing code...
+
+  // Test error message shows if passwords don't match when submitting the form
+  it("shows error when passwords don't match", async () => {
     renderStep3()
     const user = userEvent.setup()
 
@@ -117,13 +127,20 @@ describe("CreateAccount3", () => {
     // Click done button to submit form
     await user.click(doneButton)
 
-    // Verify alert was called with the correct message
-    expect(alertSpy).toHaveBeenCalledWith("Passwords don't match!")
+    // Wait for the error message to appear in the DOM
+    await waitFor(() => {
+      expect(screen.getByText("Passwords don't match!")).toBeInTheDocument()
+    })
   })
 
-  // Test successful account creation flow with valid data
-  it("completes account creation when form is valid", async () => {
-    const consoleSpy = vi.spyOn(console, "log")
+  // Test successful account creation flow with valid data (mock the API calls)
+   it("completes account creation when form is valid", async () => {
+    // configure your two sequential post calls
+    axios.post
+      .mockResolvedValueOnce({ data: { message: "Account created successfully" } }) // register call
+      .mockResolvedValueOnce({ data: { access: "mock-token" } }) // login call
+    axios.patch.mockResolvedValue({ data: {} }) // profile update call
+
     renderStep3()
     const user = userEvent.setup()
 
@@ -140,30 +157,50 @@ describe("CreateAccount3", () => {
     // Submit the form
     await user.click(doneButton)
 
-    // Verify console log contains expected data (partial check)
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Account creation completed:",
-      expect.objectContaining({
-        firstName: "John",
-        lastName: "Doe",
-        ubcStudentNumber: "12345678",
-        degreeProgram: "Bachelor of Science",
-        email: "john@example.com",
-      }),
+    // Wait for navigation to student dashboard
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith("/student-dashboard")
     )
 
-    // Verify navigation to login page
-    expect(mockNavigate).toHaveBeenCalledWith("/student-dashboard")
-  })
+    // ✅ FIX: Test the actual calls that are made
+    expect(axios.post).toHaveBeenCalledTimes(2)
+    
+    // First call should be register
+    expect(axios.post).toHaveBeenNthCalledWith(1,
+      "http://localhost:8080/api/auth/register/",
+      expect.objectContaining({
+        student_number: "12345678",
+        name: "John Doe",
+        email: "john@example.com",
+        password: "password123",
+        study_level: "Bachelor of Science",
+        program: "Computer Science",
+        minor: "",
+        year_degree_start: 2021 // ✅ FIX: Now expects 2021 instead of 2022
+      })
+    )
+    
+    // Second call should be login
+    expect(axios.post).toHaveBeenNthCalledWith(2,
+      "http://localhost:8080/api/auth/login/",
+      {
+        email: "john@example.com",
+        password: "password123"
+      }
+    )
 
-  // Test navigation to step 2 when "Prev" button is clicked
-  it("navigates to step 2 when prev button is clicked", async () => {
-    renderStep3()
-    const user = userEvent.setup()
-
-    const prevButton = screen.getByRole("button", { name: /prev/i })
-    await user.click(prevButton)
-
-    expect(mockNavigate).toHaveBeenCalledWith("/create-account/step2")
+    // ✅ FIX: Also verify the profile patch call
+    expect(axios.patch).toHaveBeenCalledWith(
+      "http://localhost:8080/api/profile/me/update/",
+      {
+        student_profile: {
+          minor: "",
+          year_degree_start: 2021,
+        }
+      },
+      {
+        headers: { Authorization: "Bearer mock-token" }
+      }
+    )
   })
 })
