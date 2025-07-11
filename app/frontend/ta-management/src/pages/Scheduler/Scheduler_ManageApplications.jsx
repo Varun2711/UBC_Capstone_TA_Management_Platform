@@ -23,7 +23,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "../components/scheduler-sidebar";
+import { AppSidebar } from "@/components/scheduler-sidebar";
 import { Button } from "@/components/ui/button";
 import SearchFilters from "@/components/application-management/SearchFilters";
 import axios from "axios";

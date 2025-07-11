@@ -24,6 +24,7 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Scheduler/Scheduler_ManageApplications";
 import ViewStudentApplication from "./pages/Scheduler/Scheduler_ViewApplication";
 import InstructorProfile from "./pages/Instructor/instructor-profile";
+import FormTemplateManagerPage from "./pages/Scheduler/Scheduler-form-manager";
 
 function App() {
   return (
@@ -166,6 +167,14 @@ function App() {
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manage-templates"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <FormTemplateManagerPage />
           </ProtectedRoute>
         }
       />

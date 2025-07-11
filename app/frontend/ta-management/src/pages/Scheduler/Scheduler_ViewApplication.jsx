@@ -30,7 +30,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "../components/scheduler-sidebar";
+import { AppSidebar } from "@/components/scheduler-sidebar";
 
 const instance = axios.create({
   baseURL: "http://localhost:8080/api",

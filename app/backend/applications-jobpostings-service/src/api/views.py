@@ -320,6 +320,61 @@ class FormTemplateViewSet(viewsets.ModelViewSet):
                 {"error": f"Failed to duplicate template: {str(e)}"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+    @action(detail=True, methods=['put', 'patch'])
+    def update_template(self, request, pk=None):
+        """Custom update action for templates with sections and questions"""
+        template = self.get_object()
+        
+        try:
+            with transaction.atomic():
+                # Update template basic info
+                template.name = request.data.get('name', template.name)
+                template.description = request.data.get('description', template.description)
+                template.is_active = request.data.get('is_active', template.is_active)
+                template.save()
+                
+                # Handle sections if provided
+                sections_data = request.data.get('sections', [])
+                if sections_data:
+                    # Clear existing sections (this will cascade to questions)
+                    template.sections.all().delete()
+                    
+                    # Create new sections and questions
+                    for section_data in sections_data:
+                        questions_data = section_data.pop('questions', [])
+                        
+                        section = FormSection.objects.create(
+                            template=template,
+                            name=section_data.get('name', 'Untitled Section'),
+                            section_type=section_data.get('section_type', 'custom'),
+                            order=section_data.get('order', 1),
+                            is_required=section_data.get('is_required', True),
+                            description=section_data.get('description', '')
+                        )
+                        
+                        for question_data in questions_data:
+                            FormQuestion.objects.create(
+                                section=section,
+                                question_text=question_data.get('question_text', ''),
+                                question_type=question_data.get('question_type', 'text'),
+                                field_name=question_data.get('field_name', ''),
+                                order=question_data.get('order', 1),
+                                is_required=question_data.get('is_required', False),
+                                help_text=question_data.get('help_text', ''),
+                                validation_rules=question_data.get('validation_rules', {}),
+                                options=question_data.get('options', [])
+                            )
+                
+                # Return updated template
+                serializer = self.get_serializer(template)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to update template: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class FormSectionViewSet(viewsets.ModelViewSet):
     """ViewSet for managing form sections"""

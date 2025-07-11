@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { Plus, GripVertical, Edit, Trash2, Save, Eye } from "lucide-react";
+import {
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  Edit,
+  Trash2,
+  Save,
+  Eye,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +26,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import axios from "axios";
+
+const instance = axios.create({
+  baseURL: "http://localhost:8080/api",
+});
 
 const QUESTION_TYPES = [
   { value: "radio", label: "Radio Button", icon: "◉" },
@@ -52,9 +63,9 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
 
   const fetchTemplate = async () => {
     try {
-      const response = await fetch(`/api/form-templates/${templateId}/`);
-      const data = await response.json();
-      setTemplate(data);
+      const response = await instance.get(`/ajp/form-templates/${templateId}/`);
+      //const data = await response.json();
+      setTemplate(response.data);
     } catch (error) {
       console.error("Error fetching template:", error);
     }
@@ -92,6 +103,77 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
         (section) => section.section_id !== sectionId
       ),
     }));
+  };
+
+  const moveSectionUp = (sectionIndex) => {
+    if (sectionIndex === 0) return;
+    const newSections = [...template.sections];
+    [newSections[sectionIndex - 1], newSections[sectionIndex]] = [
+      newSections[sectionIndex],
+      newSections[sectionIndex - 1],
+    ];
+
+    // Update order numbers
+    const updatedSections = newSections.map((section, index) => ({
+      ...section,
+      order: index + 1,
+    }));
+
+    setTemplate((prev) => ({ ...prev, sections: updatedSections }));
+  };
+
+  const moveSectionDown = (sectionIndex) => {
+    if (sectionIndex === template.sections.length - 1) return;
+    const newSections = [...template.sections];
+    [newSections[sectionIndex], newSections[sectionIndex + 1]] = [
+      newSections[sectionIndex + 1],
+      newSections[sectionIndex],
+    ];
+
+    // Update order numbers
+    const updatedSections = newSections.map((section, index) => ({
+      ...section,
+      order: index + 1,
+    }));
+
+    setTemplate((prev) => ({ ...prev, sections: updatedSections }));
+  };
+
+  const moveQuestionUp = (sectionId, questionIndex) => {
+    if (questionIndex === 0) return;
+    const section = template.sections.find((s) => s.section_id === sectionId);
+    const newQuestions = [...section.questions];
+    [newQuestions[questionIndex - 1], newQuestions[questionIndex]] = [
+      newQuestions[questionIndex],
+      newQuestions[questionIndex - 1],
+    ];
+
+    // Update order numbers
+    const updatedQuestions = newQuestions.map((question, index) => ({
+      ...question,
+      order: index + 1,
+    }));
+
+    updateSection(sectionId, { questions: updatedQuestions });
+  };
+
+  const moveQuestionDown = (sectionId, questionIndex) => {
+    const section = template.sections.find((s) => s.section_id === sectionId);
+    if (questionIndex === section.questions.length - 1) return;
+
+    const newQuestions = [...section.questions];
+    [newQuestions[questionIndex], newQuestions[questionIndex + 1]] = [
+      newQuestions[questionIndex + 1],
+      newQuestions[questionIndex],
+    ];
+
+    // Update order numbers
+    const updatedQuestions = newQuestions.map((question, index) => ({
+      ...question,
+      order: index + 1,
+    }));
+
+    updateSection(sectionId, { questions: updatedQuestions });
   };
 
   const openQuestionDialog = (sectionId, question = null) => {
@@ -165,59 +247,21 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
       ),
     }));
   };
-
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-
-    const { source, destination, type } = result;
-
-    if (type === "section") {
-      const newSections = Array.from(template.sections);
-      const [reorderedSection] = newSections.splice(source.index, 1);
-      newSections.splice(destination.index, 0, reorderedSection);
-
-      // Update order numbers
-      const updatedSections = newSections.map((section, index) => ({
-        ...section,
-        order: index + 1,
-      }));
-
-      setTemplate((prev) => ({ ...prev, sections: updatedSections }));
-    } else if (type === "question") {
-      const sectionId = parseInt(source.droppableId);
-      const section = template.sections.find((s) => s.section_id === sectionId);
-      const newQuestions = Array.from(section.questions);
-      const [reorderedQuestion] = newQuestions.splice(source.index, 1);
-      newQuestions.splice(destination.index, 0, reorderedQuestion);
-
-      // Update order numbers
-      const updatedQuestions = newQuestions.map((question, index) => ({
-        ...question,
-        order: index + 1,
-      }));
-
-      updateSection(sectionId, { questions: updatedQuestions });
-    }
-  };
-
+  // Replace your current saveTemplate function with:
   const saveTemplate = async () => {
     try {
-      const url = templateId
-        ? `/api/form-templates/${templateId}/`
-        : "/api/form-templates/";
-      const method = templateId ? "PUT" : "POST";
+      let response;
+      if (templateId) {
+        response = await instance.put(
+          `/ajp/form-templates/${templateId}/`,
+          template
+        );
+      } else {
+        response = await instance.post("/ajp/form-templates/", template);
+      }
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(template),
-      });
-
-      if (response.ok) {
-        const savedTemplate = await response.json();
-        onSave?.(savedTemplate);
+      if (response.data) {
+        onSave?.(response.data);
       }
     } catch (error) {
       console.error("Error saving template:", error);
@@ -261,173 +305,156 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
       </Card>
 
       {/* Sections */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="sections" type="section">
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="space-y-4"
-            >
-              {template.sections.map((section, sectionIndex) => (
-                <Draggable
-                  key={section.section_id}
-                  draggableId={`section-${section.section_id}`}
-                  index={sectionIndex}
+      <div className="space-y-4">
+        {template.sections.map((section, sectionIndex) => (
+          <Card
+            key={section.section_id}
+            className="border-2 border-dashed border-gray-300"
+          >
+            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+              <div className="flex items-center space-x-2 mr-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => moveSectionUp(sectionIndex)}
+                  disabled={sectionIndex === 0}
                 >
-                  {(provided) => (
-                    <Card
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className="border-2 border-dashed border-gray-300"
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => moveSectionDown(sectionIndex)}
+                  disabled={sectionIndex === template.sections.length - 1}
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex-1">
+                <Input
+                  value={section.name}
+                  onChange={(e) =>
+                    updateSection(section.section_id, {
+                      name: e.target.value,
+                    })
+                  }
+                  className="font-semibold"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor={`required-${section.section_id}`}>
+                  Required
+                </Label>
+                <Switch
+                  id={`required-${section.section_id}`}
+                  checked={section.is_required}
+                  onCheckedChange={(checked) =>
+                    updateSection(section.section_id, {
+                      is_required: checked,
+                    })
+                  }
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => deleteSection(section.section_id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={section.description || ""}
+                onChange={(e) =>
+                  updateSection(section.section_id, {
+                    description: e.target.value,
+                  })
+                }
+                placeholder="Section description"
+                className="mb-4"
+              />
+
+              {/* Questions */}
+              <div className="space-y-2">
+                {section.questions.map((question, questionIndex) => (
+                  <div
+                    key={question.question_id}
+                    className="flex items-center space-x-2 p-3 bg-gray-50 rounded border"
+                  >
+                    <div className="flex flex-col space-y-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          moveQuestionUp(section.section_id, questionIndex)
+                        }
+                        disabled={questionIndex === 0}
+                      >
+                        <ArrowUp className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          moveQuestionDown(section.section_id, questionIndex)
+                        }
+                        disabled={
+                          questionIndex === section.questions.length - 1
+                        }
+                      >
+                        <ArrowDown className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">
+                        {question.question_text}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {
+                          QUESTION_TYPES.find(
+                            (t) => t.value === question.question_type
+                          )?.label
+                        }
+                        {question.is_required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        openQuestionDialog(section.section_id, question)
+                      }
                     >
-                      <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-                        <div {...provided.dragHandleProps} className="mr-2">
-                          <GripVertical className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <div className="flex-1">
-                          <Input
-                            value={section.name}
-                            onChange={(e) =>
-                              updateSection(section.section_id, {
-                                name: e.target.value,
-                              })
-                            }
-                            className="font-semibold"
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Label htmlFor={`required-${section.section_id}`}>
-                            Required
-                          </Label>
-                          <Switch
-                            id={`required-${section.section_id}`}
-                            checked={section.is_required}
-                            onCheckedChange={(checked) =>
-                              updateSection(section.section_id, {
-                                is_required: checked,
-                              })
-                            }
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteSection(section.section_id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Textarea
-                          value={section.description || ""}
-                          onChange={(e) =>
-                            updateSection(section.section_id, {
-                              description: e.target.value,
-                            })
-                          }
-                          placeholder="Section description"
-                          className="mb-4"
-                        />
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        deleteQuestion(section.section_id, question.question_id)
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
 
-                        {/* Questions */}
-                        <Droppable
-                          droppableId={`${section.section_id}`}
-                          type="question"
-                        >
-                          {(provided) => (
-                            <div
-                              {...provided.droppableProps}
-                              ref={provided.innerRef}
-                              className="space-y-2"
-                            >
-                              {section.questions.map(
-                                (question, questionIndex) => (
-                                  <Draggable
-                                    key={question.question_id}
-                                    draggableId={`question-${question.question_id}`}
-                                    index={questionIndex}
-                                  >
-                                    {(provided) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        className="flex items-center space-x-2 p-3 bg-gray-50 rounded border"
-                                      >
-                                        <div {...provided.dragHandleProps}>
-                                          <GripVertical className="h-4 w-4 text-gray-400" />
-                                        </div>
-                                        <div className="flex-1">
-                                          <div className="font-medium">
-                                            {question.question_text}
-                                          </div>
-                                          <div className="text-sm text-gray-600">
-                                            {
-                                              QUESTION_TYPES.find(
-                                                (t) =>
-                                                  t.value ===
-                                                  question.question_type
-                                              )?.label
-                                            }
-                                            {question.is_required && (
-                                              <span className="text-red-500 ml-1">
-                                                *
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                            openQuestionDialog(
-                                              section.section_id,
-                                              question
-                                            )
-                                          }
-                                        >
-                                          <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                            deleteQuestion(
-                                              section.section_id,
-                                              question.question_id
-                                            )
-                                          }
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                )
-                              )}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-
-                        <Button
-                          variant="dashed"
-                          className="w-full mt-4"
-                          onClick={() => openQuestionDialog(section.section_id)}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Question
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+              <Button
+                variant="outline"
+                className="w-full mt-4"
+                onClick={() => openQuestionDialog(section.section_id)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Question
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       {/* Add Section Button */}
       <Button variant="outline" className="w-full" onClick={addSection}>
