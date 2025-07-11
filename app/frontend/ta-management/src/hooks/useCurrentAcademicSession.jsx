@@ -1,10 +1,8 @@
 /*
 Custom hook to fetch the current academic session (for EX,
-2025/26 Winter) using the courses api
+2025/26 Winter) from the courses api
 
-STATUS: WORK IN PROGRESS
-- Can't test this yet because api not finished, but it's
-here for when we need it. Currently mocked for testing
+STATUS: in progress (currently mocked but will make API calls once service is ready)
 */
 
 import axios from "axios";
@@ -20,7 +18,8 @@ export function useCurrentAcademicSession() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                //const response = await axios.get('/course-term-service/terms/active');
+                // todo: make request to api to get the data we need
+                //const response = await axios.get('');
                 //setData(response.data)
 
                 // hardcoded for now to fake it

@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react";
-
 /*
 Custom hook to handle fetching the current user (instructor)'s 
 courses to be displayed on their 'My Courses' page. 
-For now this is mocked but future will make API calls
+
+STATUS: in progress (currently mocked but will make API calls once service is ready)
 */
+
+import axios from "axios";
+import { useEffect, useState } from "react";
+
+const API_URL = 'http://localhost:8080/api';
+
 export function useMyCourses() {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -14,14 +19,9 @@ export function useMyCourses() {
         async function fetchData() {
             try {
                 // todo: make request to api to get the data we need
-
-                // Info I Need:
-                // 1. Course offerings that the currently logged-in instructor
-                // is teaching AND that take place within the current academic
-                // session (EX: Winter 2025/26)
-                // 2. For each of those course offerings, I need the actual
-                // course that is associated
-
+                // but for now, we mock so that it's useable.
+                // why i did it this way? hoping that setting these up
+                // right off the bat = less rework once the api is complete
                 const mockApiResponse = {
                     "courses": [
                         {

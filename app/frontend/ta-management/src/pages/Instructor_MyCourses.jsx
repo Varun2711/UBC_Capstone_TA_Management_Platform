@@ -67,7 +67,8 @@ export default function MyCourses() {
                                             <CardDescription> { course.course_number } - { course.section } </CardDescription>  
                                         </CardHeader>
                                         <CardContent>
-                                            {/* todo: this should go to the Course Details page that shows TA allocations across the whole course */}
+                                            {/* todo: this should go to the Course Details page that shows TA allocations across the whole course,
+                                            but that is a completely separate issue */}
                                             <Link
                                                 to={`/`}
                                                 className="text-primary font-medium underline underline-offset-4"
