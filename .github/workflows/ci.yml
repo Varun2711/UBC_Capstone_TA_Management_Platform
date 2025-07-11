@@ -4,21 +4,20 @@ on:
   push:
     branches: [ development ]
     paths:
-      - 'app/frontend/**'  # ⬅️ Only trigger on frontend changes
+      - 'app/frontend/ta-management/**'  # Watch this specific project folder
 
   pull_request:
     branches: [ development ]
     paths:
-      - 'app/frontend/ta-management/**'  # ⬅️ Only trigger on frontend changes
+      - 'app/frontend/ta-management/**'  # Keep the trigger consistent for PRs
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    # Set the default directory for all 'run' commands in this job
     defaults:
       run:
-        working-directory: ./app/frontend/ta-management # ⬅️ Set working directory
+        working-directory: ./app/frontend/ta-management # Set working directory
 
     strategy:
       matrix:
@@ -33,10 +32,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: app/frontend/ta-management/package-lock.json # ⬅️ Point to the correct lock file
+        cache-dependency-path: app/frontend/ta-management/package-lock.json
 
     - name: Install dependencies
-      run: npm ci # This will run in ./app/frontend
+      run: npm ci # This runs in ./app/frontend/ta-management
 
     - name: Run tests
-      run: npm test # This will also run in ./app/frontend
+      run: npm test # This also runs in ./app/frontend/ta-management
