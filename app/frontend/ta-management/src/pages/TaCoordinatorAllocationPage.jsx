@@ -284,9 +284,11 @@ function getPriorityBadge(priority) {
 
 export default function TAAllocationPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [searchTermForCourse, setSearchTermForCourse] = useState("")
   const [selectedTAId, setSelectedTAId] = useState(null)
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [filterStatus, setFilterStatus] = useState("all")
+  const [courseFilterStatus, setCourseFilterStatus] = useState("all")
   const [assignments, setAssignments] = useState([])
   const [taList, setTaList] = useState(availableTAs)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -540,8 +542,17 @@ export default function TAAllocationPage() {
   const totalTAs = taList.length
   const availableTACount = taList.filter((ta) => ta.status === "Available").length
   const totalCourses = courses.length
-  const coursesNeedingTAs = courses.filter((course) => course.totalTAAssigned < course.totalTARequired).length
 
+  const filteredCourses = courses.filter((course) => {
+    
+    const matchesSearch =
+      course.code.toLowerCase().includes(searchTermForCourse.toLowerCase()) ||
+      course.name.toLowerCase().includes(searchTermForCourse.toLowerCase()) ||
+      course.instructor.toLowerCase().includes(searchTermForCourse.toLowerCase()) ||
+      course.semester.toLowerCase().includes(searchTermForCourse.toLowerCase())
+
+    return matchesSearch 
+  })
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -711,7 +722,7 @@ export default function TAAllocationPage() {
                                         //
                                         className="inline-flex items-center text-blue-600 hover:text-blue-900 p-1 rounded"
                                       >
-                                        View <Eye className="h-4 w-4 ml-1" />
+                                        Select Applicant <Eye className="h-4 w-4 ml-1" />
                                       </button>
                                     </div>
                                   </div>
@@ -734,8 +745,16 @@ export default function TAAllocationPage() {
                       <CardDescription>Choose a course section that needs a TA</CardDescription>
                     </CardHeader>
                     <CardContent>
+                      {/* ✅ Search Bar */}
+                        <input
+                          type="text"
+                          placeholder="Search Courses by name, code, instructor, and semester"
+                          className="w-full mb-4 p-2 border border-gray-300 rounded-md"
+                          value={searchTermForCourse}
+                          onChange={(e) => setSearchTermForCourse(e.target.value)}
+                        />
                       <div className="space-y-4">
-                        {courses.map((course) => {
+                        {filteredCourses.map((course) => {
                           const availableSections = course.sections.filter(
                             (section) => section.taAssigned < section.taRequired
                           )
