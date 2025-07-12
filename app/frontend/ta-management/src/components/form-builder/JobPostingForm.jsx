@@ -36,6 +36,7 @@ const JobPostingForm = ({
     post_date: new Date().toISOString().split("T")[0],
     deadline_date: "",
     status: "draft",
+    created_by_id: 1,
   });
 
   const [errors, setErrors] = useState({});
@@ -58,6 +59,7 @@ const JobPostingForm = ({
           jobPosting.post_date || new Date().toISOString().split("T")[0],
         deadline_date: jobPosting.deadline_date || "",
         status: jobPosting.status || "draft",
+        created_by_id: jobPosting.created_by_id || 1, // Default to 1 if not provided
       });
     }
   }, [jobPosting]);
@@ -148,14 +150,14 @@ const JobPostingForm = ({
       let response;
       if (jobPosting) {
         response = await instance.put(
-          "/ajp/jobpostings/${jobPosting.posting_id}/",
+          `/ajp/jobpostings/${jobPosting.posting_id}/`,
           submitData
         );
       } else {
         response = await instance.post("/ajp/jobpostings/", submitData);
       }
       console.log("Job posting submitted successfully:", response.data);
-      //onSave(response.data);
+      onSave(response.data);
     } catch (error) {
       console.error("Error submitting job posting:", error);
       setErrors({ submit: error.message });
