@@ -175,17 +175,33 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         """Disallow updates to applications"""
         return Response(
-            {"detail": "Updates to applications are not currently in scope."},
+            {"detail": "Updates to applications are not currently in scope. Try a Patch"},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
     
     def partial_update(self, request, *args, **kwargs):
-        """Disallow partial updates to applications"""
-        return Response(
-            {"detail": "Updates to applications are not currently in scope."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        instance = self.get_object()
+
+        allowed_fields = ['status']
+
+        filtered_data = {
+            key: value for key, value in request.data.items()
+            if key in allowed_fields
+        }
+
+        if not filtered_data:
+             return Response(
+            {"detail": "Only the application 'status' can be updated."},
+            status=status.HTTP_400_BAD_REQUEST
         )
+
+        serializer = self.get_serializer(instance, data=filtered_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
     
+        return Response(serializer.data)
+
+
     @action(detail=False, methods=['post'])
     def submit_with_responses(self, request):
         """Submit application with dynamic form responses in one call"""
