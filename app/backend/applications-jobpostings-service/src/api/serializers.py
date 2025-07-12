@@ -115,33 +115,32 @@ class JobPostingSerializer(serializers.ModelSerializer):
     #read only fields  
     department = DepartmentSerializer(read_only=True)  
     term = TermSerializer(read_only = True)   
-    created_by = TAschedulerSerializer(read_only=True)      
-    posting_questions = JobPostingQuestionSerializer(many=True)
+    created_by = TAschedulerSerializer(read_only=True)    
     form_template = FormTemplateSerializer(read_only=True)
     
     class Meta:
         model = JobPosting
         fields = ['posting_id', 'title', 'status', 'description', 'term_id', 'term',
                   'post_date' ,'department_id', 'department', 'deadline_date',  
-                  'created_by', 'created_by_id', 'requirements', 'posting_questions',
+                  'created_by', 'created_by_id', 'requirements',
                   'form_template_id', 'form_template'] #fields to include in the serializer
-    # Note: 'posting_questions' is read-only here, as it will be handled separately in the create method
+   
     
     def create(self, validated_data):
-        questions_data = validated_data.pop('posting_questions', [])
+        #questions_data = validated_data.pop('posting_questions', [])
         job_posting = JobPosting.objects.create(**validated_data)
         
         #create the JobPostingQuestion instances
         # Note: We pop 'job_posting' from each question data to avoid circular reference
         # and use the job_posting instance created above
-        for question in questions_data:
-            question.pop('job_posting', None) 
-            JobPostingQuestion.objects.create(posting=job_posting, **question)
+        # for question in questions_data:
+        #     question.pop('job_posting', None) 
+        #     JobPostingQuestion.objects.create(posting=job_posting, **question)
         
         return job_posting
     
     def update(self, instance, validated_data):
-        questions_data = validated_data.pop('posting_questions', [])
+      #questions_data = validated_data.pop('posting_questions', [])
 
         # Update JobPosting fields
         for attr, value in validated_data.items():
@@ -150,10 +149,10 @@ class JobPostingSerializer(serializers.ModelSerializer):
 
         # Handle nested posting questions
         # Simple version: delete all old, create new ones
-        instance.posting_questions.all().delete()
-        for question in questions_data:
-            question.pop('job_posting', None) 
-            JobPostingQuestion.objects.create(posting=instance, **question)
+        # instance.posting_questions.all().delete()
+        # for question in questions_data:
+        #     question.pop('job_posting', None) 
+        #     JobPostingQuestion.objects.create(posting=instance, **question)
 
         return instance
     

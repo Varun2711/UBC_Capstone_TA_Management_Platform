@@ -11,15 +11,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import axios from "axios";
+
+const instance = axios.create({
+  baseURL: "http://localhost:8080/api",
+});
 
 const JobPostingForm = ({
   jobPosting,
-  departments = {},
-  terms = {},
+  departments,
+  terms,
   templates,
   onSave,
   onCancel,
 }) => {
+  //initialize job form data fields
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -37,7 +43,9 @@ const JobPostingForm = ({
 
   useEffect(() => {
     console.log(templates, "Templates in JobPostingForm");
+    console.log(departments, "Departments in JobPostingForm");
 
+    //if jobPosting prop is provided, populate formData with its values
     if (jobPosting) {
       setFormData({
         title: jobPosting.title || "",
@@ -61,7 +69,7 @@ const JobPostingForm = ({
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
   };
-
+  //form data validation
   const validateForm = () => {
     const newErrors = {};
 
@@ -103,11 +111,12 @@ const JobPostingForm = ({
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).length === 0; //return true if no errors
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("We're here!");
 
     if (!validateForm()) {
       return;
@@ -116,43 +125,39 @@ const JobPostingForm = ({
     setLoading(true);
 
     try {
-      // Prepare data for API
+      // Prepare data for API call
+      //attach form_template_id if it exists, otherwise set to null
       const submitData = {
         ...formData,
         form_template_id: formData.form_template_id || null,
       };
+
+      console.log("Submitting job posting data:", submitData);
 
       // Remove empty template ID to avoid validation errors
       if (!submitData.form_template_id) {
         delete submitData.form_template_id;
       }
 
-      const url = jobPosting
-        ? `http://localhost:8080/api/ajp/jobpostings/${jobPosting.posting_id}/`
-        : "http://localhost:8080/api/ajp/jobpostings/";
+      // const url = jobPosting
+      //   ? `http://localhost:8080/api/ajp/jobpostings/${jobPosting.posting_id}/`
+      //   : "http://localhost:8080/api/ajp/jobpostings/";
 
-      const method = jobPosting ? "PUT" : "POST";
+      // const method = jobPosting ? "PUT" : "POST";
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(submitData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("API Error:", errorData);
-        throw new Error(
-          `Failed to ${jobPosting ? "update" : "create"} job posting`
+      let response;
+      if (jobPosting) {
+        response = await instance.put(
+          "/ajp/jobpostings/${jobPosting.posting_id}/",
+          submitData
         );
+      } else {
+        response = await instance.post("/ajp/jobpostings/", submitData);
       }
-
-      const savedJobPosting = await response.json();
-      onSave(savedJobPosting);
+      console.log("Job posting submitted successfully:", response.data);
+      //onSave(response.data);
     } catch (error) {
-      console.error("Error saving job posting:", error);
+      console.error("Error submitting job posting:", error);
       setErrors({ submit: error.message });
     } finally {
       setLoading(false);
@@ -225,7 +230,7 @@ const JobPostingForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="department">Department *</Label>
-                {/* <Select
+                <Select
                   value={formData.department_id}
                   onValueChange={(value) =>
                     handleInputChange("department_id", value)
@@ -243,7 +248,7 @@ const JobPostingForm = ({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select> */}
+                </Select>
                 {errors.department_id && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.department_id}
@@ -253,7 +258,7 @@ const JobPostingForm = ({
 
               <div>
                 <Label htmlFor="term">Term *</Label>
-                {/* <Select
+                <Select
                   value={formData.term_id}
                   onValueChange={(value) => handleInputChange("term_id", value)}
                 >
@@ -269,7 +274,7 @@ const JobPostingForm = ({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select> */}
+                </Select>
                 {errors.term_id && (
                   <p className="text-red-500 text-sm mt-1">{errors.term_id}</p>
                 )}

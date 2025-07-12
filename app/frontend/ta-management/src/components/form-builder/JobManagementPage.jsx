@@ -39,6 +39,14 @@ const instance = axios.create({
   baseURL: "http://localhost:8080/api",
 });
 
+//mock departments and terms while awaiting the course API
+const mockDepartments = [{ id: 1, name: "CMPS" }];
+const mockTerms = [
+  { id: 1, code: "W2025T1", description: "Winter 2025 Term 1" },
+  { id: 2, code: "W2025T2", description: "Winter 2025 Term 2" },
+  { id: 3, code: "W2025BOTH", description: "Winter 2025 Both Terms" },
+];
+
 const JobManagementPage = () => {
   // Toggle state
   const [currentView, setCurrentView] = useState("jobs"); // "jobs" or "templates"
@@ -67,14 +75,15 @@ const JobManagementPage = () => {
     fetchInitialData();
   }, []);
 
+  //on mount, fetch initial data including job postings, templates, departments, and terms
   const fetchInitialData = async () => {
     setLoading(true);
     try {
       await Promise.all([
         fetchJobPostings(),
         fetchTemplates(),
-        //  fetchDepartments(),
-        //  fetchTerms(),
+        fetchDepartments(),
+        fetchTerms(),
       ]);
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -102,24 +111,28 @@ const JobManagementPage = () => {
     }
   };
 
-  //   const fetchDepartments = async () => {
-  //     try {
-  //       const data = await apiCall("/ajp/departments/");
-  //       setDepartments(data);
-  //     } catch (error) {
-  //       console.error("Error fetching departments:", error);
-  //     }
-  //   };
+  const fetchDepartments = async () => {
+    try {
+      const data = await instance.get("/courses/departments/");
+      setDepartments(data);
+    } catch (error) {
+      console.error("Error fetching departments from api:", error);
+      // Fallback to mock data
+      setDepartments(mockDepartments);
+    }
+  };
 
   //waiting on course api
-  //   const fetchTerms = async () => {
-  //     try {
-  //       const data = await instance.get("/course/terms/");
-  //       setTerms(data);
-  //     } catch (error) {
-  //       console.error("Error fetching terms:", error);
-  //     }
-  //   };
+  const fetchTerms = async () => {
+    try {
+      const data = await instance.get("/course/terms/");
+      setTerms(data);
+    } catch (error) {
+      console.error("Error fetching terms:", error);
+      // Fallback to mock data
+      setTerms(mockTerms);
+    }
+  };
 
   // Job Posting Handlers
   const handleCreateJobPosting = () => {
@@ -270,7 +283,6 @@ const JobManagementPage = () => {
                 Create Job Posting
               </Button>
             </div>
-
             {/* Job Postings Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredJobPostings.map((posting) => (
@@ -369,6 +381,7 @@ const JobManagementPage = () => {
                 </Card>
               ))}
             </div>
+            {/*if no job postings found, show message and button to create first*/}
 
             {filteredJobPostings.length === 0 && (
               <div className="text-center py-12">
@@ -437,7 +450,7 @@ const JobManagementPage = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm text-muted-foreground">
                         <span>{template.sections?.length || 0} sections</span>
-                        <span>
+                        {/* <span>
                           Used in{" "}
                           {
                             jobPostings.filter(
@@ -447,7 +460,7 @@ const JobManagementPage = () => {
                             ).length
                           }{" "}
                           jobs
-                        </span>
+                        </span> */}
                       </div>
 
                       <div className="text-xs text-muted-foreground">
@@ -521,14 +534,16 @@ const JobManagementPage = () => {
           </DialogHeader>
           <JobPostingForm
             jobPosting={selectedJobPosting}
-            //departments={}
-            //terms= {}
+            departments={departments}
+            terms={terms}
             templates={templates}
+            //when job posting is saved, fetch job postings again and close dialog
             onSave={(savedJobPosting) => {
               setIsJobDialogOpen(false);
               fetchJobPostings();
               setSelectedJobPosting(null);
             }}
+            //when job posting is cancelled, close dialog and reset selected job posting
             onCancel={() => {
               setIsJobDialogOpen(false);
               setSelectedJobPosting(null);
