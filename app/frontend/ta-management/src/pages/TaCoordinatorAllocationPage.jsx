@@ -13,6 +13,7 @@ import {
   Settings,
   Users,
   CheckCircle,
+  Eye
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -217,6 +218,35 @@ const courses = [
         enrollment: 20,
         taRequired: 1,
         taAssigned: 1,
+      },
+    ],
+    totalTARequired: 3,
+    totalTAAssigned: 3,
+    priority: "Medium",
+  },
+  {
+    id: 3,
+    code: "POLI 105",
+    name: "Introduction to European Politics",
+    instructor: "Dr. Surrey",
+    semester: "Fall 2024",
+    sections: [
+      {
+        id: 6,
+        type: "Lecture",
+        section: "001",
+        slots: [
+          "Monday-11-top",
+          "Monday-11-bottom",
+          "Tuesday-11-bottom",
+          "Tuesday-11-bottom",
+          "Thursday-11-top",
+          "Thursday-11-bottom",
+        ],
+        weekHours: 3,
+        enrollment: 80,
+        taRequired: 2,
+        taAssigned: 0,
       },
     ],
     totalTARequired: 3,
@@ -665,12 +695,25 @@ export default function TAAllocationPage() {
                                     </div>
                                     {getStatusBadge(ta.status)}
                                   </div>
-                                  <div className="mt-2 flex flex-wrap gap-1">
-                                    {ta.skills.slice(0, 3).map((skill, index) => (
-                                      <Badge key={index} variant="outline" className="text-xs">
-                                        {skill}
-                                      </Badge>
-                                    ))}
+                                  <div className="flex items-center justify-between">
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                      {ta.skills.slice(0, 3).map((skill, index) => (
+                                        <Badge key={index} variant="outline" className="text-xs">
+                                          {skill}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                      <button
+                                        //onClick={() =>
+                                          //handleViewApplication(application)
+                                        //}
+                                        //
+                                        className="inline-flex items-center text-blue-600 hover:text-blue-900 p-1 rounded"
+                                      >
+                                        View <Eye className="h-4 w-4 ml-1" />
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               ))
