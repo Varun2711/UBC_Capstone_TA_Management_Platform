@@ -119,65 +119,83 @@ class Command(BaseCommand):
         # Create terms for 2024-2025 and 2025-2026 academic years
         for year in [2024, 2025]:
             # Winter Terms (September - April)
-            winter_term_1 = Term.objects.create(
+            winter_term_1, created = Term.objects.get_or_create(
                 code=f'W{year} Term 1',
-                description=f'Winter Term 1 {year}/{year+1}',
-                start=date(year, 9, 1),
-                end=date(year, 12, 31),
-                startCalendarYear=year,
-                endCalendarYear=year,
-                academicYear=f'{year}/{str(year+1)[2:]}',
-                is_active=year == 2025,  # Only 2025 terms are active
-                term_type='winter'
+                defaults={
+                    'description': f'Winter Term 1 {year}/{year+1}',
+                    'start': date(year, 9, 1),
+                    'end': date(year, 12, 31),
+                    'startCalendarYear': year,
+                    'endCalendarYear': year,
+                    'academicYear': f'{year}/{str(year+1)[2:]}',
+                    'is_active': year == 2025,  # Only 2025 terms are active
+                    'term_type': 'winter'
+                }
             )
             terms.append(winter_term_1)
+            if created:
+                self.stdout.write(f'  Created term: {winter_term_1.code}')
             
-            winter_term_2 = Term.objects.create(
+            winter_term_2, created = Term.objects.get_or_create(
                 code=f'W{year} Term 2',
-                description=f'Winter Term 2 {year}/{year+1}',
-                start=date(year+1, 1, 1),
-                end=date(year+1, 4, 30),
-                startCalendarYear=year+1,
-                endCalendarYear=year+1,
-                academicYear=f'{year}/{str(year+1)[2:]}',
-                is_active=year == 2025,
-                term_type='winter'
+                defaults={
+                    'description': f'Winter Term 2 {year}/{year+1}',
+                    'start': date(year+1, 1, 1),
+                    'end': date(year+1, 4, 30),
+                    'startCalendarYear': year+1,
+                    'endCalendarYear': year+1,
+                    'academicYear': f'{year}/{str(year+1)[2:]}',
+                    'is_active': year == 2025,
+                    'term_type': 'winter'
+                }
             )
             terms.append(winter_term_2)
+            if created:
+                self.stdout.write(f'  Created term: {winter_term_2.code}')
             
             # Summer Term (May - August)
-            summer_term = Term.objects.create(
+            summer_term, created = Term.objects.get_or_create(
                 code=f'S{year+1}',
-                description=f'Summer Term {year+1}',
-                start=date(year+1, 5, 1),
-                end=date(year+1, 8, 31),
-                startCalendarYear=year+1,
-                endCalendarYear=year+1,
-                academicYear=f'{year}/{str(year+1)[2:]}',
-                is_active=year == 2025,
-                term_type='summer'
+                defaults={
+                    'description': f'Summer Term {year+1}',
+                    'start': date(year+1, 5, 1),
+                    'end': date(year+1, 8, 31),
+                    'startCalendarYear': year+1,
+                    'endCalendarYear': year+1,
+                    'academicYear': f'{year}/{str(year+1)[2:]}',
+                    'is_active': year == 2025,
+                    'term_type': 'summer'
+                }
             )
             terms.append(summer_term)
+            if created:
+                self.stdout.write(f'  Created term: {summer_term.code}')
             
             # Create parent "Both Terms" term for winter terms
-            both_terms = Term.objects.create(
+            both_terms, created = Term.objects.get_or_create(
                 code=f'W{year} Both Terms',
-                description=f'Winter Both Terms {year}/{year+1}',
-                start=date(year, 9, 1),
-                end=date(year+1, 4, 30),
-                startCalendarYear=year,
-                endCalendarYear=year+1,
-                academicYear=f'{year}/{str(year+1)[2:]}',
-                is_active=year == 2025,
-                term_type='full_year'
+                defaults={
+                    'description': f'Winter Both Terms {year}/{year+1}',
+                    'start': date(year, 9, 1),
+                    'end': date(year+1, 4, 30),
+                    'startCalendarYear': year,
+                    'endCalendarYear': year+1,
+                    'academicYear': f'{year}/{str(year+1)[2:]}',
+                    'is_active': year == 2025,
+                    'term_type': 'full_year'
+                }
             )
             terms.append(both_terms)
+            if created:
+                self.stdout.write(f'  Created term: {both_terms.code}')
             
             # Set subsetOf relationships
-            winter_term_1.subsetOf = both_terms
-            winter_term_1.save()
-            winter_term_2.subsetOf = both_terms
-            winter_term_2.save()
+            if winter_term_1.subsetOf != both_terms:
+                winter_term_1.subsetOf = both_terms
+                winter_term_1.save()
+            if winter_term_2.subsetOf != both_terms:
+                winter_term_2.subsetOf = both_terms
+                winter_term_2.save()
         
         self.stdout.write(f'  Created {len(terms)} academic terms')
         return terms
@@ -311,14 +329,15 @@ class Command(BaseCommand):
         for course_number, term, section, instructor in offering_data:
             try:
                 course = Course.objects.get(course_number=course_number)
-                offering = CourseOffering.objects.create(
+                offering, created = CourseOffering.objects.get_or_create(
                     course=course,
                     section_number=section,
                     academic_term=term,
-                    instructor=instructor
+                    defaults={'instructor': instructor}
                 )
                 offerings.append(offering)
-                self.stdout.write(f'  Created offering: {course_number} {section} - {term.code}')
+                if created:
+                    self.stdout.write(f'  Created offering: {course_number} {section} - {term.code}')
             except Course.DoesNotExist:
                 self.stdout.write(f'  Warning: Course {course_number} not found')
         
@@ -360,21 +379,22 @@ class Command(BaseCommand):
         for course_number, term, session_type, section, instructor in session_data:
             try:
                 course = Course.objects.get(course_number=course_number)
-                session = SharedSession.objects.create(
+                session, created = SharedSession.objects.get_or_create(
                     session_type=session_type,
                     course=course,
                     section_number=section,
                     academic_term=term,
-                    instructor=instructor
+                    defaults={'instructor': instructor}
                 )
                 
-                # Assign random time slots
-                import random
-                assigned_slots = random.sample(time_slots, k=random.randint(1, 2))
-                session.time_slots.set(assigned_slots)
+                if created:
+                    # Assign random time slots
+                    import random
+                    assigned_slots = random.sample(time_slots, k=random.randint(1, 2))
+                    session.time_slots.set(assigned_slots)
+                    self.stdout.write(f'  Created session: {course_number} {section} ({session_type}) - {term.code}')
                 
                 sessions.append(session)
-                self.stdout.write(f'  Created session: {course_number} {section} ({session_type}) - {term.code}')
             except Course.DoesNotExist:
                 self.stdout.write(f'  Warning: Course {course_number} not found')
         

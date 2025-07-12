@@ -140,12 +140,14 @@ class TimeSlotSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     """
     Serializer for Course model with full CRUD operations.
-    Includes nested department information and related offerings.
+    Includes simplified department information (just name and id).
     """
-    # Nested serialization for department
-    department_name = serializers.StringRelatedField(source='department', read_only=True)
-    department_id = serializers.PrimaryKeyRelatedField(
-        source='department',
+    # Department information - just name and id
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    department_id = serializers.IntegerField(source='department.id', read_only=True)
+    
+    # For write operations, accept department by ID
+    department = serializers.PrimaryKeyRelatedField(
         queryset=Department.objects.all(),
         write_only=True
     )
@@ -161,11 +163,12 @@ class CourseSerializer(serializers.ModelSerializer):
             'course_name',
             'department_name',
             'department_id',
+            'department',
             'course_description',
             'course_level',
             'offerings_count'
         ]
-        read_only_fields = ['id', 'department_name', 'offerings_count']
+        read_only_fields = ['id', 'department_name', 'department_id', 'offerings_count']
     
     def get_offerings_count(self, obj):
         """
