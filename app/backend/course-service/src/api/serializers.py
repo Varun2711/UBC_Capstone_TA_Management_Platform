@@ -263,19 +263,10 @@ class SharedSessionSerializer(serializers.ModelSerializer):
         write_only=True
     )
     
-    term_info = serializers.StringRelatedField(source='academic_term', read_only=True)
-    term_id = serializers.PrimaryKeyRelatedField(
+    academic_term_info = serializers.StringRelatedField(source='academic_term', read_only=True)
+    academic_term_id = serializers.PrimaryKeyRelatedField(
         source='academic_term',
         queryset=Term.objects.all(),
-        write_only=True
-    )
-    
-    instructor_info = serializers.StringRelatedField(source='instructor', read_only=True)
-    instructor_id = serializers.PrimaryKeyRelatedField(
-        source='instructor',
-        queryset=Instructor.objects.all(),
-        required=False,
-        allow_null=True,
         write_only=True
     )
     
@@ -298,14 +289,12 @@ class SharedSessionSerializer(serializers.ModelSerializer):
             'course_info',
             'course_id',
             'section_number',
-            'term_info',
-            'term_id',
-            'instructor_info',
-            'instructor_id',
+            'academic_term_info',
+            'academic_term_id',
             'time_slots_info',
             'time_slot_ids'
         ]
-        read_only_fields = ['shared_session_id', 'session_type_display', 'course_info', 'term_info', 'instructor_info', 'time_slots_info']
+        read_only_fields = ['shared_session_id', 'session_type_display', 'course_info', 'academic_term_info', 'time_slots_info']
     
     def validate_session_type(self, value):
         """

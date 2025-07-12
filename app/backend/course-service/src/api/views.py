@@ -278,7 +278,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         
         # Build the response data
         response_data = {
-            'id': course.course_number,  # Using course_number as ID like in example
+            'id': course.id,  # Bug fix: Use course.id instead of course_number
             'code': course.course_number,
             'title': course.course_name,
             'department': course.department.name,
@@ -293,7 +293,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                 'id': str(offering.course_offering_id),
                 'year': str(offering.academic_term.startCalendarYear),
                 'term': offering.academic_term.code,
-                'instructor': offering.instructor.name if offering.instructor else None,
+                'instructor_id': offering.instructor.id if offering.instructor else None,  # Give instructor id instead of name
                 'section': offering.section_number,
                 'requirements': {
                     'specialRequirements': []  # This would need to be added to model if needed
@@ -301,13 +301,13 @@ class CourseViewSet(viewsets.ModelViewSet):
             }
             response_data['offerings'].append(offering_data)
         
-        # Process shared sessions, grouped by term-year
+        # Process shared sessions, grouped by term (remove year from term parent)
         for session in shared_sessions:
-            term_year_key = f"{session.academic_term.code}-{session.academic_term.startCalendarYear}"
+            term_key = session.academic_term.code  # Remove year from term parent key
             
-            # Initialize term-year group if not exists
-            if term_year_key not in response_data['sharedSessions']:
-                response_data['sharedSessions'][term_year_key] = {
+            # Initialize term group if not exists
+            if term_key not in response_data['sharedSessions']:
+                response_data['sharedSessions'][term_key] = {
                     'labs': [],
                     'tutorials': [],
                     'seminars': [],
@@ -332,21 +332,20 @@ class CourseViewSet(viewsets.ModelViewSet):
                 'day': time_info[0]['day'] if time_info else 'TBD',
                 'time': time_info[0]['time'] if time_info else 'TBD',
                 'location': location,
-                'taAssigned': session.instructor.name if session.instructor else None,
-                'forOfferings': [str(offering.course_offering_id) for offering in offerings 
-                               if offering.academic_term_id == session.academic_term_id]
+                'instructor_id': session.instructor.id if session.instructor else None,  # Give instructor id instead of name
+                'forCourse': course.id  # Change from forOfferings to forCourse with course id
             }
             
             # Add to appropriate session type list
             session_type = session.session_type.lower()
             if session_type == 'lab':
-                response_data['sharedSessions'][term_year_key]['labs'].append(session_data)
+                response_data['sharedSessions'][term_key]['labs'].append(session_data)
             elif session_type == 'tutorial':
-                response_data['sharedSessions'][term_year_key]['tutorials'].append(session_data)
+                response_data['sharedSessions'][term_key]['tutorials'].append(session_data)
             elif session_type == 'seminar':
-                response_data['sharedSessions'][term_year_key]['seminars'].append(session_data)
+                response_data['sharedSessions'][term_key]['seminars'].append(session_data)
             elif session_type == 'workshop':
-                response_data['sharedSessions'][term_year_key]['workshops'].append(session_data)
+                response_data['sharedSessions'][term_key]['workshops'].append(session_data)
         
         return Response(response_data)
     
@@ -558,7 +557,6 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
         'course': ['exact'],
         'section_number': ['exact', 'icontains'],
         'academic_term': ['exact'],
-        'instructor': ['exact'],
         'course__course_number': ['exact', 'icontains'],
         'course__course_name': ['icontains'],
         'course__department': ['exact'],
@@ -568,7 +566,7 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
     }
     
     # Define searchable fields
-    search_fields = ['session_type', 'course__course_number', 'course__course_name', 'section_number', 'instructor__name']
+    search_fields = ['session_type', 'course__course_number', 'course__course_name', 'section_number']
     
     # Define ordering fields
     ordering_fields = ['session_type', 'course__course_number', 'section_number', 'academic_term__startCalendarYear']
@@ -593,23 +591,23 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
     def by_term(self, request):
         """
         Get shared sessions by academic term.
-        Usage: /shared-sessions/by_term/?term_id=1
+        Usage: /shared-sessions/by_term/?academic_term_id=1
         """
-        term_id = request.query_params.get('term_id')
-        if not term_id:
+        academic_term_id = request.query_params.get('academic_term_id')
+        if not academic_term_id:
             return Response(
-                {'error': 'term_id parameter is required'}, 
+                {'error': 'academic_term_id parameter is required'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         try:
-            term_id = int(term_id)
-            sessions = self.queryset.filter(academic_term_id=term_id)
+            academic_term_id = int(academic_term_id)
+            sessions = self.queryset.filter(academic_term_id=academic_term_id)
             serializer = self.get_serializer(sessions, many=True)
             return Response(serializer.data)
         except ValueError:
             return Response(
-                {'error': 'Invalid term_id format'}, 
+                {'error': 'Invalid academic_term_id format'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
     
@@ -634,30 +632,6 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
         except ValueError:
             return Response(
                 {'error': 'Invalid course_id format'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
-    @action(detail=False, methods=['get'])
-    def by_instructor(self, request):
-        """
-        Get shared sessions by instructor.
-        Usage: /shared-sessions/by_instructor/?instructor_id=1
-        """
-        instructor_id = request.query_params.get('instructor_id')
-        if not instructor_id:
-            return Response(
-                {'error': 'instructor_id parameter is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            instructor_id = int(instructor_id)
-            sessions = self.queryset.filter(instructor_id=instructor_id)
-            serializer = self.get_serializer(sessions, many=True)
-            return Response(serializer.data)
-        except ValueError:
-            return Response(
-                {'error': 'Invalid instructor_id format'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
     
@@ -883,19 +857,14 @@ def api_root(request, format=None):
                     'description': 'Get current shared sessions (active terms)'
                 },
                 'by_term': {
-                    'url': '/api/course-term-service/shared-sessions/by_term/?term_id={term_id}',
+                    'url': '/api/course-term-service/shared-sessions/by_term/?academic_term_id={academic_term_id}',
                     'methods': ['GET'],
-                    'description': 'Get shared sessions by academic term (term_id parameter required)'
+                    'description': 'Get shared sessions by academic term (academic_term_id parameter required)'
                 },
                 'by_course': {
                     'url': '/api/course-term-service/shared-sessions/by_course/?course_id={course_id}',
                     'methods': ['GET'],
                     'description': 'Get shared sessions by course (course_id parameter required)'
-                },
-                'by_instructor': {
-                    'url': '/api/course-term-service/shared-sessions/by_instructor/?instructor_id={instructor_id}',
-                    'methods': ['GET'],
-                    'description': 'Get shared sessions by instructor (instructor_id parameter required)'
                 },
                 'by_session_type': {
                     'url': '/api/course-term-service/shared-sessions/by_session_type/?session_type={session_type}',

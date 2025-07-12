@@ -31,7 +31,7 @@ class Command(BaseCommand):
         time_slots = self.create_time_slots()
         courses = self.create_courses(departments)
         course_offerings = self.create_course_offerings(courses, terms, instructors)
-        shared_sessions = self.create_shared_sessions(courses, terms, instructors, time_slots)
+        shared_sessions = self.create_shared_sessions(courses, terms, time_slots)
         
         self.stdout.write(
             self.style.SUCCESS(
@@ -47,14 +47,28 @@ class Command(BaseCommand):
         )
     
     def clear_data(self):
-        """Clear all existing data"""
+        """Clear all existing data, handling foreign key constraints"""
+        # Clear in dependency order to avoid foreign key violations
+        # SharedSession depends on Course, Term, and TimeSlot
         SharedSession.objects.all().delete()
+        
+        # CourseOffering depends on Course and Term  
         CourseOffering.objects.all().delete()
+        
+        # Course depends on Department
         Course.objects.all().delete()
+        
+        # TimeSlot is independent
         TimeSlot.objects.all().delete()
-        Term.objects.all().delete()
-        Instructor.objects.all().delete()
-        # Note: Not clearing Department as it's unmanaged
+        
+        # Don't delete Terms as they might be referenced by other services
+        # Term.objects.all().delete()
+        
+        # Don't delete Instructors as they might be referenced by other services
+        # Instructor.objects.all().delete()
+        
+        # Note: Not clearing Department as it's unmanaged and shared
+        self.stdout.write('  Cleared course-specific data (kept Terms and Instructors for other services)')
     
     def create_departments(self):
         """Create department data"""
@@ -343,48 +357,46 @@ class Command(BaseCommand):
         
         return offerings
     
-    def create_shared_sessions(self, courses, terms, instructors, time_slots):
+    def create_shared_sessions(self, courses, terms, time_slots):
         """Create shared session (lab/tutorial) data"""
         sessions = []
         
         # Get some specific data
         w2025_t1 = Term.objects.get(code='W2025 Term 1')
         w2025_t2 = Term.objects.get(code='W2025 Term 2')
-        cs_instructors = [i for i in instructors if i.department.name == 'Computer Science']
         
         # Create labs and tutorials for programming courses
         session_data = [
             # COSC 111 labs
-            ('COSC 111', w2025_t1, 'lab', 'L01', cs_instructors[0]),
-            ('COSC 111', w2025_t1, 'lab', 'L02', cs_instructors[1]),
-            ('COSC 111', w2025_t1, 'lab', 'L03', None),  # Unassigned
-            ('COSC 111', w2025_t2, 'lab', 'L01', cs_instructors[0]),
+            ('COSC 111', w2025_t1, 'lab', 'L01'),
+            ('COSC 111', w2025_t1, 'lab', 'L02'),
+            ('COSC 111', w2025_t1, 'lab', 'L03'),
+            ('COSC 111', w2025_t2, 'lab', 'L01'),
             
             # COSC 111 tutorials
-            ('COSC 111', w2025_t1, 'tutorial', 'T01', cs_instructors[2]),
-            ('COSC 111', w2025_t2, 'tutorial', 'T01', cs_instructors[1]),
+            ('COSC 111', w2025_t1, 'tutorial', 'T01'),
+            ('COSC 111', w2025_t2, 'tutorial', 'T01'),
             
             # COSC 121 labs
-            ('COSC 121', w2025_t2, 'lab', 'L01', cs_instructors[1]),
-            ('COSC 121', w2025_t2, 'lab', 'L02', None),
+            ('COSC 121', w2025_t2, 'lab', 'L01'),
+            ('COSC 121', w2025_t2, 'lab', 'L02'),
             
             # COSC 320 tutorials
-            ('COSC 320', w2025_t1, 'tutorial', 'T01', cs_instructors[2]),
-            ('COSC 320', w2025_t2, 'tutorial', 'T01', cs_instructors[0]),
+            ('COSC 320', w2025_t1, 'tutorial', 'T01'),
+            ('COSC 320', w2025_t2, 'tutorial', 'T01'),
             
             # COSC 499 seminars
-            ('COSC 499', w2025_t2, 'seminar', 'S01', cs_instructors[2]),
+            ('COSC 499', w2025_t2, 'seminar', 'S01'),
         ]
         
-        for course_number, term, session_type, section, instructor in session_data:
+        for course_number, term, session_type, section in session_data:
             try:
                 course = Course.objects.get(course_number=course_number)
                 session, created = SharedSession.objects.get_or_create(
                     session_type=session_type,
                     course=course,
                     section_number=section,
-                    academic_term=term,
-                    defaults={'instructor': instructor}
+                    academic_term=term
                 )
                 
                 if created:
