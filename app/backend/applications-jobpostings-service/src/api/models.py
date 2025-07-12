@@ -210,6 +210,7 @@ class JobPosting(models.Model):
         ('cancelled', 'Cancelled'),
         ('draft', 'Draft'),
         ('archived', 'Archived'),
+        
     ], default='draft')
     
     # reference the template used for the job posting

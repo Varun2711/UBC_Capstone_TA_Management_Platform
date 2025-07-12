@@ -47,6 +47,10 @@ class JobPostingViewSet(viewsets.ModelViewSet):
     #enable searched based on post title, description, and department name
     search_fields = ['title', 'description', 'department__name'] 
     ordering_fields = ['post_date', 'title']
+    
+    #override global default to only return non-archived jobs
+    def get_queryset(self):    
+        return JobPosting.objects.exclude(status='archived')
 
     # Optional: custom action to list only "open" postings
     @action(detail=False, methods=['get'])
@@ -55,12 +59,29 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(jobs, many=True)
         return Response(serializer.data)
     
-    #Prevent deletion of job postings. They can be marked as archived or closed.
-    def destroy(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Deletion of job postings is not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+    #Prevent deletion of job postings. Instead jobs marked as archived
+    def destroy(self, request, *args, **kwargs):    
+        try:
+            job_posting = self.get_object()
+            job_posting.status = 'archived'
+            job_posting.save()
+            
+        # Return the updated job posting data
+            serializer = self.get_serializer(job_posting)
+            return Response(
+                {
+                    "detail": "Job posting has been archived successfully.",
+                    "job_posting": serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        except JobPosting.DoesNotExist:
+            return Response(
+                {"detail": "Job posting not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    
     #Is the job active?
     def active(self, request):    
        

@@ -141,12 +141,6 @@ const JobPostingForm = ({
         delete submitData.form_template_id;
       }
 
-      // const url = jobPosting
-      //   ? `http://localhost:8080/api/ajp/jobpostings/${jobPosting.posting_id}/`
-      //   : "http://localhost:8080/api/ajp/jobpostings/";
-
-      // const method = jobPosting ? "PUT" : "POST";
-
       let response;
       if (jobPosting) {
         response = await instance.put(

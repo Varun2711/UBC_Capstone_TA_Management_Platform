@@ -146,14 +146,19 @@ const JobManagementPage = () => {
   };
 
   const handleDeleteJobPosting = async (postingId) => {
-    if (!confirm("Are you sure you want to delete this job posting?")) return;
+    if (!confirm("Are you sure you want to delete this job posting?")) {
+      return;
+    }
 
-    //     try {
-    //       await apiCall(`/ajp/jobpostings/${postingId}/`, { method: "DELETE" });
-    //       fetchJobPostings();
-    //     } catch (error) {
-    //       console.error("Error deleting job posting:", error);
-    //     }
+    try {
+      console.log("Deleting job posting with ID:", postingId);
+      const response = await instance.delete(`/ajp/jobpostings/${postingId}/`);
+      console.log("Job posting deleted successfully:", response.data);
+      // Refresh job postings after deletion
+      fetchJobPostings();
+    } catch (error) {
+      console.error("Error deleting job posting:", error);
+    }
   };
 
   const handleAssignTemplate = async (postingId, templateId) => {
@@ -188,8 +193,9 @@ const JobManagementPage = () => {
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    if (!confirm("Are you sure you want to delete this template?")) return;
-
+    if (!confirm("Are you sure you want to delete this template?")) {
+      return;
+    }
     try {
       await apiCall(`/ajp/form-templates/${templateId}/`, { method: "DELETE" });
       fetchTemplates();
