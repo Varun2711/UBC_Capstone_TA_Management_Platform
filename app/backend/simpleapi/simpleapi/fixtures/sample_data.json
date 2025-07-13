@@ -35,7 +35,7 @@
   },
   {
     "model" : "myapp.tascheduler",
-    "pk": 1,
+    "pk": 3,
     "fields": {
       "employee_number": 12345678,
       "name": "Chad Davis",
