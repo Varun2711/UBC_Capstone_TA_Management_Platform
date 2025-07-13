@@ -239,7 +239,7 @@ const courses = [
         slots: [
           "Monday-11-top",
           "Monday-11-bottom",
-          "Tuesday-11-bottom",
+          "Tuesday-11-top",
           "Tuesday-11-bottom",
           "Thursday-11-top",
           "Thursday-11-bottom",
@@ -303,7 +303,7 @@ export default function TAAllocationPage() {
   const selectedTA = taList.find((ta) => ta.id === selectedTAId)
 
   // Function to store the assignment of a TA to a course
-  const handleAssignTA = (selectedTA, selectedCourse) => {
+  const handleAddTAtoActiveOfferTab = (selectedTA, selectedCourse) => {
     const alreadyAssigned = assignments.some(
       (a) =>
         a.taStudentId === selectedTA.studentId &&
@@ -819,7 +819,6 @@ export default function TAAllocationPage() {
                           ))}
                         </select>
 
-                        {/* Fixed: Changed from termSelection to term_code */}
                         <select
                           value={filters.term_code}
                           onChange={(e) => handleFilterChange("term_code", e.target.value)}
@@ -947,11 +946,12 @@ export default function TAAllocationPage() {
                               setTaList((prevTAs) =>
                                 prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
                               )
-                              handleAssignTA(updatedTA, selectedCourse)
-
+                              handleAddTAtoActiveOfferTab(updatedTA, selectedCourse)
                               // Re-select the updated TA by ID
                               setSelectedTAId(updatedTA.id)
                               setSelectedCourse(null)
+                              setSelectedTAId(null)
+
                             }}
                           >
                             Confirm Assignment
