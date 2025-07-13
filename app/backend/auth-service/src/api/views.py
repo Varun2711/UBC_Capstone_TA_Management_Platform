@@ -12,6 +12,9 @@ from django.http import JsonResponse
 from .models import Student, Instructor, TAScheduler, Admin
 from .serializers import LoginSerializer, TokenSerializer, StudentRegistrationSerializer
 
+# Import shared auth utilities
+from auth_utils.decorators import authenticated_required
+
 # Get Django's default User model
 User = get_user_model()
  
@@ -48,7 +51,6 @@ def find_user_by_email(email, password):
     except TAScheduler.DoesNotExist:
         pass
 
-    # NEW - Check Admin
     try:
         admin = Admin.objects.get(email=email)
         if check_password(password, admin.password):
@@ -58,8 +60,7 @@ def find_user_by_email(email, password):
     except Admin.DoesNotExist:
         pass
 
-    return None, None, None # if not found in student, instructor, or ta scheduler, user does not exist
-        
+    return None, None, None
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -172,17 +173,27 @@ def validate_token_view(request):
             algorithms=["HS256"]
         )
 
-        # Extract user info from token claims
-        user_id = decoded.get('user_id')
+        # DEBUG: Print what's in the token
+        print(f"TOKEN DEBUG - Full payload: {decoded}")
+
+        # Extract user info from token claims - FIX: Use 'sub' instead of 'user_id'
+        user_id = decoded.get('sub') or decoded.get('user_id')  # Try 'sub' first, fallback to 'user_id'
         user_type = decoded.get('user_type')
         email = decoded.get('email')
         name = decoded.get('name')
+        
+        print(f"TOKEN DEBUG - Extracted: user_id={user_id}, user_type={user_type}")
         
         # Check if we have the required user data
         if not user_id or not user_type:
             return Response({
                 "error": "Token is missing required user information",
-                "valid": False
+                "valid": False,
+                "debug": {
+                    "user_id": user_id,
+                    "user_type": user_type,
+                    "available_claims": list(decoded.keys())
+                }
             }, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({
