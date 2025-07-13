@@ -8,7 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
 import ApplicationForm from "./pages/Student/ApplicationForm";
 import StudentDashboard from "./pages/Student_Dashboard";
-import ProfilePage from "./pages/ProfilePage2";
+import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
 import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
