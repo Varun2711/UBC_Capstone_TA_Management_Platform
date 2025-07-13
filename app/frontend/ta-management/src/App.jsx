@@ -24,7 +24,7 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Scheduler/Scheduler_ManageApplications";
 import ViewStudentApplication from "./pages/Scheduler/Scheduler_ViewApplication";
 import InstructorProfile from "./pages/Instructor/instructor-profile";
-import FormTemplateManagerPage from "./pages/Scheduler/Scheduler-form-manager";
+import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-management";
 
 function App() {
   return (
@@ -174,7 +174,7 @@ function App() {
         path="/manage-templates"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
-            <FormTemplateManagerPage />
+            <JobPostingManagerPage />
           </ProtectedRoute>
         }
       />

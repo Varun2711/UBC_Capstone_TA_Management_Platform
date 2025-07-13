@@ -43,7 +43,6 @@ class FormQuestionSerializer(serializers.ModelSerializer):
         read_only_fields = ['question_id']
 
 
-
 class FormSectionSerializer(serializers.ModelSerializer):
     questions = FormQuestionSerializer(many=True, required=False)
     
@@ -169,14 +168,15 @@ class JobPostingSerializer(serializers.ModelSerializer):
     created_by_id = serializers.PrimaryKeyRelatedField(
         queryset=TAScheduler.objects.all(),
         source='created_by',
-        write_only=True
+        write_only=True,
+        required=False,
+        allow_null=True
     ) 
 
      # Form template associated with the job post
     form_template_id = serializers.PrimaryKeyRelatedField(
         queryset=FormTemplate.objects.all(),
-        source='form_template',
-        write_only=True,
+        source='form_template',        
         required=False,
         allow_null=True
     )
@@ -186,14 +186,14 @@ class JobPostingSerializer(serializers.ModelSerializer):
     department = DepartmentSerializer(read_only=True)  
     term = TermSerializer(read_only = True)   
     created_by = TAschedulerSerializer(read_only=True)    
-    form_template = FormTemplateSerializer(read_only=True)
+   # form_template = FormTemplateSerializer(read_only=True)
     
     class Meta:
         model = JobPosting
         fields = ['posting_id', 'title', 'status', 'description', 'term_id', 'term',
                   'post_date' ,'department_id', 'department', 'deadline_date',  
                   'created_by', 'created_by_id', 'requirements',
-                  'form_template_id', 'form_template'] #fields to include in the serializer
+                  'form_template_id'] #fields to include in the serializer
    
     
     def create(self, validated_data):
@@ -318,7 +318,8 @@ class ApplicationShortListSerializer(serializers.ModelSerializer):
         queryset=TAScheduler.objects.all(),
         source='created_by',
         write_only=True,
-        required=False  # Can be set automatically from request user
+        required=False,  # Can be set automatically from request user,
+        allow_null= True
     )
     
     # For read operations - use nested serializers

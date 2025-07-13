@@ -267,9 +267,9 @@ const JobManagementPage = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Job Management</h2>
+          <h2 className="text-2xl font-bold">Job Posting Management</h2>
           <p className="text-muted-foreground">
-            Manage job postings and form templates
+            Manage job postings and application form templates
           </p>
         </div>
       </div>
@@ -338,10 +338,6 @@ const JobManagementPage = () => {
                           Deadline:{" "}
                           {new Date(posting.deadline_date).toLocaleDateString()}
                         </div>
-                        <div>
-                          Template:{" "}
-                          {posting.form_template?.name || "Default Form"}
-                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -371,8 +367,7 @@ const JobManagementPage = () => {
                           </Label>
                           <Select
                             value={
-                              posting.form_template?.template_id?.toString() ||
-                              "default"
+                              posting.form_template_id?.toString() || "default"
                             }
                             onValueChange={(value) =>
                               handleAssignTemplate(
@@ -386,7 +381,7 @@ const JobManagementPage = () => {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="default">
-                                Default Form
+                                Select Form
                               </SelectItem>
                               {templates
                                 .filter((t) => t.is_active)
@@ -474,9 +469,9 @@ const JobManagementPage = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="flex justify-between text-sm text-muted-foreground">
+                      {/* <div className="flex justify-between text-sm text-muted-foreground">
                         <span>{template.sections?.length || 0} sections</span>
-                      </div>
+                      </div> */}
 
                       <div className="text-xs text-muted-foreground">
                         Created{" "}
@@ -486,40 +481,73 @@ const JobManagementPage = () => {
                       </div>
 
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePreviewTemplate(template)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {template.is_editable && (
+                        <div className="relative group">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleEditTemplate(template)}
+                            onClick={() => handlePreviewTemplate(template)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                           </Button>
+
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                            Preview Template
+                            {/* Arrow */}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                          </div>
+                        </div>
+                        {template.is_editable && (
+                          <div className="relative group">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditTemplate(template)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                              Edit Template
+                              {/* Arrow */}
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDuplicateTemplate(template)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        {template.is_editable && (
+                        <div className="relative group">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              handleDeleteTemplate(template.template_id)
-                            }
-                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDuplicateTemplate(template)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Copy className="h-4 w-4" />
                           </Button>
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                            Copy Template
+                            {/* Arrow */}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                          </div>
+                        </div>
+                        {template.is_editable && (
+                          <div className="relative group">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleDeleteTemplate(template.template_id)
+                              }
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                              Delete Template
+                              {/* Arrow */}
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -605,8 +633,14 @@ const JobManagementPage = () => {
             <div className="space-y-4">
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  This is how form sections will appear to students applying for
-                  positions.
+                  <b>
+                    This is not an exact representation of how the form will
+                    appear.
+                  </b>{" "}
+                  This is a preview of how questions and sections will be
+                  organized. Please note that some features like file uploads
+                  and dynamic fields may not be fully functional in this
+                  preview.
                 </p>
               </div>
               <DynamicFormRenderer

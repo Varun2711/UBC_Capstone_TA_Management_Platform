@@ -341,28 +341,19 @@ class Application(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
         
     # Selections (from Selections.jsx)
-    positionType = models.CharField(max_length=100, choices=[
-        ('UTA', 'Undergraduate Teaching Assistant'),
-        ('GTA2', 'Graduate Teaching Assistant 2 (Master\'s Student)'),
-        ('GTA1', 'Graduate Teaching Assistant 1 (Ph.D student)'),
-    ], blank=True, null=True)
+    positionType = models.CharField(max_length=100, blank=True, null=True)
 
     #Term Selection
     termSelection = models.ForeignKey('Term', on_delete = models.SET_NULL, null=True, db_constraint=False)      
    
-    workload = models.CharField(max_length=20, choices=[
-        ('6', '6 hours'),
-        ('12', '12 hours'),
-    ], blank=True, null=True)
+    workload = models.CharField(max_length=20,
+     blank=True, null=True)
     
     # Discipline Rankings 
     disciplineRankings = models.JSONField() 
     
-    citizenshipStatus = models.CharField(max_length=50, choices=[
-        ('citizen', 'Canadian Citizen'),
-        ('pr', 'Permanent Resident'),
-        ('international', 'International Student'),
-    ], blank=True, null=True)
+    citizenshipStatus = models.CharField(max_length=50,
+     blank=True, null=True)
     
     residingInKelowna = models.CharField(max_length=10, choices=[
         ('yes', 'Yes'),

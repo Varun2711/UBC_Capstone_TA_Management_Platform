@@ -47,10 +47,27 @@ class JobPostingViewSet(viewsets.ModelViewSet):
     #enable searched based on post title, description, and department name
     search_fields = ['title', 'description', 'department__name'] 
     ordering_fields = ['post_date', 'title']
+
+     # Add default ordering - most recent posts first, then by ID for consistency
+    ordering = ['-post_date', '-posting_id']
     
     #override global default to only return non-archived jobs
     def get_queryset(self):    
         return JobPosting.objects.exclude(status='archived')
+    
+    def perform_create(self, serializer):       
+        if not serializer.validated_data.get('created_by'):
+            # Try to get from authenticated user first
+            if hasattr(self.request.user, 'tascheduler'):
+                serializer.save(created_by=self.request.user.tascheduler)
+            else:                
+                serializer.save(created_by=None)
+                
+        else:
+            serializer.save()
+
+    def perform_update(self, serializer):       
+        serializer.save()
 
     # Optional: custom action to list only "open" postings
     @action(detail=False, methods=['get'])
@@ -365,12 +382,13 @@ class FormTemplateViewSet(viewsets.ModelViewSet):
                             section=new_section,
                             question_text=question.question_text,
                             question_type=question.question_type,
-                            field_name=f"{question.field_name}_copy",  # Ensure unique field names
+                            field_name=f"{question.field_name}",  # Ensure unique field names
                             order=question.order,
                             is_required=question.is_required,
                             help_text=question.help_text,
                             validation_rules=question.validation_rules,
-                            options=question.options
+                            options=question.options,
+                            is_editable = question.is_editable
                         )
                 
                 serializer = self.get_serializer(new_template)
@@ -382,60 +400,7 @@ class FormTemplateViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
-    # @action(detail=True, methods=['put', 'patch'])
-    # def update_template(self, request, pk=None):
-    #     """Custom update action for templates with sections and questions"""
-    #     template = self.get_object()
-        
-    #     try:
-    #         with transaction.atomic():
-    #             # Update template basic info
-    #             template.name = request.data.get('name', template.name)
-    #             template.description = request.data.get('description', template.description)
-    #             template.is_active = request.data.get('is_active', template.is_active)
-    #             template.save()
-                
-    #             # Handle sections if provided
-    #             sections_data = request.data.get('sections', [])
-    #             if sections_data:
-    #                 # Clear existing sections (this will cascade to questions)
-    #                 template.sections.all().delete()
-                    
-    #                 # Create new sections and questions
-    #                 for section_data in sections_data:
-    #                     questions_data = section_data.pop('questions', [])
-                        
-    #                     section = FormSection.objects.create(
-    #                         template=template,
-    #                         name=section_data.get('name', 'Untitled Section'),
-    #                         section_type=section_data.get('section_type', 'custom'),
-    #                         order=section_data.get('order', 1),
-    #                         is_required=section_data.get('is_required', True),
-    #                         description=section_data.get('description', '')
-    #                     )
-                        
-    #                     for question_data in questions_data:
-    #                         FormQuestion.objects.create(
-    #                             section=section,
-    #                             question_text=question_data.get('question_text', ''),
-    #                             question_type=question_data.get('question_type', 'text'),
-    #                             field_name=question_data.get('field_name', ''),
-    #                             order=question_data.get('order', 1),
-    #                             is_required=question_data.get('is_required', False),
-    #                             help_text=question_data.get('help_text', ''),
-    #                             validation_rules=question_data.get('validation_rules', {}),
-    #                             options=question_data.get('options', [])
-    #                         )
-                
-    #             # Return updated template
-    #             serializer = self.get_serializer(template)
-    #             return Response(serializer.data, status=status.HTTP_200_OK)
-                
-    #     except Exception as e:
-    #         return Response(
-    #             {"error": f"Failed to update template: {str(e)}"}, 
-    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-    #         )
+   
 
 class FormSectionViewSet(viewsets.ModelViewSet):
     """ViewSet for managing form sections"""
@@ -565,3 +530,16 @@ class ApplicationShortListViewSet(viewsets.ModelViewSet):
         shortlists = self.queryset.filter(application__posting__posting_id=posting_id)
         serializer = self.get_serializer(shortlists, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)')
+    def by_application(self, request, application_id=None):
+        """Get shortlisted application data by application id"""
+        shortlists = self.queryset.filter(application_id=application_id)
+        serializer = self.get_serializer(shortlists, many=True)  # Fixed: many=True
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)/exists')
+    def application_shortlisted(self, request, application_id=None):
+        """Check if application is shortlisted"""
+        exists = self.queryset.filter(application_id=application_id).exists()
+        return Response({'shortlisted': exists})

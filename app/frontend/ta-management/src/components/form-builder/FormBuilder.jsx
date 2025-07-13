@@ -21,12 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import QuestionDialog from "@/components/form-builder/QuestionDialog";
 import axios from "axios";
 
 const instance = axios.create({
@@ -41,7 +36,6 @@ const QUESTION_TYPES = [
   { value: "select", label: "Dropdown", icon: "▼" },
   { value: "number", label: "Number", icon: "#" },
   { value: "email", label: "Email", icon: "@" },
-  { value: "file", label: "File Upload", icon: "📎" },
   { value: "ranking", label: "Ranking", icon: "🔢" },
 ];
 
@@ -64,7 +58,6 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
   const fetchTemplate = async () => {
     try {
       const response = await instance.get(`/ajp/form-templates/${templateId}/`);
-      //const data = await response.json();
       setTemplate(response.data);
     } catch (error) {
       console.error("Error fetching template:", error);
@@ -73,7 +66,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
 
   const addSection = () => {
     const newSection = {
-      section_id: Date.now(), // Temporary ID. No worries. The db will handle the actual ID
+      section_id: Date.now(), // Temporary ID. The db will handle the actual ID
       name: "New Section",
       section_type: "custom",
       order: template.sections.length + 1,
@@ -276,7 +269,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
       {/* Template Header */}
       <Card>
         <CardHeader>
-          <CardTitle>Form Template Configuration</CardTitle>
+          <CardTitle>Application Form Template</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -314,136 +307,161 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
             key={section.section_id}
             className="border-2 border-dashed border-gray-300"
           >
-            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-              <div className="flex items-center space-x-2 mr-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => moveSectionUp(sectionIndex)}
-                  disabled={sectionIndex === 0}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => moveSectionDown(sectionIndex)}
-                  disabled={sectionIndex === template.sections.length - 1}
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex-1">
-                <Input
-                  value={section.name}
-                  onChange={(e) =>
-                    updateSection(section.section_id, {
-                      name: e.target.value,
-                    })
-                  }
-                  className="font-semibold"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor={`required-${section.section_id}`}>
-                  Required
-                </Label>
-                <Switch
-                  id={`required-${section.section_id}`}
-                  checked={section.is_required}
-                  onCheckedChange={(checked) =>
-                    updateSection(section.section_id, {
-                      is_required: checked,
-                    })
-                  }
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => deleteSection(section.section_id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={section.description || ""}
-                onChange={(e) =>
-                  updateSection(section.section_id, {
-                    description: e.target.value,
-                  })
-                }
-                placeholder="Section description"
-                className="mb-4"
-              />
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between gap-4">
+                {/* Section Name */}
+                <div className="flex-1">
+                  <Label htmlFor={`section-name-${section.section_id}`}>
+                    Section Name
+                  </Label>
+                  <Input
+                    id={`section-name-${section.section_id}`}
+                    value={section.name}
+                    onChange={(e) =>
+                      updateSection(section.section_id, {
+                        name: e.target.value,
+                      })
+                    }
+                    className="font-semibold"
+                    placeholder="Enter section name"
+                  />
+                </div>
 
-              {/* Questions */}
-              <div className="space-y-2">
-                {section.questions.map((question, questionIndex) => (
-                  <div
-                    key={question.question_id}
-                    className="flex items-center space-x-2 p-3 bg-gray-50 rounded border"
-                  >
-                    <div className="flex flex-col space-y-1">
+                {/* Section Controls */}
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground text-center">
+                      Reorder
+                    </Label>
+                    <div className="flex gap-1">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          moveQuestionUp(section.section_id, questionIndex)
-                        }
-                        disabled={questionIndex === 0}
+                        onClick={() => moveSectionUp(sectionIndex)}
+                        disabled={sectionIndex === 0}
+                        title="Move section up"
                       >
-                        <ArrowUp className="h-3 w-3" />
+                        <ArrowUp className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          moveQuestionDown(section.section_id, questionIndex)
-                        }
-                        disabled={
-                          questionIndex === section.questions.length - 1
-                        }
+                        onClick={() => moveSectionDown(sectionIndex)}
+                        disabled={sectionIndex === template.sections.length - 1}
+                        title="Move section down"
                       >
-                        <ArrowDown className="h-3 w-3" />
+                        <ArrowDown className="h-4 w-4" />
                       </Button>
                     </div>
-                    <div className="flex-1">
-                      <div className="font-medium">
-                        {question.question_text}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {
-                          QUESTION_TYPES.find(
-                            (t) => t.value === question.question_type
-                          )?.label
-                        }
-                        {question.is_required && (
-                          <span className="text-red-500 ml-1">*</span>
-                        )}
-                      </div>
-                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground text-center">
+                      Delete
+                    </Label>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        openQuestionDialog(section.section_id, question)
-                      }
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        deleteQuestion(section.section_id, question.question_id)
-                      }
+                      onClick={() => deleteSection(section.section_id)}
+                      className="text-red-600 hover:text-red-700"
+                      title="Delete section"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent>
+              {/* Questions */}
+              <div className="space-y-2">
+                {section.questions.length > 0 ? (
+                  section.questions.map((question, questionIndex) => (
+                    <div
+                      key={question.question_id}
+                      className="flex items-center space-x-2 p-3 bg-gray-50 rounded border"
+                    >
+                      <div className="flex flex-col space-y-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            moveQuestionUp(section.section_id, questionIndex)
+                          }
+                          disabled={questionIndex === 0}
+                          title="Move question up"
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            moveQuestionDown(section.section_id, questionIndex)
+                          }
+                          disabled={
+                            questionIndex === section.questions.length - 1
+                          }
+                          title="Move question down"
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {question.question_text || "Untitled Question"}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {
+                            QUESTION_TYPES.find(
+                              (t) => t.value === question.question_type
+                            )?.label
+                          }
+                          {question.is_required && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                          {question.field_name && (
+                            <span className="text-blue-600 ml-2">
+                              ({question.field_name})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          openQuestionDialog(section.section_id, question)
+                        }
+                        title="Edit question"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          deleteQuestion(
+                            section.section_id,
+                            question.question_id
+                          )
+                        }
+                        className="text-red-600 hover:text-red-700"
+                        title="Delete question"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground bg-gray-50 rounded border-2 border-dashed">
+                    <p>No questions in this section yet</p>
+                    <p className="text-sm">
+                      Click "Add Question" below to get started
+                    </p>
+                  </div>
+                )}
               </div>
 
               <Button
@@ -477,7 +495,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
         </Button>
       </div>
 
-      {/* Question Dialog */}
+      {/* Question Dialog - Now using the separate component */}
       <QuestionDialog
         isOpen={isQuestionDialogOpen}
         onClose={() => setIsQuestionDialogOpen(false)}
@@ -485,183 +503,6 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
         onSave={saveQuestion}
       />
     </div>
-  );
-};
-
-const QuestionDialog = ({ isOpen, onClose, question, onSave }) => {
-  const [formData, setFormData] = useState({
-    question_text: "",
-    question_type: "text",
-    field_name: "",
-    is_required: false,
-    help_text: "",
-    options: [],
-    validation_rules: {},
-  });
-
-  useEffect(() => {
-    if (question) {
-      setFormData({ ...question });
-    }
-  }, [question]);
-
-  const handleSave = () => {
-    onSave(formData);
-  };
-
-  const addOption = () => {
-    setFormData((prev) => ({
-      ...prev,
-      options: [...(prev.options || []), { value: "", label: "" }],
-    }));
-  };
-
-  const updateOption = (index, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      options: prev.options.map((option, i) =>
-        i === index ? { ...option, [field]: value } : option
-      ),
-    }));
-  };
-
-  const removeOption = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      options: prev.options.filter((_, i) => i !== index),
-    }));
-  };
-
-  const needsOptions = ["radio", "checkbox", "select", "ranking"].includes(
-    formData.question_type
-  );
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Configure Question</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="question-text">Question Text</Label>
-            <Textarea
-              id="question-text"
-              value={formData.question_text}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  question_text: e.target.value,
-                }))
-              }
-              placeholder="Enter your question"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="question-type">Question Type</Label>
-            <Select
-              value={formData.question_type}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, question_type: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select question type" />
-              </SelectTrigger>
-              <SelectContent>
-                {QUESTION_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    <span className="mr-2">{type.icon}</span>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="field-name">Field Name (for data storage)</Label>
-            <Input
-              id="field-name"
-              value={formData.field_name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, field_name: e.target.value }))
-              }
-              placeholder="e.g., citizenship_status"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="is-required"
-              checked={formData.is_required}
-              onCheckedChange={(checked) =>
-                setFormData((prev) => ({ ...prev, is_required: checked }))
-              }
-            />
-            <Label htmlFor="is-required">Required Field</Label>
-          </div>
-
-          <div>
-            <Label htmlFor="help-text">Help Text</Label>
-            <Textarea
-              id="help-text"
-              value={formData.help_text}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, help_text: e.target.value }))
-              }
-              placeholder="Optional help text for users"
-            />
-          </div>
-
-          {needsOptions && (
-            <div>
-              <Label>Options</Label>
-              <div className="space-y-2">
-                {(formData.options || []).map((option, index) => (
-                  <div key={index} className="flex space-x-2">
-                    <Input
-                      placeholder="Value"
-                      value={option.value}
-                      onChange={(e) =>
-                        updateOption(index, "value", e.target.value)
-                      }
-                    />
-                    <Input
-                      placeholder="Label"
-                      value={option.label}
-                      onChange={(e) =>
-                        updateOption(index, "label", e.target.value)
-                      }
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeOption(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button variant="outline" onClick={addOption}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Option
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>Save Question</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 };
 

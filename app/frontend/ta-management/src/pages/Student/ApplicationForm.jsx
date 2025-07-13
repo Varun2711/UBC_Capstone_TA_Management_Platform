@@ -27,55 +27,54 @@ const instance = axios.create({
 // Add this helper function at the top of ApplicationForm.jsx (same as ProfilePage)
 // Replace the extractSemesterFromDate function in StudentProfileForm.jsx:
 const extractSemesterFromDate = (dateString) => {
-  if (!dateString) return '';
-  
+  if (!dateString) return "";
+
   // If it's already in "Fall 2022" format, return as-is
   if (dateString.match(/^(Fall|Winter|Summer)\s+\d{4}$/)) {
     console.log("Already in semester format:", dateString);
     return dateString;
   }
-  
+
   // Handle the "2022-09-02 to " format from ApplicationForm
-  if (dateString.includes(' to ')) {
-    const datePart = dateString.split(' to ')[0];
+  if (dateString.includes(" to ")) {
+    const datePart = dateString.split(" to ")[0];
     if (datePart) {
       dateString = datePart;
     }
   }
-  
+
   try {
     console.log("dateString is:", dateString);
-    
+
     // Only try to parse if it looks like a date
     if (dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
       const date = new Date(dateString);
       console.log("dateString to date becomes:", date);
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         console.log("Invalid date, returning original string");
         return dateString;
       }
-      
+
       const year = date.getFullYear();
       const month = date.getMonth(); // 0-indexed: Jan=0, Sep=8, Dec=11
-      
+
       console.log("Extracted semester info:", { year, month });
 
-      let term = 'Winter';
-      if (month >= 4 && month <= 7) term = 'Summer';  // May-Aug
-      else if (month >= 8) term = 'Fall';             // Sep-Dec
+      let term = "Winter";
+      if (month >= 4 && month <= 7) term = "Summer"; // May-Aug
+      else if (month >= 8) term = "Fall"; // Sep-Dec
       // Jan-Apr stays as Winter
 
       const result = `${term} ${year}`;
       console.log("Final result:", result);
       return result;
     }
-    
+
     // If it doesn't look like a date, return as-is
     console.log("Not a date format, returning original:", dateString);
     return dateString;
-    
   } catch (e) {
     console.error("Date parsing error:", e);
     return dateString;
@@ -159,7 +158,7 @@ const cleanApiDataFormat = (apiData) => {
     }
 
     // If no availability data, return empty array
-    if (!availability || typeof availability !== 'object') {
+    if (!availability || typeof availability !== "object") {
       console.log("No availability data, returning empty array");
       return [];
     }
@@ -168,34 +167,48 @@ const cleanApiDataFormat = (apiData) => {
     const availabilityGrid = availability.availability_grid || availability;
     console.log("Extracted grid:", availabilityGrid);
 
-    if (!availabilityGrid || typeof availabilityGrid !== 'object') {
+    if (!availabilityGrid || typeof availabilityGrid !== "object") {
       return [];
     }
 
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const days = ["monday", "tuesday", "wednesday", "thursday", "friday"];
     const selectedSlots = [];
 
     // ✅ SIMPLIFIED: Use the same logic as ProfilePage.jsx
     const timeMap = {
-      '8:00am': '8-top', '8:30am': '8-bottom',
-      '9:00am': '9-top', '9:30am': '9-bottom',
-      '10:00am': '10-top', '10:30am': '10-bottom',
-      '11:00am': '11-top', '11:30am': '11-bottom',
-      '12:00pm': '12-top', '12:30pm': '12-bottom',
-      '1:00pm': '13-top', '1:30pm': '13-bottom',
-      '2:00pm': '14-top', '2:30pm': '14-bottom',
-      '3:00pm': '15-top', '3:30pm': '15-bottom',
-      '4:00pm': '16-top', '4:30pm': '16-bottom',
-      '5:00pm': '17-top', '5:30pm': '17-bottom',
-      '6:00pm': '18-top', '6:30pm': '18-bottom',
-      '7:00pm': '19-top', '7:30pm': '19-bottom',
-      '8:00pm': '20-top', '8:30pm': '20-bottom',
-      '9:00pm': '21-top', '9:30pm': '21-bottom',
+      "8:00am": "8-top",
+      "8:30am": "8-bottom",
+      "9:00am": "9-top",
+      "9:30am": "9-bottom",
+      "10:00am": "10-top",
+      "10:30am": "10-bottom",
+      "11:00am": "11-top",
+      "11:30am": "11-bottom",
+      "12:00pm": "12-top",
+      "12:30pm": "12-bottom",
+      "1:00pm": "13-top",
+      "1:30pm": "13-bottom",
+      "2:00pm": "14-top",
+      "2:30pm": "14-bottom",
+      "3:00pm": "15-top",
+      "3:30pm": "15-bottom",
+      "4:00pm": "16-top",
+      "4:30pm": "16-bottom",
+      "5:00pm": "17-top",
+      "5:30pm": "17-bottom",
+      "6:00pm": "18-top",
+      "6:30pm": "18-bottom",
+      "7:00pm": "19-top",
+      "7:30pm": "19-bottom",
+      "8:00pm": "20-top",
+      "8:30pm": "20-bottom",
+      "9:00pm": "21-top",
+      "9:30pm": "21-bottom",
     };
 
-    days.forEach(day => {
+    days.forEach((day) => {
       if (availabilityGrid[day] && Array.isArray(availabilityGrid[day])) {
-        availabilityGrid[day].forEach(time => {
+        availabilityGrid[day].forEach((time) => {
           const timeSlot = timeMap[time];
           if (timeSlot) {
             const dayCapitalized = day.charAt(0).toUpperCase() + day.slice(1);
@@ -213,7 +226,7 @@ const cleanApiDataFormat = (apiData) => {
   // ✅ SIMPLIFIED data transformation
   const result = {
     id: apiData.id,
-    name: `${apiData.first_name || ''} ${apiData.last_name || ''}`.trim(),
+    name: `${apiData.first_name || ""} ${apiData.last_name || ""}`.trim(),
     email: apiData.email,
     studentId: apiData.student_info?.student_number || "N/A",
     UBCEmployeeId: apiData.student_profile?.ubc_employee_id || "N/A",
@@ -223,24 +236,30 @@ const cleanApiDataFormat = (apiData) => {
     gpa: apiData.student_profile?.gpa || "N/A",
     phone: apiData.student_info?.phone || "N/A",
     avatar: "/placeholder.svg?height=120&width=120",
-    coursePreference: apiData.course_preferences?.map((pref) => pref.course_code) || [],
+    coursePreference:
+      apiData.course_preferences?.map((pref) => pref.course_code) || [],
     academicInfo: {
       yearStanding: apiData.student_info?.year_standing?.toString() || "N/A",
-      degreeStart: apiData.student_profile?.year_degree_start?.toString() || "N/A",
+      degreeStart:
+        apiData.student_profile?.year_degree_start?.toString() || "N/A",
       expectedGraduation: apiData.student_info?.expected_graduation || "N/A",
     },
-    experience: apiData.experiences?.map((exp) => ({
-      course: exp.position_title?.replace('TA for ', '') || exp.organization || '',
-      semester: extractSemesterFromDate(exp.start_date), // ✅ Use the same logic as ProfilePage
-      professor: exp.organization || "Unknown",
-      description: exp.description || '',
-    })) || [],
-    technicalSkills: apiData.skills
-      ?.filter((skill) => skill.skill_type === "technical")
-      .map((skill) => skill.name) || [],
-    softSkills: apiData.skills
-      ?.filter((skill) => skill.skill_type === "soft")
-      .map((skill) => skill.name) || [],
+    experience:
+      apiData.experiences?.map((exp) => ({
+        course:
+          exp.position_title?.replace("TA for ", "") || exp.organization || "",
+        semester: extractSemesterFromDate(exp.start_date), // ✅ Use the same logic as ProfilePage
+        professor: exp.organization || "Unknown",
+        description: exp.description || "",
+      })) || [],
+    technicalSkills:
+      apiData.skills
+        ?.filter((skill) => skill.skill_type === "technical")
+        .map((skill) => skill.name) || [],
+    softSkills:
+      apiData.skills
+        ?.filter((skill) => skill.skill_type === "soft")
+        .map((skill) => skill.name) || [],
 
     // ✅ Use the simplified availability transformation
     availability: transformAvailability(apiData.availability),
@@ -399,7 +418,7 @@ export default function ApplicationForm() {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-        console.log(response.data);
+        console.log("Student response", response.data);
 
         //transform data to ensure it matches the studentprofile object
         const cleanedData = cleanApiDataFormat(response.data);

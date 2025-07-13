@@ -3,7 +3,6 @@ import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppSidebar } from "@/components/scheduler-sidebar";
 import JobManagementPage from "@/components/form-builder/JobManagementPage";
-import FormTemplateManager from "@/components/form-builder/FormTemplateManager";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,10 +16,10 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-const FormTemplateManagerPage = () => {
+const JobPostingManagerPage = () => {
   return (
     <SidebarProvider>
-      <AppSidebar activePage="Dashboard" />
+      <AppSidebar activePage="Job Posting Management" />
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -44,7 +43,6 @@ const FormTemplateManagerPage = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
-          {/* <FormTemplateManager />*/}
           <JobManagementPage />
         </main>
       </SidebarInset>
@@ -52,4 +50,4 @@ const FormTemplateManagerPage = () => {
   );
 };
 
-export default FormTemplateManagerPage;
+export default JobPostingManagerPage;

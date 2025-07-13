@@ -14,6 +14,8 @@ import {
   FileText,
   Award,
   BookOpen,
+  Star,
+  StarOff,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +41,7 @@ const instance = axios.create({
 export default function ViewStudentApplication() {
   const { applicationid } = useParams(); // Fixed: destructure the param name
   const [application, setApplication] = useState(null);
+  const [shortlisted, setShortlisted] = useState(false);
   const [studentProfile, setStudentProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -57,24 +60,26 @@ export default function ViewStudentApplication() {
         const applicationData = applicationResponse.data;
         setApplication(applicationData);
 
+        const shortlistResponse = await instance.get(
+          `/ajp/application-shortlists/by-application/${applicationid}/exists/`
+        );
+        setShortlisted(shortlistResponse.data.shortlisted);
+
+        //This doesn't seem to work. idk.
         // Get the student profile data
-        const accessToken = localStorage.getItem("accessToken");
-        if (accessToken && applicationData.student?.id) {
-          try {
-            const profileResponse = await instance.get(
-              `/profile/student/${applicationData.student.id}/`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              }
-            );
-            setStudentProfile(profileResponse.data);
-          } catch (profileError) {
-            console.warn("Could not load student profile:", profileError);
-            // Continue without profile data
-          }
-        }
+        // const accessToken = sessionStorage.getItem("accessToken");
+        // console.log("Access Token:", accessToken);
+        // if (accessToken && applicationData.student?.id) {
+        //   try {
+        //     const profileResponse = await instance.get(
+        //       `/profile/student/${applicationData.student.id}/`,
+        //       {
+        //         headers: {
+        //           Authorization: `Bearer ${accessToken}`,
+        //         },
+        //       }
+        //     );
+        //     setStudentProfile(profileResponse.data);
       } catch (error) {
         console.error("Error loading application:", error);
         setError("Failed to load application details");
@@ -173,6 +178,47 @@ export default function ViewStudentApplication() {
     });
   };
 
+  const handleShortList = async () => {
+    const payload = {
+      application_id: applicationid,
+      created_by_id: null, // Backend will handle this automatically
+    };
+
+    try {
+      const response = await instance.post(
+        `/ajp/application-shortlists/`,
+        payload
+      );
+      console.log("Application shortlisted successfully:", response.data);
+      setShortlisted(true); // Update local state immediately
+    } catch (error) {
+      console.error("Error shortlisting application:", error);
+      setError("Failed to shortlist application");
+    }
+  };
+
+  const handleRemoveShortlist = async () => {
+    try {
+      // Get the shortlist data to find the ID
+      const shortlistResponse = await instance.get(
+        `/ajp/application-shortlists/by-application/${applicationid}/`
+      );
+
+      if (shortlistResponse.data.length > 0) {
+        const shortlistId = shortlistResponse.data[0].id;
+
+        // Delete the shortlist entry
+        await instance.delete(`/ajp/application-shortlists/${shortlistId}/`);
+
+        console.log("Application removed from shortlist successfully");
+        setShortlisted(false); // Update local state immediately
+      }
+    } catch (error) {
+      console.error("Error removing from shortlist:", error);
+      setError("Failed to remove from shortlist");
+    }
+  };
+
   if (loading) {
     return (
       <SidebarProvider>
@@ -246,9 +292,34 @@ export default function ViewStudentApplication() {
                   </p>
                 </div>
               </div>
+
+              {/* Shortlist button moved to the right side */}
+              <div>
+                {shortlisted ? (
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                      <Star className="w-4 h-4 mr-1" />
+                      Shortlisted
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveShortlist}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <StarOff className="h-4 w-4 mr-2" />
+                      Remove from Shortlist
+                    </Button>
+                  </div>
+                ) : (
+                  <Button onClick={handleShortList}>
+                    <Star className="h-4 w-4 mr-2" />
+                    Shortlist Application
+                  </Button>
+                )}
+              </div>
             </div>
           </header>
-
           {/* Main Content Area */}
           <main className="flex-1 overflow-auto p-6">
             <div className="max-w-6xl mx-auto space-y-6">

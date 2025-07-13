@@ -36,15 +36,18 @@ const JobPostingForm = ({
     post_date: new Date().toISOString().split("T")[0],
     deadline_date: "",
     status: "draft",
-    created_by_id: 1,
+    created_by_id: "",
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [schedulerID, setSchedulerID] = useState(null);
 
   useEffect(() => {
     console.log(templates, "Templates in JobPostingForm");
     console.log(departments, "Departments in JobPostingForm");
+
+    //fetchSchedulerProfile(); Does not have the Scheduler PK
 
     //if jobPosting prop is provided, populate formData with its values
     if (jobPosting) {
@@ -59,10 +62,31 @@ const JobPostingForm = ({
           jobPosting.post_date || new Date().toISOString().split("T")[0],
         deadline_date: jobPosting.deadline_date || "",
         status: jobPosting.status || "draft",
-        created_by_id: jobPosting.created_by_id || 1, // Default to 1 if not provided
+        created_by_id: jobPosting.created_by_id, // Default to 1 if not provided
       });
     }
   }, [jobPosting]);
+
+  const fetchSchedulerProfile = async () => {
+    const accessToken = sessionStorage.getItem("accessToken");
+    //if we can't find the accces token, then for the demo, use the mock student profile data
+    if (!accessToken) {
+      console.log("No access token found in localStorage, using mock data");
+      setStudent(studentProfile);
+      return;
+    }
+    try {
+      const response = await instance.get(`/profile/me/`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      console.log("Scheduler response", response.data);
+      setSchedulerID(response.data.id);
+    } catch (error) {
+      console.error("API call failed", error.message);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -141,6 +165,8 @@ const JobPostingForm = ({
         delete submitData.form_template_id;
       }
 
+      console.log("Submitting job posting:", submitData);
+
       let response;
       if (jobPosting) {
         response = await instance.put(
@@ -170,7 +196,9 @@ const JobPostingForm = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="title">Job Title *</Label>
+              <Label htmlFor="title">
+                Job Title <span className="text-red-500"> *</span>{" "}
+              </Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -184,7 +212,9 @@ const JobPostingForm = ({
             </div>
 
             <div>
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">
+                Description <span className="text-red-500"> *</span>{" "}
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -203,7 +233,7 @@ const JobPostingForm = ({
             </div>
 
             <div>
-              <Label htmlFor="requirements">Requirements</Label>
+              <Label htmlFor="requirements">Requirements (Optional)</Label>
               <Textarea
                 id="requirements"
                 value={formData.requirements}
@@ -219,13 +249,12 @@ const JobPostingForm = ({
 
         {/* Assignment Details */}
         <Card>
-          <CardHeader>
-            <CardTitle>Assignment Details</CardTitle>
-          </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="department">Department *</Label>
+                <Label htmlFor="department">
+                  Department <span className="text-red-500"> *</span>
+                </Label>
                 <Select
                   value={formData.department_id}
                   onValueChange={(value) =>
@@ -253,7 +282,9 @@ const JobPostingForm = ({
               </div>
 
               <div>
-                <Label htmlFor="term">Term *</Label>
+                <Label htmlFor="term">
+                  Term <span className="text-red-500"> *</span>
+                </Label>
                 <Select
                   value={formData.term_id}
                   onValueChange={(value) => handleInputChange("term_id", value)}
@@ -279,17 +310,22 @@ const JobPostingForm = ({
 
             <div>
               <Label htmlFor="form_template">Application Form Template</Label>
-              {/* <Select
-                value={formData.form_template_id}
+              <Select
+                value={formData.form_template_id || "default"}
                 onValueChange={(value) =>
-                  handleInputChange("form_template_id", value)
+                  handleInputChange(
+                    "form_template_id",
+                    value === "default" ? "" : value
+                  )
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Use default form or select custom template" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Default Application Form</SelectItem>
+                  <SelectItem value="default">
+                    Select Application Form
+                  </SelectItem>
                   {templates
                     .filter((template) => template.is_active)
                     .map((template) => (
@@ -301,10 +337,11 @@ const JobPostingForm = ({
                       </SelectItem>
                     ))}
                 </SelectContent>
-              </Select> */}
+              </Select>
               <p className="text-sm text-muted-foreground mt-1">
-                Choose a custom form template or leave blank to use the standard
-                application form
+                Choose an application form template now or update at a later
+                time. <br></br> You can create a new application form template
+                in the Job Posting Manager.
               </p>
             </div>
           </CardContent>
@@ -330,7 +367,9 @@ const JobPostingForm = ({
               </div>
 
               <div>
-                <Label htmlFor="deadline_date">Application Deadline *</Label>
+                <Label htmlFor="deadline_date">
+                  Application Deadline <span className="text-red-500"> *</span>
+                </Label>
                 <Input
                   id="deadline_date"
                   type="date"
