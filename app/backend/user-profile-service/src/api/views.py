@@ -1035,19 +1035,6 @@ def scheduler_update_instructor(request, instructor_id):
             # Get the instructor
             instructor = get_object_or_404(Instructor, employee_number=instructor_id)
 
-            # Handle department update
-            department_name = request.data.get('department')
-            if department_name:
-                try:
-                    department = Department.objects.get(name__iexact=department_name)
-                    instructor.department = department  # Update department
-                except Department.DoesNotExist:
-                    return Response(
-                        error_response("Department not found"),
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-            # Update other fields
             serializer = SchedulerInstructorUpdateSerializer(instructor, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
