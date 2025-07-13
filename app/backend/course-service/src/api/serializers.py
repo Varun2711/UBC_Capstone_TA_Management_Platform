@@ -7,7 +7,8 @@ from .models import (
     Course,
     CourseOffering,
     SharedSession,
-    InstructorRequest
+    InstructorRequest,
+    Student
 )
 
 # Term Serializer
@@ -106,9 +107,10 @@ class TimeSlotSerializer(serializers.ModelSerializer):
     Serializer for TimeSlot model with full CRUD operations.
     Includes validation for time consistency and computed duration field.
     """
-    # Read-only computed field
+    # Read-only computed fields
     duration = serializers.ReadOnlyField()
     day_display = serializers.CharField(source='get_day_display', read_only=True)
+    time_increments = serializers.ReadOnlyField()
     
     class Meta:
         model = TimeSlot
@@ -118,9 +120,34 @@ class TimeSlotSerializer(serializers.ModelSerializer):
             'day_display',
             'start_time',
             'end_time',
-            'duration'
+            'duration',
+            'time_increments'
         ]
-        read_only_fields = ['slot_id', 'duration', 'day_display']
+        read_only_fields = ['slot_id', 'duration', 'day_display', 'time_increments']
+    
+    def validate(self, data):
+        """
+        Validate that end_time is after start_time.
+        """
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+        
+        if start_time and end_time:
+            if start_time >= end_time:
+                raise serializers.ValidationError("End time must be after start time.")
+        
+        return data
+
+
+# TimeSlot Input Serializer (for nested creation without uniqueness constraints)
+class TimeSlotInputSerializer(serializers.Serializer):
+    """
+    Simplified serializer for time slot input data.
+    Used for creating/finding time slots without uniqueness validation.
+    """
+    day = serializers.ChoiceField(choices=TimeSlot.DAYS_OF_WEEK)
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
     
     def validate(self, data):
         """
@@ -270,7 +297,17 @@ class SharedSessionSerializer(serializers.ModelSerializer):
         write_only=True
     )
     
-    # Many-to-many time slots
+    # Student information for TA assignment
+    student_info = serializers.StringRelatedField(source='student', read_only=True)
+    student_id = serializers.PrimaryKeyRelatedField(
+        source='student',
+        queryset=Student.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True
+    )
+    
+    # Many-to-many time slots - support both ID-based and data-based creation
     time_slots_info = TimeSlotSerializer(source='time_slots', many=True, read_only=True)
     time_slot_ids = serializers.PrimaryKeyRelatedField(
         source='time_slots',
@@ -279,6 +316,9 @@ class SharedSessionSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True
     )
+    
+    # Accept time slot data for auto-creation/linking
+    time_slots = TimeSlotInputSerializer(many=True, required=False, write_only=True)
     
     class Meta:
         model = SharedSession
@@ -291,10 +331,13 @@ class SharedSessionSerializer(serializers.ModelSerializer):
             'section_number',
             'academic_term_info',
             'academic_term_id',
+            'student_info',
+            'student_id',
             'time_slots_info',
-            'time_slot_ids'
+            'time_slot_ids',
+            'time_slots'
         ]
-        read_only_fields = ['shared_session_id', 'session_type_display', 'course_info', 'academic_term_info', 'time_slots_info']
+        read_only_fields = ['shared_session_id', 'session_type_display', 'course_info', 'academic_term_info', 'student_info', 'time_slots_info']
     
     def validate_session_type(self, value):
         """
@@ -322,6 +365,74 @@ class SharedSessionSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError("Section number cannot be empty.")
         return value.strip().upper()
+    
+    def _handle_time_slots(self, validated_data):
+        """
+        Helper method to handle time slot creation/linking.
+        Returns a list of TimeSlot objects to be assigned to the SharedSession.
+        """
+        # Extract time slot data - both fields map to 'time_slots' in validated_data due to source mapping
+        # We need to check the original data to see which format was used
+        time_slot_objects = []
+        
+        # Get the time slots from validated_data (could be from either field)
+        time_slots_value = validated_data.pop('time_slots', [])
+        
+        # Check if we have TimeSlot objects (from time_slot_ids) or data dicts (from time_slots)
+        for slot_item in time_slots_value:
+            if hasattr(slot_item, 'slot_id'):
+                # This is already a TimeSlot object from PrimaryKeyRelatedField
+                time_slot_objects.append(slot_item)
+            else:
+                # This is slot data for creation/finding
+                # Use the input serializer for proper validation
+                slot_serializer = TimeSlotInputSerializer(data=slot_item)
+                if slot_serializer.is_valid(raise_exception=True):
+                    validated_slot_data = slot_serializer.validated_data
+                    
+                    # Try to find existing time slot first, create if not found
+                    time_slot, created = TimeSlot.objects.get_or_create(
+                        day=validated_slot_data['day'],
+                        start_time=validated_slot_data['start_time'],
+                        end_time=validated_slot_data['end_time']
+                    )
+                    time_slot_objects.append(time_slot)
+        
+        return time_slot_objects
+    
+    def create(self, validated_data):
+        """
+        Custom create method to handle time slot creation/linking.
+        """
+        # Handle time slots
+        time_slot_objects = self._handle_time_slots(validated_data)
+        
+        # Create the SharedSession
+        shared_session = SharedSession.objects.create(**validated_data)
+        
+        # Assign time slots
+        if time_slot_objects:
+            shared_session.time_slots.set(time_slot_objects)
+        
+        return shared_session
+    
+    def update(self, instance, validated_data):
+        """
+        Custom update method to handle time slot updates.
+        """
+        # Handle time slots
+        time_slot_objects = self._handle_time_slots(validated_data)
+        
+        # Update the SharedSession fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update time slots if provided
+        if time_slot_objects:
+            instance.time_slots.set(time_slot_objects)
+        
+        return instance
 
 
 # InstructorRequest Serializer
@@ -378,3 +489,14 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
         if value and value < timezone.now().date():
             raise serializers.ValidationError("Request date cannot be in the past.")
         return value
+
+
+# Student Serializer
+class StudentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Student model - read-only since it's managed in other services.
+    """
+    class Meta:
+        model = Student
+        fields = ['student_number', 'name', 'email', 'program', 'year_standing', 'study_level']
+        read_only_fields = ['student_number', 'name', 'email', 'program', 'year_standing', 'study_level']

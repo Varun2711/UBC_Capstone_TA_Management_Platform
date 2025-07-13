@@ -2,6 +2,8 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+#### MODELS WITH managed=False <- used here but made in other services
+
 # department model
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -9,6 +11,28 @@ class Department(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_department'
+
+# Student model
+class Student(models.Model):
+    student_number = models.CharField(max_length=8, unique=True)
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15, null=True, blank=True)
+    program = models.CharField(max_length=100, null=True, blank=True)
+    year_standing = models.IntegerField(null=True, blank=True)
+    study_level = models.CharField(max_length=20)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    sin = models.CharField(max_length=11, null=True, blank=True)
+    password = models.CharField(max_length=255)
+    email = models.EmailField()
+    is_active = models.BooleanField(default=True)
+    expected_graduation = models.CharField(max_length=20, null=True, blank=True)  # Add this line
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_student'
+    
+    def __str__(self):
+        return f"{self.name} ({self.student_number})"
 
 class Term(models.Model):
     code = models.CharField(max_length=20, unique=True)
@@ -72,6 +96,9 @@ class Instructor(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_instructor'
+    
+    def __str__(self):
+        return self.name
 
 
 # Time slot model
@@ -123,6 +150,27 @@ class TimeSlot(models.Model):
             end = datetime.combine(datetime.today(), self.end_time)
             return end - start
         return None
+
+    @property
+    def time_increments(self):
+        """
+        Generate array of times in 30-minute increments from start to end time.
+        For example: 8:00 AM to 9:30 AM would return ['8:00', '8:30', '9:00']
+        """
+        from datetime import datetime, timedelta
+        if not self.start_time or not self.end_time:
+            return []
+        
+        increments = []
+        current_time = datetime.combine(datetime.today(), self.start_time)
+        end_time = datetime.combine(datetime.today(), self.end_time)
+        
+        # Generate 30-minute increments (excluding the end time)
+        while current_time < end_time:
+            increments.append(current_time.strftime('%H:%M'))
+            current_time += timedelta(minutes=30)
+            
+        return increments
 
 # Courses model
 class Course(models.Model):
@@ -225,13 +273,13 @@ class SharedSession(models.Model):
         related_name='lab_sections',
         help_text="Academic term when this lab section is offered"
     )
-    instructor = models.ForeignKey(
-        Instructor,
+    student = models.ForeignKey(
+        Student,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='lab_sections',
-        help_text="Instructor or TA teaching this lab section"
+        related_name='shared_sessions',
+        help_text="Student assigned as TA for this shared session"
     )
     time_slots = models.ManyToManyField(
         TimeSlot,

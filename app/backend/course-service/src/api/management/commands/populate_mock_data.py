@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import date, timedelta, time
 from api.models import (
     Department, Instructor, Term, TimeSlot, Course, 
-    CourseOffering, SharedSession
+    CourseOffering, SharedSession, Student
 )
 
 
@@ -29,9 +29,10 @@ class Command(BaseCommand):
         instructors = self.create_instructors(departments)
         terms = self.create_terms()
         time_slots = self.create_time_slots()
+        students = self.create_students()
         courses = self.create_courses(departments)
         course_offerings = self.create_course_offerings(courses, terms, instructors)
-        shared_sessions = self.create_shared_sessions(courses, terms, time_slots)
+        shared_sessions = self.create_shared_sessions(courses, terms, time_slots, students)
         
         self.stdout.write(
             self.style.SUCCESS(
@@ -40,6 +41,7 @@ class Command(BaseCommand):
                 f'  - {len(instructors)} instructors\n'
                 f'  - {len(terms)} terms\n'
                 f'  - {len(time_slots)} time slots\n'
+                f'  - {len(students)} students\n'
                 f'  - {len(courses)} courses\n'
                 f'  - {len(course_offerings)} course offerings\n'
                 f'  - {len(shared_sessions)} shared sessions'
@@ -251,6 +253,39 @@ class Command(BaseCommand):
         
         return time_slots
     
+    def create_students(self):
+        """Create student data for TA assignments"""
+        student_data = [
+            ('S12345678', 'Alice Chen', 'alice.chen@student.university.edu', 'Computer Science', 4, 'undergraduate'),
+            ('S12345679', 'Bob Smith', 'bob.smith@student.university.edu', 'Computer Science', 3, 'undergraduate'),
+            ('S12345680', 'Carol Wang', 'carol.wang@student.university.edu', 'Computer Science', 2, 'graduate'),
+            ('S12345681', 'David Kim', 'david.kim@student.university.edu', 'Mathematics', 4, 'undergraduate'),
+            ('S12345682', 'Emma Rodriguez', 'emma.rodriguez@student.university.edu', 'Computer Science', 1, 'graduate'),
+            ('S12345683', 'Frank Liu', 'frank.liu@student.university.edu', 'Computer Science', 3, 'undergraduate'),
+            ('S12345684', 'Grace Taylor', 'grace.taylor@student.university.edu', 'Mathematics', 2, 'graduate'),
+            ('S12345685', 'Henry Park', 'henry.park@student.university.edu', 'Computer Science', 4, 'undergraduate'),
+            ('S12345686', 'Ivy Zhang', 'ivy.zhang@student.university.edu', 'Computer Science', 1, 'graduate'),
+            ('S12345687', 'Jack Brown', 'jack.brown@student.university.edu', 'Computer Science', 3, 'undergraduate'),
+        ]
+        
+        students = []
+        for student_number, name, email, program, year, study_level in student_data:
+            student, created = Student.objects.get_or_create(
+                student_number=student_number,
+                defaults={
+                    'name': name,
+                    'email': email,
+                    'program': program,
+                    'year_standing': year,
+                    'study_level': study_level
+                }
+            )
+            students.append(student)
+            if created:
+                self.stdout.write(f'  Created student: {name} ({student_number})')
+        
+        return students
+    
     def create_courses(self, departments):
         """Create course data"""
         cs_dept = Department.objects.get(name='Computer Science')
@@ -357,46 +392,50 @@ class Command(BaseCommand):
         
         return offerings
     
-    def create_shared_sessions(self, courses, terms, time_slots):
-        """Create shared session (lab/tutorial) data"""
+    def create_shared_sessions(self, courses, terms, time_slots, students):
+        """Create shared session (lab/tutorial) data with TA assignments"""
         sessions = []
         
         # Get some specific data
         w2025_t1 = Term.objects.get(code='W2025 Term 1')
         w2025_t2 = Term.objects.get(code='W2025 Term 2')
         
+        # Get CS students (potential TAs)
+        cs_students = [s for s in students if s.program == 'Computer Science']
+        
         # Create labs and tutorials for programming courses
         session_data = [
             # COSC 111 labs
-            ('COSC 111', w2025_t1, 'lab', 'L01'),
-            ('COSC 111', w2025_t1, 'lab', 'L02'),
-            ('COSC 111', w2025_t1, 'lab', 'L03'),
-            ('COSC 111', w2025_t2, 'lab', 'L01'),
+            ('COSC 111', w2025_t1, 'lab', 'L01', cs_students[0] if cs_students else None),
+            ('COSC 111', w2025_t1, 'lab', 'L02', cs_students[1] if len(cs_students) > 1 else None),
+            ('COSC 111', w2025_t1, 'lab', 'L03', cs_students[2] if len(cs_students) > 2 else None),
+            ('COSC 111', w2025_t2, 'lab', 'L01', cs_students[3] if len(cs_students) > 3 else None),
             
             # COSC 111 tutorials
-            ('COSC 111', w2025_t1, 'tutorial', 'T01'),
-            ('COSC 111', w2025_t2, 'tutorial', 'T01'),
+            ('COSC 111', w2025_t1, 'tutorial', 'T01', cs_students[4] if len(cs_students) > 4 else None),
+            ('COSC 111', w2025_t2, 'tutorial', 'T01', cs_students[5] if len(cs_students) > 5 else None),
             
             # COSC 121 labs
-            ('COSC 121', w2025_t2, 'lab', 'L01'),
-            ('COSC 121', w2025_t2, 'lab', 'L02'),
+            ('COSC 121', w2025_t2, 'lab', 'L01', cs_students[6] if len(cs_students) > 6 else None),
+            ('COSC 121', w2025_t2, 'lab', 'L02', cs_students[7] if len(cs_students) > 7 else None),
             
             # COSC 320 tutorials
-            ('COSC 320', w2025_t1, 'tutorial', 'T01'),
-            ('COSC 320', w2025_t2, 'tutorial', 'T01'),
+            ('COSC 320', w2025_t1, 'tutorial', 'T01', cs_students[8] if len(cs_students) > 8 else None),
+            ('COSC 320', w2025_t2, 'tutorial', 'T01', cs_students[0] if cs_students else None),  # Reuse first student
             
             # COSC 499 seminars
-            ('COSC 499', w2025_t2, 'seminar', 'S01'),
+            ('COSC 499', w2025_t2, 'seminar', 'S01', cs_students[1] if len(cs_students) > 1 else None),
         ]
         
-        for course_number, term, session_type, section in session_data:
+        for course_number, term, session_type, section, assigned_student in session_data:
             try:
                 course = Course.objects.get(course_number=course_number)
                 session, created = SharedSession.objects.get_or_create(
                     session_type=session_type,
                     course=course,
                     section_number=section,
-                    academic_term=term
+                    academic_term=term,
+                    defaults={'student': assigned_student}
                 )
                 
                 if created:
@@ -404,7 +443,8 @@ class Command(BaseCommand):
                     import random
                     assigned_slots = random.sample(time_slots, k=random.randint(1, 2))
                     session.time_slots.set(assigned_slots)
-                    self.stdout.write(f'  Created session: {course_number} {section} ({session_type}) - {term.code}')
+                    ta_info = f"TA: {assigned_student.name}" if assigned_student else "No TA assigned"
+                    self.stdout.write(f'  Created session: {course_number} {section} ({session_type}) - {term.code} ({ta_info})')
                 
                 sessions.append(session)
             except Course.DoesNotExist:

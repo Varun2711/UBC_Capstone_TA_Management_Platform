@@ -16,7 +16,8 @@ from .models import (
     Course,
     CourseOffering,
     SharedSession,
-    InstructorRequest
+    InstructorRequest,
+    Student
 )
 
 # Import all serializers
@@ -273,7 +274,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         
         # Get all shared sessions for this course
         shared_sessions = course.lab_sections.select_related(
-            'academic_term', 'instructor'
+            'academic_term', 'student'
         ).prefetch_related('time_slots').all()
         
         # Build the response data
@@ -317,6 +318,7 @@ class CourseViewSet(viewsets.ModelViewSet):
             # Get time slot information
             time_slots = session.time_slots.all()
             time_info = []
+            time_increments = []
             location = "TBD"  # Location would need to be added to model if needed
             
             for slot in time_slots:
@@ -324,6 +326,11 @@ class CourseViewSet(viewsets.ModelViewSet):
                     'day': slot.get_day_display(),
                     'time': f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
                 })
+                # Add time increments from this slot
+                time_increments.extend(slot.time_increments)
+            
+            # Remove duplicates and sort time increments
+            time_increments = sorted(list(set(time_increments)))
             
             # Build session data
             session_data = {
@@ -331,8 +338,9 @@ class CourseViewSet(viewsets.ModelViewSet):
                 'section': session.section_number,
                 'day': time_info[0]['day'] if time_info else 'TBD',
                 'time': time_info[0]['time'] if time_info else 'TBD',
+                'time_increments': time_increments,  # Add the 30-minute increments
                 'location': location,
-                'instructor_id': session.instructor.id if session.instructor else None,  # Give instructor id instead of name
+                'student_id': session.student.id if session.student else None,  # Changed from instructor to student
                 'forCourse': course.id  # Change from forOfferings to forCourse with course id
             }
             
@@ -557,16 +565,21 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
         'course': ['exact'],
         'section_number': ['exact', 'icontains'],
         'academic_term': ['exact'],
+        'student': ['exact'],
         'course__course_number': ['exact', 'icontains'],
         'course__course_name': ['icontains'],
         'course__department': ['exact'],
         'academic_term__startCalendarYear': ['exact', 'gte', 'lte'],
         'academic_term__is_active': ['exact'],
         'academic_term__term_type': ['exact', 'in'],
+        'student__student_number': ['exact', 'icontains'],
+        'student__name': ['icontains'],
+        'student__program': ['icontains'],
+        'student__study_level': ['exact', 'icontains'],
     }
     
     # Define searchable fields
-    search_fields = ['session_type', 'course__course_number', 'course__course_name', 'section_number']
+    search_fields = ['session_type', 'course__course_number', 'course__course_name', 'section_number', 'student__name', 'student__student_number']
     
     # Define ordering fields
     ordering_fields = ['session_type', 'course__course_number', 'section_number', 'academic_term__startCalendarYear']
@@ -700,6 +713,30 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
             'description': 'Available session type choices for shared sessions'
         })
     
+    @action(detail=False, methods=['get'])
+    def by_student(self, request):
+        """
+        Get shared sessions by student (TA assignments).
+        Usage: /shared-sessions/by_student/?student_id=1
+        """
+        student_id = request.query_params.get('student_id')
+        if not student_id:
+            return Response(
+                {'error': 'student_id parameter is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            student_id = int(student_id)
+            sessions = self.queryset.filter(student_id=student_id)
+            serializer = self.get_serializer(sessions, many=True)
+            return Response(serializer.data)
+        except ValueError:
+            return Response(
+                {'error': 'Invalid student_id format'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
     def perform_create(self, serializer):
         """
         Custom create logic if needed.
@@ -717,6 +754,7 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
         Custom delete logic if needed.
         """
         instance.delete()
+
 
 # API Root View
 @api_view(['GET'])
@@ -871,6 +909,11 @@ def api_root(request, format=None):
                     'methods': ['GET'],
                     'description': 'Get shared sessions by session type (session_type parameter required)'
                 },
+                'by_student': {
+                    'url': '/api/course-term-service/shared-sessions/by_student/?student_id={student_id}',
+                    'methods': ['GET'],
+                    'description': 'Get shared sessions by student TA assignment (student_id parameter required)'
+                },
                 'session_types': {
                     'url': '/api/course-term-service/shared-sessions/session_types/',
                     'methods': ['GET'],
@@ -910,7 +953,13 @@ def api_root(request, format=None):
             'filter_current_sessions': '/api/course-term-service/shared-sessions/?academic_term__is_active=true',
             'search_sessions': '/api/course-term-service/shared-sessions/?search=lab',
             'filter_by_session_type': '/api/course-term-service/shared-sessions/?session_type=LAB',
-            'filter_sessions_by_course': '/api/course-term-service/shared-sessions/?course=1'
+            'filter_sessions_by_course': '/api/course-term-service/shared-sessions/?course=1',
+            'filter_sessions_by_student': '/api/course-term-service/shared-sessions/?student=123'
+        },
+        'notes': {
+            'time_increments': 'Time slots include time_increments array with 30-minute intervals (e.g., 8:00 AM - 9:30 AM returns ["08:00", "08:30", "09:00"])',
+            'student_assignments': 'Shared sessions now track student TA assignments instead of instructors',
+            'smart_time_slots': 'Time slots are automatically created/linked based on day, start_time, and end_time matching'
         },
         'note': 'More endpoints will be added as additional ViewSets are implemented'
     })
