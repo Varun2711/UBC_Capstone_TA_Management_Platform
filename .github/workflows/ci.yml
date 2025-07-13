@@ -1,41 +1,24 @@
-name: Frontend CI
+name: CI
 
 on:
   push:
-    branches: [ development ]
-    paths:
-      - 'app/frontend/ta-management/**'  # Watch this specific project folder
-
+    branches:
+      - development
   pull_request:
-    branches: [ development ]
-    paths:
-      - 'app/frontend/ta-management/**'  # Keep the trigger consistent for PRs
+    branches:
+      - development
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./app/frontend/ta-management # Set working directory
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: app/frontend/ta-management/package-lock.json
-
-    - name: Install dependencies
-      run: npm ci # This runs in ./app/frontend/ta-management
-
-    - name: Run tests
-      run: npm test # This also runs in ./app/frontend/ta-management
+    frontend:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v4
+              with:
+                node-version: '22.x'
+            - name: Install dependencies
+              run: npm install
+              working-directory: ./app/frontend/ta-management
+            - name: Test frontend
+              run: npm test
+              working-directory: ./app/frontend/ta-management
