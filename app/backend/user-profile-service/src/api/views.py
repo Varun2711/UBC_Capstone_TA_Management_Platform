@@ -545,7 +545,8 @@ class CreateInstructorView(generics.CreateAPIView):
                 response_data = InstructorSerializer(instructor).data
                 response_data['temporary_password'] = temp_password
                 
-                log_user_activity('admin', request.user.email, f'created_instructor_{instructor.employee_number}')
+                user_type = request.auth.payload.get('user_type', 'unknown')
+                log_user_activity(user_type, request.user.email, f'created_instructor_{instructor.employee_number}')
                 
                 return Response(
                     success_response(
@@ -929,18 +930,31 @@ def admin_dashboard(request):
 @api_view(['POST'])
 @scheduler_required
 def scheduler_create_instructor(request):
-    """TA Scheduler can create instructors in their department"""
+    """TA Scheduler can create instructors in any department"""
     try:
         with transaction.atomic():
-            # Get the scheduler's department
-            scheduler = TAScheduler.objects.get(employee_number=request.user_id)
-            scheduler_department = scheduler.department
-            
             # Validate the data
             serializer = SchedulerInstructorSerializer(data=request.data)
             if not serializer.is_valid():
                 return Response(
                     error_response("Invalid data", serializer.errors),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get the department from the request data
+            department_name = serializer.validated_data.get('department')
+            if not department_name:
+                return Response(
+                    error_response("Department is required"),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Validate the department exists
+            try:
+                department = Department.objects.get(name__iexact=department_name)
+            except Department.DoesNotExist:
+                return Response(
+                    error_response("Department not found"),
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -973,12 +987,12 @@ def scheduler_create_instructor(request):
             password = generate_secure_password()
             hashed_password = make_password(password)
             
-            # Create instructor in the scheduler's department
+            # Create instructor in the specified department
             instructor = Instructor.objects.create(
                 name=serializer.validated_data['name'],
                 email=serializer.validated_data['email'],
                 employee_number=employee_number,
-                department=scheduler_department,  # Use scheduler's department
+                department=department,  # Use the department provided in the request
                 password=hashed_password,
                 is_active=True
             )
@@ -1015,49 +1029,33 @@ def scheduler_create_instructor(request):
 @api_view(['PUT', 'PATCH'])
 @scheduler_required
 def scheduler_update_instructor(request, instructor_id):
-    """TA Scheduler can update instructors in their department"""
+    """TA Scheduler can update instructors in any department"""
     try:
         with transaction.atomic():
-            # Get the scheduler's department
-            scheduler = TAScheduler.objects.get(employee_number=request.user_id)
-            scheduler_department = scheduler.department
-            
             # Get the instructor
             instructor = get_object_or_404(Instructor, employee_number=instructor_id)
-            
-            # Check if instructor is in scheduler's department
-            if instructor.department != scheduler_department:
-                return Response(
-                    error_response("You can only manage instructors in your department"),
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
+
             # Handle department update
             department_name = request.data.get('department')
             if department_name:
                 try:
-                    department = Department.objects.get(name=department_name)
-                    # Only allow updates within the same department for schedulers
-                    if department != scheduler_department:
-                        return Response(
-                            error_response("You can only assign instructors to your department"),
-                            status=status.HTTP_403_FORBIDDEN
-                        )
+                    department = Department.objects.get(name__iexact=department_name)
+                    instructor.department = department  # Update department
                 except Department.DoesNotExist:
                     return Response(
                         error_response("Department not found"),
                         status=status.HTTP_400_BAD_REQUEST
                     )
-            
-            # Update the instructor
+
+            # Update other fields
             serializer = SchedulerInstructorUpdateSerializer(instructor, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                
+
                 # Log the activity
                 log_user_activity(request.user_id, 'SCHEDULER_UPDATE_INSTRUCTOR', instructor.employee_number)
-                
-                # Return response in the format you requested
+
+                # Return response
                 response_data = {
                     "id": instructor.employee_number,
                     "name": instructor.name,
@@ -1065,19 +1063,20 @@ def scheduler_update_instructor(request, instructor_id):
                     "email": instructor.email,
                     "updated_by": request.user_id
                 }
-                
+
                 return Response(
-                    success_response(response_data, "Instructor updated successfully")
+                    success_response(response_data, "Instructor updated successfully"),
+                    status=status.HTTP_200_OK
                 )
             else:
                 return Response(
                     error_response("Invalid data", serializer.errors),
                     status=status.HTTP_400_BAD_REQUEST
                 )
-                
-    except TAScheduler.DoesNotExist:
+
+    except Instructor.DoesNotExist:
         return Response(
-            error_response("TA Scheduler not found"),
+            error_response("Instructor not found"),
             status=status.HTTP_404_NOT_FOUND
         )
     except Exception as e:
@@ -1089,23 +1088,12 @@ def scheduler_update_instructor(request, instructor_id):
 @api_view(['DELETE'])
 @scheduler_required
 def scheduler_delete_instructor(request, instructor_id):
-    """TA Scheduler can delete instructors in their department"""
+    """TA Scheduler can delete instructors in any department"""
     try:
         with transaction.atomic():
-            # Get the scheduler's department
-            scheduler = TAScheduler.objects.get(employee_number=request.user_id)
-            scheduler_department = scheduler.department
-            
             # Get the instructor
             instructor = get_object_or_404(Instructor, employee_number=instructor_id)
-            
-            # Check if instructor is in scheduler's department
-            if instructor.department != scheduler_department:
-                return Response(
-                    error_response("You can only manage instructors in your department"),
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
+
             # Store info for response
             instructor_info = {
                 "id": instructor.employee_number,
@@ -1113,13 +1101,13 @@ def scheduler_delete_instructor(request, instructor_id):
                 "department": instructor.department.name,
                 "email": instructor.email
             }
-            
+
             # Log the activity before deletion
             log_user_activity(request.user_id, 'SCHEDULER_DELETE_INSTRUCTOR', instructor.employee_number)
-            
+
             # Delete the instructor
             instructor.delete()
-            
+
             return Response(
                 success_response(
                     {
@@ -1127,12 +1115,13 @@ def scheduler_delete_instructor(request, instructor_id):
                         "deleted_by": request.user_id
                     },
                     "Instructor deleted successfully"
-                )
+                ),
+                status=status.HTTP_200_OK
             )
-            
-    except TAScheduler.DoesNotExist:
+
+    except Instructor.DoesNotExist:
         return Response(
-            error_response("TA Scheduler not found"),
+            error_response("Instructor not found"),
             status=status.HTTP_404_NOT_FOUND
         )
     except Exception as e:
