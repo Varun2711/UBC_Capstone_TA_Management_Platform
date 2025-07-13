@@ -1,0 +1,1156 @@
+[
+  {
+    "model": "course_api.department",
+    "pk": 1,
+    "fields": {
+      "name": "Computer Science"
+    }
+  },
+  {
+    "model": "course_api.department",
+    "pk": 2,
+    "fields": {
+      "name": "Mathematics"
+    }
+  },
+  {
+    "model": "course_api.department",
+    "pk": 3,
+    "fields": {
+      "name": "Physics"
+    }
+  },
+  {
+    "model": "course_api.department",
+    "pk": 4,
+    "fields": {
+      "name": "Chemistry"
+    }
+  },
+  {
+    "model": "course_api.department",
+    "pk": 5,
+    "fields": {
+      "name": "Biology"
+    }
+  },
+  {
+    "model": "course_api.department",
+    "pk": 6,
+    "fields": {
+      "name": "Engineering"
+    }
+  },
+  {
+    "model": "course_api.department",
+    "pk": 7,
+    "fields": {
+      "name": "Psychology"
+    }
+  },
+  {
+    "model": "course_api.department",
+    "pk": 8,
+    "fields": {
+      "name": "English"
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 1,
+    "fields": {
+      "employee_number": "EMP1001",
+      "name": "Dr. Sarah Johnson",
+      "department": 1,
+      "email": "sarah.johnson@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 2,
+    "fields": {
+      "employee_number": "EMP1002",
+      "name": "Dr. Michael Chen",
+      "department": 1,
+      "email": "michael.chen@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 3,
+    "fields": {
+      "employee_number": "EMP1003",
+      "name": "Prof. Emily Davis",
+      "department": 2,
+      "email": "emily.davis@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 4,
+    "fields": {
+      "employee_number": "EMP1004",
+      "name": "Dr. Robert Wilson",
+      "department": 3,
+      "email": "robert.wilson@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 5,
+    "fields": {
+      "employee_number": "EMP1005",
+      "name": "Dr. Lisa Anderson",
+      "department": 4,
+      "email": "lisa.anderson@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 6,
+    "fields": {
+      "employee_number": "EMP1006",
+      "name": "Prof. David Brown",
+      "department": 1,
+      "email": "david.brown@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 7,
+    "fields": {
+      "employee_number": "EMP1007",
+      "name": "Dr. Jennifer Lee",
+      "department": 5,
+      "email": "jennifer.lee@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 8,
+    "fields": {
+      "employee_number": "EMP1008",
+      "name": "Dr. Mark Taylor",
+      "department": 6,
+      "email": "mark.taylor@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 9,
+    "fields": {
+      "employee_number": "EMP1009",
+      "name": "Dr. Anna Garcia",
+      "department": 7,
+      "email": "anna.garcia@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.instructor",
+    "pk": 10,
+    "fields": {
+      "employee_number": "EMP1010",
+      "name": "Prof. James Miller",
+      "department": 8,
+      "email": "james.miller@university.edu",
+      "password": "hashed_password_here",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.term",
+    "pk": 1,
+    "fields": {
+      "code": "W2024 Term 1",
+      "description": "Winter Term 1 2024/2025",
+      "subsetOf": 7,
+      "start": "2024-09-01",
+      "end": "2024-12-31",
+      "startCalendarYear": 2024,
+      "endCalendarYear": 2024,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "course_api.term",
+    "pk": 2,
+    "fields": {
+      "code": "W2024 Term 2",
+      "description": "Winter Term 2 2024/2025",
+      "subsetOf": 7,
+      "start": "2025-01-01",
+      "end": "2025-04-30",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "course_api.term",
+    "pk": 3,
+    "fields": {
+      "code": "S2025",
+      "description": "Summer Term 2025",
+      "subsetOf": null,
+      "start": "2025-05-01",
+      "end": "2025-08-31",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "summer"
+    }
+  },
+  {
+    "model": "course_api.term",
+    "pk": 4,
+    "fields": {
+      "code": "W2025 Term 1",
+      "description": "Winter Term 1 2025/2026",
+      "subsetOf": 8,
+      "start": "2025-09-01",
+      "end": "2025-12-31",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2025/26",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "course_api.term",
+    "pk": 5,
+    "fields": {
+      "code": "W2025 Term 2",
+      "description": "Winter Term 2 2025/2026",
+      "subsetOf": 8,
+      "start": "2026-01-01",
+      "end": "2026-04-30",
+      "startCalendarYear": 2026,
+      "endCalendarYear": 2026,
+      "academicYear": "2025/26",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "course_api.term",
+    "pk": 6,
+    "fields": {
+      "code": "S2026",
+      "description": "Summer Term 2026",
+      "subsetOf": null,
+      "start": "2026-05-01",
+      "end": "2026-08-31",
+      "startCalendarYear": 2026,
+      "endCalendarYear": 2026,
+      "academicYear": "2025/26",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "summer"
+    }
+  },
+  {
+    "model": "course_api.term",
+    "pk": 7,
+    "fields": {
+      "code": "W2024 Both Terms",
+      "description": "Winter Both Terms 2024/2025",
+      "subsetOf": null,
+      "start": "2024-09-01",
+      "end": "2025-04-30",
+      "startCalendarYear": 2024,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "full_year"
+    }
+  },
+  {
+    "model": "course_api.term",
+    "pk": 8,
+    "fields": {
+      "code": "W2025 Both Terms",
+      "description": "Winter Both Terms 2025/2026",
+      "subsetOf": null,
+      "start": "2025-09-01",
+      "end": "2026-04-30",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2026,
+      "academicYear": "2025/26",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "full_year"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440001",
+    "fields": {
+      "day": "monday",
+      "start_time": "09:00:00",
+      "end_time": "10:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440002",
+    "fields": {
+      "day": "monday",
+      "start_time": "11:00:00",
+      "end_time": "12:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440003",
+    "fields": {
+      "day": "monday",
+      "start_time": "14:00:00",
+      "end_time": "15:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440004",
+    "fields": {
+      "day": "monday",
+      "start_time": "16:00:00",
+      "end_time": "17:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440005",
+    "fields": {
+      "day": "tuesday",
+      "start_time": "09:00:00",
+      "end_time": "10:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440006",
+    "fields": {
+      "day": "tuesday",
+      "start_time": "11:00:00",
+      "end_time": "12:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440007",
+    "fields": {
+      "day": "tuesday",
+      "start_time": "14:00:00",
+      "end_time": "15:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440008",
+    "fields": {
+      "day": "wednesday",
+      "start_time": "09:00:00",
+      "end_time": "10:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440009",
+    "fields": {
+      "day": "wednesday",
+      "start_time": "11:00:00",
+      "end_time": "12:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440010",
+    "fields": {
+      "day": "wednesday",
+      "start_time": "14:00:00",
+      "end_time": "15:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440011",
+    "fields": {
+      "day": "wednesday",
+      "start_time": "16:00:00",
+      "end_time": "17:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440012",
+    "fields": {
+      "day": "thursday",
+      "start_time": "09:00:00",
+      "end_time": "10:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440013",
+    "fields": {
+      "day": "thursday",
+      "start_time": "11:00:00",
+      "end_time": "12:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440014",
+    "fields": {
+      "day": "thursday",
+      "start_time": "14:00:00",
+      "end_time": "15:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440015",
+    "fields": {
+      "day": "friday",
+      "start_time": "09:00:00",
+      "end_time": "10:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440016",
+    "fields": {
+      "day": "friday",
+      "start_time": "11:00:00",
+      "end_time": "12:30:00"
+    }
+  },
+  {
+    "model": "course_api.timeslot",
+    "pk": "550e8400-e29b-41d4-a716-446655440017",
+    "fields": {
+      "day": "friday",
+      "start_time": "14:00:00",
+      "end_time": "15:30:00"
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 1,
+    "fields": {
+      "student_number": "S12345678",
+      "name": "Alice Chen",
+      "phone": null,
+      "program": "Computer Science",
+      "year_standing": 4,
+      "study_level": "undergraduate",
+      "department": 1,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "alice.chen@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 2,
+    "fields": {
+      "student_number": "S12345679",
+      "name": "Bob Smith",
+      "phone": null,
+      "program": "Computer Science",
+      "year_standing": 3,
+      "study_level": "undergraduate",
+      "department": 1,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "bob.smith@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 3,
+    "fields": {
+      "student_number": "S12345680",
+      "name": "Carol Wang",
+      "phone": null,
+      "program": "Computer Science",
+      "year_standing": 2,
+      "study_level": "graduate",
+      "department": 1,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "carol.wang@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 4,
+    "fields": {
+      "student_number": "S12345681",
+      "name": "David Kim",
+      "phone": null,
+      "program": "Mathematics",
+      "year_standing": 4,
+      "study_level": "undergraduate",
+      "department": 2,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "david.kim@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 5,
+    "fields": {
+      "student_number": "S12345682",
+      "name": "Emma Rodriguez",
+      "phone": null,
+      "program": "Computer Science",
+      "year_standing": 1,
+      "study_level": "graduate",
+      "department": 1,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "emma.rodriguez@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 6,
+    "fields": {
+      "student_number": "S12345683",
+      "name": "Frank Liu",
+      "phone": null,
+      "program": "Computer Science",
+      "year_standing": 3,
+      "study_level": "undergraduate",
+      "department": 1,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "frank.liu@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 7,
+    "fields": {
+      "student_number": "S12345684",
+      "name": "Grace Taylor",
+      "phone": null,
+      "program": "Mathematics",
+      "year_standing": 2,
+      "study_level": "graduate",
+      "department": 2,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "grace.taylor@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 8,
+    "fields": {
+      "student_number": "S12345685",
+      "name": "Henry Park",
+      "phone": null,
+      "program": "Computer Science",
+      "year_standing": 4,
+      "study_level": "undergraduate",
+      "department": 1,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "henry.park@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 9,
+    "fields": {
+      "student_number": "S12345686",
+      "name": "Ivy Zhang",
+      "phone": null,
+      "program": "Computer Science",
+      "year_standing": 1,
+      "study_level": "graduate",
+      "department": 1,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "ivy.zhang@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.student",
+    "pk": 10,
+    "fields": {
+      "student_number": "S12345687",
+      "name": "Jack Brown",
+      "phone": null,
+      "program": "Computer Science",
+      "year_standing": 3,
+      "study_level": "undergraduate",
+      "department": 1,
+      "sin": null,
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "jack.brown@student.university.edu",
+      "is_active": true,
+      "expected_graduation": null
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 1,
+    "fields": {
+      "course_number": "COSC 111",
+      "course_name": "Computer Programming I",
+      "department": 1,
+      "course_description": "Introduction to programming using Python",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 2,
+    "fields": {
+      "course_number": "COSC 121",
+      "course_name": "Computer Programming II",
+      "department": 1,
+      "course_description": "Object-oriented programming concepts",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 3,
+    "fields": {
+      "course_number": "COSC 211",
+      "course_name": "Machine Architecture",
+      "department": 1,
+      "course_description": "Computer systems and assembly language",
+      "course_level": "200",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 4,
+    "fields": {
+      "course_number": "COSC 221",
+      "course_name": "Introduction to Discrete Structures",
+      "department": 1,
+      "course_description": "Logic, sets, functions, and proof techniques",
+      "course_level": "200",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 5,
+    "fields": {
+      "course_number": "COSC 310",
+      "course_name": "Software Engineering",
+      "department": 1,
+      "course_description": "Software development methodologies",
+      "course_level": "300",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 6,
+    "fields": {
+      "course_number": "COSC 320",
+      "course_name": "Data Structures and Algorithms",
+      "department": 1,
+      "course_description": "Advanced data structures and algorithmic analysis",
+      "course_level": "300",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 7,
+    "fields": {
+      "course_number": "COSC 404",
+      "course_name": "Database Systems",
+      "department": 1,
+      "course_description": "Database design and implementation",
+      "course_level": "400",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 8,
+    "fields": {
+      "course_number": "COSC 499",
+      "course_name": "Capstone Project",
+      "department": 1,
+      "course_description": "Final year capstone project",
+      "course_level": "400",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 9,
+    "fields": {
+      "course_number": "MATH 100",
+      "course_name": "Differential Calculus",
+      "department": 2,
+      "course_description": "Limits, derivatives, and applications",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 10,
+    "fields": {
+      "course_number": "MATH 101",
+      "course_name": "Integral Calculus",
+      "department": 2,
+      "course_description": "Integration and its applications",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 11,
+    "fields": {
+      "course_number": "MATH 200",
+      "course_name": "Multivariable Calculus",
+      "department": 2,
+      "course_description": "Calculus of several variables",
+      "course_level": "200",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 12,
+    "fields": {
+      "course_number": "MATH 221",
+      "course_name": "Matrix Algebra",
+      "department": 2,
+      "course_description": "Linear algebra and matrix operations",
+      "course_level": "200",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 13,
+    "fields": {
+      "course_number": "PHYS 111",
+      "course_name": "General Physics I",
+      "department": 3,
+      "course_description": "Mechanics and thermodynamics",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.course",
+    "pk": 14,
+    "fields": {
+      "course_number": "PHYS 112",
+      "course_name": "General Physics II",
+      "department": 3,
+      "course_description": "Electricity and magnetism",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440001",
+    "fields": {
+      "course": 1,
+      "section_number": "001",
+      "academic_term": 4,
+      "instructor": 1
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440002",
+    "fields": {
+      "course": 1,
+      "section_number": "002",
+      "academic_term": 4,
+      "instructor": 2
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440003",
+    "fields": {
+      "course": 1,
+      "section_number": "001",
+      "academic_term": 5,
+      "instructor": 1
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440004",
+    "fields": {
+      "course": 2,
+      "section_number": "001",
+      "academic_term": 5,
+      "instructor": 2
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440005",
+    "fields": {
+      "course": 2,
+      "section_number": "001",
+      "academic_term": 6,
+      "instructor": 6
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440006",
+    "fields": {
+      "course": 3,
+      "section_number": "001",
+      "academic_term": 4,
+      "instructor": 6
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440007",
+    "fields": {
+      "course": 6,
+      "section_number": "001",
+      "academic_term": 4,
+      "instructor": 1
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440008",
+    "fields": {
+      "course": 6,
+      "section_number": "001",
+      "academic_term": 5,
+      "instructor": 2
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440009",
+    "fields": {
+      "course": 8,
+      "section_number": "001",
+      "academic_term": 5,
+      "instructor": 6
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440010",
+    "fields": {
+      "course": 9,
+      "section_number": "001",
+      "academic_term": 4,
+      "instructor": 3
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440011",
+    "fields": {
+      "course": 9,
+      "section_number": "002",
+      "academic_term": 4,
+      "instructor": 3
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440012",
+    "fields": {
+      "course": 10,
+      "section_number": "001",
+      "academic_term": 5,
+      "instructor": 3
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440013",
+    "fields": {
+      "course": 13,
+      "section_number": "001",
+      "academic_term": 4,
+      "instructor": 4
+    }
+  },
+  {
+    "model": "course_api.courseoffering",
+    "pk": "650e8400-e29b-41d4-a716-446655440014",
+    "fields": {
+      "course": 14,
+      "section_number": "001",
+      "academic_term": 5,
+      "instructor": 4
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440001",
+    "fields": {
+      "session_type": "lab",
+      "course": 1,
+      "section_number": "L01",
+      "academic_term": 4,
+      "student": 1
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440002",
+    "fields": {
+      "session_type": "lab",
+      "course": 1,
+      "section_number": "L02",
+      "academic_term": 4,
+      "student": 2
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440003",
+    "fields": {
+      "session_type": "lab",
+      "course": 1,
+      "section_number": "L03",
+      "academic_term": 4,
+      "student": 3
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440004",
+    "fields": {
+      "session_type": "lab",
+      "course": 1,
+      "section_number": "L01",
+      "academic_term": 5,
+      "student": 4
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440005",
+    "fields": {
+      "session_type": "tutorial",
+      "course": 1,
+      "section_number": "T01",
+      "academic_term": 4,
+      "student": 5
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440006",
+    "fields": {
+      "session_type": "tutorial",
+      "course": 1,
+      "section_number": "T01",
+      "academic_term": 5,
+      "student": 6
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440007",
+    "fields": {
+      "session_type": "lab",
+      "course": 2,
+      "section_number": "L01",
+      "academic_term": 5,
+      "student": 7
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440008",
+    "fields": {
+      "session_type": "lab",
+      "course": 2,
+      "section_number": "L02",
+      "academic_term": 5,
+      "student": 8
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440009",
+    "fields": {
+      "session_type": "tutorial",
+      "course": 6,
+      "section_number": "T01",
+      "academic_term": 4,
+      "student": 9
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440010",
+    "fields": {
+      "session_type": "tutorial",
+      "course": 6,
+      "section_number": "T01",
+      "academic_term": 5,
+      "student": 1
+    }
+  },
+  {
+    "model": "course_api.sharedsession",
+    "pk": "750e8400-e29b-41d4-a716-446655440011",
+    "fields": {
+      "session_type": "seminar",
+      "course": 8,
+      "section_number": "S01",
+      "academic_term": 5,
+      "student": 2
+    }
+  },
+  {
+    "model": "course_api.instructorrequest",
+    "pk": 1,
+    "fields": {
+      "instructor": 1,
+      "course_offering": "650e8400-e29b-41d4-a716-446655440001",
+      "request_date": "2025-07-07",
+      "request_description": "Request for additional grading support for COSC 111 section 001"
+    }
+  },
+  {
+    "model": "course_api.instructorrequest",
+    "pk": 2,
+    "fields": {
+      "instructor": 2,
+      "course_offering": "650e8400-e29b-41d4-a716-446655440002",
+      "request_date": "2025-07-09",
+      "request_description": "Need teaching assistant for lab sections in COSC 111 section 002"
+    }
+  },
+  {
+    "model": "course_api.instructorrequest",
+    "pk": 3,
+    "fields": {
+      "instructor": 1,
+      "course_offering": "650e8400-e29b-41d4-a716-446655440003",
+      "request_date": "2025-07-02",
+      "request_description": "Requesting TA support for office hours and grading"
+    }
+  },
+  {
+    "model": "course_api.instructorrequest",
+    "pk": 4,
+    "fields": {
+      "instructor": 6,
+      "course_offering": "650e8400-e29b-41d4-a716-446655440005",
+      "request_date": "2025-07-11",
+      "request_description": "Summer session COSC 121 requires additional tutoring support"
+    }
+  },
+  {
+    "model": "course_api.instructorrequest",
+    "pk": 5,
+    "fields": {
+      "instructor": 2,
+      "course_offering": "650e8400-e29b-41d4-a716-446655440008",
+      "request_date": "2025-06-27",
+      "request_description": "COSC 320 complex algorithms course needs advanced TA"
+    }
+  },
+  {
+    "model": "course_api.instructorrequest",
+    "pk": 6,
+    "fields": {
+      "instructor": 6,
+      "course_offering": "650e8400-e29b-41d4-a716-446655440009",
+      "request_date": "2025-07-05",
+      "request_description": "Capstone project coordination requires graduate student assistance"
+    }
+  },
+  {
+    "model": "course_api.instructorrequest",
+    "pk": 7,
+    "fields": {
+      "instructor": 1,
+      "course_offering": "650e8400-e29b-41d4-a716-446655440010",
+      "request_date": "2025-06-22",
+      "request_description": "Large enrollment in MATH 100 requires multiple grading assistants"
+    }
+  },
+  {
+    "model": "course_api.instructorrequest",
+    "pk": 8,
+    "fields": {
+      "instructor": 1,
+      "course_offering": "650e8400-e29b-41d4-a716-446655440011",
+      "request_date": "2025-07-10",
+      "request_description": "Second section of MATH 100 needs lab supervision"
+    }
+  }
+]

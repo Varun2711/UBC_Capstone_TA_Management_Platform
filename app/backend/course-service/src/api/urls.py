@@ -8,6 +8,7 @@ router.register(r'terms', views.TermViewSet)
 router.register(r'courses', views.CourseViewSet)
 router.register(r'course-offerings', views.CourseOfferingViewSet)
 router.register(r'shared-sessions', views.SharedSessionViewSet)
+router.register(r'instructor-requests', views.InstructorRequestViewSet)
 
 urlpatterns = [
     # API Root

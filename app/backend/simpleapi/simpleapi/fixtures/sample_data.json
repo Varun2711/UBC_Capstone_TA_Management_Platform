@@ -238,5 +238,1175 @@
       "hasOtherPositions": "yes",
       "otherPositionHours": 8
     }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 1,
+    "fields": {
+      "name": "Computer Science"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 2,
+    "fields": {
+      "name": "Mathematics"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 3,
+    "fields": {
+      "name": "Physics"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 4,
+    "fields": {
+      "name": "Chemistry"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 5,
+    "fields": {
+      "name": "Biology"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 6,
+    "fields": {
+      "name": "Engineering"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 7,
+    "fields": {
+      "name": "Psychology"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 8,
+    "fields": {
+      "name": "English"
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 2,
+    "fields": {
+      "employee_number": "EMP1001",
+      "name": "Dr. Sarah Johnson",
+      "department": 1,
+      "email": "sarah.johnson@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 3,
+    "fields": {
+      "employee_number": "EMP1002",
+      "name": "Dr. Michael Chen",
+      "department": 1,
+      "email": "michael.chen@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 4,
+    "fields": {
+      "employee_number": "EMP1003",
+      "name": "Prof. Emily Davis",
+      "department": 2,
+      "email": "emily.davis@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 5,
+    "fields": {
+      "employee_number": "EMP1004",
+      "name": "Dr. Robert Wilson",
+      "department": 3,
+      "email": "robert.wilson@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 6,
+    "fields": {
+      "employee_number": "EMP1005",
+      "name": "Dr. Lisa Anderson",
+      "department": 4,
+      "email": "lisa.anderson@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 7,
+    "fields": {
+      "employee_number": "EMP1006",
+      "name": "Prof. David Brown",
+      "department": 1,
+      "email": "david.brown@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 8,
+    "fields": {
+      "employee_number": "EMP1007",
+      "name": "Dr. Jennifer Lee",
+      "department": 5,
+      "email": "jennifer.lee@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 9,
+    "fields": {
+      "employee_number": "EMP1008",
+      "name": "Dr. Mark Taylor",
+      "department": 6,
+      "email": "mark.taylor@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 10,
+    "fields": {
+      "employee_number": "EMP1009",
+      "name": "Dr. Anna Garcia",
+      "department": 7,
+      "email": "anna.garcia@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 11,
+    "fields": {
+      "employee_number": "EMP1010",
+      "name": "Prof. James Miller",
+      "department": 8,
+      "email": "james.miller@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 3,
+    "fields": {
+      "course_number": "COSC 121",
+      "course_name": "Computer Programming II",
+      "department": 1,
+      "course_description": "Object-oriented programming concepts",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 4,
+    "fields": {
+      "course_number": "COSC 211",
+      "course_name": "Machine Architecture",
+      "department": 1,
+      "course_description": "Computer systems and assembly language",
+      "course_level": "200",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 5,
+    "fields": {
+      "course_number": "COSC 310",
+      "course_name": "Software Engineering",
+      "department": 1,
+      "course_description": "Software development methodologies",
+      "course_level": "300",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 6,
+    "fields": {
+      "course_number": "COSC 320",
+      "course_name": "Data Structures and Algorithms",
+      "department": 1,
+      "course_description": "Advanced data structures and algorithmic analysis",
+      "course_level": "300",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 7,
+    "fields": {
+      "course_number": "COSC 404",
+      "course_name": "Database Systems",
+      "department": 1,
+      "course_description": "Database design and implementation",
+      "course_level": "400",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 8,
+    "fields": {
+      "course_number": "COSC 499",
+      "course_name": "Capstone Project",
+      "department": 1,
+      "course_description": "Final year capstone project",
+      "course_level": "400",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 9,
+    "fields": {
+      "course_number": "MATH 100",
+      "course_name": "Differential Calculus",
+      "department": 2,
+      "course_description": "Limits, derivatives, and applications",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 10,
+    "fields": {
+      "course_number": "MATH 101",
+      "course_name": "Integral Calculus",
+      "department": 2,
+      "course_description": "Integration and its applications",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 11,
+    "fields": {
+      "course_number": "MATH 200",
+      "course_name": "Multivariable Calculus",
+      "department": 2,
+      "course_description": "Calculus of several variables",
+      "course_level": "200",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 12,
+    "fields": {
+      "course_number": "MATH 221",
+      "course_name": "Matrix Algebra",
+      "department": 2,
+      "course_description": "Linear algebra and matrix operations",
+      "course_level": "200",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 13,
+    "fields": {
+      "course_number": "PHYS 111",
+      "course_name": "General Physics I",
+      "department": 3,
+      "course_description": "Mechanics and thermodynamics",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.course",
+    "pk": 14,
+    "fields": {
+      "course_number": "PHYS 112",
+      "course_name": "General Physics II",
+      "department": 3,
+      "course_description": "Electricity and magnetism",
+      "course_level": "100",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 5,
+    "fields": {
+      "code": "W2024 Term 1",
+      "description": "Winter Term 1 2024/2025",
+      "subsetOf": 9,
+      "start": "2024-09-01",
+      "end": "2024-12-31",
+      "startCalendarYear": 2024,
+      "endCalendarYear": 2024,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 6,
+    "fields": {
+      "code": "W2024 Term 2",
+      "description": "Winter Term 2 2024/2025",
+      "subsetOf": 9,
+      "start": "2025-01-01",
+      "end": "2025-04-30",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 7,
+    "fields": {
+      "code": "W2025 Term 1",
+      "description": "Winter Term 1 2025/2026",
+      "subsetOf": 10,
+      "start": "2025-09-01",
+      "end": "2025-12-31",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2025/26",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 8,
+    "fields": {
+      "code": "W2025 Term 2",
+      "description": "Winter Term 2 2025/2026",
+      "subsetOf": 10,
+      "start": "2026-01-01",
+      "end": "2026-04-30",
+      "startCalendarYear": 2026,
+      "endCalendarYear": 2026,
+      "academicYear": "2025/26",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 9,
+    "fields": {
+      "code": "W2024 Both Terms",
+      "description": "Winter Both Terms 2024/2025",
+      "subsetOf": null,
+      "start": "2024-09-01",
+      "end": "2025-04-30",
+      "startCalendarYear": 2024,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "full_year"
+    }
+  },
+  {
+    "model": "myapp.term",
+    "pk": 10,
+    "fields": {
+      "code": "W2025 Both Terms",
+      "description": "Winter Both Terms 2025/2026",
+      "subsetOf": null,
+      "start": "2025-09-01",
+      "end": "2026-04-30",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2026,
+      "academicYear": "2025/26",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "full_year"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 1,
+    "fields": {
+      "day": "Monday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 2,
+    "fields": {
+      "day": "Monday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 3,
+    "fields": {
+      "day": "Monday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 4,
+    "fields": {
+      "day": "Tuesday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 5,
+    "fields": {
+      "day": "Tuesday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 6,
+    "fields": {
+      "day": "Tuesday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 7,
+    "fields": {
+      "day": "Wednesday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 8,
+    "fields": {
+      "day": "Wednesday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 9,
+    "fields": {
+      "day": "Wednesday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 10,
+    "fields": {
+      "day": "Thursday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 11,
+    "fields": {
+      "day": "Thursday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 12,
+    "fields": {
+      "day": "Thursday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 13,
+    "fields": {
+      "day": "Friday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 14,
+    "fields": {
+      "day": "Friday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 15,
+    "fields": {
+      "day": "Friday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 16,
+    "fields": {
+      "day": "Monday",
+      "start_time": "14:00:00",
+      "end_time": "16:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 17,
+    "fields": {
+      "day": "Wednesday",
+      "start_time": "14:00:00",
+      "end_time": "16:00:00"
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 3,
+    "fields": {
+      "student_number": "20241004",
+      "name": "Emily Wilson",
+      "phone": "+1-250-555-0104",
+      "program": "Computer Science",
+      "year_standing": 2,
+      "study_level": "BSc",
+      "department": 1,
+      "sin": "987654323",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "emily.wilson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 4,
+    "fields": {
+      "student_number": "20241005",
+      "name": "David Kim",
+      "phone": "+1-250-555-0105",
+      "program": "Mathematics",
+      "year_standing": 3,
+      "study_level": "BSc",
+      "department": 2,
+      "sin": "987654324",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "david.kim@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 5,
+    "fields": {
+      "student_number": "20241006",
+      "name": "Lisa Chen",
+      "phone": "+1-250-555-0106",
+      "program": "Physics",
+      "year_standing": 4,
+      "study_level": "MSc",
+      "department": 3,
+      "sin": "987654325",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "lisa.chen@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 6,
+    "fields": {
+      "student_number": "20241007",
+      "name": "Michael Rodriguez",
+      "phone": "+1-250-555-0107",
+      "program": "Computer Science",
+      "year_standing": 1,
+      "study_level": "BSc",
+      "department": 1,
+      "sin": "987654326",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "michael.rodriguez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 7,
+    "fields": {
+      "student_number": "20241008",
+      "name": "Jennifer Thompson",
+      "phone": "+1-250-555-0108",
+      "program": "Biology",
+      "year_standing": 2,
+      "study_level": "BSc",
+      "department": 5,
+      "sin": "987654327",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "jennifer.thompson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 8,
+    "fields": {
+      "student_number": "20241009",
+      "name": "Alex Martinez",
+      "phone": "+1-250-555-0109",
+      "program": "Engineering",
+      "year_standing": 3,
+      "study_level": "BSc",
+      "department": 6,
+      "sin": "987654328",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "alex.martinez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 9,
+    "fields": {
+      "student_number": "20241010",
+      "name": "Rachel Adams",
+      "phone": "+1-250-555-0110",
+      "program": "Psychology",
+      "year_standing": 4,
+      "study_level": "BA",
+      "department": 7,
+      "sin": "987654329",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "rachel.adams@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 10,
+    "fields": {
+      "student_number": "20241011",
+      "name": "Kevin Zhang",
+      "phone": "+1-250-555-0111",
+      "program": "Mathematics",
+      "year_standing": 1,
+      "study_level": "BSc",
+      "department": 2,
+      "sin": "987654330",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "kevin.zhang@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 1,
+    "fields": {
+      "course": 3,
+      "instructor": 2,
+      "term": 7,
+      "section": "001",
+      "capacity": 30,
+      "year": 2025,
+      "semester": "fall",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 2,
+    "fields": {
+      "course": 4,
+      "instructor": 3,
+      "term": 7,
+      "section": "001",
+      "capacity": 25,
+      "year": 2025,
+      "semester": "fall",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 3,
+    "fields": {
+      "course": 5,
+      "instructor": 2,
+      "term": 8,
+      "section": "001",
+      "capacity": 20,
+      "year": 2026,
+      "semester": "spring",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 4,
+    "fields": {
+      "course": 6,
+      "instructor": 7,
+      "term": 8,
+      "section": "001",
+      "capacity": 15,
+      "year": 2026,
+      "semester": "spring",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 5,
+    "fields": {
+      "course": 7,
+      "instructor": 3,
+      "term": 10,
+      "section": "001",
+      "capacity": 18,
+      "year": 2025,
+      "semester": "full_year",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 6,
+    "fields": {
+      "course": 8,
+      "instructor": 7,
+      "term": 10,
+      "section": "001",
+      "capacity": 12,
+      "year": 2025,
+      "semester": "full_year",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 7,
+    "fields": {
+      "course": 9,
+      "instructor": 4,
+      "term": 7,
+      "section": "001",
+      "capacity": 40,
+      "year": 2025,
+      "semester": "fall",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 8,
+    "fields": {
+      "course": 10,
+      "instructor": 4,
+      "term": 8,
+      "section": "001",
+      "capacity": 35,
+      "year": 2026,
+      "semester": "spring",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 9,
+    "fields": {
+      "course": 11,
+      "instructor": 4,
+      "term": 10,
+      "section": "001",
+      "capacity": 25,
+      "year": 2025,
+      "semester": "full_year",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 10,
+    "fields": {
+      "course": 12,
+      "instructor": 4,
+      "term": 7,
+      "section": "001",
+      "capacity": 30,
+      "year": 2025,
+      "semester": "fall",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 11,
+    "fields": {
+      "course": 13,
+      "instructor": 5,
+      "term": 7,
+      "section": "001",
+      "capacity": 50,
+      "year": 2025,
+      "semester": "fall",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 12,
+    "fields": {
+      "course": 14,
+      "instructor": 5,
+      "term": 8,
+      "section": "001",
+      "capacity": 45,
+      "year": 2026,
+      "semester": "spring",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 13,
+    "fields": {
+      "course": 1,
+      "instructor": 2,
+      "term": 7,
+      "section": "002",
+      "capacity": 25,
+      "year": 2025,
+      "semester": "fall",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 14,
+    "fields": {
+      "course": 2,
+      "instructor": 3,
+      "term": 8,
+      "section": "002",
+      "capacity": 20,
+      "year": 2026,
+      "semester": "spring",
+      "isActive": true
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 1,
+    "fields": {
+      "course_offering": 1,
+      "student": 1,
+      "session_type": "Lab",
+      "location": "ICCS 021",
+      "start_date": "2025-09-08",
+      "end_date": "2025-12-05",
+      "time_slots": [1, 2]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 2,
+    "fields": {
+      "course_offering": 1,
+      "student": 3,
+      "session_type": "Tutorial",
+      "location": "ICCS 025",
+      "start_date": "2025-09-10",
+      "end_date": "2025-12-07",
+      "time_slots": [4, 5]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 3,
+    "fields": {
+      "course_offering": 2,
+      "student": 2,
+      "session_type": "Lab",
+      "location": "EME 1153",
+      "start_date": "2025-09-08",
+      "end_date": "2025-12-05",
+      "time_slots": [7, 8]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 4,
+    "fields": {
+      "course_offering": 3,
+      "student": 4,
+      "session_type": "Tutorial",
+      "location": "ARTS 140",
+      "start_date": "2026-01-06",
+      "end_date": "2026-04-08",
+      "time_slots": [10, 11]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 5,
+    "fields": {
+      "course_offering": 4,
+      "student": 1,
+      "session_type": "Lab",
+      "location": "ICCS 021",
+      "start_date": "2026-01-06",
+      "end_date": "2026-04-08",
+      "time_slots": [13, 14]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 6,
+    "fields": {
+      "course_offering": 5,
+      "student": 5,
+      "session_type": "Tutorial",
+      "location": "MATH 100",
+      "start_date": "2025-09-01",
+      "end_date": "2026-04-30",
+      "time_slots": [16]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 7,
+    "fields": {
+      "course_offering": 6,
+      "student": 6,
+      "session_type": "Lab",
+      "location": "ICCS X836",
+      "start_date": "2025-09-01",
+      "end_date": "2026-04-30",
+      "time_slots": [17]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 8,
+    "fields": {
+      "course_offering": 7,
+      "student": 4,
+      "session_type": "Tutorial",
+      "location": "MATH 202",
+      "start_date": "2025-09-08",
+      "end_date": "2025-12-05",
+      "time_slots": [1, 3]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 9,
+    "fields": {
+      "course_offering": 8,
+      "student": 10,
+      "session_type": "Tutorial",
+      "location": "MATH 202",
+      "start_date": "2026-01-06",
+      "end_date": "2026-04-08",
+      "time_slots": [6, 9]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 10,
+    "fields": {
+      "course_offering": 11,
+      "student": 5,
+      "session_type": "Lab",
+      "location": "SCI 387",
+      "start_date": "2025-09-08",
+      "end_date": "2025-12-05",
+      "time_slots": [2, 5]
+    }
+  },
+  {
+    "model": "myapp.sharedsession",
+    "pk": 11,
+    "fields": {
+      "course_offering": 12,
+      "student": 5,
+      "session_type": "Lab",
+      "location": "SCI 387",
+      "start_date": "2026-01-06",
+      "end_date": "2026-04-08",
+      "time_slots": [8, 11]
+    }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 1,
+    "fields": {
+      "instructor": 2,
+      "course": 3,
+      "term": 7,
+      "ta_required": 2,
+      "additional_notes": "Need experienced TAs for programming lab sessions",
+      "priority": "high",
+      "status": "pending",
+      "created_at": "2024-08-15T10:00:00Z",
+      "updated_at": "2024-08-15T10:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 2,
+    "fields": {
+      "instructor": 3,
+      "course": 4,
+      "term": 7,
+      "ta_required": 1,
+      "additional_notes": "Looking for TA with strong assembly language background",
+      "priority": "medium",
+      "status": "pending",
+      "created_at": "2024-08-16T14:30:00Z",
+      "updated_at": "2024-08-16T14:30:00Z"
+    }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 3,
+    "fields": {
+      "instructor": 2,
+      "course": 5,
+      "term": 8,
+      "ta_required": 3,
+      "additional_notes": "Senior course requiring experienced TAs for project supervision",
+      "priority": "high",
+      "status": "approved",
+      "created_at": "2024-08-17T09:15:00Z",
+      "updated_at": "2024-08-20T16:45:00Z"
+    }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 4,
+    "fields": {
+      "instructor": 7,
+      "course": 6,
+      "term": 8,
+      "ta_required": 2,
+      "additional_notes": "Need TAs familiar with advanced algorithms and data structures",
+      "priority": "medium",
+      "status": "pending",
+      "created_at": "2024-08-18T11:20:00Z",
+      "updated_at": "2024-08-18T11:20:00Z"
+    }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 5,
+    "fields": {
+      "instructor": 4,
+      "course": 9,
+      "term": 7,
+      "ta_required": 3,
+      "additional_notes": "Large enrollment class, need multiple TAs for tutorials",
+      "priority": "high",
+      "status": "approved",
+      "created_at": "2024-08-19T13:45:00Z",
+      "updated_at": "2024-08-22T10:30:00Z"
+    }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 6,
+    "fields": {
+      "instructor": 4,
+      "course": 10,
+      "term": 8,
+      "ta_required": 2,
+      "additional_notes": "Continuation of MATH 100, need consistent TA support",
+      "priority": "medium",
+      "status": "pending",
+      "created_at": "2024-08-20T08:30:00Z",
+      "updated_at": "2024-08-20T08:30:00Z"
+    }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 7,
+    "fields": {
+      "instructor": 5,
+      "course": 13,
+      "term": 7,
+      "ta_required": 4,
+      "additional_notes": "Large physics course with multiple lab sections",
+      "priority": "high",
+      "status": "approved",
+      "created_at": "2024-08-21T15:00:00Z",
+      "updated_at": "2024-08-25T12:15:00Z"
+    }
+  },
+  {
+    "model": "myapp.instructorrequest",
+    "pk": 8,
+    "fields": {
+      "instructor": 3,
+      "course": 7,
+      "term": 10,
+      "ta_required": 1,
+      "additional_notes": "Database course requiring TA with SQL and database design experience",
+      "priority": "low",
+      "status": "rejected",
+      "created_at": "2024-08-22T12:30:00Z",
+      "updated_at": "2024-08-28T14:20:00Z"
+    }
   }
 ]

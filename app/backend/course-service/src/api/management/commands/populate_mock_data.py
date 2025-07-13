@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import date, timedelta, time
 from api.models import (
     Department, Instructor, Term, TimeSlot, Course, 
-    CourseOffering, SharedSession, Student
+    CourseOffering, SharedSession, Student, InstructorRequest
 )
 
 
@@ -33,6 +33,7 @@ class Command(BaseCommand):
         courses = self.create_courses(departments)
         course_offerings = self.create_course_offerings(courses, terms, instructors)
         shared_sessions = self.create_shared_sessions(courses, terms, time_slots, students)
+        instructor_requests = self.create_instructor_requests(instructors, course_offerings)
         
         self.stdout.write(
             self.style.SUCCESS(
@@ -44,13 +45,17 @@ class Command(BaseCommand):
                 f'  - {len(students)} students\n'
                 f'  - {len(courses)} courses\n'
                 f'  - {len(course_offerings)} course offerings\n'
-                f'  - {len(shared_sessions)} shared sessions'
+                f'  - {len(shared_sessions)} shared sessions\n'
+                f'  - {len(instructor_requests)} instructor requests'
             )
         )
     
     def clear_data(self):
         """Clear all existing data, handling foreign key constraints"""
         # Clear in dependency order to avoid foreign key violations
+        # InstructorRequest depends on Instructor and CourseOffering
+        InstructorRequest.objects.all().delete()
+        
         # SharedSession depends on Course, Term, and TimeSlot
         SharedSession.objects.all().delete()
         
@@ -451,3 +456,40 @@ class Command(BaseCommand):
                 self.stdout.write(f'  Warning: Course {course_number} not found')
         
         return sessions
+    
+    def create_instructor_requests(self, instructors, course_offerings):
+        """Create instructor request data"""
+        requests = []
+        
+        # Get some sample data
+        from datetime import date, timedelta
+        today = date.today()
+        
+        # Sample instructor requests
+        request_data = [
+            (instructors[0], course_offerings[0], today - timedelta(days=5), 'Request for additional grading support for COSC 111 section 001'),
+            (instructors[1], course_offerings[1], today - timedelta(days=3), 'Need teaching assistant for lab sections in COSC 111 section 002'),
+            (instructors[0], course_offerings[2], today - timedelta(days=10), 'Requesting TA support for office hours and grading'),
+            (instructors[2], course_offerings[4], today - timedelta(days=1), 'Summer session COSC 121 requires additional tutoring support'),
+            (instructors[1], course_offerings[7], today - timedelta(days=15), 'COSC 320 complex algorithms course needs advanced TA'),
+            (instructors[2], course_offerings[8], today - timedelta(days=7), 'Capstone project coordination requires graduate student assistance'),
+            (instructors[0], course_offerings[9], today - timedelta(days=20), 'Large enrollment in MATH 100 requires multiple grading assistants'),
+            (instructors[0], course_offerings[10], today - timedelta(days=2), 'Second section of MATH 100 needs lab supervision'),
+        ]
+        
+        for instructor, course_offering, request_date, description in request_data:
+            try:
+                request, created = InstructorRequest.objects.get_or_create(
+                    instructor=instructor,
+                    course_offering=course_offering,
+                    request_date=request_date,
+                    defaults={'request_description': description}
+                )
+                requests.append(request)
+                if created:
+                    offering_info = f"{course_offering.course.course_number} {course_offering.section_number}"
+                    self.stdout.write(f'  Created request: {instructor.name} -> {offering_info}')
+            except Exception as e:
+                self.stdout.write(f'  Warning: Failed to create request - {str(e)}')
+        
+        return requests

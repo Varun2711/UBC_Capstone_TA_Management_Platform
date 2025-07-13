@@ -756,6 +756,126 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
+# InstructorRequest ViewSet
+class InstructorRequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for InstructorRequest model with full CRUD operations.
+    Provides filtering, searching, and ordering capabilities.
+    """
+    queryset = InstructorRequest.objects.all()
+    serializer_class = InstructorRequestSerializer
+    permission_classes = [AllowAny]  # Adjust based on your auth requirements
+    
+    # Enable filtering, searching, and ordering
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    # Define filterable fields
+    filterset_fields = {
+        'instructor': ['exact'],
+        'course_offering': ['exact'],
+        'request_date': ['exact', 'gte', 'lte'],
+        'instructor__department': ['exact'],
+        'course_offering__course': ['exact'],
+        'course_offering__academic_term': ['exact'],
+        'course_offering__course__course_number': ['exact', 'icontains'],
+        'course_offering__academic_term__startCalendarYear': ['exact', 'gte', 'lte'],
+        'course_offering__academic_term__is_active': ['exact'],
+    }
+    
+    # Define searchable fields
+    search_fields = ['request_description', 'instructor__name', 'course_offering__course__course_number', 'course_offering__course__course_name']
+    
+    # Define ordering fields
+    ordering_fields = ['request_date', 'instructor__name', 'course_offering__course__course_number']
+    ordering = ['-request_date']  # Default ordering: newest requests first
+    
+    @action(detail=False, methods=['get'])
+    def by_instructor(self, request):
+        """
+        Get instructor requests by instructor.
+        Usage: /instructor-requests/by_instructor/?instructor_id=1
+        """
+        instructor_id = request.query_params.get('instructor_id')
+        if not instructor_id:
+            return Response(
+                {'error': 'instructor_id parameter is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            instructor_id = int(instructor_id)
+            requests = self.queryset.filter(instructor_id=instructor_id)
+            serializer = self.get_serializer(requests, many=True)
+            return Response(serializer.data)
+        except ValueError:
+            return Response(
+                {'error': 'Invalid instructor_id format'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['get'])
+    def by_course_offering(self, request):
+        """
+        Get instructor requests by course offering.
+        Usage: /instructor-requests/by_course_offering/?course_offering_id=1
+        """
+        course_offering_id = request.query_params.get('course_offering_id')
+        if not course_offering_id:
+            return Response(
+                {'error': 'course_offering_id parameter is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            course_offering_id = int(course_offering_id)
+            requests = self.queryset.filter(course_offering_id=course_offering_id)
+            serializer = self.get_serializer(requests, many=True)
+            return Response(serializer.data)
+        except ValueError:
+            return Response(
+                {'error': 'Invalid course_offering_id format'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """
+        Get recent instructor requests (last 30 days).
+        Usage: /instructor-requests/recent/
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        thirty_days_ago = timezone.now().date() - timedelta(days=30)
+        recent_requests = self.queryset.filter(request_date__gte=thirty_days_ago)
+        serializer = self.get_serializer(recent_requests, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_term(self, request):
+        """
+        Get instructor requests by academic term.
+        Usage: /instructor-requests/by_term/?term_id=1
+        """
+        term_id = request.query_params.get('term_id')
+        if not term_id:
+            return Response(
+                {'error': 'term_id parameter is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            term_id = int(term_id)
+            requests = self.queryset.filter(course_offering__academic_term_id=term_id)
+            serializer = self.get_serializer(requests, many=True)
+            return Response(serializer.data)
+        except ValueError:
+            return Response(
+                {'error': 'Invalid term_id format'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 # API Root View
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -929,6 +1049,38 @@ def api_root(request, format=None):
                     'methods': ['GET'],
                     'description': 'Get all time slots for a specific shared session'
                 }
+            },
+            'instructor_requests': {
+                'list': {
+                    'url': '/api/course-term-service/instructor-requests/',
+                    'methods': ['GET', 'POST'],
+                    'description': 'List all instructor requests or create a new instructor request'
+                },
+                'detail': {
+                    'url': '/api/course-term-service/instructor-requests/{id}/',
+                    'methods': ['GET', 'PUT', 'PATCH', 'DELETE'],
+                    'description': 'Retrieve, update, or delete a specific instructor request'
+                },
+                'by_instructor': {
+                    'url': '/api/course-term-service/instructor-requests/by_instructor/?instructor_id={instructor_id}',
+                    'methods': ['GET'],
+                    'description': 'Get instructor requests by instructor (instructor_id parameter required)'
+                },
+                'by_course_offering': {
+                    'url': '/api/course-term-service/instructor-requests/by_course_offering/?course_offering_id={course_offering_id}',
+                    'methods': ['GET'],
+                    'description': 'Get instructor requests by course offering (course_offering_id parameter required)'
+                },
+                'recent': {
+                    'url': '/api/course-term-service/instructor-requests/recent/',
+                    'methods': ['GET'],
+                    'description': 'Get recent instructor requests (last 30 days)'
+                },
+                'by_term': {
+                    'url': '/api/course-term-service/instructor-requests/by_term/?term_id={term_id}',
+                    'methods': ['GET'],
+                    'description': 'Get instructor requests by academic term (term_id parameter required)'
+                }
             }
         },
         'features': {
@@ -954,7 +1106,11 @@ def api_root(request, format=None):
             'search_sessions': '/api/course-term-service/shared-sessions/?search=lab',
             'filter_by_session_type': '/api/course-term-service/shared-sessions/?session_type=LAB',
             'filter_sessions_by_course': '/api/course-term-service/shared-sessions/?course=1',
-            'filter_sessions_by_student': '/api/course-term-service/shared-sessions/?student=123'
+            'filter_sessions_by_student': '/api/course-term-service/shared-sessions/?student=123',
+            'filter_recent_requests': '/api/course-term-service/instructor-requests/recent/',
+            'search_requests': '/api/course-term-service/instructor-requests/?search=database',
+            'filter_requests_by_instructor': '/api/course-term-service/instructor-requests/?instructor=1',
+            'filter_requests_by_term': '/api/course-term-service/instructor-requests/?course_offering__academic_term=1'
         },
         'notes': {
             'time_increments': 'Time slots include time_increments array with 30-minute intervals (e.g., 8:00 AM - 9:30 AM returns ["08:00", "08:30", "09:00"])',
