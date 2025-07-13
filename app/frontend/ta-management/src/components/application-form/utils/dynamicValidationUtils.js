@@ -14,8 +14,13 @@ export const validateDynamicForm = (section, responses) => {
     return { isValid: true, errors: {} };
   }
 
-  section.questions.forEach(question => {
-    const { field_name, is_required, question_type, validation_rules = {} } = question;
+  section.questions.forEach((question) => {
+    const {
+      field_name,
+      is_required,
+      question_type,
+      validation_rules = {},
+    } = question;
     const value = responses[field_name];
 
     // Check required fields
@@ -33,14 +38,22 @@ export const validateDynamicForm = (section, responses) => {
     }
 
     // Type-specific validation
-    const typeValidation = validateByType(value, question_type, validation_rules);
+    const typeValidation = validateByType(
+      value,
+      question_type,
+      validation_rules
+    );
     if (!typeValidation.isValid) {
       errors[field_name] = typeValidation.error;
       isValid = false;
     }
 
     // Custom validation rules
-    const customValidation = validateCustomRules(value, validation_rules, question);
+    const customValidation = validateCustomRules(
+      value,
+      validation_rules,
+      question
+    );
     if (!customValidation.isValid) {
       errors[field_name] = customValidation.error;
       isValid = false;
@@ -58,28 +71,30 @@ export const validateDynamicForm = (section, responses) => {
  */
 const isEmpty = (value, questionType) => {
   if (value === null || value === undefined) return true;
-  
+
   switch (questionType) {
-    case 'text':
-    case 'textarea':
-    case 'email':
-    case 'select':
-    case 'radio':
-      return value === '' || (typeof value === 'string' && value.trim() === '');
-    
-    case 'number':
-      return value === '' || value === null || value === undefined;
-    
-    case 'checkbox':
+    case "text":
+    case "textarea":
+    case "email":
+    case "select":
+    case "radio":
+      return value === "" || (typeof value === "string" && value.trim() === "");
+
+    case "number":
+      return value === "" || value === null || value === undefined;
+
+    case "checkbox":
       return !Array.isArray(value) || value.length === 0;
-    
-    case 'ranking':
-      if (!value || typeof value !== 'object') return true;
-      return Object.keys(value).length === 0 || !Object.values(value).some(v => v);
-    
-    case 'file':
+
+    case "ranking":
+      if (!value || typeof value !== "object") return true;
+      return (
+        Object.keys(value).length === 0 || !Object.values(value).some((v) => v)
+      );
+
+    case "file":
       return !value || !value.file;
-    
+
     default:
       return !value;
   }
@@ -94,76 +109,123 @@ const isEmpty = (value, questionType) => {
  */
 const validateByType = (value, questionType, validationRules) => {
   switch (questionType) {
-    case 'email':
+    case "email":
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
-        return { isValid: false, error: 'Please enter a valid email address.' };
+        return { isValid: false, error: "Please enter a valid email address." };
       }
       break;
 
-    case 'number':
+    case "number":
       const numValue = parseFloat(value);
       if (isNaN(numValue)) {
-        return { isValid: false, error: 'Please enter a valid number.' };
+        return { isValid: false, error: "Please enter a valid number." };
       }
-      
+
       if (validationRules.min !== undefined && numValue < validationRules.min) {
-        return { isValid: false, error: `Value must be at least ${validationRules.min}.` };
+        return {
+          isValid: false,
+          error: `Value must be at least ${validationRules.min}.`,
+        };
       }
-      
+
       if (validationRules.max !== undefined && numValue > validationRules.max) {
-        return { isValid: false, error: `Value must be no more than ${validationRules.max}.` };
+        return {
+          isValid: false,
+          error: `Value must be no more than ${validationRules.max}.`,
+        };
       }
       break;
 
-    case 'text':
-    case 'textarea':
-      if (validationRules.minLength && value.length < validationRules.minLength) {
-        return { isValid: false, error: `Must be at least ${validationRules.minLength} characters.` };
+    case "text":
+    case "textarea":
+      if (
+        validationRules.minLength &&
+        value.length < validationRules.minLength
+      ) {
+        return {
+          isValid: false,
+          error: `Must be at least ${validationRules.minLength} characters.`,
+        };
       }
-      
-      if (validationRules.maxLength && value.length > validationRules.maxLength) {
-        return { isValid: false, error: `Must be no more than ${validationRules.maxLength} characters.` };
+
+      if (
+        validationRules.maxLength &&
+        value.length > validationRules.maxLength
+      ) {
+        return {
+          isValid: false,
+          error: `Must be no more than ${validationRules.maxLength} characters.`,
+        };
       }
       break;
 
-    case 'checkbox':
-      if (validationRules.minSelections && value.length < validationRules.minSelections) {
-        return { isValid: false, error: `Please select at least ${validationRules.minSelections} options.` };
+    case "checkbox":
+      if (
+        validationRules.minSelections &&
+        value.length < validationRules.minSelections
+      ) {
+        return {
+          isValid: false,
+          error: `Please select at least ${validationRules.minSelections} options.`,
+        };
       }
-      
-      if (validationRules.maxSelections && value.length > validationRules.maxSelections) {
-        return { isValid: false, error: `Please select no more than ${validationRules.maxSelections} options.` };
+
+      if (
+        validationRules.maxSelections &&
+        value.length > validationRules.maxSelections
+      ) {
+        return {
+          isValid: false,
+          error: `Please select no more than ${validationRules.maxSelections} options.`,
+        };
       }
       break;
 
-    case 'ranking':
+    case "ranking":
       if (validationRules.requireAllRanks) {
         const expectedRanks = validationRules.maxRanks || 3;
-        const filledRanks = Object.values(value).filter(v => v).length;
+        const filledRanks = Object.values(value).filter((v) => v).length;
         if (filledRanks < expectedRanks) {
-          return { isValid: false, error: `Please rank all ${expectedRanks} options.` };
+          return {
+            isValid: false,
+            error: `Please rank all ${expectedRanks} options.`,
+          };
         }
       }
-      
+
       // Check for duplicate rankings
-      const rankValues = Object.values(value).filter(v => v);
+      const rankValues = Object.values(value).filter((v) => v);
       const uniqueValues = new Set(rankValues);
       if (rankValues.length !== uniqueValues.size) {
-        return { isValid: false, error: 'Each option can only be ranked once.' };
+        return {
+          isValid: false,
+          error: "Each option can only be ranked once.",
+        };
       }
       break;
 
-    case 'file':
+    case "file":
       if (validationRules.maxSize && value.size > validationRules.maxSize) {
         const maxSizeMB = (validationRules.maxSize / (1024 * 1024)).toFixed(1);
-        return { isValid: false, error: `File size must be less than ${maxSizeMB}MB.` };
+        return {
+          isValid: false,
+          error: `File size must be less than ${maxSizeMB}MB.`,
+        };
       }
-      
-      if (validationRules.allowedTypes && validationRules.allowedTypes.length > 0) {
-        const fileExtension = value.name.split('.').pop().toLowerCase();
+
+      if (
+        validationRules.allowedTypes &&
+        validationRules.allowedTypes.length > 0
+      ) {
+        const fileExtension = value.name.split(".").pop().toLowerCase();
         if (!validationRules.allowedTypes.includes(fileExtension)) {
-          return { isValid: false, error: `File type must be one of: ${validationRules.allowedTypes.join(', ')}.` };
+          return {
+            isValid: false,
+            error: `File type must be one of: ${validationRules.allowedTypes.join(
+              ", "
+            )}.`,
+          };
         }
       }
       break;
@@ -184,23 +246,26 @@ const validateCustomRules = (value, validationRules, question) => {
   if (validationRules.pattern) {
     const regex = new RegExp(validationRules.pattern);
     if (!regex.test(value)) {
-      return { 
-        isValid: false, 
-        error: validationRules.patternMessage || 'Please enter a valid format.' 
+      return {
+        isValid: false,
+        error: validationRules.patternMessage || "Please enter a valid format.",
       };
     }
   }
 
   // Custom function validation (if you want to support it)
-  if (validationRules.customValidator && typeof validationRules.customValidator === 'function') {
+  if (
+    validationRules.customValidator &&
+    typeof validationRules.customValidator === "function"
+  ) {
     try {
       const result = validationRules.customValidator(value, question);
       if (result !== true) {
-        return { isValid: false, error: result || 'Invalid value.' };
+        return { isValid: false, error: result || "Invalid value." };
       }
     } catch (error) {
-      console.error('Custom validator error:', error);
-      return { isValid: false, error: 'Validation error occurred.' };
+      console.error("Custom validator error:", error);
+      return { isValid: false, error: "Validation error occurred." };
     }
   }
 
@@ -222,9 +287,9 @@ export const validateEntireForm = (template, responses) => {
     return { isValid: true, errors: {}, sectionErrors: {} };
   }
 
-  template.sections.forEach(section => {
+  template.sections.forEach((section) => {
     const sectionValidation = validateDynamicForm(section, responses);
-    
+
     if (!sectionValidation.isValid) {
       isValid = false;
       sectionErrors[section.section_id] = sectionValidation.errors;
@@ -244,32 +309,32 @@ export const getDefaultValidationRules = (questionType) => {
   const defaults = {
     text: {
       maxLength: 500,
-      minLength: 0
+      minLength: 0,
     },
     textarea: {
       maxLength: 2000,
-      minLength: 0
+      minLength: 0,
     },
     email: {
-      pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+,
-      patternMessage: 'Please enter a valid email address'
+      pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+",
+      patternMessage: "Please enter a valid email address",
     },
     number: {
       min: 0,
-      max: 999999
+      max: 999999,
     },
     checkbox: {
       minSelections: 0,
-      maxSelections: 10
+      maxSelections: 10,
     },
     ranking: {
       maxRanks: 3,
-      requireAllRanks: true
+      requireAllRanks: true,
     },
     file: {
       maxSize: 10 * 1024 * 1024, // 10MB
-      allowedTypes: ['pdf', 'doc', 'docx', 'txt']
-    }
+      allowedTypes: ["pdf", "doc", "docx", "txt"],
+    },
   };
 
   return defaults[questionType] || {};

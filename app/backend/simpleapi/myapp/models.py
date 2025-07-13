@@ -195,6 +195,7 @@ class FormTemplate(models.Model):
     created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
+    is_editable = models.BooleanField(default=True)
     
     class Meta:
         managed = False
@@ -220,6 +221,7 @@ class FormSection(models.Model):
     order = models.PositiveIntegerField()
     is_required = models.BooleanField(default=True)
     description = models.TextField(null=True, blank=True)
+    is_editable = models.BooleanField(default=True)
     
     class Meta:
         managed = False
@@ -253,6 +255,7 @@ class FormQuestion(models.Model):
     help_text = models.TextField(null=True, blank=True)
     validation_rules = models.JSONField(null=True, blank=True)  # Store validation rules
     options = models.JSONField(null=True, blank=True)  # For select/radio options
+    is_editable = models.BooleanField(default=True)
     
     class Meta:
         managed = False
@@ -306,9 +309,7 @@ class JobPosting(models.Model):
     def is_expired(self):        
         return self.deadline_date < timezone.now().date()
     
-
-    
-
+ 
 class JobPostingQuestion(models.Model):
     question_id = models.AutoField(primary_key=True)
     posting = models.ForeignKey(JobPosting, on_delete=models.CASCADE, related_name='posting_questions')
@@ -329,13 +330,11 @@ class Application(models.Model):
     posting = models.ForeignKey('JobPosting', on_delete=models.SET_NULL, null=True, db_constraint=False)
     status = models.CharField(max_length=20, choices=[ 
         ('draft', 'Draft'),
-        ('submitted', 'Submitted'),
-        ('under_review', 'Under Review'),
+        ('submitted', 'Submitted'),        
         ('accepted', 'Accepted'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'No Longer In Consideration'),
         ('withdrawn', 'Withdrawn'),
-        ('archived', 'Archived'),
-        ('deleted', 'Deleted'),], default='draft')
+        ('archived', 'Archived'), ], default='draft')
     
     # Timestamps
     applied_at = models.DateTimeField(default=timezone.now)
@@ -410,6 +409,23 @@ class ApplicationResponse(models.Model):
     def __str__(self):
         return f"Response to {self.question.question_text[:30]} for {self.application}"   
 
+class ApplicationShortList(models.Model):    
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='shortlists')    
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    created_at = models.DateTimeField(default=timezone.now)  # Track when shortlisted
+    notes = models.TextField(null=True, blank=True)  # Optional notes about why shortlisted
+    
+    class Meta:
+        managed = False
+        db_table = 'myapp_applicationshortlist'
+        # Prevent duplicate shortlists by same scheduler for same application
+        unique_together = ('application', 'created_by')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Shortlisted: {self.application} by {self.created_by}"
+
+
 class Offer(models.Model):
     requiredhours_choices ={
         ('1', '6 hours'),
@@ -478,3 +494,5 @@ class Document(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_document'
+
+

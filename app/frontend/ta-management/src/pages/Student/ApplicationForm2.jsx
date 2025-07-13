@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/student-dashboard-sidebar";
-import DynamicFormRenderer from "@/components/DynamicFormRenderer";
+import DynamicFormRenderer from "@/components/form-builder/DynamicFormRenderer";
 import ProgressBar from "@/components/ProgressBar";
 import { validateDynamicForm } from "@/components/application-form/utils/dynamicValidationUtils";
 import axios from "axios";
@@ -46,19 +46,25 @@ export default function ApplicationForm() {
       try {
         // Fetch student profile
         const accessToken = localStorage.getItem("accessToken");
+        console.log("Access Token:", accessToken);
         if (!accessToken) {
-          setStudent(studentProfile);
-        } else {
-          const studentResponse = await instance.get("/profile/me/", {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          setStudent(studentResponse.data);
+          console.log("No access token found in localStorage.");
+          return;
         }
+
+        const studentResponse = await instance.get(`/profile/me/`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        console.log("Student Profile Response:", studentResponse.data);
+        setStudent(studentResponse.data);
 
         // Fetch job posting and its form template
         const postingResponse = await instance.get(
           `/ajp/jobpostings/${postingId}/`
         );
+        console.log("Job Posting Response:", postingResponse.data);
         setJobPosting(postingResponse.data);
 
         // Check if job posting has a custom form template
