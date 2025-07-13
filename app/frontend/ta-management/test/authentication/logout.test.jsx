@@ -5,7 +5,39 @@ import { USERS } from "../test-utils/testUsers"
 import { renderWithAuth } from "../test-utils/renderWithAuth"
 import axios from "axios"
 
-vi.mock("axios")
+// ✅ Properly mock axios with interceptors
+vi.mock("axios", () => ({
+  default: {
+    create: vi.fn(() => ({
+      get: vi.fn(),
+      post: vi.fn(),
+      patch: vi.fn(),
+      put: vi.fn(),
+      // ✅ Mock interceptors property
+      interceptors: {
+        request: {
+          use: vi.fn(),
+        },
+        response: {
+          use: vi.fn(),
+        },
+      },
+    })),
+    get: vi.fn(),
+    post: vi.fn(),
+    patch: vi.fn(),
+    put: vi.fn(),
+    // ✅ Mock interceptors for the main axios instance too
+    interceptors: {
+      request: {
+        use: vi.fn(),
+      },
+      response: {
+        use: vi.fn(),
+      },
+    },
+  },
+}))
 
 describe("Logout", () => {
   beforeEach(() => {
@@ -66,6 +98,22 @@ describe("Logout", () => {
     axios.post.mockResolvedValue({ data: {} })
     axios.patch.mockResolvedValue({ data: {} })
     axios.put.mockResolvedValue({ data: {} })
+
+    // ✅ Mock axios.create to return mocked instance
+    axios.create.mockReturnValue({
+      get: axios.get,
+      post: axios.post,
+      patch: axios.patch,
+      put: axios.put,
+      interceptors: {
+        request: {
+          use: vi.fn(),
+        },
+        response: {
+          use: vi.fn(),
+        },
+      },
+    })
   })
 
   it.each(USERS)(
