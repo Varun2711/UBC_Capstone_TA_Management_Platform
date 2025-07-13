@@ -13,7 +13,8 @@ import {
   Settings,
   Users,
   CheckCircle,
-  Eye
+  Eye,
+  Filter
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -53,7 +54,7 @@ let availableTAs = [
     maxHours: 20,
     currentHours: 10,
     skills: ["Python", "Java", "JavaScript"],
-    experience: ["CS 101", "CS 201"],
+    experience: ["COSC 101", "COSC 201"],
     availability: [
       "Monday-9-top", "Monday-10-bottom",
       "Wednesday-13-top", "Wednesday-14-bottom",
@@ -73,7 +74,7 @@ let availableTAs = [
     maxHours: 20,
     currentHours: 15,
     skills: ["C++", "Python", "Machine Learning"],
-    experience: ["CS 301", "CS 401"],
+    experience: ["COSC 301", "COSC 401"],
     availability: [
       "Tuesday-10-top", "Tuesday-11-top",
       "Thursday-14-top", "Thursday-14-bottom"
@@ -92,7 +93,7 @@ let availableTAs = [
     maxHours: 10,
     currentHours: 10,
     skills: ["JavaScript", "React", "Node.js"],
-    experience: ["CS 102", "CS 250"],
+    experience: ["COSC 102", "COSC 250"],
     availability: [
       "Monday-9-bottom", "Tuesday-10-top", "Wednesday-15-bottom"
     ],
@@ -104,13 +105,13 @@ let availableTAs = [
     name: "Abraham Lincoln",
     email: "abraham.lincoln@university.edu",
     studentId: "AL2354021",
-    major: "Political Science",
+    major: "Data Science",
     year: "Undergraduate",
     gpa: "3.80",
     maxHours: 20,
     currentHours: 0,
-    skills: ["Canadian Government", "International Law", "European History"],
-    experience: ["GOV 101", "LAW 201"],
+    skills: ["Tableau", "Power BI", "Pandas"],
+    experience: ["DATA 101", "DATA 224"],
     availability: [
       "Monday-8-top", "Tuesday-10-top", "Tuesday-10-bottom", "Friday-9-bottom"
     ],
@@ -123,10 +124,10 @@ let availableTAs = [
 const courses = [
   {
     id: 1,
-    code: "CS 101",
+    code: "COSC 101",
     name: "Introduction to Programming",
     instructor: "Dr. Smith",
-    semester: "Spring 2024",
+    semester: "W2025 Term 1",
     sections: [
       {
         id: 1,
@@ -182,10 +183,10 @@ const courses = [
   },
   {
     id: 2,
-    code: "CS 201",
+    code: "COSC 201",
     name: "Data Structures",
     instructor: "Dr. Johnson",
-    semester: "Spring 2024",
+    semester: "S2025",
     sections: [
       {
         id: 4,
@@ -226,10 +227,10 @@ const courses = [
   },
   {
     id: 3,
-    code: "POLI 105",
-    name: "Introduction to European Politics",
+    code: "DATA 105",
+    name: "Introduction to Data Analytics",
     instructor: "Dr. Surrey",
-    semester: "Fall 2024",
+    semester: "W2025 Term 2",
     sections: [
       {
         id: 6,
@@ -294,10 +295,12 @@ export default function TAAllocationPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState(null)
   const [activeOffers, setActiveOffers] = useState([])
-
+  const [filters, setFilters] = useState({
+    discipline: "",
+    term_code: "",
+  });
 
   const selectedTA = taList.find((ta) => ta.id === selectedTAId)
-
 
   // Function to store the assignment of a TA to a course
   const handleAssignTA = (selectedTA, selectedCourse) => {
@@ -514,11 +517,7 @@ export default function TAAllocationPage() {
       .join(" | ")
   }
 
-
-
-
-
-// Function to get assignments for a specific TA
+  // Function to get assignments for a specific TA
   function getAssignmentsForTA(taName) {
   return assignments.filter((assignment) => assignment.taName === taName)
   }
@@ -551,8 +550,53 @@ export default function TAAllocationPage() {
       course.instructor.toLowerCase().includes(searchTermForCourse.toLowerCase()) ||
       course.semester.toLowerCase().includes(searchTermForCourse.toLowerCase())
 
-    return matchesSearch 
+    // Discipline filter logic
+    const matchesDiscipline = filters.discipline
+      ? course.code.startsWith(filters.discipline)
+      : true;
+
+    // Term filter logic (assuming semester format is "Term Year")
+    const matchesTerm = filters.term_code
+      ? course.semester.toLowerCase().includes(filters.term_code.toLowerCase())
+      : true;
+    
+    return matchesSearch && matchesDiscipline && matchesTerm
   })
+
+  // Function to handle changes in filter dropdowns
+  const handleFilterChange = (filterName, value) => {
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [filterName]: value,
+    }));
+  };
+
+  // Function to clear all active filters
+  const clearFilters = () => {
+    setFilters({
+      discipline: "",
+      term_code: "",
+    });
+    setSearchTermForCourse("");
+  };
+
+  const termCodeOptions = [
+    { value: "", label: "Select Term" },
+    { value: "S2025", label: "S2025" },
+    { value: "W2025 Term 1", label: "W2025 Term 1" },
+    { value: "W2025 Term 2", label: "W2025 Term 2" },
+  ];
+
+  const disciplineOptions = [
+    { value: "", label: "Select Discipline" },
+    { value: "ASTR", label: "ASTR" },
+    { value: "COSC", label: "COSC" },
+    { value: "DATA", label: "DATA" },
+    { value: "MATH", label: "MATH" },
+    { value: "PHYS", label: "PHYS" },
+    { value: "STAT", label: "STAT" },
+  ];
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -745,14 +789,58 @@ export default function TAAllocationPage() {
                       <CardDescription>Choose a course section that needs a TA</CardDescription>
                     </CardHeader>
                     <CardContent>
+
                       {/* ✅ Search Bar */}
-                        <input
-                          type="text"
-                          placeholder="Search Courses by name, code, instructor, and semester"
-                          className="w-full mb-4 p-2 border border-gray-300 rounded-md"
-                          value={searchTermForCourse}
-                          onChange={(e) => setSearchTermForCourse(e.target.value)}
-                        />
+                      <input
+                        type="text"
+                        placeholder="Search Courses by name, code, instructor, and semester"
+                        className="w-full mb-4 p-2 border border-gray-300 rounded-md"
+                        value={searchTermForCourse}
+                        onChange={(e) => setSearchTermForCourse(e.target.value)}
+                      />
+
+                      {/* ✅ Filters */}
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <Filter className="h-5 w-5 text-gray-600" />
+                        <h3 className="text-lg font-medium text-gray-900">Filters & Search</h3>
+                      </div>
+
+                      {/* Filter Controls */}
+                      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
+                        <select
+                          value={filters.discipline}
+                          onChange={(e) => handleFilterChange("discipline", e.target.value)}
+                          className="px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 w-full"
+                        >
+                          {disciplineOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Fixed: Changed from termSelection to term_code */}
+                        <select
+                          value={filters.term_code}
+                          onChange={(e) => handleFilterChange("term_code", e.target.value)}
+                          className="px-2 py-2 border text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 w-full"
+                        >
+                          {termCodeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        
+                        <div className="md:col-span-2">
+                          <button
+                            onClick={clearFilters}
+                            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            Clear Filters
+                          </button>
+                        </div>
+                      </div>
                       <div className="space-y-4">
                         {filteredCourses.map((course) => {
                           const availableSections = course.sections.filter(
