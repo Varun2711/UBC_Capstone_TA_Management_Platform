@@ -4,11 +4,15 @@ Django settings for application_service project.
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import sys
 
 load_dotenv('../../.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Add shared utilities to Python path
+sys.path.insert(0, os.path.join(BASE_DIR.parent, 'shared-utils'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -37,6 +41,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'auth_utils.middleware.JWTAuthenticationMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

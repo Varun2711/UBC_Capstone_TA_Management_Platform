@@ -35,6 +35,7 @@ services:
       - .env
     volumes:
       - ./backend/user-profile-service:/app
+      - ./shared-utils:/app/shared-utils
     depends_on:
       db:
         condition: service_healthy
@@ -65,6 +66,7 @@ services:
       - .env
     volumes:
       - ./backend/auth-service:/app
+      - ./shared-utils:/app/shared-utils
     depends_on:
       db:
         condition: service_healthy
@@ -87,6 +89,7 @@ services:
       - .env
     volumes:
       - ./backend/applications-jobpostings-service:/app
+      - ./shared-utils:/app/shared-utils
     depends_on:
       db:
         condition: service_healthy
@@ -100,7 +103,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8003/api/applications/')",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8003/api/')",
         ]
       interval: 10s
       timeout: 5s
