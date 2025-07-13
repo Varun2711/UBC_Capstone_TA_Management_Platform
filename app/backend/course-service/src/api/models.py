@@ -247,8 +247,7 @@ class SharedSession(models.Model):
     SESSION_TYPE_CHOICES = [
         ('lab', 'Lab'),
         ('tutorial', 'Tutorial'),
-        ('seminar', 'Seminar'),
-        ('workshop', 'Workshop'),
+        ('seminar', 'Seminar')
     ]
 
     shared_session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)

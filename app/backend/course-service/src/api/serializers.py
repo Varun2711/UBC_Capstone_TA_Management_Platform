@@ -193,6 +193,7 @@ class CourseSerializer(serializers.ModelSerializer):
             'department',
             'course_description',
             'course_level',
+            'is_active',
             'offerings_count'
         ]
         read_only_fields = ['id', 'department_name', 'department_id', 'offerings_count']
@@ -256,11 +257,14 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
             'course_offering_id',
             'course_info',
             'course_id',
+            'course',  # Add for test compatibility
             'section_number',
             'term_info',
             'term_id',
+            'academic_term',  # Add for test compatibility
             'instructor_info',
-            'instructor_id'
+            'instructor_id',
+            'instructor'  # Add for test compatibility
         ]
         read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info']
     
