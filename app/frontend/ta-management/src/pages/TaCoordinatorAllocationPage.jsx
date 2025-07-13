@@ -897,17 +897,17 @@ export default function TAAllocationPage() {
                   </Card>
                 </div>
 
-                {/* Assignment Action */}
+                {/* Send Offer Action */}
                 {selectedTA && selectedCourse && (
                   <Card>
                     <CardHeader>
-                      <CardTitle>Confirm Assignment</CardTitle>
+                      <CardTitle> Send Offer </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                         <div>
                           <p className="font-medium">
-                            Assign <span className="text-blue-600">{selectedTA.name}</span> to{" "}
+                            Send offer to <span className="text-blue-600">{selectedTA.name}</span> for{" "}
                             <span className="text-blue-600">
                               {selectedCourse.code} - {selectedCourse.name} - {selectedCourse.type} Section {selectedCourse.section}
                             </span>
@@ -954,7 +954,7 @@ export default function TAAllocationPage() {
 
                             }}
                           >
-                            Confirm Assignment
+                            Send Offer
                           </Button>
                         </div>
                       </div>
