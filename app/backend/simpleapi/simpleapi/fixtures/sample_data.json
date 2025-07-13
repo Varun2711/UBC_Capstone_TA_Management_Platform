@@ -239,6 +239,7 @@
       "otherPositionHours": 8
     }
   },
+  
   {
     "model": "myapp.department",
     "pk": 1,
@@ -665,7 +666,8 @@
     "model": "myapp.timeslot",
     "pk": 1,
     "fields": {
-      "day": "Monday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440001",
+      "day": "monday",
       "start_time": "08:00:00",
       "end_time": "09:00:00"
     }
@@ -674,7 +676,8 @@
     "model": "myapp.timeslot",
     "pk": 2,
     "fields": {
-      "day": "Monday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440002",
+      "day": "monday",
       "start_time": "09:00:00",
       "end_time": "10:00:00"
     }
@@ -683,7 +686,8 @@
     "model": "myapp.timeslot",
     "pk": 3,
     "fields": {
-      "day": "Monday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440003",
+      "day": "monday",
       "start_time": "10:00:00",
       "end_time": "11:00:00"
     }
@@ -692,7 +696,8 @@
     "model": "myapp.timeslot",
     "pk": 4,
     "fields": {
-      "day": "Tuesday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440004",
+      "day": "tuesday",
       "start_time": "08:00:00",
       "end_time": "09:00:00"
     }
@@ -701,7 +706,8 @@
     "model": "myapp.timeslot",
     "pk": 5,
     "fields": {
-      "day": "Tuesday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440005",
+      "day": "tuesday",
       "start_time": "09:00:00",
       "end_time": "10:00:00"
     }
@@ -710,7 +716,8 @@
     "model": "myapp.timeslot",
     "pk": 6,
     "fields": {
-      "day": "Tuesday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440006",
+      "day": "tuesday",
       "start_time": "10:00:00",
       "end_time": "11:00:00"
     }
@@ -719,7 +726,8 @@
     "model": "myapp.timeslot",
     "pk": 7,
     "fields": {
-      "day": "Wednesday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440007",
+      "day": "wednesday",
       "start_time": "08:00:00",
       "end_time": "09:00:00"
     }
@@ -728,7 +736,8 @@
     "model": "myapp.timeslot",
     "pk": 8,
     "fields": {
-      "day": "Wednesday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440008",
+      "day": "wednesday",
       "start_time": "09:00:00",
       "end_time": "10:00:00"
     }
@@ -737,7 +746,8 @@
     "model": "myapp.timeslot",
     "pk": 9,
     "fields": {
-      "day": "Wednesday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440009",
+      "day": "wednesday",
       "start_time": "10:00:00",
       "end_time": "11:00:00"
     }
@@ -746,7 +756,8 @@
     "model": "myapp.timeslot",
     "pk": 10,
     "fields": {
-      "day": "Thursday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440010",
+      "day": "thursday",
       "start_time": "08:00:00",
       "end_time": "09:00:00"
     }
@@ -755,7 +766,8 @@
     "model": "myapp.timeslot",
     "pk": 11,
     "fields": {
-      "day": "Thursday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440011",
+      "day": "thursday",
       "start_time": "09:00:00",
       "end_time": "10:00:00"
     }
@@ -764,7 +776,8 @@
     "model": "myapp.timeslot",
     "pk": 12,
     "fields": {
-      "day": "Thursday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440012",
+      "day": "thursday",
       "start_time": "10:00:00",
       "end_time": "11:00:00"
     }
@@ -773,7 +786,8 @@
     "model": "myapp.timeslot",
     "pk": 13,
     "fields": {
-      "day": "Friday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440013",
+      "day": "friday",
       "start_time": "08:00:00",
       "end_time": "09:00:00"
     }
@@ -782,7 +796,8 @@
     "model": "myapp.timeslot",
     "pk": 14,
     "fields": {
-      "day": "Friday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440014",
+      "day": "friday",
       "start_time": "09:00:00",
       "end_time": "10:00:00"
     }
@@ -791,7 +806,8 @@
     "model": "myapp.timeslot",
     "pk": 15,
     "fields": {
-      "day": "Friday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440015",
+      "day": "friday",
       "start_time": "10:00:00",
       "end_time": "11:00:00"
     }
@@ -800,7 +816,8 @@
     "model": "myapp.timeslot",
     "pk": 16,
     "fields": {
-      "day": "Monday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440016",
+      "day": "monday",
       "start_time": "14:00:00",
       "end_time": "16:00:00"
     }
@@ -809,7 +826,8 @@
     "model": "myapp.timeslot",
     "pk": 17,
     "fields": {
-      "day": "Wednesday",
+      "slot_id": "550e8400-e29b-41d4-a716-446655440017",
+      "day": "wednesday",
       "start_time": "14:00:00",
       "end_time": "16:00:00"
     }
@@ -954,339 +972,297 @@
     "model": "myapp.courseoffering",
     "pk": 1,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440101",
       "course": 3,
       "instructor": 2,
-      "term": 7,
-      "section": "001",
-      "capacity": 30,
-      "year": 2025,
-      "semester": "fall",
-      "isActive": true
+      "academic_term": 7,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 2,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440102",
       "course": 4,
       "instructor": 3,
-      "term": 7,
-      "section": "001",
-      "capacity": 25,
-      "year": 2025,
-      "semester": "fall",
-      "isActive": true
+      "academic_term": 7,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 3,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440103",
       "course": 5,
       "instructor": 2,
-      "term": 8,
-      "section": "001",
-      "capacity": 20,
-      "year": 2026,
-      "semester": "spring",
-      "isActive": true
+      "academic_term": 8,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 4,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440104",
       "course": 6,
       "instructor": 7,
-      "term": 8,
-      "section": "001",
-      "capacity": 15,
-      "year": 2026,
-      "semester": "spring",
-      "isActive": true
+      "academic_term": 8,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 5,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440105",
       "course": 7,
       "instructor": 3,
-      "term": 10,
-      "section": "001",
-      "capacity": 18,
-      "year": 2025,
-      "semester": "full_year",
-      "isActive": true
+      "academic_term": 10,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 6,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440106",
       "course": 8,
       "instructor": 7,
-      "term": 10,
-      "section": "001",
-      "capacity": 12,
-      "year": 2025,
-      "semester": "full_year",
-      "isActive": true
+      "academic_term": 10,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 7,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440107",
       "course": 9,
       "instructor": 4,
-      "term": 7,
-      "section": "001",
-      "capacity": 40,
-      "year": 2025,
-      "semester": "fall",
-      "isActive": true
+      "academic_term": 7,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 8,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440108",
       "course": 10,
       "instructor": 4,
-      "term": 8,
-      "section": "001",
-      "capacity": 35,
-      "year": 2026,
-      "semester": "spring",
-      "isActive": true
+      "academic_term": 8,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 9,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440109",
       "course": 11,
       "instructor": 4,
-      "term": 10,
-      "section": "001",
-      "capacity": 25,
-      "year": 2025,
-      "semester": "full_year",
-      "isActive": true
+      "academic_term": 10,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 10,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440110",
       "course": 12,
       "instructor": 4,
-      "term": 7,
-      "section": "001",
-      "capacity": 30,
-      "year": 2025,
-      "semester": "fall",
-      "isActive": true
+      "academic_term": 7,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 11,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440111",
       "course": 13,
       "instructor": 5,
-      "term": 7,
-      "section": "001",
-      "capacity": 50,
-      "year": 2025,
-      "semester": "fall",
-      "isActive": true
+      "academic_term": 7,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 12,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440112",
       "course": 14,
       "instructor": 5,
-      "term": 8,
-      "section": "001",
-      "capacity": 45,
-      "year": 2026,
-      "semester": "spring",
-      "isActive": true
+      "academic_term": 8,
+      "section_number": "001"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 13,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440113",
       "course": 1,
       "instructor": 2,
-      "term": 7,
-      "section": "002",
-      "capacity": 25,
-      "year": 2025,
-      "semester": "fall",
-      "isActive": true
+      "academic_term": 7,
+      "section_number": "002"
     }
   },
   {
     "model": "myapp.courseoffering",
     "pk": 14,
     "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440114",
       "course": 2,
       "instructor": 3,
-      "term": 8,
-      "section": "002",
-      "capacity": 20,
-      "year": 2026,
-      "semester": "spring",
-      "isActive": true
+      "academic_term": 8,
+      "section_number": "002"
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 1,
     "fields": {
-      "course_offering": 1,
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440201",
+      "course": 3,
       "student": 1,
-      "session_type": "Lab",
-      "location": "ICCS 021",
-      "start_date": "2025-09-08",
-      "end_date": "2025-12-05",
-      "time_slots": [1, 2]
+      "academic_term": 7,
+      "section_number": "L01",
+      "session_type": "lab",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 2,
     "fields": {
-      "course_offering": 1,
-      "student": 3,
-      "session_type": "Tutorial",
-      "location": "ICCS 025",
-      "start_date": "2025-09-10",
-      "end_date": "2025-12-07",
-      "time_slots": [4, 5]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440202",
+      "course": 3,
+      "student": 2,
+      "academic_term": 7,
+      "section_number": "T01",
+      "session_type": "tutorial",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440004", "550e8400-e29b-41d4-a716-446655440005"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 3,
     "fields": {
-      "course_offering": 2,
-      "student": 2,
-      "session_type": "Lab",
-      "location": "EME 1153",
-      "start_date": "2025-09-08",
-      "end_date": "2025-12-05",
-      "time_slots": [7, 8]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440203",
+      "course": 4,
+      "student": 3,
+      "academic_term": 7,
+      "section_number": "L01",
+      "session_type": "lab",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440007", "550e8400-e29b-41d4-a716-446655440008"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 4,
     "fields": {
-      "course_offering": 3,
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440204",
+      "course": 5,
       "student": 4,
-      "session_type": "Tutorial",
-      "location": "ARTS 140",
-      "start_date": "2026-01-06",
-      "end_date": "2026-04-08",
-      "time_slots": [10, 11]
+      "academic_term": 8,
+      "section_number": "T01",
+      "session_type": "tutorial",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440010", "550e8400-e29b-41d4-a716-446655440011"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 5,
     "fields": {
-      "course_offering": 4,
-      "student": 1,
-      "session_type": "Lab",
-      "location": "ICCS 021",
-      "start_date": "2026-01-06",
-      "end_date": "2026-04-08",
-      "time_slots": [13, 14]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440205",
+      "course": 6,
+      "student": 5,
+      "academic_term": 8,
+      "section_number": "L01",
+      "session_type": "lab",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440013", "550e8400-e29b-41d4-a716-446655440014"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 6,
     "fields": {
-      "course_offering": 5,
-      "student": 5,
-      "session_type": "Tutorial",
-      "location": "MATH 100",
-      "start_date": "2025-09-01",
-      "end_date": "2026-04-30",
-      "time_slots": [16]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440206",
+      "course": 7,
+      "student": 6,
+      "academic_term": 10,
+      "section_number": "T01",
+      "session_type": "tutorial",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440016"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 7,
     "fields": {
-      "course_offering": 6,
-      "student": 6,
-      "session_type": "Lab",
-      "location": "ICCS X836",
-      "start_date": "2025-09-01",
-      "end_date": "2026-04-30",
-      "time_slots": [17]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440207",
+      "course": 8,
+      "student": 7,
+      "academic_term": 10,
+      "section_number": "L01",
+      "session_type": "lab",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440017"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 8,
     "fields": {
-      "course_offering": 7,
-      "student": 4,
-      "session_type": "Tutorial",
-      "location": "MATH 202",
-      "start_date": "2025-09-08",
-      "end_date": "2025-12-05",
-      "time_slots": [1, 3]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440208",
+      "course": 9,
+      "student": 8,
+      "academic_term": 7,
+      "section_number": "T01",
+      "session_type": "tutorial",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440003"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 9,
     "fields": {
-      "course_offering": 8,
-      "student": 10,
-      "session_type": "Tutorial",
-      "location": "MATH 202",
-      "start_date": "2026-01-06",
-      "end_date": "2026-04-08",
-      "time_slots": [6, 9]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440209",
+      "course": 10,
+      "student": 9,
+      "academic_term": 8,
+      "section_number": "T01",
+      "session_type": "tutorial",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440006", "550e8400-e29b-41d4-a716-446655440009"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 10,
     "fields": {
-      "course_offering": 11,
-      "student": 5,
-      "session_type": "Lab",
-      "location": "SCI 387",
-      "start_date": "2025-09-08",
-      "end_date": "2025-12-05",
-      "time_slots": [2, 5]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440210",
+      "course": 13,
+      "student": 10,
+      "academic_term": 7,
+      "section_number": "L01",
+      "session_type": "lab",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440002", "550e8400-e29b-41d4-a716-446655440005"]
     }
   },
   {
     "model": "myapp.sharedsession",
     "pk": 11,
     "fields": {
-      "course_offering": 12,
-      "student": 5,
-      "session_type": "Lab",
-      "location": "SCI 387",
-      "start_date": "2026-01-06",
-      "end_date": "2026-04-08",
-      "time_slots": [8, 11]
+      "shared_session_id": "550e8400-e29b-41d4-a716-446655440211",
+      "course": 14,
+      "student": 1,
+      "academic_term": 8,
+      "section_number": "L01",
+      "session_type": "lab",
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440008", "550e8400-e29b-41d4-a716-446655440011"]
     }
   },
   {
@@ -1294,14 +1270,9 @@
     "pk": 1,
     "fields": {
       "instructor": 2,
-      "course": 3,
-      "term": 7,
-      "ta_required": 2,
-      "additional_notes": "Need experienced TAs for programming lab sessions",
-      "priority": "high",
-      "status": "pending",
-      "created_at": "2024-08-15T10:00:00Z",
-      "updated_at": "2024-08-15T10:00:00Z"
+      "course_offering": "550e8400-e29b-41d4-a716-446655440101",
+      "request_date": "2024-08-15",
+      "request_description": "Need experienced TAs for programming lab sessions"
     }
   },
   {
@@ -1309,14 +1280,9 @@
     "pk": 2,
     "fields": {
       "instructor": 3,
-      "course": 4,
-      "term": 7,
-      "ta_required": 1,
-      "additional_notes": "Looking for TA with strong assembly language background",
-      "priority": "medium",
-      "status": "pending",
-      "created_at": "2024-08-16T14:30:00Z",
-      "updated_at": "2024-08-16T14:30:00Z"
+      "course_offering": "550e8400-e29b-41d4-a716-446655440102",
+      "request_date": "2024-08-16",
+      "request_description": "Looking for TA with strong assembly language background"
     }
   },
   {
@@ -1324,14 +1290,9 @@
     "pk": 3,
     "fields": {
       "instructor": 2,
-      "course": 5,
-      "term": 8,
-      "ta_required": 3,
-      "additional_notes": "Senior course requiring experienced TAs for project supervision",
-      "priority": "high",
-      "status": "approved",
-      "created_at": "2024-08-17T09:15:00Z",
-      "updated_at": "2024-08-20T16:45:00Z"
+      "course_offering": "550e8400-e29b-41d4-a716-446655440103",
+      "request_date": "2024-08-17",
+      "request_description": "Senior course requiring experienced TAs for project supervision"
     }
   },
   {
@@ -1339,14 +1300,9 @@
     "pk": 4,
     "fields": {
       "instructor": 7,
-      "course": 6,
-      "term": 8,
-      "ta_required": 2,
-      "additional_notes": "Need TAs familiar with advanced algorithms and data structures",
-      "priority": "medium",
-      "status": "pending",
-      "created_at": "2024-08-18T11:20:00Z",
-      "updated_at": "2024-08-18T11:20:00Z"
+      "course_offering": "550e8400-e29b-41d4-a716-446655440104",
+      "request_date": "2024-08-18",
+      "request_description": "Need TAs familiar with advanced algorithms and data structures"
     }
   },
   {
@@ -1354,14 +1310,9 @@
     "pk": 5,
     "fields": {
       "instructor": 4,
-      "course": 9,
-      "term": 7,
-      "ta_required": 3,
-      "additional_notes": "Large enrollment class, need multiple TAs for tutorials",
-      "priority": "high",
-      "status": "approved",
-      "created_at": "2024-08-19T13:45:00Z",
-      "updated_at": "2024-08-22T10:30:00Z"
+      "course_offering": "550e8400-e29b-41d4-a716-446655440107",
+      "request_date": "2024-08-19",
+      "request_description": "Large enrollment class, need multiple TAs for tutorials"
     }
   },
   {
@@ -1369,14 +1320,9 @@
     "pk": 6,
     "fields": {
       "instructor": 4,
-      "course": 10,
-      "term": 8,
-      "ta_required": 2,
-      "additional_notes": "Continuation of MATH 100, need consistent TA support",
-      "priority": "medium",
-      "status": "pending",
-      "created_at": "2024-08-20T08:30:00Z",
-      "updated_at": "2024-08-20T08:30:00Z"
+      "course_offering": "550e8400-e29b-41d4-a716-446655440108",
+      "request_date": "2024-08-20",
+      "request_description": "Continuation of MATH 100, need consistent TA support"
     }
   },
   {
@@ -1384,14 +1330,9 @@
     "pk": 7,
     "fields": {
       "instructor": 5,
-      "course": 13,
-      "term": 7,
-      "ta_required": 4,
-      "additional_notes": "Large physics course with multiple lab sections",
-      "priority": "high",
-      "status": "approved",
-      "created_at": "2024-08-21T15:00:00Z",
-      "updated_at": "2024-08-25T12:15:00Z"
+      "course_offering": "550e8400-e29b-41d4-a716-446655440111",
+      "request_date": "2024-08-21",
+      "request_description": "Large physics course with multiple lab sections"
     }
   },
   {
@@ -1399,14 +1340,9 @@
     "pk": 8,
     "fields": {
       "instructor": 3,
-      "course": 7,
-      "term": 10,
-      "ta_required": 1,
-      "additional_notes": "Database course requiring TA with SQL and database design experience",
-      "priority": "low",
-      "status": "rejected",
-      "created_at": "2024-08-22T12:30:00Z",
-      "updated_at": "2024-08-28T14:20:00Z"
+      "course_offering": "550e8400-e29b-41d4-a716-446655440105",
+      "request_date": "2024-08-22",
+      "request_description": "Database course requiring TA with SQL and database design experience"
     }
   }
 ]

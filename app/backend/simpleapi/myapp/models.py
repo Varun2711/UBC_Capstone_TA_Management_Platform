@@ -130,6 +130,27 @@ class TimeSlot(models.Model):
             return end - start
         return None
 
+    @property
+    def time_increments(self):
+        """
+        Generate array of times in 30-minute increments from start to end time.
+        For example: 8:00 AM to 9:30 AM would return ['8:00', '8:30', '9:00']
+        """
+        from datetime import datetime, timedelta
+        if not self.start_time or not self.end_time:
+            return []
+        
+        increments = []
+        current_time = datetime.combine(datetime.today(), self.start_time)
+        end_time = datetime.combine(datetime.today(), self.end_time)
+        
+        # Generate 30-minute increments (excluding the end time)
+        while current_time < end_time:
+            increments.append(current_time.strftime('%H:%M'))
+            current_time += timedelta(minutes=30)
+            
+        return increments
+
 # Courses model
 class Course(models.Model):
     """
@@ -194,66 +215,6 @@ class CourseOffering(models.Model):
 
     def __str__(self):
         return f'{self.course.course_number} {self.section_number} ({self.academic_term})'
-
-# lab sections model
-class SharedSession(models.Model):
-    """
-    A Lab section is similar to a course offering but specifically for lab/tutorial sessions.
-    Lab sections are associated with a course and academic term, similar to course offerings.
-    """
-
-    SESSION_TYPE_CHOICES = [
-        ('lab', 'Lab'),
-        ('tutorial', 'Tutorial'),
-        ('seminar', 'Seminar'),
-        ('workshop', 'Workshop'),
-    ]
-
-    shared_session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    session_type = models.CharField(
-        max_length=10, 
-        choices=SESSION_TYPE_CHOICES,
-        help_text="Type of shared session"
-    )
-    course = models.ForeignKey(
-        Course, 
-        on_delete=models.CASCADE,
-        related_name='lab_sections',
-        help_text="The course this lab section is for"
-    ) 
-    section_number = models.CharField(
-        max_length=3, 
-        help_text="Lab section number (e.g., 'L01', 'T01')"
-    )
-    academic_term = models.ForeignKey(
-        Term,
-        on_delete=models.CASCADE,
-        related_name='lab_sections',
-        help_text="Academic term when this lab section is offered"
-    )
-    instructor = models.ForeignKey(
-        Instructor,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='lab_sections',
-        help_text="Instructor or TA teaching this lab section"
-    )
-    time_slots = models.ManyToManyField(
-        TimeSlot,
-        blank=True,
-        related_name='lab_sections',
-        help_text="Time slots when this lab section meets"
-    )
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_sharedsessions'
-        ordering = ['-academic_term__startCalendarYear', 'course__course_number', 'section_number']
-        unique_together = ['course', 'section_number', 'academic_term']
-
-    def __str__(self):
-        return f'{self.course.course_number} {self.section_number} ({self.academic_term}) - {self.session_type}'
 
 class InstructorRequest(models.Model):
     request_id = models.AutoField(primary_key=True)
@@ -333,6 +294,66 @@ class Admin(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+# lab sections model
+class SharedSession(models.Model):
+    """
+    A Lab section is similar to a course offering but specifically for lab/tutorial sessions.
+    Lab sections are associated with a course and academic term, similar to course offerings.
+    """
+
+    SESSION_TYPE_CHOICES = [
+        ('lab', 'Lab'),
+        ('tutorial', 'Tutorial'),
+        ('seminar', 'Seminar'),
+        ('workshop', 'Workshop'),
+    ]
+
+    shared_session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    session_type = models.CharField(
+        max_length=10, 
+        choices=SESSION_TYPE_CHOICES,
+        help_text="Type of shared session"
+    )
+    course = models.ForeignKey(
+        Course, 
+        on_delete=models.CASCADE,
+        related_name='lab_sections',
+        help_text="The course this lab section is for"
+    ) 
+    section_number = models.CharField(
+        max_length=3, 
+        help_text="Lab section number (e.g., 'L01', 'T01')"
+    )
+    academic_term = models.ForeignKey(
+        Term,
+        on_delete=models.CASCADE,
+        related_name='lab_sections',
+        help_text="Academic term when this lab section is offered"
+    )
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='shared_sessions',
+        help_text="Student assigned as TA for this shared session"
+    )
+    time_slots = models.ManyToManyField(
+        TimeSlot,
+        blank=True,
+        related_name='lab_sections',
+        help_text="Time slots when this lab section meets"
+    )
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_sharedsessions'
+        ordering = ['-academic_term__startCalendarYear', 'course__course_number', 'section_number']
+        unique_together = ['course', 'section_number', 'academic_term']
+
+    def __str__(self):
+        return f'{self.course.course_number} {self.section_number} ({self.academic_term}) - {self.session_type}'
 
 class Availability(models.Model):
     availability_id = models.AutoField(primary_key=True)
@@ -533,4 +554,5 @@ class Document(models.Model):
     class Meta:
         managed = False
         db_table = 'myapp_document'
+
 
