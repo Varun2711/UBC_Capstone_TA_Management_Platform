@@ -48,8 +48,19 @@ describe("TAAllocationPage", () => {
     renderWithRouter(<TAAllocationPage />)
 
     expect(screen.getByText("Select Course Section")).toBeInTheDocument()
-    expect(screen.getByText(/CS 101 - Introduction to Programming/)).toBeInTheDocument()
-    expect(screen.getByText(/Lecture - Section 001/)).toBeInTheDocument()
+
+    // Find the h4 element for COSC 101
+    const cosc101TitleElement = screen.getByText(/COSC 101 - Introduction to Programming/);
+    
+    // Get the parent of the h4 (the div with flex items-center justify-between mb-2)
+    // Then get the parent of that div (the main course container)
+    const cosc101CourseElement = cosc101TitleElement.parentElement.parentElement;
+    
+    // Assert that the COSC 101 course element exists
+    expect(cosc101CourseElement).toBeInTheDocument();
+
+    // Now, search for "Lecture - Section 001" specifically within the COSC 101 course element
+    expect(within(cosc101CourseElement).getByText(/Lecture - Section 001/)).toBeInTheDocument();
   })
 
   it("allows assigning a TA to a course section and shows confirmation", async () => {
@@ -63,14 +74,14 @@ describe("TAAllocationPage", () => {
 
     const confirmButton = screen.getByText((_, node) =>
       node?.tagName === "BUTTON" &&
-      node?.textContent?.trim() === "Confirm Assignment"
+      node?.textContent?.trim() === "Send Offer"
     )
 
     expect(confirmButton).toBeInTheDocument()
     expect(
       screen.getByText((content, node) =>
         node?.tagName === "P" &&
-        node.textContent?.includes("Assign Abraham Lincoln to")
+        node.textContent?.includes("Send offer to Abraham Lincoln for")
       )
     ).toBeInTheDocument()
 
@@ -82,7 +93,7 @@ describe("TAAllocationPage", () => {
 
     await userEvent.click(screen.getByText("Abraham Lincoln"))
     await userEvent.click(screen.getByText(/Lab - Section L01/))
-    await userEvent.click(screen.getByRole("button", { name: "Confirm Assignment" }))
+    await userEvent.click(screen.getByRole("button", { name: "Send Offer" }))
 
     await userEvent.click(screen.getByText("Allocated TAs"))
 
