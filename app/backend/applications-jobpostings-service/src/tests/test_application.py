@@ -215,7 +215,8 @@ class ApplicationAPITest(APITestCase):
         from rest_framework.permissions import AllowAny
         mock_get_permissions.return_value = [AllowAny()]
         
-        mock_get_user_info.return_value = ('student', 2)
+        # Use the actual user ID from the test setup
+        mock_get_user_info.return_value = ('student', self.django_user.pk)
         
         # Create test applications
         Application.objects.create(
@@ -233,13 +234,16 @@ class ApplicationAPITest(APITestCase):
 
     @patch('api.views.ApplicationViewSet.get_permissions')
     @patch('api.views.ApplicationViewSet.get_user_info')
-    def test_filter_by_status(self, mock_get_user_info, mock_get_permissions):
+    @patch('api.views.ApplicationViewSet.get_student_model_id')
+    def test_filter_by_status(self, mock_get_student_model_id, mock_get_user_info, mock_get_permissions):
         """Test filtering applications by status"""
         # Mock permissions to allow access
         from rest_framework.permissions import AllowAny
         mock_get_permissions.return_value = [AllowAny()]
         
-        mock_get_user_info.return_value = ('student', 2)
+        # Use the actual user and student IDs from the test setup
+        mock_get_user_info.return_value = ('student', self.django_user.pk)
+        mock_get_student_model_id.return_value = self.student.pk
         
         # Create applications with different statuses
         Application.objects.create(
@@ -264,13 +268,16 @@ class ApplicationAPITest(APITestCase):
 
     @patch('api.views.ApplicationViewSet.get_permissions')
     @patch('api.views.ApplicationViewSet.get_user_info')
-    def test_search_applications(self, mock_get_user_info, mock_get_permissions):
+    @patch('api.views.ApplicationViewSet.get_student_model_id')
+    def test_search_applications(self, mock_get_student_model_id, mock_get_user_info, mock_get_permissions):
         """Test searching applications by student name"""
         # Mock permissions to allow access
         from rest_framework.permissions import AllowAny
         mock_get_permissions.return_value = [AllowAny()]
         
-        mock_get_user_info.return_value = ('student', 2)
+        # Use the actual user and student IDs from the test setup
+        mock_get_user_info.return_value = ('student', self.django_user.pk)
+        mock_get_student_model_id.return_value = self.student.pk
         
         Application.objects.create(
             student=self.student,
