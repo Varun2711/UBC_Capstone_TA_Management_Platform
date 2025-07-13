@@ -302,6 +302,10 @@ class FormTemplateViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ['name', 'description']
     filterset_fields = ['is_active', 'created_by']
+
+#set globally, that inactive templates are not returned
+    def get_queryset(self):    
+        return FormTemplate.objects.exclude(is_active=False)
     
     def perform_create(self, serializer):
         # Set created_by to current user if authenticated and is a TA scheduler
@@ -309,6 +313,27 @@ class FormTemplateViewSet(viewsets.ModelViewSet):
             serializer.save(created_by=self.request.user.tascheduler)
         else:
             serializer.save()
+
+    def destroy(self, request, *args, **kwargs):    
+        try:
+            form_template = self.get_object()
+            form_template.is_active= False
+            form_template.save()
+            
+        # Return the updated job posting data
+            serializer = self.get_serializer(form_template)
+            return Response(
+                {
+                    "detail": "Template has been disbaled successfully.",
+                    "job_posting": serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        except FormTemplate.DoesNotExist:
+            return Response(
+                {"detail": "Form template not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
     
     @action(detail=True, methods=['post'])
     def duplicate(self, request, pk=None):

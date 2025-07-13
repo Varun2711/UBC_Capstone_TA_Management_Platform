@@ -38,6 +38,7 @@ class FormQuestionSerializer(serializers.ModelSerializer):
         fields = [
             'question_id', 'question_text', 'question_type', 'field_name',
             'order', 'is_required', 'help_text', 'validation_rules', 'options'
+            , 'is_editable'
         ]
         read_only_fields = ['question_id']
 
@@ -50,7 +51,7 @@ class FormSectionSerializer(serializers.ModelSerializer):
         model = FormSection
         fields = [
             'section_id', 'name', 'section_type', 'order', 
-            'is_required', 'description', 'questions'
+            'is_required', 'description', 'questions', 'is_editable'
         ]
         read_only_fields = ['section_id']
 
@@ -95,7 +96,7 @@ class FormTemplateSerializer(serializers.ModelSerializer):
         model = FormTemplate
         fields = [
             'template_id', 'name', 'description', 'created_by', 'created_by_id',
-            'created_at', 'is_active', 'sections'
+            'created_at', 'is_active', 'sections', 'is_editable'
         ]
         read_only_fields = ['template_id', 'created_at'] #do not accept these as input because the db auto-generates themm
 

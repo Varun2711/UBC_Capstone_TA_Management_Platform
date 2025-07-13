@@ -197,7 +197,10 @@ const JobManagementPage = () => {
       return;
     }
     try {
-      await apiCall(`/ajp/form-templates/${templateId}/`, { method: "DELETE" });
+      let response = await instance.delete(
+        `/ajp/form-templates/${templateId}/`
+      );
+      console.log("Template deleted successfully", response.data);
       fetchTemplates();
     } catch (error) {
       console.error("Error deleting template:", error);
@@ -585,7 +588,7 @@ const JobManagementPage = () => {
             <div className="space-y-4">
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  This is how the form will appear to students applying for
+                  This is how form sections will appear to students applying for
                   positions.
                 </p>
               </div>
