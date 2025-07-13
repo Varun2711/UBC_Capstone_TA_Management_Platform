@@ -545,7 +545,8 @@ class CreateInstructorView(generics.CreateAPIView):
                 response_data = InstructorSerializer(instructor).data
                 response_data['temporary_password'] = temp_password
                 
-                log_user_activity('admin', request.user.email, f'created_instructor_{instructor.employee_number}')
+                user_type = request.auth.payload.get('user_type', 'unknown')
+                log_user_activity(user_type, request.user.email, f'created_instructor_{instructor.employee_number}')
                 
                 return Response(
                     success_response(

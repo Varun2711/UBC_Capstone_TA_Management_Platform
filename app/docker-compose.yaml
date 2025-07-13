@@ -97,6 +97,9 @@ services:
       user-profile-service:
         condition: service_healthy
         restart: true
+      courses-terms-service:
+        condition: service_healthy
+        restart: true
     healthcheck:
       test:
         [
@@ -104,6 +107,39 @@ services:
           "python",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8003/api/')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # set app-networks as the current network
+    networks:
+      - app-networks
+
+  courses-terms-service:
+    container_name: 'courses-terms-service'
+    build:
+      context: ./backend/course-service
+    ports:
+      - "8004:8004"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/course-service:/app
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      user-profile-service:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8004/api/course-term-service/')",
         ]
       interval: 10s
       timeout: 5s
