@@ -39,9 +39,12 @@ class FormQuestionSerializer(serializers.ModelSerializer):
             'question_id', 'question_text', 'question_type', 'field_name',
             'order', 'is_required', 'help_text', 'validation_rules', 'options'
         ]
+        read_only_fields = ['question_id']
+
+
 
 class FormSectionSerializer(serializers.ModelSerializer):
-    questions = FormQuestionSerializer(many=True, read_only=True)
+    questions = FormQuestionSerializer(many=True, required=False)
     
     class Meta:
         model = FormSection
@@ -49,9 +52,35 @@ class FormSectionSerializer(serializers.ModelSerializer):
             'section_id', 'name', 'section_type', 'order', 
             'is_required', 'description', 'questions'
         ]
+        read_only_fields = ['section_id']
+
+    def create(self, validated_data):
+        questions_data = validated_data.pop('questions', [])
+        section = FormSection.objects.create(**validated_data)
+        
+        for question_data in questions_data:
+            FormQuestion.objects.create(section=section, **question_data)
+        
+        return section
+    
+    def update(self, instance, validated_data):
+        questions_data = validated_data.pop('questions', None)
+        
+        # Update section fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Only update questions if they were provided
+        if questions_data is not None:
+            instance.questions.all().delete()
+            for question_data in questions_data:
+                FormQuestion.objects.create(section=instance, **question_data)
+        
+        return instance
 
 class FormTemplateSerializer(serializers.ModelSerializer):
-    sections = FormSectionSerializer(many=True, read_only=True)
+    sections = FormSectionSerializer(many=True, required=False)
     created_by = TAschedulerSerializer(read_only=True)
     
     # Add write-only field for creating templates
@@ -68,6 +97,46 @@ class FormTemplateSerializer(serializers.ModelSerializer):
             'template_id', 'name', 'description', 'created_by', 'created_by_id',
             'created_at', 'is_active', 'sections'
         ]
+        read_only_fields = ['template_id', 'created_at'] #do not accept these as input because the db auto-generates themm
+
+#when creating a template
+    def create(self, validated_data):
+        sections_data = validated_data.pop('sections', [])
+        template = FormTemplate.objects.create(**validated_data)
+        
+        # Create sections and their questions
+        for section_data in sections_data:
+            questions_data = section_data.pop('questions', [])
+            section = FormSection.objects.create(template=template, **section_data)
+            
+            # Create questions for this section
+            for question_data in questions_data:
+                FormQuestion.objects.create(section=section, **question_data)
+        
+        return template
+    
+    def update(self, instance, validated_data):
+        sections_data = validated_data.pop('sections', None)
+        
+        # Update template fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Only update sections if they were provided in the request
+        if sections_data is not None:
+            # Clear existing sections (cascades to questions)
+            instance.sections.all().delete()
+            
+            # Create new sections and questions
+            for section_data in sections_data:
+                questions_data = section_data.pop('questions', [])
+                section = FormSection.objects.create(template=instance, **section_data)
+                
+                for question_data in questions_data:
+                    FormQuestion.objects.create(section=section, **question_data)
+        
+        return instance
 
 class ApplicationResponseSerializer(serializers.ModelSerializer):
     question = FormQuestionSerializer(read_only=True)

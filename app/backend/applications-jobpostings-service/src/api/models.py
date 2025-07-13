@@ -121,6 +121,7 @@ class FormTemplate(models.Model):
     created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
+    is_editable = models.BooleanField(default=True)
     
     class Meta:
         managed = True
@@ -146,6 +147,7 @@ class FormSection(models.Model):
     order = models.PositiveIntegerField()
     is_required = models.BooleanField(default=True)
     description = models.TextField(null=True, blank=True)
+    is_editable =models.BooleanField(default=True)
     
     class Meta:
         managed = True
@@ -179,6 +181,7 @@ class FormQuestion(models.Model):
     help_text = models.TextField(null=True, blank=True)
     validation_rules = models.JSONField(null=True, blank=True)  # Store validation rules
     options = models.JSONField(null=True, blank=True)  # For select/radio options
+    is_editable = models.BooleanField(default=True)
     
     class Meta:
         managed = True
@@ -210,7 +213,7 @@ class JobPosting(models.Model):
         ('cancelled', 'Cancelled'),
         ('draft', 'Draft'),
         ('archived', 'Archived'),
-        
+
     ], default='draft')
     
     # reference the template used for the job posting
@@ -258,7 +261,7 @@ class Application(models.Model):
         ('submitted', 'Submitted'),
         ('under_review', 'Under Review'),
         ('accepted', 'Accepted'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'No Longer In Consideration'),
         ('withdrawn', 'Withdrawn'),
         ('archived', 'Archived'),
         ('deleted', 'Deleted'),], default='draft')

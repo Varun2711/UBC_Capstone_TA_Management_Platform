@@ -456,17 +456,6 @@ const JobManagementPage = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm text-muted-foreground">
                         <span>{template.sections?.length || 0} sections</span>
-                        {/* <span>
-                          Used in{" "}
-                          {
-                            jobPostings.filter(
-                              (p) =>
-                                p.form_template?.template_id ===
-                                template.template_id
-                            ).length
-                          }{" "}
-                          jobs
-                        </span> */}
                       </div>
 
                       <div className="text-xs text-muted-foreground">
@@ -484,13 +473,15 @@ const JobManagementPage = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditTemplate(template)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        {template.is_editable && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditTemplate(template)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -498,16 +489,18 @@ const JobManagementPage = () => {
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleDeleteTemplate(template.template_id)
-                          }
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {template.is_editable && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleDeleteTemplate(template.template_id)
+                            }
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>

@@ -73,7 +73,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
 
   const addSection = () => {
     const newSection = {
-      section_id: Date.now(), // Temporary ID
+      section_id: Date.now(), // Temporary ID. No worries. The db will handle the actual ID
       name: "New Section",
       section_type: "custom",
       order: template.sections.length + 1,
@@ -85,6 +85,8 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
       ...prev,
       sections: [...prev.sections, newSection],
     }));
+
+    console.log("New section added:", newSection);
   };
 
   const updateSection = (sectionId, updates) => {
@@ -247,8 +249,9 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
       ),
     }));
   };
-  // Replace your current saveTemplate function with:
+
   const saveTemplate = async () => {
+    console.log("Saving template:", template);
     try {
       let response;
       if (templateId) {
@@ -259,7 +262,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
       } else {
         response = await instance.post("/ajp/form-templates/", template);
       }
-
+      console.log("Template saved successfully:", response.data);
       if (response.data) {
         onSave?.(response.data);
       }
