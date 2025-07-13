@@ -490,3 +490,78 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationResponseSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['application', 'question']
+
+
+class ApplicationShortListFilter(django_filters.FilterSet):
+    """Filter class for ApplicationShortList"""
+    # Filter by TA scheduler
+    created_by = django_filters.NumberFilter()
+    
+    # Filter by application status
+    application_status = django_filters.CharFilter(
+        field_name='application__status',
+        help_text='Filter by application status'
+    )
+    
+    # Filter by job posting
+    posting_id = django_filters.NumberFilter(
+        field_name='application__posting__posting_id',
+        help_text='Filter by job posting ID'
+    )
+    
+    # Filter by term
+    term_id = django_filters.NumberFilter(
+        field_name='application__termSelection__id',
+        help_text='Filter by term ID'
+    )
+    
+    # Filter by student
+    student_id = django_filters.NumberFilter(
+        field_name='application__student__id',
+        help_text='Filter by student ID'
+    )
+    
+    class Meta:
+        model = ApplicationShortList
+        fields = ['created_by', 'application_status', 'posting_id', 'term_id', 'student_id']
+
+
+class ApplicationShortListViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing application shortlists"""
+    queryset = ApplicationShortList.objects.all()
+    serializer_class = ApplicationShortListSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = ApplicationShortListFilter
+    
+    # Enable search on related fields
+    search_fields = [
+        'application__student__name',
+        'application__student__student_number',
+        'application__posting__title',
+        'created_by__name'
+    ]
+    
+    # Ordering options
+    ordering_fields = ['id', 'application__applied_at']
+    ordering = ['-id']  # Most recent shortlists first
+    
+    def perform_create(self, serializer):
+        """Set created_by to current user if not provided"""
+        if hasattr(self.request.user, 'tascheduler') and not serializer.validated_data.get('created_by'):
+            serializer.save(created_by=self.request.user.tascheduler)
+        else:
+            serializer.save()
+    
+    @action(detail=False, methods=['get'], url_path=r'by-scheduler/(?P<scheduler_id>\d+)')
+    def by_scheduler(self, request, scheduler_id=None):
+        """Get all shortlisted applications by a specific TA scheduler"""
+        shortlists = self.queryset.filter(created_by_id=scheduler_id)
+        serializer = self.get_serializer(shortlists, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
+    def by_posting(self, request, posting_id=None):
+        """Get all shortlisted applications for a specific job posting"""
+        shortlists = self.queryset.filter(application__posting__posting_id=posting_id)
+        serializer = self.get_serializer(shortlists, many=True)
+        return Response(serializer.data)

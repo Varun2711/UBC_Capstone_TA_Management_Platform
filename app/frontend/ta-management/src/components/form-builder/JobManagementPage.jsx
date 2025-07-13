@@ -163,7 +163,23 @@ const JobManagementPage = () => {
 
   const handleAssignTemplate = async (postingId, templateId) => {
     try {
-      await instance.patch(`/ajp/jobpostings/${postingId}/`, templateId);
+      console.log(
+        "Assigning template ID:",
+        templateId,
+        "to job posting ID:",
+        postingId
+      );
+
+      const payload = {
+        form_template_id: templateId === null ? null : templateId,
+      };
+
+      let response = await instance.patch(
+        `/ajp/jobpostings/${postingId}/`,
+        payload
+      );
+
+      console.log("Template assigned successfully:", response.data);
       fetchJobPostings();
     } catch (error) {
       console.error("Error assigning template:", error);
@@ -183,9 +199,10 @@ const JobManagementPage = () => {
 
   const handleDuplicateTemplate = async (template) => {
     try {
-      await apiCall(`/ajp/form-templates/${template.template_id}/duplicate/`, {
-        method: "POST",
-      });
+      const response = await instance.post(
+        `/ajp/form-templates/${template.template_id}/duplicate/`
+      );
+      console.log("Template duplicated successfully:", response.data);
       fetchTemplates();
     } catch (error) {
       console.error("Error duplicating template:", error);

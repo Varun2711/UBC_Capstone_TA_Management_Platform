@@ -307,3 +307,29 @@ class ApplicationWithResponsesSerializer(serializers.Serializer):
     
 
 
+class ApplicationShortListSerializer(serializers.ModelSerializer):
+    # For write operations - use IDs
+    application_id = serializers.PrimaryKeyRelatedField(
+        queryset=Application.objects.all(),
+        source='application',
+        write_only=True
+    )
+    created_by_id = serializers.PrimaryKeyRelatedField(
+        queryset=TAScheduler.objects.all(),
+        source='created_by',
+        write_only=True,
+        required=False  # Can be set automatically from request user
+    )
+    
+    # For read operations - use nested serializers
+    application = ApplicationSerializer(read_only=True)
+    created_by = TAschedulerSerializer(read_only=True)
+    
+    class Meta:
+        model = ApplicationShortList
+        fields = [
+            'id', 'application_id', 'application', 
+            'created_by_id', 'created_by', 
+            'created_at', 'notes'  # Include the new fields
+        ]
+        read_only_fields = ['id', 'created_at']

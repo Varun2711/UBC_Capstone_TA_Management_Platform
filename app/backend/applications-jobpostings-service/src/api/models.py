@@ -264,7 +264,7 @@ class Application(models.Model):
         ('rejected', 'No Longer In Consideration'),
         ('withdrawn', 'Withdrawn'),
         ('archived', 'Archived'),
-        ('deleted', 'Deleted'),], default='draft')
+        ('deleted', 'Deleted'),], default='draft')     
     
     # Timestamps
     applied_at = models.DateTimeField(default=timezone.now)
@@ -339,6 +339,24 @@ class ApplicationResponse(models.Model):
     def __str__(self):
         return f"Response to {self.question.question_text[:30]} for {self.application}"   
    
+
+class ApplicationShortList(models.Model):    
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='shortlists')    
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    created_at = models.DateTimeField(default=timezone.now)  # Track when shortlisted
+    notes = models.TextField(null=True, blank=True)  # Optional notes about why shortlisted
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_applicationshortlist'
+        # Prevent duplicate shortlists by same scheduler for same application
+        unique_together = ('application', 'created_by')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Shortlisted: {self.application} by {self.created_by}"
+
+
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
     application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
