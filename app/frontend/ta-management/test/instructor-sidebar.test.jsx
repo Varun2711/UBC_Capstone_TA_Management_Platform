@@ -87,8 +87,9 @@ describe("InstructorSidebar", () => {
 
     const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
     const menuItems = within(navigationGroup).getAllByRole("link")
+    
     menuItems.forEach((item) => {
-      expect(item).toHaveAttribute("href", "#")
+      expect(item).toHaveAttribute("href");
     })
 
     const footer = screen.getByText("Ronnie Smith").closest('[data-sidebar="footer"]')
@@ -132,10 +133,20 @@ describe("InstructorSidebar", () => {
     const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
     const links = within(navigationGroup).getAllByRole("link")
 
+    const expectedLinks = [
+      "/instructor-dashboard",
+      "/my-courses",
+      "#",
+      "/instructor-profile",
+      "#"
+    ]
+
     expect(links).toHaveLength(5) // Should have 5 navigation items
 
+    let i = 0;
     links.forEach((link) => {
-      expect(link).toHaveAttribute("href", "#")
+      expect(link).toHaveAttribute("href", expectedLinks[i])
+      i++;
     })
   })
 })
