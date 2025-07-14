@@ -302,18 +302,18 @@ export default function TAAllocationPage() {
 
   const selectedTA = taList.find((ta) => ta.id === selectedTAId)
 
-  // Function to store the assignment of a TA to a course
+  // Function to store the offer of a TA to a course
   const handleAddTAtoActiveOfferTab = (selectedTA, selectedCourse) => {
-    const alreadyAssigned = assignments.some(
+    const alreadyOffered = activeOffers.some(
       (a) =>
         a.taStudentId === selectedTA.studentId &&
         a.courseCode === selectedCourse.code &&
         a.section === selectedCourse.section
     )
 
-    if (alreadyAssigned) return
+    if (alreadyOffered) return
 
-    const newAssignment = {
+    const newOffer = {
       taName: selectedTA.name,
       taStudentId: selectedTA.studentId,
       courseCode: selectedCourse.code,
@@ -322,10 +322,10 @@ export default function TAAllocationPage() {
       instructor: selectedCourse.instructor,
       semester: selectedCourse.semester,
       type: selectedCourse.type,
-      time: selectedCourse.time,
+      slots: selectedCourse.slots,
     }
 
-    setActiveOffers((prevOffers) => [...prevOffers, newAssignment])
+    setActiveOffers((prevOffers) => [...prevOffers, newOffer])
   }
 
   const handleDeleteAssignment = (assignmentToDelete) => {
@@ -718,7 +718,23 @@ export default function TAAllocationPage() {
                                 mode={"allocation"}
                                 editable={false}
                                 availability={selectedTA.availability}
-                                highlightedSlots={selectedCourse?.slots || []}
+                                // Calculate highlightedSlots from assigned courses for the selected TA
+                                highlightedSlots={
+                                  selectedTA
+                                    ? [
+                                        // Include slots from the currently selected course section (red highlight for potential offer)
+                                        ...(selectedCourse?.slots || []),
+                                        // Include slots from accepted assignments for this TA (persistent red highlight)
+                                        ...assignments
+                                            .filter(a => a.taStudentId === selectedTA.studentId)
+                                            .flatMap(a => a.slots || []),
+                                        // Include slots from active (pending) offers for this TA (persistent red highlight)
+                                        ...activeOffers
+                                            .filter(o => o.taStudentId === selectedTA.studentId)
+                                            .flatMap(o => o.slots || []),
+                                      ]
+                                    : []
+                                }
                               />
                             </div>
 
@@ -963,19 +979,16 @@ export default function TAAllocationPage() {
                               console.log("Assigning", selectedTA.name, "to", selectedCourse)
                               const newHours = selectedTA.currentHours + selectedCourse.weekHours
                               const newStatus = newHours >= selectedTA.maxHours ? "Fully Allocated" : "Partially Allocated"
-                              const updatedAvailability = Array.from(
-                                new Set([...(selectedTA.availability || []), ...(selectedCourse.slots || [])])
-                              )
                               // Merge course time slots into TA availability
                               const updatedTA = {
                                 ...selectedTA,
                                 currentHours: newHours,
                                 status: newStatus,
-                                availability: updatedAvailability,
                               }
                               setTaList((prevTAs) =>
                                 prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
                               )
+
                               handleAddTAtoActiveOfferTab(updatedTA, selectedCourse)
                               // Re-select the updated TA by ID
                               setSelectedTAId(updatedTA.id)
