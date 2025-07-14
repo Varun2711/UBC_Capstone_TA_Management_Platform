@@ -36,6 +36,56 @@ class TASchedulerSerializer(serializers.ModelSerializer):
             'password': {'write_only': True}
         }
 
+class SchedulerInstructorSerializer(serializers.Serializer):
+    """Serializer for TA scheduler instructor management"""
+    name = serializers.CharField(max_length=100)
+    email = serializers.EmailField()
+    department = serializers.CharField(max_length=100)
+    employee_number = serializers.CharField(max_length=20, required=False)
+    
+    def validate_email(self, value):
+        # Check if creating new instructor
+        if not self.instance:
+            if Instructor.objects.filter(email=value).exists():
+                raise serializers.ValidationError("Instructor with this email already exists.")
+        else:
+            # Check if updating existing instructor
+            if Instructor.objects.exclude(pk=self.instance.pk).filter(email=value).exists():
+                raise serializers.ValidationError("This email is already in use.")
+        return value
+    
+    def validate_employee_number(self, value):
+        if not value:
+            return value
+        
+        # Check if creating new instructor
+        if not self.instance:
+            if Instructor.objects.filter(employee_number=value).exists():
+                raise serializers.ValidationError("Instructor with this employee number already exists.")
+        else:
+            # Check if updating existing instructor
+            if Instructor.objects.exclude(pk=self.instance.pk).filter(employee_number=value).exists():
+                raise serializers.ValidationError("This employee number is already in use.")
+        return value
+
+class SchedulerInstructorUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating instructor via TA scheduler"""
+    department = serializers.SlugRelatedField(
+        queryset=Department.objects.all(),
+        slug_field='name'
+    )
+
+    class Meta:
+        model = Instructor
+        fields = ['name', 'email', 'department']
+
+    def validate_email(self, value):
+        """Ensure email is not already in use by another instructor"""
+        instance = self.instance
+        if Instructor.objects.exclude(pk=instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
 class AdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Admin
@@ -319,6 +369,8 @@ class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
     availability = StudentAvailabilitySerializer(read_only=True)
     course_preferences = StudentCoursePreferenceSerializer(many=True, read_only=True)
     
+    # Override the ID to return the Student model ID instead of User model ID
+    id = serializers.SerializerMethodField()
     student_info = serializers.SerializerMethodField()
     
     
@@ -329,6 +381,14 @@ class ComprehensiveStudentProfileSerializer(serializers.ModelSerializer):
             'student_info','student_profile', 'experiences', 'skills', 
             'availability', 'course_preferences'
         ]
+
+    def get_id(self, obj):
+        """Return the Student model ID instead of User model ID"""
+        try:
+            student = Student.objects.get(email=obj.email)
+            return student.id
+        except Student.DoesNotExist:
+            return obj.id  # Fallback to User ID if no Student found
 
     def get_student_info(self, obj):
         """Get student info from the custom Student model"""

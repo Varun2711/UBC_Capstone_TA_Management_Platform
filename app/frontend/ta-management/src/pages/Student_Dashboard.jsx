@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BookOpen, Calendar, Clock, FileText, GraduationCap, Home, Mail, Phone, Plus, Search, 
-  Settings, User, Users } from "lucide-react";
+import {
+  Bell, BookOpen, Calendar, Clock, FileText, GraduationCap, Home, Mail, Phone, Plus, Search,
+  Settings, User, Users
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -126,6 +128,20 @@ const instance = axios.create({
   baseURL: "http://localhost:8080/api",
 });
 
+// Add an interceptor to automatically include auth headers
+instance.interceptors.request.use(
+  (config) => {
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export default function StudentDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [submittedApplications, setSubmittedApplications] = useState([]);
@@ -226,7 +242,7 @@ export default function StudentDashboard() {
       } catch (err) {
         console.log("Error fetching applications using student id. error is:", err);
         console.log("Using mock data for submitted applications");
-        setSubmittedApplications(mockSubmittedApplications);
+        setSubmittedApplications([]);
       }
       finally {
         setIsLoadingApplications(false);
@@ -253,7 +269,7 @@ export default function StudentDashboard() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar name = {userData.firstName} email = {userData.email} avatar = {userData.avatar}/>
+        <AppSidebar name={userData.firstName} email={userData.email} avatar={userData.avatar} />
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center justify-between border-b bg-background px-6">

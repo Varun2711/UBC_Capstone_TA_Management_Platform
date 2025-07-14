@@ -2,7 +2,9 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (StudentViewSet, InstructorViewSet, TASchedulerViewSet, find_user, api_root, CreateInstructorView, CreateSchedulerView, UserManagementView,
                     ProfileDetailView, ProfileUpdateView, StudentTAExperienceListCreateView, StudentExperienceDetailView,StudentSkillListCreateView, 
-                    StudentSkillDetailView, StudentAvailabilityView, StudentCoursePreferenceListCreateView, StudentCoursePreferenceDetailView, DepartmentListView)
+                    StudentSkillDetailView, StudentAvailabilityView, StudentCoursePreferenceListCreateView, StudentCoursePreferenceDetailView, DepartmentListView,
+                    scheduler_create_instructor, scheduler_update_instructor, scheduler_delete_instructor)
+
 
 router = DefaultRouter()
 router.include_root_view = False
@@ -20,6 +22,11 @@ urlpatterns = [
     path('admin/create-scheduler/', CreateSchedulerView.as_view(), name='create-scheduler'),
     path('admin/user-management/', UserManagementView.as_view(), name='user-management'),
     path('departments/', DepartmentListView.as_view(), name='faculty-list'),
+
+    # TA Scheduler instructor management endpoints
+    path('scheduler/create-instructor/', scheduler_create_instructor, name='scheduler-create-instructor'),
+    path('scheduler/update-instructor/<str:instructor_id>/', scheduler_update_instructor, name='scheduler-update-instructor'),
+    path('scheduler/delete-instructor/<str:instructor_id>/', scheduler_delete_instructor, name='scheduler-delete-instructor'),
     
     # Student Profile Management
     path('me/', ProfileDetailView.as_view(), name='my-profile'),

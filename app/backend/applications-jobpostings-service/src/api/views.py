@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpRequest
-from rest_framework.decorators import api_view, action
-from rest_framework import viewsets, status
+from rest_framework.decorators import api_view, action, permission_classes
+from rest_framework import viewsets, status, serializers
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import models
@@ -10,23 +11,22 @@ from .models import *
 from .serializers import *
 import django_filters
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.contrib.auth.models import User
 
+# Import shared auth utilities
+from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsStudentUser
 
+# Define a combined permission for schedulers or admins
+IsSchedulerOrAdmin = IsSchedulerUser | IsAdminUser
 
-
-#create a custom filter class to enable filtering on department and term
 class JobPostingFilter(django_filters.FilterSet):
-    # Filter by term ID (default behavior)
     term = django_filters.NumberFilter()
-    
-    # Filter by term code
     term_code = django_filters.CharFilter(
         field_name='term__code',
         lookup_expr='iexact',
         help_text='Filter by term code (e.g., W2025)'
     )
-    
-    # Filter by department name
     department_name = django_filters.CharFilter(
         field_name='department__name',
         lookup_expr='icontains',
@@ -37,33 +37,62 @@ class JobPostingFilter(django_filters.FilterSet):
         model = JobPosting
         fields = ['status', 'post_date', 'term', 'term_code', 'department_name']
 
-#refactored function based views to class based views and using viewsets to be consistent with new services
 class JobPostingViewSet(viewsets.ModelViewSet):
     queryset = JobPosting.objects.all()
     serializer_class = JobPostingSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = JobPostingFilter # use the custom filter created above
-    
-    #enable searched based on post title, description, and department name
+    filterset_class = JobPostingFilter
     search_fields = ['title', 'description', 'department__name'] 
     ordering_fields = ['post_date', 'title']
 
-    # Optional: custom action to list only "open" postings
-    @action(detail=False, methods=['get'])
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Schedulers/Admins can create, update, and destroy.
+        - Anyone can view postings.
+        """
+        if self.action in ['create', 'update', 'partial_update']:
+            return [IsSchedulerOrAdmin()]
+        elif self.action == 'destroy':
+            # Prevent deletion, but still require auth
+            return [IsSchedulerOrAdmin()]
+        return [AllowAny()]
+
+    def get_queryset(self):
+        """
+        Filter queryset to only show open job postings to unauthenticated users.
+        """
+        queryset = super().get_queryset()
+        user_type, _ = self.get_user_info(self.request)
+        
+        # If user is not authenticated, only show open postings
+        if not user_type:
+            queryset = queryset.filter(status='open')
+        
+        return queryset
+
+    def get_user_info(self, request):
+        user_type = getattr(request, 'user_type', None)
+        user_id = getattr(request, 'user_id', None)
+        return user_type, user_id
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def open(self, request):
+        """Get all open job postings."""
         jobs = JobPosting.objects.filter(status='open')
         serializer = self.get_serializer(jobs, many=True)
         return Response(serializer.data)
     
-    #Prevent deletion of job postings. They can be marked as archived or closed.
     def destroy(self, request, *args, **kwargs):
+        """Prevent deletion of job postings."""
         return Response(
             {"detail": "Deletion of job postings is not allowed."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
-    #Is the job active?
-    def active(self, request):    
-       
+    
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def active(self, request):
+        """Get all active job postings (open and not past deadline)."""
         jobs = JobPosting.objects.filter(
             status='open',
             deadline_date__gte=timezone.now().date()
@@ -71,44 +100,29 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(jobs, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'], url_path=r'by-term/(?P<term_id>\d+)')
-    def by_term(self, request, term_id=None):    
-        jobs = JobPosting.objects.filter(term_id=term_id)
-        serializer = self.get_serializer(jobs, many=True)
+    @action(detail=False, methods=['get'], url_path=r'by-term/(?P<term_id>\d+)', permission_classes=[AllowAny])
+    def by_term(self, request, term_id=None):
+        """Get job postings by term ID."""
+        queryset = self.get_queryset().filter(term_id=term_id)
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-
-#use a specific class to handle all our filtering for application
-
 class ApplicationFilter(django_filters.FilterSet):  
-    """ Application Filter Class used to create custom filters for Application requests"""
     status = django_filters.CharFilter()
     positionType = django_filters.CharFilter()
     fullTimeEnrollment = django_filters.CharFilter()
     termSelection = django_filters.NumberFilter()
     workload = django_filters.CharFilter()
     hasOtherPositions = django_filters.CharFilter()
-
-    #allow filtering on term code
     term_code = django_filters.CharFilter(
         field_name='termSelection__code',
-        lookup_expr='iexact',
-        help_text='Filter by term code (e.g., W2025)'
+        lookup_expr='iexact'
     )
-    
-    # Now, we specifically want to TA scheduler to be able to filter by  discipline 
     discipline = django_filters.CharFilter(
-        method='filter_by_discipline',
-        help_text='Filter applications that include this discipline in any rank'
+        method='filter_by_discipline'
     )
     
-    #enables TA Schedulers or Admins to filter applications by disciplines
-    #queryset filter uses iexact which makes the filter case insensstive 
     def filter_by_discipline(self, queryset, name, value):
-        """
-        Filter applications that have the specified discipline in rank1, rank2, or rank3
-        Example: ?discipline=COSC returns all applications with COSC in any ranking
-        """
         return queryset.filter(
             models.Q(disciplineRankings__rank1__iexact=value) |
             models.Q(disciplineRankings__rank2__iexact=value) |
@@ -122,74 +136,126 @@ class ApplicationFilter(django_filters.FilterSet):
             'termSelection', 'workload', 'hasOtherPositions', 'discipline', 'term_code'
         ]
 
-
 class ApplicationViewSet(viewsets.ModelViewSet):
-    """ ViewSet for Applications which manages GET, PUT, POST, DELETE ops"""
-    queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = ApplicationFilter # now we use the Application Filter created above    
-  
-    search_fields = [
-        'student__name',           # Search by student name
-        'student__student_number', # Search by student number
-        'posting__title',          # Search by job posting title
-       
-    ]
-    
-    # More ordering options
-    ordering_fields = [
-        'applied_at',        
-        'status',
-        'positionType'
-    ]
-    
-    # Default ordering is the newest application first)
+    filterset_class = ApplicationFilter
+    search_fields = ['student__name', 'posting__title']
+    ordering_fields = ['applied_at', 'updated_at']
     ordering = ['-applied_at']
 
-    def perform_create(self, serializer):        
-        serializer.save()
-    
-    
-    def update(self, request, *args, **kwargs):
-        """Disallow updates to applications"""
-        return Response(
-            {"detail": "Updates to applications are not currently in scope."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
-    
-    def partial_update(self, request, *args, **kwargs):
-        """Disallow partial updates to applications"""
-        return Response(
-            {"detail": "Updates to applications are not currently in scope."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Students can create/view/update their own applications.
+        - Schedulers/Admins can view any application.
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student']:
+            return [IsStudentUser()]
+        elif self.action in ['list', 'retrieve', 'by_posting', 'by_id']:
+            return [IsSchedulerOrAdmin()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        """
+        Filter applications based on user role.
+        - Students see only their own applications.
+        - Schedulers/Admins see all applications.
+        """
+        user_type, user_id = self.get_user_info(self.request)
+        queryset = Application.objects.all()
+
+        if user_type == 'student' and user_id:
+            student_model_id = self.get_student_model_id(user_id)
+            if student_model_id:
+                return queryset.filter(student_id=student_model_id)
+            return queryset.none()
+        
+        if user_type in ['scheduler', 'admin']:
+            return queryset
+
+        return queryset.none()
+
+    def get_user_info(self, request):
+        user_type = getattr(request, 'user_type', None)
+        user_id = getattr(request, 'user_id', None)
+        return user_type, user_id
+
+    def get_student_model_id(self, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            student = Student.objects.get(email=user.email)
+            return student.id
+        except (User.DoesNotExist, Student.DoesNotExist):
+            return None
+
+    def perform_create(self, serializer):
+        """Set the correct student ID when creating an application."""
+        user_type, user_id = self.get_user_info(self.request)
+        
+        if user_type == 'student' and user_id:
+            student_model_id = self.get_student_model_id(user_id)
+            if student_model_id:
+                serializer.save(student_id=student_model_id)
+            else:
+                raise serializers.ValidationError("Could not find a matching student record for this user.")
+        else:
+            raise serializers.ValidationError("Only students can create applications.")
 
     @action(detail=False, methods=['get'], url_path=r'by-student/(?P<student_id>\d+)') 
-    #get method using the student_id
     def by_student(self, request, student_id=None):
-        """Get all applications for a specific student"""
-        applications = self.queryset.filter(student_id=student_id)
+        """Get all applications for a specific student. Enforces student can only see their own."""
+        user_type, user_id = self.get_user_info(request)
+        
+        if user_type == 'student':
+            student_model_id = self.get_student_model_id(user_id)
+            if not student_model_id or str(student_model_id) != str(student_id):
+                return Response(
+                    {"detail": "You can only view your own applications."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        applications = Application.objects.filter(student_id=student_id)
         serializer = self.get_serializer(applications, many=True)
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
-    #get method using the posting_id
     def by_posting(self, request, posting_id=None):
-        """Get all applications for a specific job posting"""
-        applications = self.queryset.filter(posting_id=posting_id)
+        """Get all applications for a specific job posting."""
+        applications = self.get_queryset().filter(posting_id=posting_id)
         serializer = self.get_serializer(applications, many=True)
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'], url_path=r'by-id/(?P<application_id>\d+)')    
     def by_id(self, request, application_id=None):
-     #Get a specific application by ID
+        """Get a specific application by ID, respecting user permissions."""
         try:
-            application = Application.objects.get(application_id=application_id)
+            application = self.get_queryset().get(application_id=application_id)
             serializer = self.get_serializer(application)
             return Response(serializer.data)
         except Application.DoesNotExist:
             return Response(
-            {"detail": "Application not found"}, 
-            status=status.HTTP_404_NOT_FOUND
-        )
+                {"detail": "Application not found or you do not have permission to view it."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request):
+    """Service status and available endpoints"""
+    return JsonResponse({
+        'status': 'Applications & Job Postings Service is running',
+        'service_scope': 'Job postings and application management',
+        'public_endpoints': {
+            'job_postings': '/api/ajp/jobpostings/',
+            'open_jobs': '/api/ajp/jobpostings/open/',
+            'active_jobs': '/api/ajp/jobpostings/active/',
+            'jobs_by_term': '/api/ajp/jobpostings/by-term/{term_id}/',
+        },
+        'authenticated_endpoints': {
+            'applications': '/api/ajp/applications/',
+            'apps_by_student': '/api/ajp/applications/by-student/{student_id}/',
+            'apps_by_posting': '/api/ajp/applications/by-posting/{posting_id}/',
+            'app_by_id': '/api/ajp/applications/by-id/{application_id}/',
+        }
+    })
