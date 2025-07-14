@@ -70,10 +70,15 @@ class SchedulerInstructorSerializer(serializers.Serializer):
 
 class SchedulerInstructorUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating instructor via TA scheduler"""
+    department = serializers.SlugRelatedField(
+        queryset=Department.objects.all(),
+        slug_field='name'
+    )
+
     class Meta:
         model = Instructor
         fields = ['name', 'email', 'department']
-        
+
     def validate_email(self, value):
         """Ensure email is not already in use by another instructor"""
         instance = self.instance
