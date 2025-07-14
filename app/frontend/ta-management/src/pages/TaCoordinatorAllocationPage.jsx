@@ -715,8 +715,10 @@ export default function TAAllocationPage() {
                             <div>
                               <h4 className="text-sm font-medium mb-2">Availability</h4>
                               <WeeklyAvailabilityCalendar
+                                mode={"allocation"}
                                 editable={false}
                                 availability={selectedTA.availability}
+                                highlightedSlots={selectedCourse?.slots || []}
                               />
                             </div>
 
