@@ -1,3 +1,5 @@
+"use client"
+
 import { Search, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -29,7 +31,7 @@ export function RequirementsFilters({
         </div>
 
         <Select value={selectedDepartment} onValueChange={onDepartmentChange}>
-          <SelectTrigger aria-label = "Department" className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Department" />
           </SelectTrigger>
           <SelectContent>
@@ -43,7 +45,7 @@ export function RequirementsFilters({
         </Select>
 
         <Select value={selectedYear} onValueChange={onYearChange}>
-          <SelectTrigger aria-label = 'year' className="w-full sm:w-32">
+          <SelectTrigger className="w-full sm:w-32">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>
@@ -57,7 +59,7 @@ export function RequirementsFilters({
         </Select>
 
         <Select value={selectedTerm} onValueChange={onTermChange}>
-          <SelectTrigger aria-label = 'term' className="w-full sm:w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Term" />
           </SelectTrigger>
           <SelectContent>
