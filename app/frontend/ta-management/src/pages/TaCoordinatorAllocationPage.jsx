@@ -431,6 +431,26 @@ export default function TAAllocationPage() {
     })
   }, [])
 
+  // Helper function to check for scheduling conflicts
+  const checkForConflicts = (taAvailability, courseSlots) => {
+    // If either array is missing, assume no conflict
+    if (!taAvailability || !courseSlots) {
+      return false;
+    }
+
+    // Use a Set for efficient O(1) average time complexity lookups
+    const availabilitySet = new Set(taAvailability);
+
+    // Check if any of the course's slots already exist in the TA's availability
+    for (const slot of courseSlots) {
+      if (availabilitySet.has(slot)) {
+        return true; // Conflict found
+      }
+    }
+
+    // No conflicts found
+    return false;
+  };
 
   // Function to update TA hours after assignment
   const updateHours = (ta, course) => {
@@ -929,6 +949,14 @@ export default function TAAllocationPage() {
                           </Button>
                           <Button
                             onClick={() => {
+
+                              const hasConflict = checkForConflicts(selectedTA.availability, selectedCourse.slots);
+
+                              if(hasConflict){
+                                alert("Scheduling Conflict: This TA is not available for one or more of the selected course section's time slots.");
+                                return; // Stop the function to prevent sending the offer
+                              }
+                              
                               // Handle assignment logic here
                               console.log("Assigning", selectedTA.name, "to", selectedCourse)
                               const newHours = selectedTA.currentHours + selectedCourse.weekHours
