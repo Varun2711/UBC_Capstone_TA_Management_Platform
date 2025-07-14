@@ -18,7 +18,7 @@ import { EditInstructorModal } from "@/components/scheduler/instructor-managemen
 export default function InstructorRequirements() {
   // --- STATE MANAGEMENT ---
   const [instructors, setInstructors] = useState([]);
-  const [allDepartments, setAllDepartments] = useState([]); // Will store [{id, name}]
+  const [allDepartments, setAllDepartments] = useState([]); // Stores [{id, name}]
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,26 +34,22 @@ export default function InstructorRequirements() {
       try {
         setIsLoading(true);
         setError(null);
-        // Fetch instructors and departments in parallel
         const [instructorsData, departmentsData] = await Promise.all([
           getInstructors(), 
           getDepartments()
         ]);
 
-        setAllDepartments(departmentsData); // Store full department objects
-
-        // Create a lookup map for department IDs to names for efficient mapping
+        setAllDepartments(departmentsData);
         const departmentMap = new Map(departmentsData.map(d => [d.id, d.name]));
 
-        // Format instructors with the correct department name
         const formattedInstructors = instructorsData.map((inst) => ({
-          instructorId: inst.employee_number, // Use employee_number as the unique key
-          dbId: inst.id, // Keep the database primary key if needed elsewhere
+          instructorId: inst.employee_number,
+          dbId: inst.id,
           instructorName: inst.name,
           email: inst.email,
-          department: departmentMap.get(inst.department) || "Unknown", // Map ID to name
+          department: departmentMap.get(inst.department) || "Unknown",
           employeeNumber: inst.employee_number,
-          courseOfferings: [],
+          courseOfferings: [], // Placeholder for future implementation
         }));
 
         setInstructors(formattedInstructors);
@@ -68,10 +64,21 @@ export default function InstructorRequirements() {
   }, []);
 
   // --- EVENT HANDLERS ---
+  const toggleInstructor = (instructorId) => {
+    setExpandedInstructors((prev) => {
+      const next = new Set(prev);
+      if (next.has(instructorId)) {
+        next.delete(instructorId);
+      } else {
+        next.add(instructorId);
+      }
+      return next;
+    });
+  };
+
   const handleAddInstructorSubmit = (newInstructorFromApi) => {
-    // The create API returns the department name directly
     const formatted = {
-      instructorId: newInstructorFromApi.id, // API returns employee_number as 'id'
+      instructorId: newInstructorFromApi.id,
       instructorName: newInstructorFromApi.name,
       email: newInstructorFromApi.email,
       department: newInstructorFromApi.department,
@@ -84,7 +91,7 @@ export default function InstructorRequirements() {
   const handleEditInstructorSubmit = (updatedFromApi) => {
     setInstructors((prev) =>
       prev.map((inst) =>
-        inst.instructorId === updatedFromApi.id // Match by employee_number
+        inst.instructorId === updatedFromApi.id
           ? { ...inst, instructorName: updatedFromApi.name, email: updatedFromApi.email, department: updatedFromApi.department }
           : inst
       )
@@ -161,59 +168,57 @@ export default function InstructorRequirements() {
         </header>
 
         <main className="flex-1 space-y-6 p-4 md:p-8">
-        <div className="flex flex-col space-y-4">
-    <div className="flex flex-col space-y-2">
-      <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Instructor Management</h1>
-      <p className="text-muted-foreground">Add, edit, and manage course instructors.</p>
-    </div>
+          <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-2">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Instructor Management</h1>
+              <p className="text-muted-foreground">Add, edit, and manage course instructors.</p>
+            </div>
 
-    {/* --- THIS IS THE MISSING SECTION --- */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Instructors</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.visibleInstructors}</div>
-          <p className="text-xs text-muted-foreground">
-            of {stats.totalInstructors} total instructors
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Requirements</CardTitle>
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.visibleRequirements}</div>
-          <p className="text-xs text-muted-foreground">
-            of {stats.totalRequirements} total requirements
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-    {/* --- END OF MISSING SECTION --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Instructors</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.visibleInstructors}</div>
+                  <p className="text-xs text-muted-foreground">
+                    of {stats.totalInstructors} total instructors
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Requirements</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.visibleRequirements}</div>
+                  <p className="text-xs text-muted-foreground">
+                    of {stats.totalRequirements} total requirements
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
 
-    <RequirementsFilters
-      searchQuery={searchQuery}
-      onSearchChange={setSearchQuery}
-      selectedDepartment={selectedDepartment}
-      onDepartmentChange={setSelectedDepartment}
-      departments={departmentNames}
-      selectedYear={"all"} onYearChange={() => {}} years={[]}
-      selectedTerm={"all"} onTermChange={() => {}} terms={[]}
-    />
-  </div>
+            <RequirementsFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedDepartment={selectedDepartment}
+              onDepartmentChange={setSelectedDepartment}
+              departments={departmentNames}
+              selectedYear={"all"} onYearChange={() => {}} years={[]}
+              selectedTerm={"all"} onTermChange={() => {}} terms={[]}
+            />
+          </div>
           <div className="space-y-4">
             {filteredInstructors.length > 0 ? (
               filteredInstructors.map((instructor) => (
                 <InstructorRequirementsCard
                   key={instructor.instructorId}
                   instructor={instructor}
-                  isExpanded={false} /* Manage expansion state if needed */
-                  onToggle={() => {}}
+                  isExpanded={expandedInstructors.has(instructor.instructorId)}
+                  onToggle={() => toggleInstructor(instructor.instructorId)}
                   onEdit={handleEditInstructor}
                   onDelete={handleDeleteInstructor}
                   visibleOfferingsCount={0}
