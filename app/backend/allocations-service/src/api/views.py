@@ -90,7 +90,6 @@ class ShortlistedApplicantViewSet(viewsets.ReadOnlyModelViewSet):
                 'max_hours': max_hours,
                 'available_hours': max_hours - current_allocation['total_hours'],
                 'pending_offers_hours': current_allocation['pending_offers_hours'],
-                'accepted_offers_hours': current_allocation['accepted_offers_hours'],
                 'active_assignments_hours': current_allocation['active_assignments_hours']
             }
             
@@ -100,7 +99,7 @@ class ShortlistedApplicantViewSet(viewsets.ReadOnlyModelViewSet):
     
     def calculate_student_allocation(self, student):
         """Calculate student's current allocation status"""
-        # Get pending offers HOURS
+        # Get pending offers HOURS (potential future workload)
         pending_offers_hours = Offer.objects.filter(
             student=student,
             status='pending'
@@ -115,22 +114,8 @@ class ShortlistedApplicantViewSet(viewsets.ReadOnlyModelViewSet):
             )
         )['total_hours'] or 0
         
-        # Get accepted offers HOURS
-        accepted_offers_hours = Offer.objects.filter(
-            student=student,
-            status='accepted'
-        ).aggregate(
-            total_hours=Sum(
-                Case(
-                    When(required_hours='6', then=6),
-                    When(required_hours='12', then=12),
-                    default=0,
-                    output_field=IntegerField()
-                )
-            )
-        )['total_hours'] or 0
-        
-        # Get active assignments HOURS
+        # Get active assignments HOURS (confirmed workload)
+        # This is the single source of truth for allocated hours.
         active_assignments_hours = Assignment.objects.filter(
             student=student,
             is_active=True
@@ -145,11 +130,12 @@ class ShortlistedApplicantViewSet(viewsets.ReadOnlyModelViewSet):
             )
         )['total_hours'] or 0
         
+        # The total allocated hours are the sum of confirmed work and potential work.
+        # We no longer need to query for 'accepted' offers separately.
         return {
             'pending_offers_hours': pending_offers_hours,
-            'accepted_offers_hours': accepted_offers_hours,
             'active_assignments_hours': active_assignments_hours,
-            'total_hours': pending_offers_hours + accepted_offers_hours + active_assignments_hours
+            'total_hours': pending_offers_hours + active_assignments_hours
         }
 
 class OfferViewSet(viewsets.ModelViewSet):
