@@ -1,152 +1,151 @@
-import { describe, it, expect, vi } from "vitest"
-import { render, screen, within } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter, useNavigate } from "react-router-dom"
 import { InstructorSidebar } from "@/components/instructor-dashboard-sidebar"
+import * as profileLogic from "@/logic/scheduler-profile"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
-// Mock the useIsMobile hook
-vi.mock("@/hooks/use-mobile", () => ({
-  useIsMobile: vi.fn(() => false),
-}))
+// --- Mocks Setup ---
 
-// Mock icons from lucide-react
-vi.mock("lucide-react", () => ({
-  Home: () => <svg data-testid="home-icon" />,
-  BookOpen: () => <svg data-testid="book-open-icon" />,
-  Calendar: () => <svg data-testid="calendar-icon" />,
-  GraduationCap: () => <svg data-testid="graduation-cap-icon" />,
-  Settings: () => <svg data-testid="settings-icon" />,
-  MoreVerticalIcon: () => <svg data-testid="more-vertical-icon" />,
-}))
+// Mock the API call for getProfile
+const getProfileSpy = vi.spyOn(profileLogic, "getProfile")
 
-const renderSidebar = (props = {}) => {
-  return render(
-    <MemoryRouter>
-      <SidebarProvider>
-        <InstructorSidebar {...props} />
-      </SidebarProvider>
-    </MemoryRouter>,
-  )
-}
+// Mock react-router-dom's useNavigate
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
+  }
+})
+
+// Mock lucide-react icons
+vi.mock("lucide-react", async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    Home: () => <svg data-testid="home-icon" />,
+    BookOpen: () => <svg data-testid="book-open-icon" />,
+    GraduationCap: () => <svg data-testid="graduation-cap-icon" />,
+    MoreVerticalIcon: () => <svg data-testid="more-vertical-icon" />,
+  }
+})
+
+// --- Test Suite ---
 
 describe("InstructorSidebar", () => {
+  const mockNavigate = vi.fn()
+  const mockUser = {
+    name: "Jane Doe",
+    email: "jane.doe@example.com",
+  }
 
-  it("renders all navigation items correctly", () => {
-    renderSidebar({ activePage: "My Courses" })
-
-    const navigationItems = [
-      { title: "Dashboard", icon: "home-icon" },
-      { title: "My Courses", icon: "book-open-icon", isActive: true },
-      { title: "Schedule", icon: "calendar-icon" },
-      { title: "Profile", icon: "graduation-cap-icon" },
-      { title: "Settings", icon: "settings-icon" },
-    ]
-
-    const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
-
-    navigationItems.forEach((item) => {
-      const menuItem = within(navigationGroup).getByText(item.title)
-      expect(menuItem).toBeInTheDocument()
-      expect(within(navigationGroup).getByTestId(item.icon)).toBeInTheDocument()
-
-      if (item.isActive) {
-        expect(menuItem.closest('[data-active="true"]')).toBeInTheDocument()
-      } else {
-        expect(menuItem.closest('[data-active="true"]')).not.toBeInTheDocument()
-      }
-    })
+  // Reset mocks before each test to ensure isolation
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useNavigate.mockReturnValue(mockNavigate)
   })
 
-  it("renders avatar with correct fallback", () => {
-    renderSidebar({ activePage: "Dashboard" })
+  // Helper function for rendering
+  const renderSidebar = (props = {}) => {
+    return render(
+      <MemoryRouter>
+        <SidebarProvider>
+          <InstructorSidebar {...props} />
+        </SidebarProvider>
+      </MemoryRouter>,
+    )
+  }
 
-    const avatar = screen.getByText("Ronnie Smith").closest('[data-sidebar="menu-button"]')
-    const avatarFallback = within(avatar).getByText("RS")
-    expect(avatarFallback).toBeInTheDocument()
-    expect(avatarFallback).toHaveClass("bg-muted")
-  })
+  it("should render static content and initial loading state correctly", () => {
+    getProfileSpy.mockImplementationOnce(() => new Promise(() => {})) // Prevent promise from resolving
 
-  it("renders the dropdown menu in the footer with correct items", async () => {
-    const user = userEvent.setup()
-    renderSidebar({ activePage: "Dashboard" })
-
-    const dropdownTrigger = screen.getByRole("button")
-    await user.click(dropdownTrigger)
-
-    expect(await screen.findByText("My Account")).toBeInTheDocument()
-    expect(screen.getByText("My Profile")).toBeInTheDocument()
-    expect(screen.getByText("Logout")).toBeInTheDocument()
-  })
-
-  it("has correct accessibility attributes", () => {
-    renderSidebar({ activePage: "Dashboard" })
-
-    const header = screen.getByText("UBC CMPS").closest('[data-sidebar="header"]')
-    expect(header).toHaveAttribute("data-sidebar", "header")
-
-    const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
-    const menuItems = within(navigationGroup).getAllByRole("link")
-    
-    menuItems.forEach((item) => {
-      expect(item).toHaveAttribute("href");
-    })
-
-    const footer = screen.getByText("Ronnie Smith").closest('[data-sidebar="footer"]')
-    expect(footer).toHaveAttribute("data-sidebar", "footer")
-  })
-
-  it("renders all navigation items with correct icons", () => {
     renderSidebar()
 
-    const expectedItems = [
-      { title: "Dashboard", icon: "home-icon" },
-      { title: "My Courses", icon: "book-open-icon" },
-      { title: "Schedule", icon: "calendar-icon" },
-      { title: "Profile", icon: "graduation-cap-icon" },
-      { title: "Settings", icon: "settings-icon" },
-    ]
-
-    expectedItems.forEach((item) => {
-      expect(screen.getByText(item.title)).toBeInTheDocument()
-    // Check if the icon is rendered if applicable
-    //   expect(screen.getByTestId(item.icon)).toBeInTheDocument()
-    })
-  })
-
-  it("renders correct branding and role information", () => {
-    renderSidebar()
-
-    // Check header branding
+    // Check for static branding
     expect(screen.getByText("UBC CMPS")).toBeInTheDocument()
     expect(screen.getByText("Instructor Portal")).toBeInTheDocument()
 
-    // Check user information
-    expect(screen.getByText("Ronnie Smith")).toBeInTheDocument()
-    expect(screen.getByText("Instructor")).toBeInTheDocument()
+    // Check that navigation items are rendered
+    expect(screen.getByText("Dashboard")).toBeInTheDocument()
+    expect(screen.getByText("My Courses")).toBeInTheDocument()
+    expect(screen.getByText("TA Requirements")).toBeInTheDocument()
+
+    // Check for the loading state in the footer
+    expect(screen.getByText("Loading...")).toBeInTheDocument()
+    // The dropdown trigger button should be disabled while loading
+    const dropdownTrigger = screen.getByRole("button", { name: /account menu/i })
+    expect(dropdownTrigger).toBeDisabled()
   })
 
-  it("has proper navigation structure", () => {
+  it("should display user information after successful data fetching", async () => {
+    // Mock a successful API response
+    getProfileSpy.mockResolvedValue(mockUser)
+
     renderSidebar()
 
-    // Check that all navigation items are links
-    const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
-    const links = within(navigationGroup).getAllByRole("link")
+    // Wait for the user's name to appear, which indicates the loading is complete
+    expect(await screen.findByText("Jane Doe")).toBeInTheDocument()
+    expect(screen.getByText("JD")).toBeInTheDocument() // Checks for correct initials
+    expect(screen.getByText("Instructor")).toBeInTheDocument()
 
-    const expectedLinks = [
-      "/instructor-dashboard",
-      "/my-courses",
-      "#",
-      "/instructor-profile",
-      "#"
-    ]
+    // The "Loading..." text should no longer be present
+    expect(screen.queryByText("Loading...")).not.toBeInTheDocument()
 
-    expect(links).toHaveLength(5) // Should have 5 navigation items
+    // The dropdown trigger should now be enabled
+    const dropdownTrigger = screen.getByRole("button", { name: /account menu/i })
+    expect(dropdownTrigger).toBeEnabled()
+  })
 
-    let i = 0;
-    links.forEach((link) => {
-      expect(link).toHaveAttribute("href", expectedLinks[i])
-      i++;
-    })
+  it("should navigate to the correct URL when a navigation item is clicked", async () => {
+    getProfileSpy.mockResolvedValue(mockUser) // Resolve promise to enable clicks
+    const user = userEvent.setup()
+
+    renderSidebar()
+
+    // Wait for loading to finish
+    await screen.findByText("Jane Doe")
+
+    // Find and click the "My Courses" button
+    const myCoursesButton = screen.getByRole("button", { name: /my courses/i })
+    await user.click(myCoursesButton)
+
+    // Assert that navigate was called with the correct path
+    expect(mockNavigate).toHaveBeenCalledWith("/my-courses")
+  })
+
+  it("should open the dropdown menu and handle profile clicks", async () => {
+    getProfileSpy.mockResolvedValue(mockUser)
+    const user = userEvent.setup()
+
+    renderSidebar()
+
+    // Wait for loading to complete and click the dropdown trigger
+    const dropdownTrigger = await screen.findByRole("button", { name: /account menu/i })
+    await user.click(dropdownTrigger)
+
+    // Check that the profile dropdown item is visible
+    const profileButton = await screen.findByRole("menuitem", { name: /my profile/i })
+    expect(profileButton).toBeInTheDocument()
+
+    // Click "My Profile" and check navigation
+    await user.click(profileButton)
+    expect(mockNavigate).toHaveBeenCalledWith("/instructor-profile")
+  })
+
+  it("should correctly identify and style the active page", async () => {
+    getProfileSpy.mockResolvedValue(mockUser)
+
+    renderSidebar({ activePage: "Dashboard" })
+    await screen.findByText("Jane Doe")
+
+    const dashboardButton = screen.getByRole("button", { name: /dashboard/i })
+    const coursesButton = screen.getByRole("button", { name: /my courses/i })
+
+    // The active button should have the 'data-active="true"' attribute
+    expect(dashboardButton).toHaveAttribute("data-active", "true")
+    // The inactive button should not
+    expect(coursesButton).not.toHaveAttribute("data-active", "true")
   })
 })

@@ -1,7 +1,9 @@
 "use client"
 
-import { BookOpen, Calendar, Home, Settings, Users, MessageSquare, MoreVerticalIcon, GraduationCap } from "lucide-react"
+import { useState, useEffect } from "react"
+import { BookOpen, GraduationCap, Home, MoreVerticalIcon } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { getProfile } from "@/logic/scheduler-profile" 
 import {
   Sidebar,
   SidebarContent,
@@ -37,24 +39,42 @@ const navigationItems = [
     url: "/my-courses",
   },
   {
-    title: "Schedule",
-    icon: Calendar,
-    url: "#",
-  },
-  {
-    title: "Profile",
+    title: "TA Requirements",
     icon: GraduationCap,
-    url: "/instructor-profile",
-  },
-  {
-    title: "Settings",
-    icon: Settings,
     url: "#",
   },
 ]
 
 export function InstructorSidebar({ activePage, ...props }) {
   const navigate = useNavigate()
+  const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Fetches the current user's profile data
+        const data = await getProfile()
+        setUser(data)
+      } catch (error) {
+        console.error("Failed to fetch user profile for sidebar:", error)
+        // Optionally handle the error, e.g., show an error message
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchUserData()
+  }, [])
+
+  // Helper function to get initials from a name string
+  const getInitials = (name) => {
+    if (!name) return ""
+    return name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+  }
 
   return (
     <Sidebar {...props}>
@@ -77,11 +97,12 @@ export function InstructorSidebar({ activePage, ...props }) {
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={activePage === item.title}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
+                  <SidebarMenuButton
+                    onClick={() => navigate(item.url)}
+                    isActive={activePage === item.title}
+                  >
+                    <item.icon />
+                    <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -94,27 +115,37 @@ export function InstructorSidebar({ activePage, ...props }) {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild className="h-10">
+              <DropdownMenuTrigger asChild className="h-10" disabled={isLoading}>
                 <SidebarMenuButton className="bg-background text-foreground hover:bg-muted" aria-label="account menu">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src="/placeholder.svg" alt="Ronnie Smith" />
-                    <AvatarFallback>RS</AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">Ronnie Smith</span>
-                    <span className="truncate text-xs text-muted-foreground">Instructor</span>
-                  </div>
+                  {isLoading || !user ? (
+                    <>
+                      <Avatar className="h-6 w-6 bg-muted" />
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-medium">Loading...</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-medium">{user.name}</span>
+                        <span className="truncate text-xs text-muted-foreground">Instructor</span>
+                      </div>
+                    </>
+                  )}
                   <MoreVerticalIcon className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <button>My Profile</button>
+                <DropdownMenuItem onClick={() => navigate("/instructor-profile")}>
+                  My Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
-                  <button>Logout</button>
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
