@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Bell, Users, FileText, Plus, Loader2, AlertTriangle } from "lucide-react";
-import { getInstructors, getDepartments, deleteInstructor } from "@/logic/instructorManagement";
+import { 
+    getInstructors, 
+    getDepartments, 
+    deleteInstructor, 
+    getInstructorRequests, 
+    getCourseOfferings    
+} from "@/logic/instructorManagement";
 
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
@@ -15,98 +21,100 @@ import { RequirementsFilters } from "@/components/scheduler/instructor-managemen
 import { AddInstructorModal } from "@/components/scheduler/instructor-management/add-instructor-modal";
 import { EditInstructorModal } from "@/components/scheduler/instructor-management/edit-instructor-modal";
 
+const parseCourseInfo = (courseInfo) => {
+    const parts = courseInfo.split(" ");
+    const courseCode = `${parts[0]} ${parts[1]}`;
+    const courseTitle = parts.slice(2).join(" ");
+    return { courseCode, courseTitle };
+};
+
+const parseTermInfo = (termInfo) => {
+  const yearMatch = termInfo.match(/(\d{4})/);
+  const year = yearMatch ? yearMatch[0] : "Unknown";
+  const termPartMatch = termInfo.match(/(Term \d|Both Terms)/);
+  const termPart = termPartMatch ? termPartMatch[0] : "Unknown";
+  const firstLetter = termInfo.charAt(0).toUpperCase();
+  let session = "";
+  if (firstLetter === 'W') {
+      session = 'Winter';
+  } else if (firstLetter === 'S') {
+      session = 'Summer';
+  }
+  const fullTerm = session ? `${session} ${termPart}` : termPart;
+  return { year, term: fullTerm };
+};
+
 export default function InstructorRequirements() {
-  // --- STATE MANAGEMENT ---
   const [instructors, setInstructors] = useState([]);
-  const [allDepartments, setAllDepartments] = useState([]); // Stores [{id, name}]
+  const [allDepartments, setAllDepartments] = useState([]);
+  const [allRequests, setAllRequests] = useState([]);
+  const [allCourseOfferings, setAllCourseOfferings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedTerm, setSelectedTerm] = useState("all");
   const [expandedInstructors, setExpandedInstructors] = useState(new Set());
   const [isAddInstructorModalOpen, setIsAddInstructorModalOpen] = useState(false);
   const [isEditInstructorModalOpen, setIsEditInstructorModalOpen] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState(null);
 
-  // --- DATA FETCHING ---
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const [instructorsData, departmentsData] = await Promise.all([
-          getInstructors(), 
-          getDepartments()
-        ]);
+  const fetchPageData = useCallback(async () => {
+    try {
+      setError(null);
+      const [instructorsData, departmentsData, requestsData, offeringsData] = await Promise.all([
+        getInstructors(), 
+        getDepartments(),
+        getInstructorRequests(),
+        getCourseOfferings()
+      ]);
 
-        setAllDepartments(departmentsData);
-        const departmentMap = new Map(departmentsData.map(d => [d.id, d.name]));
+      const departmentMap = new Map(departmentsData.map(d => [d.id, d.name]));
+      
+      const formattedInstructors = instructorsData.map((inst) => ({
+        dbId: inst.id,
+        instructorId: inst.employee_number,
+        instructorName: inst.name,
+        email: inst.email,
+        departmentId: inst.department,
+        departmentName: departmentMap.get(inst.department) || "Unknown",
+        employeeNumber: inst.employee_number,
+        courseOfferings: [],
+      }));
 
-        const formattedInstructors = instructorsData.map((inst) => ({
-          instructorId: inst.employee_number,
-          dbId: inst.id,
-          instructorName: inst.name,
-          email: inst.email,
-          department: departmentMap.get(inst.department) || "Unknown",
-          employeeNumber: inst.employee_number,
-          courseOfferings: [], // Placeholder for future implementation
-        }));
+      setAllDepartments(departmentsData);
+      setInstructors(formattedInstructors);
+      setAllRequests(requestsData);
+      setAllCourseOfferings(offeringsData);
 
-        setInstructors(formattedInstructors);
-      } catch (err) {
-        console.error("Failed to fetch initial data:", err);
-        setError("Could not load data. Please refresh the page.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+      setError("Could not load data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // --- EVENT HANDLERS ---
+  useEffect(() => {
+    fetchPageData();
+  }, [fetchPageData]);
+
   const toggleInstructor = (instructorId) => {
     setExpandedInstructors((prev) => {
       const next = new Set(prev);
-      if (next.has(instructorId)) {
-        next.delete(instructorId);
-      } else {
-        next.add(instructorId);
-      }
+      next.has(instructorId) ? next.delete(instructorId) : next.add(instructorId);
       return next;
     });
   };
 
-  const handleAddInstructorSubmit = (newInstructorFromApi) => {
-    const formatted = {
-      instructorId: newInstructorFromApi.id,
-      instructorName: newInstructorFromApi.name,
-      email: newInstructorFromApi.email,
-      department: newInstructorFromApi.department,
-      employeeNumber: newInstructorFromApi.id,
-      courseOfferings: [],
-    };
-    setInstructors((prev) => [...prev, formatted]);
-  };
-  
-  const handleEditInstructorSubmit = (updatedFromApi) => {
-    setInstructors((prev) =>
-      prev.map((inst) =>
-        inst.instructorId === updatedFromApi.id
-          ? { ...inst, instructorName: updatedFromApi.name, email: updatedFromApi.email, department: updatedFromApi.department }
-          : inst
-      )
-    );
-  };
-  
   const handleDeleteInstructor = async (employeeNumber) => {
     const instructor = instructors.find((inst) => inst.instructorId === employeeNumber);
     if (!instructor) return;
-
     if (window.confirm(`Are you sure you want to delete ${instructor.instructorName}?`)) {
       try {
         await deleteInstructor(employeeNumber);
-        setInstructors((prev) => prev.filter((inst) => inst.instructorId !== employeeNumber));
-        alert(`${instructor.instructorName} has been deleted.`);
+        fetchPageData();
       } catch (err) {
         console.error("Failed to delete instructor:", err);
         alert(`Error: Could not delete ${instructor.instructorName}.`);
@@ -119,40 +127,81 @@ export default function InstructorRequirements() {
     setIsEditInstructorModalOpen(true);
   };
 
-  // --- MEMOIZED FILTERS & STATS ---
-  const { filteredInstructors, stats } = useMemo(() => {
-    const filtered = instructors.filter((instructor) => {
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      const matchesSearch =
-        instructor.instructorName.toLowerCase().includes(lowerCaseQuery) ||
-        instructor.email.toLowerCase().includes(lowerCaseQuery) ||
-        instructor.employeeNumber.includes(lowerCaseQuery);
-      const matchesDepartment = selectedDepartment === "all" || instructor.department === selectedDepartment;
-      return matchesSearch && matchesDepartment;
+  const { filteredInstructors, stats, availableYears, availableTerms } = useMemo(() => {
+    if (isLoading) {
+        return { filteredInstructors: [], stats: { totalInstructors: 0, visibleInstructors: 0, totalRequirements: 0, visibleRequirements: 0 }, availableYears: [], availableTerms: [] };
+    }
+    const courseOfferingMap = new Map(allCourseOfferings.map(o => [o.course_offering_id, o]));
+    const yearSet = new Set();
+    const termSet = new Set();
+    const instructorsWithOfferings = instructors.map(instructor => {
+        const offerings = allRequests
+            .filter(req => req.instructor_id === instructor.dbId)
+            .map(req => {
+                const offeringDetails = courseOfferingMap.get(req.course_offering_id);
+                if (!offeringDetails) return null;
+                const { courseCode, courseTitle } = parseCourseInfo(offeringDetails.course_info);
+                const { year, term } = parseTermInfo(offeringDetails.term_info);
+                yearSet.add(year);
+                termSet.add(term);
+                return {
+                    offeringId: req.request_id,
+                    courseCode,
+                    courseTitle,
+                    section: offeringDetails.section_number,
+                    year,
+                    term,
+                    requirements: {
+                        submittedAt: req.request_date,
+                        generalRequirements: req.request_description || [],
+                    },
+                };
+            })
+            .filter(Boolean);
+        return { ...instructor, courseOfferings: offerings };
     });
-
+    let visibleInstructors = instructorsWithOfferings.filter(instructor => {
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        const matchesSearch =
+            instructor.instructorName.toLowerCase().includes(lowerCaseQuery) ||
+            instructor.email.toLowerCase().includes(lowerCaseQuery) ||
+            String(instructor.employeeNumber).includes(lowerCaseQuery);
+        
+        const matchesDepartment = selectedDepartment === "all" || instructor.departmentName === selectedDepartment;
+        return matchesSearch && matchesDepartment;
+    });
+    let visibleRequirementsCount = 0;
+    const finalFilteredInstructors = visibleInstructors.map(instructor => {
+        const filteredOfferings = instructor.courseOfferings.filter(offering => {
+            const matchesYear = selectedYear === "all" || offering.year === selectedYear;
+            const matchesTerm = selectedTerm === "all" || offering.term === selectedTerm;
+            return matchesYear && matchesTerm;
+        });
+        visibleRequirementsCount += filteredOfferings.length;
+        return { ...instructor, filteredOfferings };
+    });
+    const totalRequirements = instructorsWithOfferings.reduce((sum, inst) => sum + inst.courseOfferings.length, 0);
     return {
-      filteredInstructors: filtered,
-      stats: {
-        totalInstructors: instructors.length,
-        visibleInstructors: filtered.length,
-        totalRequirements: 0, // Placeholder
-        visibleRequirements: 0, // Placeholder
-      },
+        filteredInstructors: finalFilteredInstructors,
+        stats: {
+            totalInstructors: instructors.length,
+            visibleInstructors: visibleInstructors.length,
+            totalRequirements,
+            visibleRequirements: visibleRequirementsCount,
+        },
+        availableYears: Array.from(yearSet).sort(),
+        availableTerms: Array.from(termSet).sort(),
     };
-  }, [searchQuery, selectedDepartment, instructors]);
-
+  }, [instructors, allRequests, allCourseOfferings, searchQuery, selectedDepartment, selectedYear, selectedTerm, isLoading]);
+  
   const departmentNames = allDepartments.map(d => d.name);
 
-  // --- RENDER LOGIC ---
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
-
   if (error) {
     return <div className="flex flex-col items-center justify-center h-screen text-red-500"><AlertTriangle className="h-12 w-12 mb-4" /><p>{error}</p></div>;
   }
-  
   return (
     <SidebarProvider>
       <AppSidebar activePage={"Instructor Management"} />
@@ -166,82 +215,79 @@ export default function InstructorRequirements() {
             <Button variant="ghost" size="icon"><Bell className="h-5 w-5" /></Button>
           </div>
         </header>
-
         <main className="flex-1 space-y-6 p-4 md:p-8">
-          <div className="flex flex-col space-y-4">
-            <div className="flex flex-col space-y-2">
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Instructor Management</h1>
-              <p className="text-muted-foreground">Add, edit, and manage course instructors.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Instructors</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.visibleInstructors}</div>
-                  <p className="text-xs text-muted-foreground">
-                    of {stats.totalInstructors} total instructors
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Requirements</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.visibleRequirements}</div>
-                  <p className="text-xs text-muted-foreground">
-                    of {stats.totalRequirements} total requirements
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <RequirementsFilters
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedDepartment={selectedDepartment}
-              onDepartmentChange={setSelectedDepartment}
-              departments={departmentNames}
-              selectedYear={"all"} onYearChange={() => {}} years={[]}
-              selectedTerm={"all"} onTermChange={() => {}} terms={[]}
-            />
-          </div>
-          <div className="space-y-4">
-            {filteredInstructors.length > 0 ? (
-              filteredInstructors.map((instructor) => (
-                <InstructorRequirementsCard
-                  key={instructor.instructorId}
-                  instructor={instructor}
-                  isExpanded={expandedInstructors.has(instructor.instructorId)}
-                  onToggle={() => toggleInstructor(instructor.instructorId)}
-                  onEdit={handleEditInstructor}
-                  onDelete={handleDeleteInstructor}
-                  visibleOfferingsCount={0}
-                  filteredOfferings={[]}
+            <div className="flex flex-col space-y-4">
+                <div className="flex flex-col space-y-2">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Instructor Management</h1>
+                    <p className="text-muted-foreground">Add, edit, and manage course requirement requests from instructors.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Instructors</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.visibleInstructors}</div>
+                            <p className="text-xs text-muted-foreground"> of {stats.totalInstructors} total instructors</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Requirements</CardTitle>
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.visibleRequirements}</div>
+                            <p className="text-xs text-muted-foreground"> of {stats.totalRequirements} total requirements</p>
+                        </CardContent>
+                    </Card>
+                </div>
+                <RequirementsFilters
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    selectedDepartment={selectedDepartment}
+                    onDepartmentChange={setSelectedDepartment}
+                    departments={departmentNames}
+                    selectedYear={selectedYear}
+                    onYearChange={setSelectedYear}
+                    years={availableYears}
+                    selectedTerm={selectedTerm}
+                    onTermChange={setSelectedTerm}
+                    terms={availableTerms}
                 />
-              ))
-            ) : (
-              <Card><CardContent className="text-center py-8"><p>No instructors found.</p></CardContent></Card>
-            )}
-          </div>
+            </div>
+            <div className="space-y-4">
+                {filteredInstructors.length > 0 ? (
+                filteredInstructors.map((instructor) => (
+                    <InstructorRequirementsCard
+                      key={instructor.instructorId}
+                      instructor={instructor}
+                      isExpanded={expandedInstructors.has(instructor.instructorId)}
+                      onToggle={() => toggleInstructor(instructor.instructorId)}
+                      onEdit={handleEditInstructor}
+                      onDelete={handleDeleteInstructor}
+                      visibleOfferingsCount={instructor.filteredOfferings.length}
+                      filteredOfferings={instructor.filteredOfferings}
+                    />
+                ))
+                ) : (
+                <Card><CardContent className="text-center py-8"><p>No instructors match the current filters.</p></CardContent></Card>
+                )}
+            </div>
         </main>
         
         <AddInstructorModal
           isOpen={isAddInstructorModalOpen}
           onClose={() => setIsAddInstructorModalOpen(false)}
-          onAddInstructor={handleAddInstructorSubmit}
+          onDataChange={fetchPageData}
           existingInstructors={instructors}
           departments={departmentNames}
         />
         <EditInstructorModal
           isOpen={isEditInstructorModalOpen}
           onClose={() => setIsEditInstructorModalOpen(false)}
-          onEditInstructor={handleEditInstructorSubmit}
+          onDataChange={fetchPageData}
           instructor={selectedInstructor}
           existingInstructors={instructors}
           departments={departmentNames}
