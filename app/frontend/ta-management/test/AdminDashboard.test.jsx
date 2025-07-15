@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
-import AdminDashboard from "../src/pages/AdminDashboard"
+import AdminDashboard from "../src/pages/Admin/AdminDashboard"
 
 // Mock the useIsMobile hook
 vi.mock("@/hooks/use-mobile", () => ({

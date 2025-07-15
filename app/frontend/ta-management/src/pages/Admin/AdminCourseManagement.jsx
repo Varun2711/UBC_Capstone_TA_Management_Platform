@@ -53,7 +53,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { AdminSidebar } from "../components/admin-dashboard-sidebar"
+import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
 
 export default function AdminCourseManagement() {
   const [searchQuery, setSearchQuery] = useState("")

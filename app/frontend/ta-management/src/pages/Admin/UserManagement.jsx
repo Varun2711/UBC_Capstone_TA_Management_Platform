@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { AdminSidebar } from "../components/admin-dashboard-sidebar"
+import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
 
 export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("")

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
-import UserManagement from "../src/pages/UserManagement"
+import UserManagement from "../src/pages/Admin/UserManagement"
 
 vi.mock("@/hooks/use-mobile", () => ({
   useIsMobile: vi.fn(() => false),
