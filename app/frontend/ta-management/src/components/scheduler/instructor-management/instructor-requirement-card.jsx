@@ -42,13 +42,15 @@ export function InstructorRequirementsCard({
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
-      month: "short",
+      month: "long",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+      timeZone: "UTC",
+    });
   }
 
   return (
@@ -81,7 +83,7 @@ export function InstructorRequirementsCard({
               </div>
 
               <div className="flex items-center space-x-2">
-                <Badge variant="outline">{instructor.department}</Badge>
+                <Badge variant="outline">{instructor.departmentName}</Badge>
                 <Badge variant="secondary">
                   {visibleOfferingsCount} {visibleOfferingsCount === 1 ? "Course" : "Courses"}
                 </Badge>
@@ -153,8 +155,6 @@ export function InstructorRequirementsCard({
                         <CardContent className="pt-0">
                           <div className="space-y-4">
                             <Separator />
-
-                            {/* General Requirements */}
                             <div className="space-y-2">
                               <h5 className="font-medium text-sm">Requirements</h5>
                               <ul className="space-y-1">
