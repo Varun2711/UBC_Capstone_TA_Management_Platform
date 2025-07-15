@@ -4,6 +4,10 @@
 # pycache files
 *.pyc
 
+# coverage files
+coverage/
+.nyc_output
+
 # database files (for now)
 *.sqlite3
 
