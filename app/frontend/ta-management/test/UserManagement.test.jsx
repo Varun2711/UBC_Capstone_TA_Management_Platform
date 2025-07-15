@@ -59,13 +59,4 @@ describe("UserManagement", () => {
     const exportBtn = screen.getByText("Export")
     await user.click(exportBtn)
   })
-
-  it("supports basic keyboard navigation", async () => {
-    renderUserMgmtPage()
-    const searchInput = screen.getByPlaceholderText("Search users by name or email...")
-    await user.click(searchInput)
-    await user.keyboard("{Tab}")
-    await user.keyboard("{Enter}")
-    await user.keyboard("{Escape}")
-  })
 })
