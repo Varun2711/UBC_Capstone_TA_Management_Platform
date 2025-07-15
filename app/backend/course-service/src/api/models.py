@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import ArrayField
 
 #### MODELS WITH managed=False <- used here but made in other services
 
@@ -303,7 +304,7 @@ class InstructorRequest(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.SET_NULL, null=True, blank=True)
     request_date = models.DateField()
-    request_description = models.TextField()
+    request_description = ArrayField(models.CharField(max_length=200), default=list)
 
     class Meta:
         managed = True

@@ -451,8 +451,7 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
         source='instructor',
         queryset=Instructor.objects.all(),
         required=False,
-        allow_null=True,
-        write_only=True
+        allow_null=True
     )
     
     course_offering_info = serializers.StringRelatedField(source='course_offering', read_only=True)
@@ -460,8 +459,7 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
         source='course_offering',
         queryset=CourseOffering.objects.all(),
         required=False,
-        allow_null=True,
-        write_only=True
+        allow_null=True
     )
     
     class Meta:
@@ -479,11 +477,19 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
     
     def validate_request_description(self, value):
         """
-        Validate that request description is not empty.
+        Validate that request description array is not empty and contains valid strings.
         """
-        if not value or not value.strip():
+        if not value or len(value) == 0:
             raise serializers.ValidationError("Request description cannot be empty.")
-        return value.strip()
+        
+        # Validate each string in the array
+        for i, description in enumerate(value):
+            if not description or not description.strip():
+                raise serializers.ValidationError(f"Request description at index {i} cannot be empty.")
+            # Trim whitespace from each description
+            value[i] = description.strip()
+        
+        return value
     
     def validate_request_date(self, value):
         """

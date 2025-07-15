@@ -14,6 +14,9 @@ urlpatterns = [
     # API Root
     path('', views.api_root, name='api-root'),
     
+    # Debug endpoint
+    path('debug-auth/', views.debug_auth, name='debug-auth'),
+    
     # Include all router URLs
     path('', include(router.urls)),
 ]

@@ -7,6 +7,17 @@ from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
+# Add this to the imports at the top of views.py
+from auth_utils.permissions import (
+    IsAdminUser,
+    IsSchedulerUser,
+    IsStudentUser,
+    IsAuthenticatedUser,
+    IsInstructorUser,
+    IsSchedulerOrAdmin,
+    IsStudentOrOwner
+)
+
 # Import all models
 from .models import (
     Term,
@@ -40,7 +51,6 @@ class TermViewSet(viewsets.ModelViewSet):
     """
     queryset = Term.objects.all()
     serializer_class = TermSerializer
-    permission_classes = [AllowAny]  # Adjust based on your auth requirements
     
     # Enable filtering, searching, and ordering
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -63,6 +73,21 @@ class TermViewSet(viewsets.ModelViewSet):
     ordering_fields = ['code', 'start', 'end', 'startCalendarYear', 'createdAt']
     ordering = ['-startCalendarYear', 'start']  # Default ordering
     
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Authenticated users can view terms
+        - Schedulers/Admins can create, update, and delete terms
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsSchedulerOrAdmin()]
+        elif self.action in ['list', 'retrieve']:
+            return [IsAuthenticatedUser()]
+        elif self.action in ['active', 'current', 'future', 'past', 'by_year', 'by_type']:
+            return [IsAuthenticatedUser()]
+        return [IsAuthenticatedUser()]
+    
+    # Custom action methods
     @action(detail=False, methods=['get'])
     def active(self, request):
         """
@@ -174,7 +199,6 @@ class CourseViewSet(viewsets.ModelViewSet):
     """
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    permission_classes = [AllowAny]  # Adjust based on your auth requirements
     
     # Enable filtering, searching, and ordering
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -193,6 +217,20 @@ class CourseViewSet(viewsets.ModelViewSet):
     # Define ordering fields
     ordering_fields = ['course_number', 'course_name', 'course_level']
     ordering = ['course_number']  # Default ordering
+    
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Authenticated users can view courses
+        - Schedulers/Admins can create, update, and delete courses
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsSchedulerOrAdmin()]
+        elif self.action in ['list', 'retrieve']:
+            return [IsAuthenticatedUser()]
+        elif self.action in ['by_department', 'by_level', 'offerings', 'current_offerings', 'full_details', 'all_full_details']:
+            return [IsAuthenticatedUser()]
+        return [IsAuthenticatedUser()]
     
     @action(detail=False, methods=['get'])
     def by_department(self, request):
@@ -304,7 +342,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         
         # Process shared sessions, grouped by term (remove year from term parent)
         for session in shared_sessions:
-            term_key = session.academic_term.code  # Remove year from term parent key
+            term_key = session.academic_term.code  # Remove year from term parent
             
             # Initialize term group if not exists
             if term_key not in response_data['sharedSessions']:
@@ -357,6 +395,108 @@ class CourseViewSet(viewsets.ModelViewSet):
         
         return Response(response_data)
     
+    @action(detail=False, methods=['get'])
+    def all_full_details(self, request):
+        """
+        Get complete details for ALL courses with offerings and shared sessions organized by term.
+        Returns data in the format: array of courses, each with course info + offerings + sharedSessions grouped by term.
+        """
+        # Get all courses with related data
+        courses = self.queryset.select_related('department').all()
+        
+        response_data = []
+        
+        for course in courses:
+            # Get all course offerings for this course
+            offerings = course.offerings.select_related('academic_term', 'instructor').all()
+            
+            # Get all shared sessions for this course
+            shared_sessions = course.lab_sections.select_related(
+                'academic_term', 'student'
+            ).prefetch_related('time_slots').all()
+            
+            # Build the response data for this course
+            course_data = {
+                'id': course.id,
+                'code': course.course_number,
+                'title': course.course_name,
+                'department': course.department.name,
+                'description': course.course_description or '',
+                'offerings': [],
+                'sharedSessions': {}
+            }
+            
+            # Process course offerings
+            for offering in offerings:
+                offering_data = {
+                    'id': str(offering.course_offering_id),
+                    'year': str(offering.academic_term.startCalendarYear),
+                    'term': offering.academic_term.code,
+                    'instructor_id': offering.instructor.id if offering.instructor else None,
+                    'section': offering.section_number,
+                    'requirements': {
+                        'specialRequirements': []  # This would need to be added to model if needed
+                    }
+                }
+                course_data['offerings'].append(offering_data)
+            
+            # Process shared sessions, grouped by term
+            for session in shared_sessions:
+                term_key = session.academic_term.code
+                
+                # Initialize term group if not exists
+                if term_key not in course_data['sharedSessions']:
+                    course_data['sharedSessions'][term_key] = {
+                        'labs': [],
+                        'tutorials': [],
+                        'seminars': [],
+                        'workshops': []
+                    }
+                
+                # Get time slot information
+                time_slots = session.time_slots.all()
+                time_info = []
+                time_increments = []
+                location = "TBD"  # Location would need to be added to model if needed
+                
+                for slot in time_slots:
+                    time_info.append({
+                        'day': slot.get_day_display(),
+                        'time': f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
+                    })
+                    # Add time increments from this slot
+                    time_increments.extend(slot.time_increments)
+                
+                # Remove duplicates and sort time increments
+                time_increments = sorted(list(set(time_increments)))
+                
+                # Build session data
+                session_data = {
+                    'id': str(session.shared_session_id),
+                    'section': session.section_number,
+                    'day': time_info[0]['day'] if time_info else 'TBD',
+                    'time': time_info[0]['time'] if time_info else 'TBD',
+                    'time_increments': time_increments,
+                    'location': location,
+                    'student_id': session.student.id if session.student else None,
+                    'forCourse': course.id
+                }
+                
+                # Add to appropriate session type list
+                session_type = session.session_type.lower()
+                if session_type == 'lab':
+                    course_data['sharedSessions'][term_key]['labs'].append(session_data)
+                elif session_type == 'tutorial':
+                    course_data['sharedSessions'][term_key]['tutorials'].append(session_data)
+                elif session_type == 'seminar':
+                    course_data['sharedSessions'][term_key]['seminars'].append(session_data)
+                elif session_type == 'workshop':
+                    course_data['sharedSessions'][term_key]['workshops'].append(session_data)
+            
+            response_data.append(course_data)
+        
+        return Response(response_data)
+    
     def perform_create(self, serializer):
         """
         Custom create logic if needed.
@@ -391,7 +531,6 @@ class CourseOfferingViewSet(viewsets.ModelViewSet):
     """
     queryset = CourseOffering.objects.all()
     serializer_class = CourseOfferingSerializer
-    permission_classes = [AllowAny]  # Adjust based on your auth requirements
     
     # Enable filtering, searching, and ordering
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -416,6 +555,23 @@ class CourseOfferingViewSet(viewsets.ModelViewSet):
     # Define ordering fields
     ordering_fields = ['course__course_number', 'section_number', 'academic_term__startCalendarYear']
     ordering = ['-academic_term__startCalendarYear', 'course__course_number', 'section_number']  # Default ordering
+    
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Authenticated users can view course offerings
+        - Schedulers/Admins can create, update, and delete course offerings
+        - Instructors can view course offerings assigned to them
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsSchedulerOrAdmin()]
+        elif self.action in ['list', 'retrieve']:
+            return [IsAuthenticatedUser()]
+        elif self.action in ['current', 'by_term', 'by_course', 'by_year']:
+            return [IsAuthenticatedUser()]
+        elif self.action == 'by_instructor':
+            return [IsInstructorUser()]
+        return [IsAuthenticatedUser()]
     
     @action(detail=False, methods=['get'])
     def current(self, request):
@@ -485,6 +641,7 @@ class CourseOfferingViewSet(viewsets.ModelViewSet):
         """
         Get course offerings by instructor.
         Usage: /course-offerings/by_instructor/?instructor_id=1
+        Note: Instructors can only view their own offerings
         """
         instructor_id = request.query_params.get('instructor_id')
         if not instructor_id:
@@ -554,7 +711,6 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
     """
     queryset = SharedSession.objects.all()
     serializer_class = SharedSessionSerializer
-    permission_classes = [AllowAny]  # Adjust based on your auth requirements
     
     # Enable filtering, searching, and ordering
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -584,6 +740,25 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
     # Define ordering fields
     ordering_fields = ['session_type', 'course__course_number', 'section_number', 'academic_term__startCalendarYear']
     ordering = ['-academic_term__startCalendarYear', 'course__course_number', 'session_type', 'section_number']  # Default ordering
+    
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Authenticated users can view shared sessions
+        - Schedulers/Admins can create and delete shared sessions
+        - Students can update their own sessions
+        """
+        if self.action in ['create', 'destroy']:
+            return [IsSchedulerOrAdmin()]
+        elif self.action in ['update', 'partial_update']:
+            return [IsStudentOrOwner()]
+        elif self.action in ['list', 'retrieve']:
+            return [IsAuthenticatedUser()]
+        elif self.action in ['current', 'by_term', 'by_course', 'by_session_type', 'by_year', 'time_slots', 'session_types']:
+            return [IsAuthenticatedUser()]
+        elif self.action == 'by_student':
+            return [IsStudentOrOwner()]
+        return [IsAuthenticatedUser()]
     
     @action(detail=False, methods=['get'])
     def current(self, request):
@@ -718,6 +893,7 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
         """
         Get shared sessions by student (TA assignments).
         Usage: /shared-sessions/by_student/?student_id=1
+        Note: Students can only view their own sessions unless admin/scheduler
         """
         student_id = request.query_params.get('student_id')
         if not student_id:
@@ -764,7 +940,6 @@ class InstructorRequestViewSet(viewsets.ModelViewSet):
     """
     queryset = InstructorRequest.objects.all()
     serializer_class = InstructorRequestSerializer
-    permission_classes = [AllowAny]  # Adjust based on your auth requirements
     
     # Enable filtering, searching, and ordering
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -783,17 +958,36 @@ class InstructorRequestViewSet(viewsets.ModelViewSet):
     }
     
     # Define searchable fields
-    search_fields = ['request_description', 'instructor__name', 'course_offering__course__course_number', 'course_offering__course__course_name']
+    # Note: ArrayField search requires special handling, so we search in individual array elements
+    search_fields = ['instructor__name', 'course_offering__course__course_number', 'course_offering__course__course_name']
     
     # Define ordering fields
     ordering_fields = ['request_date', 'instructor__name', 'course_offering__course__course_number']
     ordering = ['-request_date']  # Default ordering: newest requests first
+    
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Authenticated users can view instructor requests
+        - Instructors can create and update their own requests
+        - Schedulers/Admins can delete requests
+        """
+        if self.action in ['create', 'update', 'partial_update']:
+            return [IsInstructorUser()]
+        elif self.action == 'destroy':
+            return [IsSchedulerOrAdmin()]
+        elif self.action in ['list', 'retrieve']:
+            return [IsAuthenticatedUser()]
+        elif self.action in ['by_instructor', 'by_course_offering', 'recent', 'by_term']:
+            return [IsAuthenticatedUser()]
+        return [IsAuthenticatedUser()]
     
     @action(detail=False, methods=['get'])
     def by_instructor(self, request):
         """
         Get instructor requests by instructor.
         Usage: /instructor-requests/by_instructor/?instructor_id=1
+        Note: Instructors can only view their own requests unless admin/scheduler
         """
         instructor_id = request.query_params.get('instructor_id')
         if not instructor_id:
@@ -874,6 +1068,46 @@ class InstructorRequestViewSet(viewsets.ModelViewSet):
                 {'error': 'Invalid term_id format'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+    
+    @action(detail=False, methods=['get'])
+    def search_descriptions(self, request):
+        """
+        Search within request descriptions (ArrayField).
+        Usage: /instructor-requests/search_descriptions/?q=search_term
+        """
+        search_term = request.query_params.get('q')
+        if not search_term:
+            return Response(
+                {'error': 'q parameter is required for search'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Use PostgreSQL array search to find descriptions containing the search term
+        from django.db.models import Q
+        requests = self.queryset.filter(
+            Q(request_description__icontains=[search_term]) |
+            Q(request_description__overlap=[search_term])
+        )
+        serializer = self.get_serializer(requests, many=True)
+        return Response(serializer.data)
+
+    def perform_create(self, serializer):
+        """
+        Custom create logic if needed.
+        """
+        serializer.save()
+    
+    def perform_update(self, serializer):
+        """
+        Custom update logic if needed.
+        """
+        serializer.save()
+    
+    def perform_destroy(self, instance):
+        """
+        Custom delete logic if needed.
+        """
+        instance.delete()
 
 
 # API Root View
@@ -959,6 +1193,11 @@ def api_root(request, format=None):
                     'url': '/api/course-term-service/courses/{id}/full_details/',
                     'methods': ['GET'],
                     'description': 'Get complete course details with offerings and shared sessions organized by term-year'
+                },
+                'all_full_details': {
+                    'url': '/api/course-term-service/courses/all_full_details/',
+                    'methods': ['GET'],
+                    'description': 'Get complete details for ALL courses with offerings and shared sessions organized by term'
                 }
             },
             'course_offerings': {
@@ -1119,3 +1358,65 @@ def api_root(request, format=None):
         },
         'note': 'More endpoints will be added as additional ViewSets are implemented'
     })
+
+# Test endpoint for debugging authentication
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def debug_auth(request):
+    """
+    Debug endpoint to test authentication flow
+    """
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    
+    if not auth_header:
+        return Response({
+            'error': 'No Authorization header found',
+            'all_headers': {k: v for k, v in request.META.items() if k.startswith('HTTP_')},
+            'status': 'missing_header'
+        }, status=400)
+    
+    if not auth_header.startswith('Bearer '):
+        return Response({
+            'error': 'Invalid Authorization header format. Expected: Bearer <token>',
+            'received': auth_header,
+            'status': 'invalid_format'
+        }, status=400)
+    
+    try:
+        token = auth_header.split(' ')[1]
+        
+        # Test the actual function used by decorators
+        from auth_utils.decorators import authenticated_required
+        
+        # Try to extract user info using the same method as decorators
+        user_id, user_type = None, None
+        try:
+            from auth_utils.permissions import extract_user_from_token
+            user_id, user_type = extract_user_from_token(request)
+        except ImportError:
+            return Response({
+                'error': 'Cannot import auth_utils.permissions',
+                'status': 'import_error'
+            }, status=500)
+        
+        if not user_id:
+            return Response({
+                'error': 'Token could not be validated - user_id is None',
+                'token_length': len(token),
+                'token_preview': token[:20] + '...' if len(token) > 20 else token,
+                'status': 'invalid_token'
+            }, status=401)
+        
+        return Response({
+            'message': 'Authentication successful',
+            'user_id': user_id,
+            'user_type': user_type,
+            'status': 'success'
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': f'Unexpected error: {str(e)}',
+            'error_type': type(e).__name__,
+            'status': 'error'
+        }, status=500)

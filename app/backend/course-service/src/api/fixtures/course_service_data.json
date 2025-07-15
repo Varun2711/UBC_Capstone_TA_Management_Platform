@@ -1080,7 +1080,7 @@
       "instructor": 1,
       "course_offering": "650e8400-e29b-41d4-a716-446655440001",
       "request_date": "2025-07-07",
-      "request_description": "Request for additional grading support for COSC 111 section 001"
+      "request_description": ["Request for additional grading support for COSC 111 section 001"]
     }
   },
   {
@@ -1090,7 +1090,7 @@
       "instructor": 2,
       "course_offering": "650e8400-e29b-41d4-a716-446655440002",
       "request_date": "2025-07-09",
-      "request_description": "Need teaching assistant for lab sections in COSC 111 section 002"
+      "request_description": ["Need teaching assistant for lab sections in COSC 111 section 002"]
     }
   },
   {
@@ -1100,7 +1100,7 @@
       "instructor": 1,
       "course_offering": "650e8400-e29b-41d4-a716-446655440003",
       "request_date": "2025-07-02",
-      "request_description": "Requesting TA support for office hours and grading"
+      "request_description": ["Requesting TA support for office hours and grading"]
     }
   },
   {
@@ -1110,7 +1110,7 @@
       "instructor": 6,
       "course_offering": "650e8400-e29b-41d4-a716-446655440005",
       "request_date": "2025-07-11",
-      "request_description": "Summer session COSC 121 requires additional tutoring support"
+      "request_description": ["Summer session COSC 121 requires additional tutoring support"]
     }
   },
   {
@@ -1120,7 +1120,7 @@
       "instructor": 2,
       "course_offering": "650e8400-e29b-41d4-a716-446655440008",
       "request_date": "2025-06-27",
-      "request_description": "COSC 320 complex algorithms course needs advanced TA"
+      "request_description": ["COSC 320 complex algorithms course needs advanced TA"]
     }
   },
   {
@@ -1130,7 +1130,7 @@
       "instructor": 6,
       "course_offering": "650e8400-e29b-41d4-a716-446655440009",
       "request_date": "2025-07-05",
-      "request_description": "Capstone project coordination requires graduate student assistance"
+      "request_description": ["Capstone project coordination requires graduate student assistance"]
     }
   },
   {
@@ -1140,7 +1140,7 @@
       "instructor": 1,
       "course_offering": "650e8400-e29b-41d4-a716-446655440010",
       "request_date": "2025-06-22",
-      "request_description": "Large enrollment in MATH 100 requires multiple grading assistants"
+      "request_description": ["Large enrollment in MATH 100 requires multiple grading assistants"]
     }
   },
   {
@@ -1150,7 +1150,7 @@
       "instructor": 1,
       "course_offering": "650e8400-e29b-41d4-a716-446655440011",
       "request_date": "2025-07-10",
-      "request_description": "Second section of MATH 100 needs lab supervision"
+      "request_description": ["Second section of MATH 100 needs lab supervision"]
     }
   }
 ]

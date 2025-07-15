@@ -1272,7 +1272,11 @@
       "instructor": 2,
       "course_offering": "550e8400-e29b-41d4-a716-446655440101",
       "request_date": "2024-08-15",
-      "request_description": "Need experienced TAs for programming lab sessions"
+      "request_description": [
+        "Need experienced TAs for programming lab sessions",
+        "Students struggle with debugging concepts",
+        "Prefer TAs with Java or Python background"
+      ]
     }
   },
   {
@@ -1282,7 +1286,11 @@
       "instructor": 3,
       "course_offering": "550e8400-e29b-41d4-a716-446655440102",
       "request_date": "2024-08-16",
-      "request_description": "Looking for TA with strong assembly language background"
+      "request_description": [
+        "Looking for TA with strong assembly language background",
+        "Course covers x86 and ARM architecture",
+        "Previous experience with low-level programming required"
+      ]
     }
   },
   {
@@ -1292,7 +1300,11 @@
       "instructor": 2,
       "course_offering": "550e8400-e29b-41d4-a716-446655440103",
       "request_date": "2024-08-17",
-      "request_description": "Senior course requiring experienced TAs for project supervision"
+      "request_description": [
+        "Senior course requiring experienced TAs for project supervision",
+        "Large team projects need constant guidance",
+        "Must have industry experience or advanced degree"
+      ]
     }
   },
   {
@@ -1302,7 +1314,11 @@
       "instructor": 7,
       "course_offering": "550e8400-e29b-41d4-a716-446655440104",
       "request_date": "2024-08-18",
-      "request_description": "Need TAs familiar with advanced algorithms and data structures"
+      "request_description": [
+        "Need TAs familiar with advanced algorithms and data structures",
+        "Course includes graph algorithms and dynamic programming",
+        "Strong mathematical background preferred"
+      ]
     }
   },
   {
@@ -1312,7 +1328,11 @@
       "instructor": 4,
       "course_offering": "550e8400-e29b-41d4-a716-446655440107",
       "request_date": "2024-08-19",
-      "request_description": "Large enrollment class, need multiple TAs for tutorials"
+      "request_description": [
+        "Large enrollment class, need multiple TAs for tutorials",
+        "Over 200 students registered",
+        "Need at least 3-4 TAs for adequate coverage"
+      ]
     }
   },
   {
@@ -1322,7 +1342,11 @@
       "instructor": 4,
       "course_offering": "550e8400-e29b-41d4-a716-446655440108",
       "request_date": "2024-08-20",
-      "request_description": "Continuation of MATH 100, need consistent TA support"
+      "request_description": [
+        "Continuation of MATH 100, need consistent TA support",
+        "Same TA from previous term preferred for continuity",
+        "Integration concepts require strong calculus background"
+      ]
     }
   },
   {
@@ -1332,7 +1356,11 @@
       "instructor": 5,
       "course_offering": "550e8400-e29b-41d4-a716-446655440111",
       "request_date": "2024-08-21",
-      "request_description": "Large physics course with multiple lab sections"
+      "request_description": [
+        "Large physics course with multiple lab sections",
+        "Lab equipment requires careful supervision",
+        "Safety protocols must be strictly followed"
+      ]
     }
   },
   {
@@ -1342,7 +1370,11 @@
       "instructor": 3,
       "course_offering": "550e8400-e29b-41d4-a716-446655440105",
       "request_date": "2024-08-22",
-      "request_description": "Database course requiring TA with SQL and database design experience"
+      "request_description": [
+        "Database course requiring TA with SQL and database design experience",
+        "Students work on real-world database projects",
+        "PostgreSQL and MySQL knowledge essential"
+      ]
     }
   }
 ]

@@ -22,6 +22,11 @@ export const ROUTES = [
         path: "/instructor-dashboard",
         authorizedRoles: ["instructor"],
     },
+    {
+        name: "instructor my courses",
+        path: "/my-courses",
+        authorizedRoles: ["instructor"],
+    },
 
     // Scheduler Routes
     {

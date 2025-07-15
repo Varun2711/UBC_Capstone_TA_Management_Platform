@@ -14,12 +14,15 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import os
+import sys
 
 # load envorinment file
 load_dotenv('../../.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, os.path.join(BASE_DIR.parent, 'shared-utils'))
 
 
 # Quick-start development settings - unsuitable for production

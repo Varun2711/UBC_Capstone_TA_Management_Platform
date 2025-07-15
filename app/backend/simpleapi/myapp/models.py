@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import ArrayField
 import uuid
+from django.contrib.postgres.fields import ArrayField
 
 
 class Term(models.Model):
@@ -216,13 +218,14 @@ class CourseOffering(models.Model):
     def __str__(self):
         return f'{self.course.course_number} {self.section_number} ({self.academic_term})'
 
+## placed after due to referencing errors:
 class InstructorRequest(models.Model):
     request_id = models.AutoField(primary_key=True)
     instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.SET_NULL, null=True, blank=True)
     request_date = models.DateField()
-    request_description = models.TextField()
-    
+    request_description = ArrayField(models.CharField(max_length=200), default=list)
+
     class Meta:
         managed = False
         db_table = 'myapp_instructor_requests'

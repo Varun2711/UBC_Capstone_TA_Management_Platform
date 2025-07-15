@@ -126,6 +126,7 @@ services:
       - .env
     volumes:
       - ./backend/course-service:/app
+      - ./shared-utils:/app/shared-utils
     depends_on:
       db:
         condition: service_healthy
