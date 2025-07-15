@@ -1,3 +1,4 @@
+"use client"
 
 import { useState } from "react"
 import { Plus, AlertCircle } from "lucide-react"
@@ -188,26 +189,26 @@ export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses =
               </div>
 
               <div className="space-y-2">
-  <Label htmlFor="department">Department *</Label>
-  <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
-    <SelectTrigger id="department" className={errors.department ? "border-red-500" : ""}>
-      <SelectValue placeholder="Select department" />
-    </SelectTrigger>
-    <SelectContent>
-      {DEPARTMENTS.map((dept) => (
-        <SelectItem key={dept} value={dept}>
-          {dept}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-  {errors.department && (
-    <p className="text-sm text-red-600 flex items-center gap-1">
-      <AlertCircle className="h-4 w-4" />
-      {errors.department}
-    </p>
-  )}
-</div>
+                <Label htmlFor="department">Department *</Label>
+                <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
+                  <SelectTrigger className={errors.department ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTMENTS.map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.department && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.department}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

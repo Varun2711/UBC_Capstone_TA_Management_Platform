@@ -1,5 +1,7 @@
+"use client"
+
 import { useState, useMemo } from "react"
-import { Plus, AlertCircle, Check, ChevronsUpDown } from "lucide-react"
+import { Plus, AlertCircle, Check, ChevronsUpDown, Calendar } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,7 +14,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -21,7 +22,14 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { mockProfessors } from "@/data/mock-professors"
 
-const TERMS = ["Winter Term 1", "Winter Term 2"]
+const TERMS = [
+  { value: "Winter Term 1", label: "Winter Term 1" },
+  { value: "Winter Term 2", label: "Winter Term 2" },
+  { value: "Summer Term 1", label: "Summer Term 1" },
+  { value: "Summer Term 2", label: "Summer Term 2" },
+  { value: "Winter Both Terms", label: "Winter Both Terms" },
+  { value: "Summer Both Terms", label: "Summer Both Terms" },
+]
 const YEARS = ["2024", "2025", "2026"]
 
 export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, existingOfferings = [] }) {
@@ -30,33 +38,30 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
     year: "",
     term: "",
     section: "",
-    specialRequirements: "",
   })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [professorSearchOpen, setProfessorSearchOpen] = useState(false)
-  const [professorSearch, setProfessorSearch] = useState("");
+  const [professorSearch, setProfessorSearch] = useState("")
 
   // Filter professors based on course department and search query
   const filteredProfessors = useMemo(() => {
-    let professors = mockProfessors;
+    let professors = mockProfessors
 
     if (course?.department) {
-      professors = professors.filter((prof) => prof.department === course.department);
+      professors = professors.filter((prof) => prof.department === course.department)
     }
 
     // Explicitly filter by your component's search state
     if (professorSearch) {
       professors = professors.filter((prof) =>
-        `${prof.name} ${prof.email} ${prof.title}`
-          .toLowerCase()
-          .includes(professorSearch.toLowerCase())
-      );
+        `${prof.name} ${prof.email} ${prof.title}`.toLowerCase().includes(professorSearch.toLowerCase()),
+      )
     }
 
-    return professors;
-  }, [course?.department, professorSearch]);
+    return professors
+  }, [course?.department, professorSearch])
 
   const selectedProfessor = mockProfessors.find((prof) => prof.id === formData.instructor)
 
@@ -89,11 +94,6 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
         if (duplicateOffering) {
           return `Section "${value.trim()}" already exists for ${formData.term} ${formData.year}`
         }
-        return ""
-
-      case "specialRequirements":
-        // Optional field, but if provided, validate length
-        if (value && value.length > 500) return "Special requirements must be less than 500 characters"
         return ""
 
       default:
@@ -139,10 +139,10 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
       year: "",
       term: "",
       section: "",
-      specialRequirements: "",
     })
     setErrors({})
     setIsSubmitting(false)
+    setProfessorSearch("")
   }
 
   const handleSubmit = async (e) => {
@@ -155,27 +155,32 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Create new offering object
-      const newOffering = {
-        id: `${course.id}-${formData.term.toLowerCase().replace(/\s+/g, "")}-${formData.year}-${formData.section.toLowerCase().replace(/\s+/g, "")}-${Date.now()}`,
-        year: formData.year,
-        term: formData.term,
-        instructor: selectedProfessor?.name || formData.instructor,
-        section: formData.section.trim(),
-        requirements: {
-          specialRequirements: formData.specialRequirements
-            ? formData.specialRequirements
-                .split(",")
-                .map((req) => req.trim())
-                .filter((req) => req)
-            : [],
-        },
+      // Handle "Both Terms" options
+      const termsToCreate = []
+      if (formData.term === "Winter Both Terms") {
+        termsToCreate.push("Winter Term 1", "Winter Term 2")
+      } else if (formData.term === "Summer Both Terms") {
+        termsToCreate.push("Summer Term 1", "Summer Term 2")
+      } else {
+        termsToCreate.push(formData.term)
       }
 
-      onAddOffering(course.id, newOffering)
+      // Create offerings for each term
+      termsToCreate.forEach((term, index) => {
+        const newOffering = {
+          id: `${course.id}-${term.toLowerCase().replace(/\s+/g, "")}-${formData.year}-${formData.section.toLowerCase().replace(/\s+/g, "")}-${Date.now()}-${index}`,
+          year: formData.year,
+          term: term,
+          instructor: selectedProfessor?.name || formData.instructor,
+          section: formData.section.trim(),
+          requirements: {
+            specialRequirements: [], // Empty array since we removed the field
+          },
+        }
+
+        onAddOffering(course.id, newOffering)
+      })
+
       resetForm()
       onClose()
     } catch (error) {
@@ -249,7 +254,7 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
               <div className="space-y-2">
                 <Label htmlFor="year">Academic Year *</Label>
                 <Select value={formData.year} onValueChange={(value) => handleInputChange("year", value)}>
-                  <SelectTrigger id =  'year' className={errors.year ? "border-red-500" : ""}>
+                  <SelectTrigger id="year" className={errors.year ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select year" />
                   </SelectTrigger>
                   <SelectContent>
@@ -271,13 +276,16 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
               <div className="space-y-2">
                 <Label htmlFor="term">Term *</Label>
                 <Select value={formData.term} onValueChange={(value) => handleInputChange("term", value)}>
-                  <SelectTrigger id = 'term' className={errors.term ? "border-red-500" : ""}>
+                  <SelectTrigger id="term" className={errors.term ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select term" />
                   </SelectTrigger>
                   <SelectContent>
                     {TERMS.map((term) => (
-                      <SelectItem key={term} value={term}>
-                        {term}
+                      <SelectItem key={term.value} value={term.value}>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <span>{term.label}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -287,6 +295,16 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
                     <AlertCircle className="h-4 w-4" />
                     {errors.term}
                   </div>
+                )}
+                {formData.term === "Winter Both Terms" && (
+                  <Alert variant="secondary">
+                    <AlertDescription>Creating offerings for both Winter Term 1 and Winter Term 2.</AlertDescription>
+                  </Alert>
+                )}
+                {formData.term === "Summer Both Terms" && (
+                  <Alert variant="secondary">
+                    <AlertDescription>Creating offerings for both Summer Term 1 and Summer Term 2.</AlertDescription>
+                  </Alert>
                 )}
               </div>
             </div>
@@ -298,7 +316,7 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
                   <Button
                     variant="outline"
                     role="combobox"
-                    id = 'instructor'
+                    id="instructor"
                     aria-expanded={professorSearchOpen}
                     className={cn("w-full justify-between", errors.instructor ? "border-red-500" : "")}
                   >
@@ -317,11 +335,11 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
                   <Command>
-                  <CommandInput
-      placeholder="Search professors..."
-      value={professorSearch}
-      onValueChange={setProfessorSearch}
-    />
+                    <CommandInput
+                      placeholder="Search professors..."
+                      value={professorSearch}
+                      onValueChange={setProfessorSearch}
+                    />
                     <CommandList>
                       <CommandEmpty>No professors found.</CommandEmpty>
                       <CommandGroup>
@@ -392,26 +410,6 @@ export function AddOfferingModal({ isOpen, onClose, onAddOffering, course, exist
                   {errors.section}
                 </div>
               )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="specialRequirements">Special Requirements</Label>
-              <Textarea
-                id="specialRequirements"
-                placeholder="e.g., Python experience, Strong communication skills (separate multiple requirements with commas)"
-                value={formData.specialRequirements}
-                onChange={(e) => handleInputChange("specialRequirements", e.target.value)}
-                onBlur={(e) => handleBlur("specialRequirements", e.target.value)}
-                className={errors.specialRequirements ? "border-red-500" : ""}
-                rows={2}
-              />
-              {errors.specialRequirements && (
-                <div className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.specialRequirements}
-                </ div>
-              )}
-              <p className="text-xs text-muted-foreground">Optional. Separate multiple requirements with commas.</p>
             </div>
           </div>
 

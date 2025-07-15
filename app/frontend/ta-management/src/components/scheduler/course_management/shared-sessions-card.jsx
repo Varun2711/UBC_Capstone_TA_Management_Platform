@@ -17,7 +17,7 @@ export function SharedSessionsCard({
   const isExpanded = expandedLabSections.has(`shared-${termKey}`)
 
   return (
-    <Card data-testid="card" className="ml-2 border-dashed">
+    <Card className="ml-2 border-dashed">
       <Collapsible open={isExpanded} onOpenChange={() => onToggleLabSection(`shared-${termKey}`)}>
         <CollapsibleTrigger asChild>
           <CardHeader className="py-3 cursor-pointer hover:bg-muted/50 transition-colors">

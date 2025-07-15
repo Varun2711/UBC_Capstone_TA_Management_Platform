@@ -1,3 +1,4 @@
+"use client"
 import { BookOpen, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -15,7 +16,7 @@ export function CourseCard({
   onDelete,
   onAddOffering,
   onEditOffering,
-  onAddLabTutorial,
+  onAddLabTutorial, // Add this prop
   expandedOfferings,
   expandedLabSections,
   onToggleOffering,
@@ -76,6 +77,10 @@ export function CourseCard({
                       <Plus className="h-4 w-4 mr-2" />
                       Add Offering
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onAddLabTutorial(course)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Lab/Tutorial
+                    </DropdownMenuItem>
                     <DropdownMenuItem className="text-red-600" onClick={() => onDelete(course.id)}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete Course
@@ -107,12 +112,11 @@ export function CourseCard({
                       onToggleOffering={onToggleOffering}
                       onToggleLabSection={onToggleLabSection}
                       onEditOffering={onEditOffering}
-                      onAddLabTutorial={onAddLabTutorial}
                     />
                   ))
                 ) : (
                   <div className="text-center py-6 text-muted-foreground">
-                    <p className="text-sm">This course currently has no offerings.</p>
+                    <p className="text-sm">No offerings available for this course.</p>
                     <Button
                       variant="outline"
                       size="sm"

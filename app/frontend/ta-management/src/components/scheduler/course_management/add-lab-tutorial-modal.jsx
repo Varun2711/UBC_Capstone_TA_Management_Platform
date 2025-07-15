@@ -39,10 +39,23 @@ const DURATIONS = [
   { value: "4", label: "4 hours" },
 ]
 
+const TERMS = [
+  { value: "Winter Term 1", label: "Winter Term 1" },
+  { value: "Winter Term 2", label: "Winter Term 2" },
+  { value: "Summer Term 1", label: "Summer Term 1" },
+  { value: "Summer Term 2", label: "Summer Term 2" },
+  { value: "Winter Both Terms", label: "Winter Both Terms" },
+  { value: "Summer Both Terms", label: "Summer Both Terms" },
+]
+
+const YEARS = ["2024", "2025", "2026", "2027"]
+
 export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, offering, existingSessions = [] }) {
   const [formData, setFormData] = useState({
     sessionType: "",
     section: "",
+    term: "",
+    year: "",
     day: "",
     startHour: "",
     startMinute: "",
@@ -65,15 +78,23 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
         if (value.trim().length < 1) return "Section name must be at least 1 character"
         if (value.trim().length > 30) return "Section name must be less than 30 characters"
 
-        // Check for duplicate section names within the same session type
-        const sessionsKey = formData.sessionType === 'lab' ? 'labs' : 'tutorials';
-        const sessionsOfType = existingSessions[sessionsKey] || [];
+        // Check for duplicate section names within the same session type and term
+        const termKey = `${formData.term}-${formData.year}`
+        const sessionsOfType = existingSessions[formData.sessionType] || []
         const duplicateSession = sessionsOfType.find(
           (session) => session.section.toLowerCase() === value.trim().toLowerCase(),
         )
         if (duplicateSession) {
           return `${formData.sessionType === "lab" ? "Lab" : "Tutorial"} section "${value.trim()}" already exists`
         }
+        return ""
+
+      case "term":
+        if (!value) return "Term is required"
+        return ""
+
+      case "year":
+        if (!value) return "Year is required"
         return ""
 
       case "day":
@@ -110,10 +131,12 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
   const handleInputChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
 
+    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }))
     }
 
+    // Also validate in real-time to clear the general error alert
     const error = validateField(name, value)
     if (!error) {
       setErrors((prev) => ({ ...prev, [name]: "" }))
@@ -130,17 +153,19 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
 
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key])
-      newErrors[key] = error
+      newErrors[key] = error // This will be empty string if no error
     })
 
     setErrors(newErrors)
-    return !Object.keys(newErrors).some((key) => newErrors[key])
+    return !Object.keys(newErrors).some((key) => newErrors[key]) // Check if any errors have actual messages
   }
 
   const resetForm = () => {
     setFormData({
       sessionType: "",
       section: "",
+      term: "",
+      year: "",
       day: "",
       startHour: "",
       startMinute: "",
@@ -152,21 +177,16 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
     setIsSubmitting(false)
   }
 
-  // =================================================================
-  // CORRECTED FUNCTION
-  // =================================================================
   const generateSectionSuggestion = () => {
     if (!formData.sessionType) return ""
 
-    // Determine the correct plural key for the existingSessions object
-    const sessionsKey = formData.sessionType === 'lab' ? 'labs' : 'tutorials';
-    
-    // Use the correct key to get the right array of sessions
-    const sessionsOfType = existingSessions[sessionsKey] || [];
+    const termKey = `${formData.term}-${formData.year}`
+    const sessionsOfType = existingSessions[formData.sessionType] || []
     const existingSectionNames = sessionsOfType.map((session) => session.section)
 
     const prefix = formData.sessionType === "lab" ? "Lab" : "Tutorial"
 
+    // Generate next section number
     for (let i = 1; i <= 99; i++) {
       const suggestion = `${prefix} ${i.toString().padStart(2, "0")}`
       if (!existingSectionNames.includes(suggestion)) {
@@ -179,13 +199,16 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
   const formatTimeRange = (hour, minute, period, duration) => {
     const startTime = `${hour}:${minute} ${period}`
 
+    // Calculate end time
     let endHour = Number.parseInt(hour)
     let endMinute = Number.parseInt(minute)
     let endPeriod = period
 
+    // Convert to 24-hour format for calculation
     if (period === "PM" && endHour !== 12) endHour += 12
     if (period === "AM" && endHour === 12) endHour = 0
 
+    // Add duration
     const durationHours = Math.floor(Number.parseFloat(duration))
     const durationMinutes = (Number.parseFloat(duration) % 1) * 60
 
@@ -196,6 +219,7 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
     }
     endHour += durationHours
 
+    // Convert back to 12-hour format
     if (endHour >= 24) endHour -= 24
     if (endHour === 0) {
       endHour = 12
@@ -223,8 +247,10 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
     setIsSubmitting(true)
 
     try {
+      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
+      // Create new session object
       const timeString = formatTimeRange(
         formData.startHour,
         formData.startMinute,
@@ -232,21 +258,36 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
         formData.duration,
       )
 
-      const newSession = {
-        id: `${course.id}-${offering.id}-${formData.sessionType}-${formData.section.toLowerCase().replace(/\s+/g, "")}-${Date.now()}`,
-        section: formData.section.trim(),
-        day: formData.day,
-        time: timeString,
-        location: formData.location.trim(),
-        taAssigned: null,
-        forOfferings: [offering.id],
+      // Handle "Both Terms" options
+      const termsToCreate = []
+      if (formData.term === "Winter Both Terms") {
+        termsToCreate.push("Winter Term 1", "Winter Term 2")
+      } else if (formData.term === "Summer Both Terms") {
+        termsToCreate.push("Summer Term 1", "Summer Term 2")
+      } else {
+        termsToCreate.push(formData.term)
       }
 
-      onAddSession(course.id, offering.term, offering.year, formData.sessionType, newSession)
+      // Create sessions for each term
+      termsToCreate.forEach((term, index) => {
+        const newSession = {
+          id: `${course.id}-${term.toLowerCase().replace(/\s+/g, "")}-${formData.year}-${formData.sessionType}-${formData.section.toLowerCase().replace(/\s+/g, "")}-${Date.now()}-${index}`,
+          section: formData.section.trim(),
+          day: formData.day,
+          time: timeString,
+          location: formData.location.trim(),
+          taAssigned: null, // No TA assigned by default
+          forOfferings: [], // Will be populated based on course offerings in that term
+        }
+
+        onAddSession(course.id, term, formData.year, formData.sessionType, newSession)
+      })
+
       resetForm()
       onClose()
     } catch (error) {
       console.error("Error adding session:", error)
+      // In a real app, you'd show an error message to the user
     } finally {
       setIsSubmitting(false)
     }
@@ -272,22 +313,20 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
           <DialogDescription>
             Add a new lab or tutorial session for{" "}
             <strong>
-              {course?.code} - {offering?.section}
+              {course?.code} - {course?.title}
             </strong>
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Course and Offering Info Display */}
+          {/* Course Info Display */}
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">
                   {course?.code} - {course?.title}
                 </h4>
-                <p className="text-sm text-muted-foreground">
-                  {offering?.section} • {offering?.term} {offering?.year} • {offering?.instructor}
-                </p>
+                <p className="text-sm text-muted-foreground">{course?.department}</p>
               </div>
               <div className="flex gap-2">
                 <Badge variant="outline">
@@ -365,12 +404,80 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
             <Separator />
 
             <div className="space-y-4">
+              <h4 className="font-medium text-sm">Term & Year</h4>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="term">Term *</Label>
+                  <Select value={formData.term} onValueChange={(value) => handleInputChange("term", value)}>
+                    <SelectTrigger id="term" className={errors.term ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select term" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TERMS.map((term) => (
+                        <SelectItem key={term.value} value={term.value}>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <span>{term.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.term && (
+                    <div className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {errors.term}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="year">Academic Year *</Label>
+                  <Select value={formData.year} onValueChange={(value) => handleInputChange("year", value)}>
+                    <SelectTrigger id="year" className={errors.year ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {YEARS.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.year && (
+                    <div className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {errors.year}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {(formData.term === "Winter Both Terms" || formData.term === "Summer Both Terms") && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    This session will be created for both{" "}
+                    {formData.term === "Winter Both Terms"
+                      ? "Winter Term 1 and Winter Term 2"
+                      : "Summer Term 1 and Summer Term 2"}
+                    .
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
               <h4 className="font-medium text-sm">Schedule</h4>
 
               <div className="space-y-2">
                 <Label htmlFor="day">Day *</Label>
                 <Select value={formData.day} onValueChange={(value) => handleInputChange("day", value)}>
-                  <SelectTrigger id="day" aria-label= 'Day' className={errors.day ? "border-red-500" : ""}>
+                  <SelectTrigger id="day" className={errors.day ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select day" />
                   </SelectTrigger>
                   <SelectContent>
@@ -396,7 +503,7 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
                 <Label>Start Time *</Label>
                 <div className="grid grid-cols-4 gap-2">
                   <Select value={formData.startHour} onValueChange={(value) => handleInputChange("startHour", value)}>
-                    <SelectTrigger aria-label="Hour" className={errors.startHour ? "border-red-500" : ""}>
+                    <SelectTrigger className={errors.startHour ? "border-red-500" : ""}>
                       <SelectValue placeholder="Hour" />
                     </SelectTrigger>
                     <SelectContent>
@@ -412,7 +519,7 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
                     value={formData.startMinute}
                     onValueChange={(value) => handleInputChange("startMinute", value)}
                   >
-                    <SelectTrigger aria-label="Minute" className={errors.startMinute ? "border-red-500" : ""}>
+                    <SelectTrigger className={errors.startMinute ? "border-red-500" : ""}>
                       <SelectValue placeholder="Min" />
                     </SelectTrigger>
                     <SelectContent>
@@ -428,7 +535,7 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
                     value={formData.startPeriod}
                     onValueChange={(value) => handleInputChange("startPeriod", value)}
                   >
-                    <SelectTrigger aria-label="AM/PM" className={errors.startPeriod ? "border-red-500" : ""}>
+                    <SelectTrigger className={errors.startPeriod ? "border-red-500" : ""}>
                       <SelectValue placeholder="AM/PM" />
                     </SelectTrigger>
                     <SelectContent>
@@ -441,7 +548,7 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
                   </Select>
 
                   <Select value={formData.duration} onValueChange={(value) => handleInputChange("duration", value)}>
-                    <SelectTrigger aria-label="Duration" className={errors.duration ? "border-red-500" : ""}>
+                    <SelectTrigger className={errors.duration ? "border-red-500" : ""}>
                       <SelectValue placeholder="Duration" />
                     </SelectTrigger>
                     <SelectContent>
@@ -502,6 +609,7 @@ export function AddLabTutorialModal({ isOpen, onClose, onAddSession, course, off
             </div>
           </div>
 
+          {/* TA Assignment Info */}
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>

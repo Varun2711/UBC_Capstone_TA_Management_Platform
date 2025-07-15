@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useMemo, useEffect } from "react"
 import { Edit, AlertCircle, Check, ChevronsUpDown } from "lucide-react"
 
@@ -12,7 +14,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -21,7 +22,14 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { mockProfessors } from "@/data/mock-professors"
 
-const TERMS = ["Winter Term 1", "Winter Term 2"]
+const TERMS = [
+  { value: "Winter Term 1", label: "Winter Term 1" },
+  { value: "Winter Term 2", label: "Winter Term 2" },
+  { value: "Summer Term 1", label: "Summer Term 1" },
+  { value: "Summer Term 2", label: "Summer Term 2" },
+  { value: "Winter Both Terms", label: "Winter Both Terms" },
+  { value: "Summer Both Terms", label: "Summer Both Terms" },
+]
 const YEARS = ["2024", "2025", "2026"]
 
 export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, offering, existingOfferings = [] }) {
@@ -30,7 +38,6 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
     year: "",
     term: "",
     section: "",
-    specialRequirements: "",
   })
 
   const [errors, setErrors] = useState({})
@@ -49,7 +56,6 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
         year: offering.year || "",
         term: offering.term || "",
         section: offering.section || "",
-        specialRequirements: offering.requirements?.specialRequirements?.join(", ") || "",
       })
       setErrors({})
       setProfessorSearch("")
@@ -108,11 +114,6 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
         }
         return ""
 
-      case "specialRequirements":
-        // Optional field, but if provided, validate length
-        if (value && value.length > 500) return "Special requirements must be less than 500 characters"
-        return ""
-
       default:
         return ""
     }
@@ -156,7 +157,6 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
       year: "",
       term: "",
       section: "",
-      specialRequirements: "",
     })
     setErrors({})
     setIsSubmitting(false)
@@ -184,12 +184,7 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
         instructor: selectedProfessor?.name || formData.instructor,
         section: formData.section.trim(),
         requirements: {
-          specialRequirements: formData.specialRequirements
-            ? formData.specialRequirements
-                .split(",")
-                .map((req) => req.trim())
-                .filter((req) => req)
-            : [],
+          specialRequirements: [],
         },
       }
 
@@ -217,8 +212,7 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
     (formData.year !== offering.year ||
       formData.term !== offering.term ||
       formData.section !== offering.section ||
-      selectedProfessor?.name !== offering.instructor ||
-      formData.specialRequirements !== (offering.requirements?.specialRequirements?.join(", ") || ""))
+      selectedProfessor?.name !== offering.instructor)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -285,8 +279,8 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
                   </SelectTrigger>
                   <SelectContent>
                     {TERMS.map((term) => (
-                      <SelectItem key={term} value={term}>
-                        {term}
+                      <SelectItem key={term.value} value={term.value}>
+                        {term.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -299,6 +293,15 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
                 )}
               </div>
             </div>
+
+            {formData.term === "Winter Both Terms" || formData.term === "Summer Both Terms" ? (
+              <Alert variant="warning">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You have selected "Both Terms". Please ensure this is the correct offering.
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="edit-instructor">Instructor *</Label>
@@ -389,26 +392,6 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
                   {errors.section}
                 </div>
               )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-specialRequirements">Special Requirements</Label>
-              <Textarea
-                id="edit-specialRequirements"
-                placeholder="e.g., Python experience, Strong communication skills (separate multiple requirements with commas)"
-                value={formData.specialRequirements}
-                onChange={(e) => handleInputChange("specialRequirements", e.target.value)}
-                onBlur={(e) => handleBlur("specialRequirements", e.target.value)}
-                className={errors.specialRequirements ? "border-red-500" : ""}
-                rows={2}
-              />
-              {errors.specialRequirements && (
-                <div className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.specialRequirements}
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">Optional. Separate multiple requirements with commas.</p>
             </div>
           </div>
 

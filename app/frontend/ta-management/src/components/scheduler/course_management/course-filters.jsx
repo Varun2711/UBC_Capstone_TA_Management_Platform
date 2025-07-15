@@ -1,4 +1,4 @@
-
+"use client"
 
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -26,7 +26,7 @@ export function CourseFilters({
         />
       </div>
       <Select value={selectedDepartment} onValueChange={onDepartmentChange}>
-        <SelectTrigger className="w-full sm:w-48" aria-label="Department" >
+        <SelectTrigger className="w-full sm:w-48">
           <SelectValue placeholder="Department" />
         </SelectTrigger>
         <SelectContent>
@@ -39,7 +39,7 @@ export function CourseFilters({
         </SelectContent>
       </Select>
       <Select value={selectedYear} onValueChange={onYearChange}>
-        <SelectTrigger className="w-full sm:w-32" aria-label="Year">
+        <SelectTrigger className="w-full sm:w-32">
           <SelectValue placeholder="Year" />
         </SelectTrigger>
         <SelectContent>

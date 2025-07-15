@@ -75,6 +75,7 @@ export default function CourseManagement() {
 
   const handleAddCourseSubmit = (newCourse) => {
     setCourses((prev) => [...prev, newCourse])
+    console.log("Course added:", newCourse)
   }
 
   const handleCloseAddModal = () => {
@@ -88,6 +89,7 @@ export default function CourseManagement() {
 
   const handleEditCourseSubmit = (updatedCourse) => {
     setCourses((prev) => prev.map((course) => (course.id === updatedCourse.id ? updatedCourse : course)))
+    console.log("Course updated:", updatedCourse)
   }
 
   const handleCloseEditModal = () => {
@@ -106,6 +108,7 @@ export default function CourseManagement() {
         course.id === courseId ? { ...course, offerings: [...course.offerings, newOffering] } : course,
       ),
     )
+    console.log("Offering added:", newOffering)
   }
 
   const handleCloseAddOfferingModal = () => {
@@ -132,6 +135,7 @@ export default function CourseManagement() {
           : course,
       ),
     )
+    console.log("Offering updated:", updatedOffering)
   }
 
   const handleCloseEditOfferingModal = () => {
@@ -140,9 +144,11 @@ export default function CourseManagement() {
     setSelectedCourse(null)
   }
 
-  const handleAddLabTutorial = (offering) => {
-    setSelectedOffering(offering)
-    setSelectedCourse(courses.find((course) => course.offerings.some((o) => o.id === offering.id)))
+  const handleAddLabTutorial = (course) => {
+    // Instead of taking an offering, we'll need to let the user select which offering
+    // or create a session that applies to all offerings in a term
+    setSelectedCourse(course)
+    setSelectedOffering(null) // Set to null since we're working at course level
     setIsAddLabTutorialModalOpen(true)
   }
 
@@ -173,6 +179,7 @@ export default function CourseManagement() {
         return course
       }),
     )
+    console.log("Lab/Tutorial session added:", newSession)
   }
 
   const handleCloseAddLabTutorialModal = () => {
@@ -202,7 +209,7 @@ export default function CourseManagement() {
 
   return (
     <SidebarProvider>
-      <AppSidebar activePage = "Course Management"/>
+      <AppSidebar />
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -268,7 +275,7 @@ export default function CourseManagement() {
                   onDelete={handleDeleteCourse}
                   onAddOffering={handleAddOffering}
                   onEditOffering={handleEditOffering}
-                  onAddLabTutorial={handleAddLabTutorial}
+                  onAddLabTutorial={handleAddLabTutorial} // This now receives the course
                   expandedOfferings={expandedOfferings}
                   expandedLabSections={expandedLabSections}
                   onToggleOffering={toggleOffering}
@@ -316,7 +323,7 @@ export default function CourseManagement() {
         existingOfferings={selectedCourse?.offerings || []}
       />
 
-<AddLabTutorialModal
+      <AddLabTutorialModal
         isOpen={isAddLabTutorialModalOpen}
         onClose={handleCloseAddLabTutorialModal}
         onAddSession={handleAddLabTutorialSubmit}

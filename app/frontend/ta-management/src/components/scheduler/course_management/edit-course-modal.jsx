@@ -1,3 +1,4 @@
+"use client"
 
 import { useState, useEffect } from "react"
 import { Edit, AlertCircle } from "lucide-react"
@@ -164,8 +165,6 @@ export function EditCourseModal({ isOpen, onClose, onEditCourse, course, existin
     }
   }
 
-  const hasErrors = Object.values(errors).some(error => error)
-
   // Check if form has changes
   const hasChanges =
     course &&
@@ -294,7 +293,7 @@ export function EditCourseModal({ isOpen, onClose, onEditCourse, course, existin
           <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting || !hasChanges || hasErrors}>
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting || !hasChanges}>
             {isSubmitting ? "Updating Course..." : "Update Course"}
           </Button>
         </DialogFooter>
