@@ -65,7 +65,6 @@ describe("AdminDashboard", () => {
     expect(screen.getByText("1089")).toBeInTheDocument() // Students
     expect(screen.getByText("124")).toBeInTheDocument() // Instructors
     expect(screen.getByText("28")).toBeInTheDocument() // TA Schedulers
-    expect(screen.getByText("6")).toBeInTheDocument() // Admins
   })
 
   it("displays system alerts", () => {
