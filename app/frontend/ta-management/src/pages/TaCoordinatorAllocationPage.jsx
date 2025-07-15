@@ -57,8 +57,11 @@ let availableTAs = [
     experience: ["COSC 101", "COSC 201"],
     availability: [
       "Monday-9-top", "Monday-10-bottom",
-      "Wednesday-13-top", "Wednesday-14-bottom",
-      "Friday-11-top", "Friday-12-bottom"
+      "Wednesday-13-top", "Wednesday-14-top",
+      "Wednesday-14-bottom","Wednesday-15-top",
+      "Wednesday-15-bottom", "Friday-11-top", 
+      "Friday-12-bottom","Wednesday-15-top",
+      "Wednesday-15-bottom",
     ],
     avatar: "/placeholder.svg?height=40&width=40",
     status: "Partially Allocated",
@@ -72,11 +75,12 @@ let availableTAs = [
     year: "PhD",
     gpa: "3.92",
     maxHours: 20,
-    currentHours: 15,
+    currentHours: 10,
     skills: ["C++", "Python", "Machine Learning"],
     experience: ["COSC 301", "COSC 401"],
     availability: [
       "Tuesday-10-top", "Tuesday-11-top",
+      "Wednesday-14-top", "Wednesday-14-bottom",
       "Thursday-14-top", "Thursday-14-bottom"
     ],
     avatar: "/placeholder.svg?height=40&width=40",
@@ -113,7 +117,7 @@ let availableTAs = [
     skills: ["Tableau", "Power BI", "Pandas"],
     experience: ["DATA 101", "DATA 224"],
     availability: [
-      "Monday-8-top", "Tuesday-10-top", "Tuesday-10-bottom", "Friday-9-bottom"
+      "Monday-8-top", "Monday-8-bottom", "Monday-9-top", "Monday-9-bottom", "Monday-14-top", "Monday-14-bottom", "Monday-15-top", "Monday-15-bottom", "Tuesday-10-top", "Tuesday-10-bottom", "Wednesday-8-top", "Wednesday-8-bottom", "Wednesday-9-top", "Wednesday-9-bottom", "Friday-8-top", "Friday-8-bottom", "Friday-9-top", "Friday-9-bottom"
     ],
     avatar: "/placeholder.svg?height=40&width=40",
     status: "Not Allocated",
@@ -287,7 +291,7 @@ export default function TAAllocationPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [searchTermForCourse, setSearchTermForCourse] = useState("")
   const [selectedTAId, setSelectedTAId] = useState(null)
-  const [selectedCourse, setSelectedCourse] = useState(null)
+  const [selectedCourses, setSelectedCourses] = useState([])
   const [filterStatus, setFilterStatus] = useState("all")
   const [courseFilterStatus, setCourseFilterStatus] = useState("all")
   const [assignments, setAssignments] = useState([])
@@ -295,6 +299,8 @@ export default function TAAllocationPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState(null)
   const [activeOffers, setActiveOffers] = useState([])
+  const [showRescindModal, setShowRescindModal] = useState(false)
+  const [taToRescind, setTaToRescind] = useState(null)
   const [filters, setFilters] = useState({
     discipline: "",
     term_code: "",
@@ -304,28 +310,54 @@ export default function TAAllocationPage() {
 
   // Function to store the offer of a TA to a course
   const handleAddTAtoActiveOfferTab = (selectedTA, selectedCourse) => {
-    const alreadyOffered = activeOffers.some(
-      (a) =>
-        a.taStudentId === selectedTA.studentId &&
-        a.courseCode === selectedCourse.code &&
-        a.section === selectedCourse.section
+    setActiveOffers((prevOffers) => {
+      const existingTA = prevOffers.find(
+        (o) => o.taStudentId === selectedTA.studentId
+      )
+
+      const newOffer = {
+        courseCode: selectedCourse.code,
+        courseName: selectedCourse.name,
+        section: selectedCourse.section,
+        sectionId: selectedCourse.sectionId, // ✅ Correct
+        instructor: selectedCourse.instructor,
+        semester: selectedCourse.semester,
+        type: selectedCourse.type,
+        slots: selectedCourse.slots,
+      }
+
+      if (existingTA) {
+        // Avoid duplicates
+        const alreadyAdded = existingTA.offers.some(
+          (offer) =>
+            offer.courseCode === newOffer.courseCode &&
+            offer.section === newOffer.section
+        )
+        if (alreadyAdded) return prevOffers
+
+        return prevOffers.map((o) =>
+          o.taStudentId === selectedTA.studentId
+            ? { ...o, offers: [...o.offers, newOffer] }
+            : o
+        )
+      } else {
+        // First offer for this TA
+        return [
+          ...prevOffers,
+          {
+            taName: selectedTA.name,
+            taStudentId: selectedTA.studentId,
+            offers: [newOffer],
+          },
+        ]
+      }
+    })
+  }
+
+  const handleRescindOffer = (taStudentId) => {
+    setActiveOffers((prevOffers) =>
+      prevOffers.filter((offer) => offer.taStudentId !== taStudentId)
     )
-
-    if (alreadyOffered) return
-
-    const newOffer = {
-      taName: selectedTA.name,
-      taStudentId: selectedTA.studentId,
-      courseCode: selectedCourse.code,
-      courseName: selectedCourse.name,
-      section: selectedCourse.section,
-      instructor: selectedCourse.instructor,
-      semester: selectedCourse.semester,
-      type: selectedCourse.type,
-      slots: selectedCourse.slots,
-    }
-
-    setActiveOffers((prevOffers) => [...prevOffers, newOffer])
   }
 
   const handleDeleteAssignment = (assignmentToDelete) => {
@@ -370,6 +402,13 @@ export default function TAAllocationPage() {
         prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
       )
     }
+  }
+
+  const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
+    const taOffer = activeOffers.find((o) => o.taStudentId === taStudentId)
+    if (!taOffer) return false
+
+    return taOffer.offers.some((offer) => String(offer.sectionId) === String(sectionId))
   }
 
 
@@ -433,24 +472,16 @@ export default function TAAllocationPage() {
 
   // Helper function to check for scheduling conflicts
   const checkForConflicts = (taAvailability, courseSlots) => {
-    // If either array is missing, assume no conflict
-    if (!taAvailability || !courseSlots) {
-      return false;
-    }
+    const availabilitySet = new Set(taAvailability)
 
-    // Use a Set for efficient O(1) average time complexity lookups
-    const availabilitySet = new Set(taAvailability);
-
-    // Check if any of the course's slots already exist in the TA's availability
     for (const slot of courseSlots) {
-      if (availabilitySet.has(slot)) {
-        return true; // Conflict found
+      if (!availabilitySet.has(slot)) {
+        return true // ❗️Conflict: TA not available at this time
       }
     }
 
-    // No conflicts found
-    return false;
-  };
+    return false // ✅ All course slots are within TA availability
+  }
 
   // Function to update TA hours after assignment
   const updateHours = (ta, course) => {
@@ -639,6 +670,17 @@ export default function TAAllocationPage() {
           <main className="flex-1 space-y-6 p-6">
             {/* Main Allocation Interface */}
             <Tabs defaultValue="allocate" className="space-y-4">
+              <div className="p-4 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-800">
+                Select an applicant, then select one or more course sections
+                you want to send them an offer for. In the availability calendar, 
+                <span className="font-bold text-blue-600"> blue </span> 
+                boxes are time slots when the applicant is available. When you select a course section,
+                the slots it takes up will turn 
+                <span className="font-bold text-purple-600"> purple </span> 
+                if no conflicts with the applicant's availability and 
+                <span className="font-bold text-red-600"> red </span> 
+                if there are conflicts.
+              </div>
               <TabsList>
                 <TabsTrigger value="allocate">Allocate TAs</TabsTrigger>
                 <TabsTrigger value="active-offers">Active Offers</TabsTrigger>
@@ -723,15 +765,19 @@ export default function TAAllocationPage() {
                                   selectedTA
                                     ? [
                                         // Include slots from the currently selected course section (red highlight for potential offer)
-                                        ...(selectedCourse?.slots || []),
+                                        ...(selectedCourses.length > 0
+                                          ? selectedCourses.flatMap(course => course.slots || [])
+                                          : []),
                                         // Include slots from accepted assignments for this TA (persistent red highlight)
                                         ...assignments
                                             .filter(a => a.taStudentId === selectedTA.studentId)
                                             .flatMap(a => a.slots || []),
                                         // Include slots from active (pending) offers for this TA (persistent red highlight)
                                         ...activeOffers
-                                            .filter(o => o.taStudentId === selectedTA.studentId)
-                                            .flatMap(o => o.slots || []),
+                                          .filter(o => o.taStudentId === selectedTA.studentId)
+                                          .flatMap(o =>
+                                            o.offers?.flatMap(offer => offer.slots || []) || []
+                                          ),
                                       ]
                                     : []
                                 }
@@ -883,7 +929,6 @@ export default function TAAllocationPage() {
                           const availableSections = course.sections.filter(
                             (section) => section.taAssigned < section.taRequired
                           )
-
                           return (
                             <div key={course.id}>
                               <div className="flex items-center justify-between mb-2">
@@ -896,36 +941,59 @@ export default function TAAllocationPage() {
                               </div>
 
                               <div className="space-y-2 ml-4">
-                                {availableSections.map((section) => (
-                                  <div
-                                    key={`${course.id}-${section.id}`}
-                                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                                      selectedCourse?.sectionId === section.id
-                                        ? "border-blue-500 bg-blue-50"
-                                        : "hover:bg-muted/50"
-                                    }`}
-                                    onClick={() => setSelectedCourse({
-                                      ...section,
-                                      name: course.name,
-                                      code: course.code,
-                                      sectionId: section.id,
-                                    })}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="font-medium">
-                                          {section.type} - Section {section.section}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          {formatSlots(section.slots)} • {section.enrollment} students
-                                        </p>
+                                {availableSections.map((section) => {
+                                  const isSelected = selectedCourses.some((s) => s.sectionId === section.id);
+                                  const isOffered =
+                                    selectedTA && isSectionAlreadyOfferedToTA(selectedTA.studentId, section.id);
+                                  console.log("Checking section ID:", section.id)
+                                  console.log("selectedCourses:", selectedCourses.map(s => s.sectionId))
+                                  console.log("activeOffers:", activeOffers)
+                                  console.log("isSelected:", isSelected, "isOffered:", isOffered)
+                                  return (
+                                    <div
+                                      key={`${course.id}-${section.id}`}
+                                      className={`p-3 border rounded-lg transition-colors ${
+                                        isOffered
+                                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                          : isSelected
+                                          ? "border-blue-500 bg-blue-50 cursor-pointer"
+                                          : "hover:bg-muted/50 cursor-pointer"
+                                      }`}
+                                      onClick={() => {
+                                        if (isOffered) return;
+
+                                        const selected = {
+                                          ...section,
+                                          name: course.name,
+                                          code: course.code,
+                                          sectionId: section.id,
+                                        };
+                                        setSelectedCourses((prev) => {
+                                          const alreadySelected = prev.some(
+                                            (s) => s.sectionId === selected.sectionId
+                                          );
+                                          return alreadySelected
+                                            ? prev.filter((s) => s.sectionId !== selected.sectionId)
+                                            : [...prev, selected];
+                                        });
+                                      }}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <p className="font-medium">
+                                            {section.type} - Section {section.section}
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                            {formatSlots(section.slots)} • {section.enrollment} students
+                                          </p>
+                                        </div>
+                                        <Badge variant="outline">
+                                          Needs {section.taRequired - section.taAssigned} TA
+                                        </Badge>
                                       </div>
-                                      <Badge variant="outline">
-                                        Needs {section.taRequired - section.taAssigned} TA
-                                      </Badge>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           )
@@ -936,7 +1004,7 @@ export default function TAAllocationPage() {
                 </div>
 
                 {/* Send Offer Action */}
-                {selectedTA && selectedCourse && (
+                {selectedTA && selectedCourses.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle> Send Offer </CardTitle>
@@ -945,14 +1013,18 @@ export default function TAAllocationPage() {
                       <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                         <div>
                           <p className="font-medium">
-                            Send offer to <span className="text-blue-600">{selectedTA.name}</span> for{" "}
-                            <span className="text-blue-600">
-                              {selectedCourse.code} - {selectedCourse.name} - {selectedCourse.type} Section {selectedCourse.section}
-                            </span>
+                            Send offer to <span className="text-blue-600">{selectedTA.name}</span> for:
                           </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            This will add to their current workload: {selectedTA.currentHours} →{" "}
-                            {selectedTA.currentHours + selectedCourse.weekHours} hours
+                          <ul className="list-disc list-inside text-sm text-muted-foreground mt-2">
+                            {selectedCourses.map((c, idx) => (
+                              <li key={idx}>
+                                {c.code} - {c.name} - {c.type} Section {c.section} ({c.weekHours} hrs)
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Total workload: {selectedTA.currentHours} →{" "}
+                            {selectedTA.currentHours + selectedCourses.reduce((sum, c) => sum + c.weekHours, 0)} hours
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -960,41 +1032,43 @@ export default function TAAllocationPage() {
                             variant="outline"
                             onClick={() => {
                               setSelectedTAId(null)
-                              setSelectedCourse(null)
+                              setSelectedCourses([])
                             }}
                           >
                             Cancel
                           </Button>
                           <Button
                             onClick={() => {
+                              let totalHours = selectedTA.currentHours;
+                              const newOffers = [];
 
-                              const hasConflict = checkForConflicts(selectedTA.availability, selectedCourse.slots);
-
-                              if(hasConflict){
-                                alert("Scheduling Conflict: This TA is not available for one or more of the selected course section's time slots.");
-                                return; // Stop the function to prevent sending the offer
+                              for (const course of selectedCourses) {
+                                const hasConflict = checkForConflicts(selectedTA.availability, course.slots);
+                                if (hasConflict) {
+                                  alert(`Conflict with section ${course.code} ${course.section}`);
+                                  return;
+                                }
+                                totalHours += course.weekHours;
+                                newOffers.push(course);
                               }
-                              
-                              // Handle assignment logic here
-                              console.log("Assigning", selectedTA.name, "to", selectedCourse)
-                              const newHours = selectedTA.currentHours + selectedCourse.weekHours
-                              const newStatus = newHours >= selectedTA.maxHours ? "Fully Allocated" : "Partially Allocated"
-                              // Merge course time slots into TA availability
+
+                              const newStatus = totalHours >= selectedTA.maxHours ? "Fully Allocated" : "Partially Allocated";
                               const updatedTA = {
                                 ...selectedTA,
-                                currentHours: newHours,
+                                currentHours: totalHours,
                                 status: newStatus,
-                              }
+                              };
+
                               setTaList((prevTAs) =>
                                 prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
-                              )
+                              );
 
-                              handleAddTAtoActiveOfferTab(updatedTA, selectedCourse)
-                              // Re-select the updated TA by ID
-                              setSelectedTAId(updatedTA.id)
-                              setSelectedCourse(null)
-                              setSelectedTAId(null)
+                              newOffers.forEach((course) => {
+                                handleAddTAtoActiveOfferTab(updatedTA, course);
+                              });
 
+                              setSelectedTAId(null);
+                              setSelectedCourses([]);
                             }}
                           >
                             Send Offer
@@ -1022,20 +1096,27 @@ export default function TAAllocationPage() {
                       </p>
                     ) : (
                       <div className="space-y-4">
-                        {activeOffers.map((offer, index) => (
-                          <div
-                            key={index}
-                            className="p-3 border rounded-lg"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div>
-                                  <p className="font-medium">{offer.taName}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {offer.courseCode} - {offer.courseName} - Section {offer.section}
-                                  </p>
-                                </div>
-                              </div>
+                        {activeOffers.map((taOffer, index) => (
+                          <div key={index} className="p-3 border rounded-lg">
+                            <p className="font-medium mb-2">{taOffer.taName}</p>
+                            <ul className="ml-4 list-disc text-sm text-muted-foreground">
+                              {taOffer.offers.map((offer, i) => (
+                                <li key={i}>
+                                  {offer.courseCode} - {offer.courseName} - {offer.type} Section {offer.section}
+                                </li>
+                              ))}
+                            </ul>
+                            <div className="mt-4 flex justify-end">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  setTaToRescind(taOffer)
+                                  setShowRescindModal(true)
+                                }}
+                              >
+                                Rescind Offer
+                              </Button>
                             </div>
                           </div>
                         ))}
@@ -1123,6 +1204,41 @@ export default function TAAllocationPage() {
                   </div>
                 </div>
               )}
+
+              {/* Rescind modal */}
+              {showRescindModal && taToRescind && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                  <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                    <h2 className="text-lg font-semibold mb-4">Confirm Rescind</h2>
+                    <p className="text-sm mb-6">
+                      Are you sure you want to rescind all offers made to{" "}
+                      <strong>{taToRescind.taName}</strong>?
+                    </p>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowRescindModal(false)
+                          setTaToRescind(null)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          handleRescindOffer(taToRescind.taStudentId)
+                          setShowRescindModal(false)
+                          setTaToRescind(null)
+                        }}
+                      >
+                        Yes, Rescind
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
 
             </Tabs>
           </main>
