@@ -121,4 +121,64 @@ describe("TAAllocationPage", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("rescinds an offer and updates the UI", async () => {
+    const user = userEvent.setup()
+    renderWithRouter(<TAAllocationPage />)
+
+    await user.click(screen.getByText("Abraham Lincoln"))
+    await user.click(screen.getByText(/Lab - Section L01/))
+    await user.click(screen.getByRole("button", { name: "Send Offer" }))
+    await user.click(screen.getByText("Active Offers"))
+
+    expect(screen.getByText("Abraham Lincoln")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /Rescind Offer/i }))
+    expect(screen.getByText(/Confirm Rescind/)).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: /Yes, Rescind/i }))
+
+    expect(screen.queryByText("Abraham Lincoln")).not.toBeInTheDocument()
+  })
+
+  it("filters courses using discipline and term dropdowns", async () => {
+    const user = userEvent.setup()
+    renderWithRouter(<TAAllocationPage />)
+
+    const [disciplineSelect, termSelect] = screen.getAllByRole("combobox")
+
+    await user.selectOptions(disciplineSelect, "COSC")
+    await user.selectOptions(termSelect, "W2025 Term 1")
+
+    const courseTitles = screen.getAllByRole("heading", { level: 4 })
+    const courseText = courseTitles.map((el) => el.textContent).join(" ")
+
+    expect(courseText).toContain("COSC 101")
+    expect(courseText).not.toContain("DATA 105")
+  })
+
+  it("shows alert when a schedule conflict exists", async () => {
+    const user = userEvent.setup()
+    window.alert = vi.fn() // Mock alert
+
+    renderWithRouter(<TAAllocationPage />)
+
+    await user.click(screen.getByText("Sarah Johnson"))
+    await user.click(screen.getByText(/Lab - Section L01/)) // Has conflicts
+
+    await user.click(screen.getByRole("button", { name: "Send Offer" }))
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("Conflict"))
+  })
+
+  it("clears all filters and search terms", async () => {
+    const user = userEvent.setup()
+    renderWithRouter(<TAAllocationPage />)
+
+    const input = screen.getByPlaceholderText(/Search Courses/i)
+    await user.type(input, "COSC")
+
+    const clearBtn = screen.getByRole("button", { name: "Clear Filters" })
+    await user.click(clearBtn)
+
+    expect(screen.getByPlaceholderText(/Search Courses/i)).toHaveValue("")
+  })
+
 })
