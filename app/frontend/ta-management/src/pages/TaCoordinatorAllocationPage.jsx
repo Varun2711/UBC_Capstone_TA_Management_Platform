@@ -987,9 +987,6 @@ export default function TAAllocationPage() {
                                             {formatSlots(section.slots)} • {section.enrollment} students
                                           </p>
                                         </div>
-                                        <Badge variant="outline">
-                                          Needs {section.taRequired - section.taAssigned} TA
-                                        </Badge>
                                       </div>
                                     </div>
                                   );
