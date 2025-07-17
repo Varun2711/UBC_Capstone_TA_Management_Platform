@@ -2,186 +2,254 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EditInstructorModal } from '@/components/scheduler/instructor-management/edit-instructor-modal';
-import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 
-// Mock lucide-react icons for cleaner test output
+// Mock the external API module
+vi.mock('@/logic/instructorManagement', () => ({
+  updateInstructor: vi.fn(),
+}));
+
+// Mock lucide-react icons
 vi.mock('lucide-react', () => ({
   Edit: () => <div data-testid="edit-icon" />,
   AlertCircle: () => <div data-testid="alert-icon" />,
   X: () => <div data-testid="close-icon" />,
   ChevronDown: () => <div data-testid="chevron-down-icon" />,
-  ChevronUp : () => <div data-testid="chevron-up-icon" />,
+  ChevronUp: () => <div data-testid="chevron-up-icon" />,
   Check: () => <div data-testid="check-icon" />,
 }));
 
+// Mock browser APIs
+vi.stubGlobal('ResizeObserver', vi.fn(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+})));
 
-// Mock JSDOM browser APIs that are not implemented
-const ResizeObserver = vi.fn(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  }));
-  vi.stubGlobal('ResizeObserver', ResizeObserver);
-  
-  window.HTMLElement.prototype.scrollIntoView = vi.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
-
-// Mock data for the tests
-const mockInstructorToEdit = {
-  instructorId: 'inst-001',
-  instructorName: 'Dr. Sarah Johnson',
-  email: 's.johnson@university.edu',
-  department: 'Computer Science',
-  title: 'Associate Professor',
-};
-
-const mockExistingInstructors = [
-  mockInstructorToEdit,
-  {
-    instructorId: 'inst-002',
-    instructorName: 'Dr. Michael Chen',
-    email: 'm.chen@university.edu',
-    department: 'Computer Science',
-    title: 'Professor',
-  },
-];
+import { updateInstructor } from '@/logic/instructorManagement';
 
 describe('EditInstructorModal', () => {
   const user = userEvent.setup();
-  let mockOnClose;
-  let mockOnEditInstructor;
 
-  beforeEach(() => {
-    mockOnClose = vi.fn();
-    mockOnEditInstructor = vi.fn();
-  });
-
-  const renderComponent = (props) => {
-    render(
-      <EditInstructorModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onEditInstructor={mockOnEditInstructor}
-        instructor={mockInstructorToEdit}
-        existingInstructors={mockExistingInstructors}
-        {...props}
-      />,
-    );
+  const mockInstructor = {
+    instructorId: 'inst-001',
+    instructorName: 'Dr. Sarah Johnson',
+    email: 's.johnson@university.edu',
+    departmentName: 'Computer Science',
+    employeeNumber: '12345678',
   };
 
-  describe('Rendering and Initialization', () => {
-    it('should populate the form with instructor data when opened', async () => {
-      renderComponent();
+  const mockExistingInstructors = [
+    mockInstructor,
+    {
+      instructorId: 'inst-002',
+      instructorName: 'Dr. Michael Chen',
+      email: 'm.chen@university.edu',
+      departmentName: 'Mathematics',
+      employeeNumber: '87654321',
+    },
+  ];
 
-      // Use waitFor to allow the useEffect hook to populate the form
-      await waitFor(() => {
-        expect(screen.getByRole('textbox', { name: /full name/i })).toHaveValue(mockInstructorToEdit.instructorName);
-        expect(screen.getByRole('textbox', { name: /email address/i })).toHaveValue(mockInstructorToEdit.email);
-        expect(screen.getByRole('combobox', { name: /department/i })).toHaveTextContent(mockInstructorToEdit.department);
-        expect(screen.getByRole('combobox', { name: /title/i })).toHaveTextContent(mockInstructorToEdit.title);
-      });
+  const defaultProps = {
+    isOpen: true,
+    onClose: vi.fn(),
+    onDataChange: vi.fn(),
+    instructor: mockInstructor,
+    existingInstructors: mockExistingInstructors,
+    departments: ['Computer Science', 'Mathematics', 'Physics'],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const renderModal = (props = {}) => {
+    return render(<EditInstructorModal {...defaultProps} {...props} />);
+  };
+
+  const waitForFormToLoad = async () => {
+    await waitFor(() => {
+      expect(screen.getByDisplayValue(mockInstructor.instructorName)).toBeInTheDocument();
     });
+  };
 
-    it('should have the "Update Instructor" button disabled initially', () => {
-      renderComponent();
-      expect(screen.getByRole('button', { name: /update instructor/i })).toBeDisabled();
+  it('renders modal with instructor data populated', async () => {
+    renderModal();
+    
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Edit Instructor')).toBeInTheDocument();
+    
+    await waitForFormToLoad();
+    
+    expect(screen.getByDisplayValue(mockInstructor.instructorName)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(mockInstructor.email)).toBeInTheDocument();
+    expect(screen.getByText(mockInstructor.employeeNumber)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /update instructor/i })).toBeDisabled();
+  });
+
+  it('does not render when closed', () => {
+    renderModal({ isOpen: false });
+    
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('calls onClose when cancel is clicked', async () => {
+    const onClose = vi.fn();
+    renderModal({ onClose });
+    
+    await user.click(screen.getByRole('button', { name: /cancel/i }));
+    
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('enables update button when changes are made', async () => {
+    renderModal();
+    await waitForFormToLoad();
+    
+    const nameInput = screen.getByDisplayValue(mockInstructor.instructorName);
+    await user.type(nameInput, ' Updated');
+    
+    expect(screen.getByRole('button', { name: /update instructor/i })).not.toBeDisabled();
+  });
+
+  it('shows validation error for empty name', async () => {
+    renderModal();
+    await waitForFormToLoad();
+    
+    const nameInput = screen.getByDisplayValue(mockInstructor.instructorName);
+    await user.clear(nameInput);
+    await user.tab();
+    
+    expect(screen.getByText('Instructor name is required')).toBeInTheDocument();
+  });
+
+  it('shows validation error for invalid email', async () => {
+    renderModal();
+    await waitForFormToLoad();
+    
+    const emailInput = screen.getByDisplayValue(mockInstructor.email);
+    await user.clear(emailInput);
+    await user.type(emailInput, 'invalid-email');
+    await user.tab();
+    
+    expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
+  });
+
+  it('shows validation error for duplicate email', async () => {
+    renderModal();
+    await waitForFormToLoad();
+    
+    const emailInput = screen.getByDisplayValue(mockInstructor.email);
+    await user.clear(emailInput);
+    await user.type(emailInput, 'm.chen@university.edu');
+    await user.tab();
+    
+    expect(screen.getByText('An instructor with this email already exists')).toBeInTheDocument();
+  });
+
+  it('submits form successfully with updated data', async () => {
+    updateInstructor.mockResolvedValue({});
+    const onClose = vi.fn();
+    const onDataChange = vi.fn();
+    renderModal({ onClose, onDataChange });
+    
+    await waitForFormToLoad();
+    
+    // Make changes
+    const nameInput = screen.getByDisplayValue(mockInstructor.instructorName);
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Dr. Sarah Johnson-Smith');
+    
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'Mathematics' }));
+    
+    // Submit
+    await user.click(screen.getByRole('button', { name: /update instructor/i }));
+    
+    // Verify API call
+    expect(updateInstructor).toHaveBeenCalledWith(mockInstructor.instructorId, {
+      name: 'Dr. Sarah Johnson-Smith',
+      email: mockInstructor.email,
+      department: 'Mathematics',
+    });
+    
+    // Verify callbacks
+    await waitFor(() => {
+      expect(onDataChange).toHaveBeenCalled();
+      expect(onClose).toHaveBeenCalled();
     });
   });
 
-  describe('Interaction and Validation', () => {
-    it('should enable the "Update" button when a change is made', async () => {
-      renderComponent();
-      await waitFor(() => {
-        expect(screen.getByRole('textbox', { name: /full name/i })).toHaveValue(mockInstructorToEdit.instructorName);
-      });
-      
-      const nameInput = screen.getByRole('textbox', { name: /full name/i });
-      await user.type(nameInput, '!');
-      
-      expect(screen.getByRole('button', { name: /update instructor/i })).not.toBeDisabled();
+  it('displays API error on submission failure', async () => {
+    updateInstructor.mockRejectedValue({
+      response: { data: { message: 'Failed to update instructor' } }
     });
-
-    it('should show an error for a duplicate email address', async () => {
-        renderComponent();
-        await waitFor(() => {
-            expect(screen.getByRole('textbox', { name: /email address/i })).toHaveValue(mockInstructorToEdit.email);
-        });
-
-        const emailInput = screen.getByRole('textbox', { name: /email address/i });
-        await user.clear(emailInput);
-        await user.type(emailInput, 'm.chen@university.edu'); // This email already exists
-        await user.tab(); // Trigger blur validation
-
-        expect(await screen.findByText('An instructor with this email already exists')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /update instructor/i })).toBeDisabled();
+    renderModal();
+    
+    await waitForFormToLoad();
+    
+    // Make a change to enable submit
+    const nameInput = screen.getByDisplayValue(mockInstructor.instructorName);
+    await user.type(nameInput, ' Updated');
+    
+    // Submit
+    await user.click(screen.getByRole('button', { name: /update instructor/i }));
+    
+    await waitFor(() => {
+      expect(screen.getByText('Failed to update instructor')).toBeInTheDocument();
     });
-
-    it('should show an error for an invalid email format', async () => {
-        renderComponent();
-        await waitFor(() => {
-            expect(screen.getByRole('textbox', { name: /email address/i })).toHaveValue(mockInstructorToEdit.email);
-        });
-
-        const emailInput = screen.getByRole('textbox', { name: /email address/i });
-        await user.clear(emailInput);
-        await user.type(emailInput, 'invalid-email');
-        await user.tab();
-
-        expect(await screen.findByText('Please enter a valid email address')).toBeInTheDocument();
-    });
+    
+    // Button should be enabled again
+    expect(screen.getByRole('button', { name: /update instructor/i })).not.toBeDisabled();
   });
 
-  describe('Submission and Cancellation', () => {
-    it('should call onEditInstructor with updated data on successful submission', async () => {
-      renderComponent();
-      await waitFor(() => {
-        expect(screen.getByRole('textbox', { name: /full name/i })).toHaveValue(mockInstructorToEdit.instructorName);
-      });
+  it('prevents submission with validation errors', async () => {
+    renderModal();
+    await waitForFormToLoad();
+    
+    // Make invalid changes
+    const nameInput = screen.getByDisplayValue(mockInstructor.instructorName);
+    await user.clear(nameInput);
+    
+    const emailInput = screen.getByDisplayValue(mockInstructor.email);
+    await user.clear(emailInput);
+    await user.type(emailInput, 'invalid-email');
+    
+    // Try to submit
+    await user.click(screen.getByRole('button', { name: /update instructor/i }));
+    
+    // Should show validation errors
+    expect(screen.getByText('Instructor name is required')).toBeInTheDocument();
+    expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
+    
+    // API should not be called
+    expect(updateInstructor).not.toHaveBeenCalled();
+  });
 
-      // Make changes to the form
-      const nameInput = screen.getByRole('textbox', { name: /full name/i });
-      await user.clear(nameInput);
-      await user.type(nameInput, 'Dr. Sarah Johnson-Smith');
+  it('shows employee number as read-only', async () => {
+    renderModal();
+    await waitForFormToLoad();
+    
+    expect(screen.getByText(mockInstructor.employeeNumber)).toBeInTheDocument();
+    expect(screen.getByText('Employee number cannot be changed.')).toBeInTheDocument();
+    
+    // Should not be an input field
+    expect(screen.queryByDisplayValue(mockInstructor.employeeNumber)).not.toBeInTheDocument();
+  });
 
-      const departmentSelect = screen.getByRole('combobox', { name: /department/i });
-      await user.click(departmentSelect);
-      await user.click(screen.getByRole('option', { name: 'Mathematics' }));
-
-      // Click the submit button
-      const submitButton = screen.getByRole('button', { name: /update instructor/i });
-      await user.click(submitButton);
-
-      // Check for submitting state
-      await waitFor(() => {
-        expect(submitButton).toBeDisabled();
-        expect(screen.getByText(/updating instructor.../i)).toBeInTheDocument();
-      });
-
-      // Check that the callback was called with the correct data
-      await waitFor(() => {
-        expect(mockOnEditInstructor).toHaveBeenCalledTimes(1);
-        expect(mockOnEditInstructor).toHaveBeenCalledWith(
-          expect.objectContaining({
-            instructorId: mockInstructorToEdit.instructorId, // ID should be preserved
-            instructorName: 'Dr. Sarah Johnson-Smith', // New name
-            department: 'Mathematics', // New department
-            email: mockInstructorToEdit.email, // Unchanged
-          })
-        );
-      });
-
-      // Check that the modal was closed
-      await waitFor(() => {
-        expect(mockOnClose).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it('should call onClose when cancel button is clicked', async () => {
-      renderComponent();
-      await user.click(screen.getByRole('button', { name: /cancel/i }));
-
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
-      expect(mockOnEditInstructor).not.toHaveBeenCalled();
-    });
+  it('clears errors when user starts typing', async () => {
+    renderModal();
+    await waitForFormToLoad();
+    
+    // Trigger validation error
+    const nameInput = screen.getByDisplayValue(mockInstructor.instructorName);
+    await user.clear(nameInput);
+    await user.tab();
+    expect(screen.getByText('Instructor name is required')).toBeInTheDocument();
+    
+    // Start typing to clear error
+    await user.type(nameInput, 'New Name');
+    expect(screen.queryByText('Instructor name is required')).not.toBeInTheDocument();
   });
 });
