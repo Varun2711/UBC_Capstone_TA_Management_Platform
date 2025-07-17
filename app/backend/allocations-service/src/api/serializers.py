@@ -9,7 +9,7 @@ class StudentSerializer(serializers.ModelSerializer):
 class TermSerializer(serializers.ModelSerializer):
     class Meta:
         model = Term
-        fields = ['term_id', 'code', 'name']
+        fields = ['id', 'code', 'name']
 
 class JobPostingSerializer(serializers.ModelSerializer):
     class Meta:

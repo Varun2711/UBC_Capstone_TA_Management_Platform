@@ -57,9 +57,9 @@ class JobPosting(models.Model):
 
 class Term(models.Model):
     """Reference to terms from applications service"""
-    term_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     code = models.CharField(max_length=20)
-    name = models.CharField(max_length=100)
+    #name = models.CharField(max_length=100)
     # Add other fields as needed for reference
     
     class Meta:

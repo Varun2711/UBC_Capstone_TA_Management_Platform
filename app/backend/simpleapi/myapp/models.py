@@ -590,57 +590,94 @@ class ApplicationShortList(models.Model):
 
 
 class Offer(models.Model):
-    requiredhours_choices ={
-        ('1', '6 hours'),
-        ('2', '12 hours') 
-    }
-
-    role_choices= {
-        ('rta', 'Regular TA'),
-        ('tac', 'TA Captain'),
-    }
-
+    """Enhanced offer model for the allocations service"""
+    REQUIRED_HOURS_CHOICES = [
+        ('6', '6 hours'),
+        ('12', '12 hours'),
+    ]
+    
+    ROLE_CHOICES = [
+        ('ta', 'Teaching Assistant'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending Response'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('expired', 'Expired'),
+    ]
+    
     offer_id = models.AutoField(primary_key=True)
     application = models.ForeignKey(Application, on_delete=models.CASCADE, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, db_constraint=False)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
-    shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True)
-    required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
-    role = models.CharField(max_length=3, choices=role_choices, default='rta')
-    offer_date = models.DateField()
-    status = models.CharField(max_length=50)
+    shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+    
+    required_hours = models.CharField(max_length=2, choices=REQUIRED_HOURS_CHOICES, default='6')
+    role = models.CharField(max_length=3, choices=ROLE_CHOICES, default='ta')
+    
+    # Offer lifecycle
+    offer_date = models.DateTimeField(default=timezone.now)
+    response_deadline = models.DateTimeField(help_text="Deadline for student to respond")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Response tracking
+    responded_at = models.DateTimeField(null=True, blank=True)
+    student_response = models.TextField(null=True, blank=True, help_text="Student's response message")
+    
+    # Administrative
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created', db_constraint=False)
     notes = models.TextField(null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created',db_constraint=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = False
+        db_table = 'myapp_offer'
+        ordering = ['-created_at']
+    
 
 class Assignment(models.Model):
-    role_choices= {
-        ('rta', 'Regular TA'),
-        ('tac', 'TA Captain'),
-    }
-    requiredhours_choices ={
-        ('1', '6 hours'),
-        ('2', '12 hours'),
-    }
+    """Final assignment after offer acceptance"""
+    ROLE_CHOICES = [
+        ('ta', 'Teaching Assistant'),
+    ]
+    
+    REQUIRED_HOURS_CHOICES = [
+        ('6', '6 hours'),
+        ('12', '12 hours'),
+    ]
     
     assignment_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, db_constraint=False)
-    offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, null=True, blank=True)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
-    shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True)
-    required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
-    role = models.CharField(max_length=3, choices=role_choices, default='rta')
-    assigned_date = models.DateField()
-    assigned_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_made', db_constraint=False )
+    offer = models.OneToOneField(Offer, on_delete=models.CASCADE, related_name='assignment', null=True, blank=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
+    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, db_constraint=False)
+    shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+    
+    required_hours = models.CharField(max_length=2, choices=REQUIRED_HOURS_CHOICES, default='6')
+    role = models.CharField(max_length=3, choices=ROLE_CHOICES, default='ta')
+    
+    # Assignment tracking
+    assigned_date = models.DateTimeField(default=timezone.now)
+    assigned_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_made', db_constraint=False)
+    
+    # Status tracking
+    is_active = models.BooleanField(default=True)
     notes = models.TextField(null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_created', db_constraint=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = False
+        db_table = 'myapp_assignment'
 
-class Shift(models.Model):
-    shift_id = models.AutoField(primary_key=True)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    notes = models.TextField(null=True, blank=True)
+# class Shift(models.Model):
+#     shift_id = models.AutoField(primary_key=True)
+#     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+#     date = models.DateField()
+#     start_time = models.TimeField()
+#     end_time = models.TimeField()
+#     notes = models.TextField(null=True, blank=True)
 
 
 

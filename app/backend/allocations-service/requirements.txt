@@ -8,6 +8,6 @@ psycopg2-binary==2.9.10
 sqlparse==0.5.3
 tzdata==2025.2
 setuptools
-django-filter==25.1
+django-filter==24.3
 pytest==7.4.3
 pytest-django==4.7.0

@@ -12,7 +12,8 @@ from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
 from .models import Offer, Assignment, Student, TAScheduler, Application, ApplicationShortList
 from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer
-from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsStudentUser
+from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
+from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsAuthenticatedUser, IsStudentUser
 
 # Combined permissions
 IsSchedulerOrAdmin = IsSchedulerUser | IsAdminUser
