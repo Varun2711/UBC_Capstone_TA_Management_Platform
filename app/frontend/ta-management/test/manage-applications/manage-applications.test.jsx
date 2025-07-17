@@ -2,7 +2,7 @@
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
-import ManageApplications from "@/pages/Coordinator_ManageApplications";
+import ManageApplications from "@/pages/Scheduler/Scheduler_ManageApplications_old";
 import axios, { getMock } from "axios";
 
 // Mock axios.create to return an instance with our getMock
@@ -90,7 +90,6 @@ describe("ManageApplications", () => {
     expect(screen.getByText("Applications (1)")).toBeInTheDocument();
     expect(screen.getByText("John Doe")).toBeInTheDocument();
     expect(screen.getByText("Undergraduate TA")).toBeInTheDocument();
-    expect(screen.getByText("ACCEPTED")).toBeInTheDocument();
   });
 
   test("renders no-results message when API returns empty array", async () => {

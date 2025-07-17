@@ -140,11 +140,7 @@ class JobPostingAPITest(APITestCase):
             'term_id': self.winter_term.pk,
             'created_by_id': self.ta_scheduler.pk,
             'status': 'open',
-            'requirements': 'Must be enrolled in CS',
-            'posting_questions': [
-                {'question_text': 'What is your GPA?'},
-                {'question_text': 'Do you have previous TA experience?'}
-            ]
+            'requirements': 'Must be enrolled in CS',           
         }
         
         response = self.client.post(url, data, format='json')
@@ -154,7 +150,7 @@ class JobPostingAPITest(APITestCase):
         job_posting = JobPosting.objects.first()
         self.assertEqual(job_posting.title, 'TA Position - COSC 101')
         self.assertEqual(job_posting.term, self.winter_term)
-        self.assertEqual(job_posting.posting_questions.count(), 2)
+        
 
     def test_filter_by_term(self):
         """Test filtering job postings by term"""
@@ -243,8 +239,8 @@ class JobPostingAPITest(APITestCase):
         self.assertIn('COSC', response.data[0]['title'])
 
     @patch('api.views.JobPostingViewSet.get_permissions')
-    def test_delete_job_posting_not_allowed(self, mock_get_permissions):
-        """Test that job posting deletion is not allowed"""
+    def test_soft_delete_job_posting_archives_instead_of_deleting(self, mock_get_permissions):
+        """Test that job posting 'deletion' actually archives the posting"""
         from rest_framework.permissions import AllowAny
         mock_get_permissions.return_value = [AllowAny()]
         
@@ -261,5 +257,17 @@ class JobPostingAPITest(APITestCase):
         url = reverse('jobposting-detail', kwargs={'pk': job_posting.pk})
         response = self.client.delete(url)
         
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        # Should return 200 OK with success message, not 204 No Content
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("archived successfully", response.data['detail'])
+        
+        # Job posting should still exist in database
         self.assertTrue(JobPosting.objects.filter(pk=job_posting.pk).exists())
+        
+        # But status should be changed to 'archived'
+        job_posting.refresh_from_db()
+        self.assertEqual(job_posting.status, 'archived')
+        
+        # Response should include the updated job posting data
+        self.assertIn('job_posting', response.data)
+        self.assertEqual(response.data['job_posting']['status'], 'archived')

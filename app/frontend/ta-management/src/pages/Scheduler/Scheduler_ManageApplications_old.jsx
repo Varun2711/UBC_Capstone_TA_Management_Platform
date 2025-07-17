@@ -10,6 +10,8 @@ import {
   XCircle,
   Loader2,
   Bell,
+  Star,
+  StarOff,
 } from "lucide-react";
 import {
   Breadcrumb,
@@ -23,7 +25,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "../components/scheduler-sidebar";
+import { AppSidebar } from "@/components/scheduler-sidebar";
 import { Button } from "@/components/ui/button";
 import SearchFilters from "@/components/application-management/SearchFilters";
 import axios from "axios";
@@ -73,7 +75,21 @@ export default function ManageApplications() {
         });
 
         console.log(response.data);
-        setApplications(response.data);
+        //setApplications(response.data);
+
+        // Check if applications have been shortlisted
+        const applicationsWithShortlistStatus = await Promise.all(
+          response.data.map(async (app) => {
+            const isShortlisted = await getShortlistStatus(app.application_id); // Fixed function name
+            return { ...app, isShortlisted };
+          })
+        );
+
+        console.log(
+          "Applications with shortlist status:",
+          applicationsWithShortlistStatus
+        );
+        setApplications(applicationsWithShortlistStatus); // Only set once
       } catch (error) {
         console.error("Error loading applications:", error);
       } finally {
@@ -187,9 +203,78 @@ export default function ManageApplications() {
     });
   };
 
+  const getShortlistStatus = async (applicationId) => {
+    try {
+      const response = await instance.get(
+        `/ajp/application-shortlists/by-application/${applicationId}/exists/`
+      );
+      console.log("Shortlist status response:", response.data);
+      // If the response has data, it means the application is shortlisted
+      return response.data.shortlisted;
+    } catch (error) {
+      console.error("Error checking shortlist status:", error);
+      return false;
+    }
+  };
+
+  // Add shortlist functionality to the applications table
+  const handleQuickShortlist = async (application, event) => {
+    event.stopPropagation(); // Prevent navigation when clicking shortlist button
+
+    try {
+      const payload = {
+        application_id: application.application_id,
+        created_by_id: null, // Null for now as user profile endpoint doesn't return scheduler pk
+      };
+
+      const response = await instance.post(
+        `/ajp/application-shortlists/`,
+        payload
+      );
+
+      console.log("Application shortlisted successfully:", response.data);
+
+      // Reload applications to reflect changes
+      const updatedApplications = applications.map((app) =>
+        app.application_id === application.application_id
+          ? { ...app, isShortlisted: true }
+          : app
+      );
+      setApplications(updatedApplications);
+    } catch (error) {
+      console.error("Error shortlisting application:", error);
+      // You might want to show a toast notification here
+    }
+  };
+
+  const handleRemoveShortlist = async (application, event) => {
+    event.stopPropagation();
+
+    try {
+      const shortlistResponse = await instance.get(
+        `/ajp/application-shortlists/by-application/${application.application_id}/`
+      );
+
+      if (shortlistResponse.data.length > 0) {
+        const shortlistId = shortlistResponse.data[0].id;
+        await instance.delete(`/ajp/application-shortlists/${shortlistId}/`);
+
+        // Update local state
+        const updatedApplications = applications.map((app) =>
+          app.application_id === application.application_id
+            ? { ...app, isShortlisted: false }
+            : app
+        );
+        setApplications(updatedApplications);
+      }
+    } catch (error) {
+      console.error("Error removing from shortlist:", error);
+    }
+  };
+
   return (
     <SidebarProvider>
-      <AppSidebar activePage="Applications" />
+      <AppSidebar activePage="Application Management" />
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -279,15 +364,23 @@ export default function ManageApplications() {
                           >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  {application.student.name}
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {application.student.name}
+                                  </div>
+                                  {application.isShortlisted && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      <Star className="w-3 h-3 mr-1" />
+                                      Shortlisted
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="text-sm text-gray-500">
                                   {application.student.student_number}
                                 </div>
-                                <div className="text-sm">
+                                {/* <div className="text-sm">
                                   {getStatusBadge(application.status)}
-                                </div>
+                                </div> */}
                               </div>
                             </td>
                             <td className="px-6 py-4">
@@ -304,14 +397,38 @@ export default function ManageApplications() {
                               {getPositionTypeBadge(application.positionType)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <button
-                                onClick={() =>
-                                  handleViewApplication(application)
-                                }
-                                className="inline-flex items-center text-blue-600 hover:text-blue-900 p-1 rounded"
-                              >
-                                View <Eye className="h-4 w-4 ml-1" />
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() =>
+                                    handleViewApplication(application)
+                                  }
+                                  className="inline-flex items-center text-blue-600 hover:text-blue-900 p-1 rounded"
+                                  title="View Application"
+                                >
+                                  <Eye className="h-5 w-5 ml-1" />
+                                </button>
+                                {application.isShortlisted ? (
+                                  <button
+                                    onClick={(e) =>
+                                      handleRemoveShortlist(application, e)
+                                    }
+                                    className="inline-flex items-center text-red-600 hover:text-red-900 p-1 rounded"
+                                    title="Remove from Shortlist"
+                                  >
+                                    <StarOff className="h-4 w-4" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={(e) =>
+                                      handleQuickShortlist(application, e)
+                                    }
+                                    className="inline-flex items-center text-green-600 hover:text-green-900 p-1 rounded"
+                                    title="Quick Shortlist"
+                                  >
+                                    <Star className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}

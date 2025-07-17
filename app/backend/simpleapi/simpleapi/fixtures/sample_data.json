@@ -1,5 +1,61 @@
 [
   {
+    "model": "myapp.department",
+    "pk": 1,
+    "fields": {
+      "name": "Computer Science"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 2,
+    "fields": {
+      "name": "Mathematics"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 3,
+    "fields": {
+      "name": "Physics"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 4,
+    "fields": {
+      "name": "Chemistry"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 5,
+    "fields": {
+      "name": "Biology"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 6,
+    "fields": {
+      "name": "Engineering"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 7,
+    "fields": {
+      "name": "Psychology"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 8,
+    "fields": {
+      "name": "English"
+    }
+  },
+  {
     "model": "myapp.student",
     "pk": 1,
     "fields": {
@@ -239,7 +295,7 @@
       "otherPositionHours": 8
     }
   },
-  
+
   {
     "model": "myapp.department",
     "pk": 1,
@@ -1132,7 +1188,10 @@
       "academic_term": 7,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002"
+      ]
     }
   },
   {
@@ -1145,7 +1204,10 @@
       "academic_term": 7,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440004", "550e8400-e29b-41d4-a716-446655440005"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440004",
+        "550e8400-e29b-41d4-a716-446655440005"
+      ]
     }
   },
   {
@@ -1158,7 +1220,10 @@
       "academic_term": 7,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440007", "550e8400-e29b-41d4-a716-446655440008"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440007",
+        "550e8400-e29b-41d4-a716-446655440008"
+      ]
     }
   },
   {
@@ -1171,7 +1236,10 @@
       "academic_term": 8,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440010", "550e8400-e29b-41d4-a716-446655440011"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440010",
+        "550e8400-e29b-41d4-a716-446655440011"
+      ]
     }
   },
   {
@@ -1184,7 +1252,10 @@
       "academic_term": 8,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440013", "550e8400-e29b-41d4-a716-446655440014"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440013",
+        "550e8400-e29b-41d4-a716-446655440014"
+      ]
     }
   },
   {
@@ -1223,7 +1294,10 @@
       "academic_term": 7,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440003"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440003"
+      ]
     }
   },
   {
@@ -1236,7 +1310,10 @@
       "academic_term": 8,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440006", "550e8400-e29b-41d4-a716-446655440009"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440006",
+        "550e8400-e29b-41d4-a716-446655440009"
+      ]
     }
   },
   {
@@ -1249,7 +1326,10 @@
       "academic_term": 7,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440002", "550e8400-e29b-41d4-a716-446655440005"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440002",
+        "550e8400-e29b-41d4-a716-446655440005"
+      ]
     }
   },
   {
@@ -1262,7 +1342,10 @@
       "academic_term": 8,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440008", "550e8400-e29b-41d4-a716-446655440011"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440008",
+        "550e8400-e29b-41d4-a716-446655440011"
+      ]
     }
   },
   {
