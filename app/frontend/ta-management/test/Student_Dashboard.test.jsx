@@ -26,9 +26,10 @@ vi.mock("@/logic/student-profile", () => ({
   ),
 }));
 
+// ✅ Properly mock axios with interceptors
 vi.mock("axios", () => ({
   default: {
-    create: () => ({
+    create: vi.fn(() => ({
       get: vi.fn(() =>
         Promise.resolve({
           data: [
@@ -42,21 +43,32 @@ vi.mock("axios", () => ({
           ],
         })
       ),
-    }),
+      // ✅ Mock interceptors property
+      interceptors: {
+        request: {
+          use: vi.fn(),
+        },
+        response: {
+          use: vi.fn(),
+        },
+      },
+    })),
   },
 }));
 
-
 describe("StudentDashboard", () => {
-
   // ✅ Set a fake token so second useEffect runs correctly
   beforeEach(() => {
     sessionStorage.setItem("accessToken", "mock-token");
   });
 
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
   it("renders student dashboard with user info", async () => {
     render(
-      <MemoryRouter> {/* 🔄 Wrapping here is ESSENTIAL */}
+      <MemoryRouter>
         <StudentDashboard />
       </MemoryRouter>
     );

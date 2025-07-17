@@ -24,6 +24,20 @@ const instance = axios.create({
   baseURL: "http://localhost:8080/api",
 });
 
+// Add interceptor to automatically include auth headers
+instance.interceptors.request.use(
+  (config) => {
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Add this helper function at the top of ApplicationForm.jsx (same as ProfilePage)
 // Replace the extractSemesterFromDate function in StudentProfileForm.jsx:
 const extractSemesterFromDate = (dateString) => {

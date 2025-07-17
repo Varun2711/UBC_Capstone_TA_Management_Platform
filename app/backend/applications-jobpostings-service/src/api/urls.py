@@ -13,3 +13,8 @@ router.register(r'form-questions', FormQuestionViewSet, basename='formquestion')
 router.register(r'application-responses', ApplicationResponseViewSet, basename='applicationresponse')
 router.register(r'application-shortlists', ApplicationShortListViewSet, basename='applicationshortlist')  
 urlpatterns = router.urls
+
+urlpatterns = [
+    path('', views.api_root, name='api-root'),
+    path('', include(router.urls)),
+]

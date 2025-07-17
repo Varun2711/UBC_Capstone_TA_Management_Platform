@@ -15,17 +15,21 @@ const generateTimeSlots = () => {
 }
 
 const WeeklyAvailabilityCalendar = ({
+  mode = "profile", // New prop: "profile" or "allocation"
   editable = false,
   availability = [],
   setAvailability = () => {},
+  highlightedSlots = [], // New optional prop for red overlay
 }) => {
   const [selectedSlots, setSelectedSlots] = useState(new Set(availability))
+  const highlightedSet = new Set(highlightedSlots); // Set for highlighted slots
 
-  // Sync internal state with incoming props when availability updates externally
+  // Sync internal state with incoming props
   useEffect(() => {
     setSelectedSlots(new Set(availability))
   }, [availability])
 
+  // Function to handle slot selection in editable mode
   const toggleSlot = (day, hour, half) => {
     const key = `${day}-${hour}-${half}`
     const updated = new Set(selectedSlots)
@@ -38,8 +42,8 @@ const WeeklyAvailabilityCalendar = ({
     setAvailability(Array.from(updated)) // Sync to parent
   }
 
-  const isSelected = (day, hour, half) =>
-    selectedSlots.has(`${day}-${hour}-${half}`)
+  const isSelected = (day, hour, half) => selectedSlots.has(`${day}-${hour}-${half}`)
+  const isHighlighted = (day, hour, half) => highlightedSet.has(`${day}-${hour}-${half}`)
 
   const timeSlots = generateTimeSlots()
 
@@ -63,28 +67,43 @@ const WeeklyAvailabilityCalendar = ({
                 return (
                   <td key={day} className="border p-0">
                     <div className="flex flex-col h-full">
+                      {/* --- Top Half-Hour Slot --- */}
                       <div
-                        data-testid={`slot-${day}-${hourNum}-top`}
-                        className={`h-5 cursor-pointer ${
-                          isSelected(day, hourNum, "top") 
-                          ? "bg-blue-400" 
-                          : editable
-                          ? "hover:bg-blue-100"
-                          : ""
-                        } border-b`}
+                        className="relative h-5 border-b"
                         onClick={() => editable && toggleSlot(day, hourNum, "top")}
-                      />
+                      >
+                        {/* Layer 1: Blue background for TA availability */}
+                        {isSelected(day, hourNum, "top") && (
+                          <div className="absolute inset-0 bg-blue-400"></div>
+                        )}
+                        {/* Layer 2: Red overlay for course schedule (Allocation Mode Only) */}
+                        {mode === 'allocation' && isHighlighted(day, hourNum, "top") && (
+                          <div className="absolute inset-0 bg-red-500 opacity-50"></div>
+                        )}
+                        {/* Layer 3: Hover effect (Profile/Editable Mode Only) */}
+                        {editable && (
+                          <div className="absolute inset-0 cursor-pointer hover:bg-blue-100"></div>
+                        )}
+                      </div>
+
+                      {/* --- Bottom Half-Hour Slot --- */}
                       <div
-                        data-testid={`slot-${day}-${hourNum}-bottom`}
-                        className={`h-5 cursor-pointer ${
-                          isSelected(day, hourNum, "bottom") 
-                          ? "bg-blue-400" 
-                          : editable
-                          ? "hover:bg-blue-100"
-                          : ""
-                        }`}
+                        className="relative h-5"
                         onClick={() => editable && toggleSlot(day, hourNum, "bottom")}
-                      />
+                      >
+                        {/* Layer 1: Blue background for TA availability */}
+                        {isSelected(day, hourNum, "bottom") && (
+                          <div className="absolute inset-0 bg-blue-400"></div>
+                        )}
+                        {/* Layer 2: Red overlay for course schedule (Allocation Mode Only) */}
+                        {mode === 'allocation' && isHighlighted(day, hourNum, "bottom") && (
+                          <div className="absolute inset-0 bg-red-500 opacity-50"></div>
+                        )}
+                        {/* Layer 3: Hover effect (Profile/Editable Mode Only) */}
+                        {editable && (
+                          <div className="absolute inset-0 cursor-pointer hover:bg-blue-100"></div>
+                        )}
+                      </div>
                     </div>
                   </td>
                 )
