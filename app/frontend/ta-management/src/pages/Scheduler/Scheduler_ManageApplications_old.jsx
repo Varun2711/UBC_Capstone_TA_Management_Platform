@@ -28,24 +28,16 @@ import {
 import { AppSidebar } from "@/components/scheduler-sidebar";
 import { Button } from "@/components/ui/button";
 import SearchFilters from "@/components/application-management/SearchFilters";
+import axios from "axios";
 
-// Import logic layer functions
-import {
-  fetchApplicationManagementData,
-  enrichApplicationsWithShortlistStatus,
-  addToShortlist,
-  removeFromShortlist,
-  getStatusConfig,
-  getPositionTypeConfig,
-  formatDate,
-  handleApiError,
-} from "@/logic/application-management";
+const instance = axios.create({
+  baseURL: "http://localhost:8080/api",
+});
 
 export default function ManageApplications() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter states
@@ -60,47 +52,53 @@ export default function ManageApplications() {
   });
 
   useEffect(() => {
+    //respond to filters and search query
+    const loadApplications = async () => {
+      try {
+        const queryParams = {
+          ...filters,
+          search: searchQuery,
+        };
+
+        // Remove empty filters
+        Object.keys(queryParams).forEach((key) => {
+          if (!queryParams[key]) delete queryParams[key];
+        });
+
+        console.log(queryParams);
+
+        const response = await instance.get("/ajp/applications/", {
+          params: {
+            status: "submitted", // Only show submitted applications open positions
+            ...queryParams, // Pass all the filters and search query
+          },
+        });
+
+        console.log(response.data);
+        //setApplications(response.data);
+
+        // Check if applications have been shortlisted
+        const applicationsWithShortlistStatus = await Promise.all(
+          response.data.map(async (app) => {
+            const isShortlisted = await getShortlistStatus(app.application_id); // Fixed function name
+            return { ...app, isShortlisted };
+          })
+        );
+
+        console.log(
+          "Applications with shortlist status:",
+          applicationsWithShortlistStatus
+        );
+        setApplications(applicationsWithShortlistStatus); // Only set once
+      } catch (error) {
+        console.error("Error loading applications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadApplications();
   }, [filters, searchQuery]);
-
-  const loadApplications = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Build filter params
-      const queryParams = {
-        status: "submitted", // Only show submitted applications for management
-        ...filters,
-        search: searchQuery,
-      };
-
-      // Remove empty filters
-      Object.keys(queryParams).forEach((key) => {
-        if (!queryParams[key]) delete queryParams[key];
-      });
-
-      console.log("Loading applications with params:", queryParams);
-
-      // Use logic layer to fetch applications
-      const data = await fetchApplicationManagementData(queryParams);
-
-      // Enrich applications with shortlist status
-      const applicationsWithShortlistStatus =
-        await enrichApplicationsWithShortlistStatus(data.applications);
-
-      console.log(
-        "Applications with shortlist status:",
-        applicationsWithShortlistStatus
-      );
-      setApplications(applicationsWithShortlistStatus);
-    } catch (error) {
-      console.error("Error loading applications:", error);
-      setError(handleApiError(error));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({
@@ -124,30 +122,69 @@ export default function ManageApplications() {
 
   const handleViewApplication = (application) => {
     // Navigate to the single application page with the application ID
+    // navigate(`/manage-applications/view/${application.application_id}`);
+    //  window.open(url, '_blank');
     const url = `/manage-applications/view/${application.application_id}`;
     window.open(url, "_blank");
   };
 
   const getStatusBadge = (status) => {
-    const config = getStatusConfig(status);
-    const Icon = {
-      submitted: Clock,
-      accepted: CheckCircle,
-      rejected: XCircle,
-    }[status];
+    const statusConfig = {
+      submitted: {
+        variant: "default",
+        icon: Clock,
+        className: "bg-yellow-100 text-yellow-800",
+      },
+      accepted: {
+        variant: "default",
+        icon: CheckCircle,
+        className: "bg-green-100 text-green-800",
+      },
+      rejected: {
+        variant: "destructive",
+        icon: XCircle,
+        className: "bg-red-100 text-red-800",
+      },
+      withdrawn: {
+        variant: "outline",
+        icon: null,
+        className: "bg-gray-100 text-gray-600",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig.draft;
+    const Icon = config.icon;
 
     return (
       <span
         className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.className}`}
       >
         {Icon && <Icon className="w-3 h-3 mr-1" />}
-        {config.label}
+        {status.replace("_", " ").toUpperCase()}
       </span>
     );
   };
 
   const getPositionTypeBadge = (positionType) => {
-    const config = getPositionTypeConfig(positionType);
+    const typeConfig = {
+      UTA: {
+        label: "Undergraduate TA",
+        className: "bg-blue-100 text-blue-800",
+      },
+      GTA2: {
+        label: "Graduate TA 2",
+        className: "bg-purple-100 text-purple-800",
+      },
+      GTA1: {
+        label: "Graduate TA 1 (Ph.D)",
+        className: "bg-orange-100 text-orange-800",
+      },
+    };
+
+    const config = typeConfig[positionType] || {
+      label: positionType,
+      className: "bg-gray-100 text-gray-800",
+    };
 
     return (
       <span
@@ -158,14 +195,46 @@ export default function ManageApplications() {
     );
   };
 
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const getShortlistStatus = async (applicationId) => {
+    try {
+      const response = await instance.get(
+        `/ajp/application-shortlists/by-application/${applicationId}/exists/`
+      );
+      console.log("Shortlist status response:", response.data);
+      // If the response has data, it means the application is shortlisted
+      return response.data.shortlisted;
+    } catch (error) {
+      console.error("Error checking shortlist status:", error);
+      return false;
+    }
+  };
+
+  // Add shortlist functionality to the applications table
   const handleQuickShortlist = async (application, event) => {
     event.stopPropagation(); // Prevent navigation when clicking shortlist button
 
     try {
-      await addToShortlist(application.application_id);
-      console.log("Application shortlisted successfully");
+      const payload = {
+        application_id: application.application_id,
+        created_by_id: null, // Null for now as user profile endpoint doesn't return scheduler pk
+      };
 
-      // Update local state
+      const response = await instance.post(
+        `/ajp/application-shortlists/`,
+        payload
+      );
+
+      console.log("Application shortlisted successfully:", response.data);
+
+      // Reload applications to reflect changes
       const updatedApplications = applications.map((app) =>
         app.application_id === application.application_id
           ? { ...app, isShortlisted: true }
@@ -174,7 +243,7 @@ export default function ManageApplications() {
       setApplications(updatedApplications);
     } catch (error) {
       console.error("Error shortlisting application:", error);
-      setError(handleApiError(error));
+      // You might want to show a toast notification here
     }
   };
 
@@ -182,19 +251,24 @@ export default function ManageApplications() {
     event.stopPropagation();
 
     try {
-      await removeFromShortlist(application.application_id);
-      console.log("Application removed from shortlist successfully");
-
-      // Update local state
-      const updatedApplications = applications.map((app) =>
-        app.application_id === application.application_id
-          ? { ...app, isShortlisted: false }
-          : app
+      const shortlistResponse = await instance.get(
+        `/ajp/application-shortlists/by-application/${application.application_id}/`
       );
-      setApplications(updatedApplications);
+
+      if (shortlistResponse.data.length > 0) {
+        const shortlistId = shortlistResponse.data[0].id;
+        await instance.delete(`/ajp/application-shortlists/${shortlistId}/`);
+
+        // Update local state
+        const updatedApplications = applications.map((app) =>
+          app.application_id === application.application_id
+            ? { ...app, isShortlisted: false }
+            : app
+        );
+        setApplications(updatedApplications);
+      }
     } catch (error) {
       console.error("Error removing from shortlist:", error);
-      setError(handleApiError(error));
     }
   };
 
@@ -235,68 +309,27 @@ export default function ManageApplications() {
                   View and manage student applications for TA positions
                 </p>
               </div>
-              <div className="flex items-center gap-4">
-                {/* Refresh Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadApplications}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    "Refresh"
-                  )}
-                </Button>
-              </div>
             </div>
           </header>
 
           {/* Main Content Area */}
           <main className="flex-1 overflow-auto p-6">
             <div className="space-y-6">
-              {/* Error Display */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800">{error}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setError(null)}
-                    className="mt-2"
-                  >
-                    Dismiss
-                  </Button>
-                </div>
-              )}
-
-              {/* Use the updated SearchFilters component */}
+              {/* Use the separated SearchFilters component */}
               <SearchFilters
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 filters={filters}
                 handleFilterChange={handleFilterChange}
                 clearFilters={clearFilters}
-                showAllStatusOptions={false} // Only show relevant statuses for management
               />
-
               {/* Applications Table */}
               <div className="bg-white rounded-lg shadow-sm border">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Applications ({applications.length})
-                    </h3>
-                    {applications.length > 0 && (
-                      <div className="text-sm text-gray-500">
-                        {applications.filter((app) => app.isShortlisted).length}{" "}
-                        shortlisted
-                      </div>
-                    )}
-                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Applications ({applications.length})
+                  </h3>
                 </div>
-
                 <div className="overflow-x-auto">
                   {loading ? (
                     <div className="flex items-center justify-center p-8">
@@ -317,9 +350,6 @@ export default function ManageApplications() {
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Type
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Applied
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Actions
@@ -348,6 +378,9 @@ export default function ManageApplications() {
                                 <div className="text-sm text-gray-500">
                                   {application.student.student_number}
                                 </div>
+                                {/* <div className="text-sm">
+                                  {getStatusBadge(application.status)}
+                                </div> */}
                               </div>
                             </td>
                             <td className="px-6 py-4">
@@ -363,9 +396,6 @@ export default function ManageApplications() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               {getPositionTypeBadge(application.positionType)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {formatDate(application.applied_at)}
-                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 <button
@@ -375,7 +405,7 @@ export default function ManageApplications() {
                                   className="inline-flex items-center text-blue-600 hover:text-blue-900 p-1 rounded"
                                   title="View Application"
                                 >
-                                  <Eye className="h-5 w-5" />
+                                  <Eye className="h-5 w-5 ml-1" />
                                 </button>
                                 {application.isShortlisted ? (
                                   <button
@@ -409,11 +439,8 @@ export default function ManageApplications() {
                   {!loading && applications.length === 0 && (
                     <div className="text-center py-12">
                       <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500 mb-2">
+                      <p className="text-gray-500">
                         No applications found matching your criteria.
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        Try adjusting your filters or search terms.
                       </p>
                     </div>
                   )}

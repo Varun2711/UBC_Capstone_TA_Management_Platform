@@ -2,7 +2,7 @@
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
-import ViewStudentApplication from "@/pages/Coordinator_ViewApplication";
+import ViewStudentApplication from "@/pages/Scheduler/Scheduler_ViewApplication_old";
 import axios, { getMock } from "axios";
 
 // Create a mockNavigate and mock axios

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
+import axios from "axios";
 import {
   Users,
   Clock,
@@ -15,7 +16,6 @@ import {
   BookOpen,
   Star,
   StarOff,
-  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,118 +34,188 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/scheduler-sidebar";
 
-// Import logic layer functions
-import {
-  fetchApplicationById,
-  checkApplicationShortlisted,
-  addToShortlist,
-  removeFromShortlist,
-  getStatusConfig,
-  getPositionTypeConfig,
-  formatDate,
-  formatDateTime,
-  formatDisciplineRankings,
-  handleApiError,
-} from "@/logic/application-management";
+const instance = axios.create({
+  baseURL: "http://localhost:8080/api",
+});
 
 export default function ViewStudentApplication() {
-  const { applicationid } = useParams();
+  const { applicationid } = useParams(); // Fixed: destructure the param name
   const [application, setApplication] = useState(null);
   const [shortlisted, setShortlisted] = useState(false);
   const [studentProfile, setStudentProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [shortlistLoading, setShortlistLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const loadStudentApplication = async () => {
+      try {
+        setLoading(true);
+
+        // Get the application details
+        const applicationResponse = await instance.get(
+          `/ajp/applications/by-id/${applicationid}/`
+        );
+
+        const applicationData = applicationResponse.data;
+        setApplication(applicationData);
+
+        const shortlistResponse = await instance.get(
+          `/ajp/application-shortlists/by-application/${applicationid}/exists/`
+        );
+        setShortlisted(shortlistResponse.data.shortlisted);
+
+        //This doesn't seem to work. idk.
+        // Get the student profile data
+        // const accessToken = sessionStorage.getItem("accessToken");
+        // console.log("Access Token:", accessToken);
+        // if (accessToken && applicationData.student?.id) {
+        //   try {
+        //     const profileResponse = await instance.get(
+        //       `/profile/student/${applicationData.student.id}/`,
+        //       {
+        //         headers: {
+        //           Authorization: `Bearer ${accessToken}`,
+        //         },
+        //       }
+        //     );
+        //     setStudentProfile(profileResponse.data);
+      } catch (error) {
+        console.error("Error loading application:", error);
+        setError("Failed to load application details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (applicationid) {
       loadStudentApplication();
     }
   }, [applicationid]);
 
-  const loadStudentApplication = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Fetch application details using logic layer
-      const applicationData = await fetchApplicationById(applicationid);
-      setApplication(applicationData);
-
-      // Check shortlist status
-      const isShortlisted = await checkApplicationShortlisted(applicationid);
-      setShortlisted(isShortlisted);
-
-      // Note: Student profile fetching is commented out in original code
-      // This would require additional API endpoint implementation
-      // const profileData = await fetchStudentProfile(applicationData.student.id);
-      // setStudentProfile(profileData);
-    } catch (error) {
-      console.error("Error loading application:", error);
-      setError(handleApiError(error));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getStatusBadge = (status) => {
-    const config = getStatusConfig(status);
-    const Icon = {
-      submitted: Clock,
-      accepted: CheckCircle,
-      rejected: XCircle,
-    }[status];
+    const statusConfig = {
+      submitted: {
+        icon: Clock,
+        className: "bg-yellow-100 text-yellow-800",
+      },
+      accepted: {
+        icon: CheckCircle,
+        className: "bg-green-100 text-green-800",
+      },
+      rejected: {
+        icon: XCircle,
+        className: "bg-red-100 text-red-800",
+      },
+      withdrawn: {
+        icon: null,
+        className: "bg-gray-100 text-gray-600",
+      },
+    };
+
+    const config = statusConfig[status] || statusConfig.submitted;
+    const Icon = config.icon;
 
     return (
       <span
         className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.className}`}
       >
         {Icon && <Icon className="w-4 h-4 mr-1" />}
-        {config.label}
+        {status.replace("_", " ").toUpperCase()}
       </span>
     );
   };
 
   const getPositionType = (positionType) => {
-    const config = getPositionTypeConfig(positionType);
+    const typeConfig = {
+      UTA: {
+        label: "Undergraduate TA",
+      },
+      GTA2: {
+        label: "Graduate TA 2",
+      },
+      GTA1: {
+        label: "Graduate TA 1 (Ph.D)",
+      },
+    };
+
+    const config = typeConfig[positionType] || {
+      label: positionType,
+    };
+
     return config.label;
   };
 
   const getPositionTypeBadge = (positionType) => {
-    const config = getPositionTypeConfig(positionType);
+    const typeConfig = {
+      UTA: {
+        label: "Undergraduate TA",
+        className: "bg-blue-100 text-blue-800",
+      },
+      GTA2: {
+        label: "Graduate TA 2",
+        className: "bg-purple-100 text-purple-800",
+      },
+      GTA1: {
+        label: "Graduate TA 1 (Ph.D)",
+        className: "bg-orange-100 text-orange-800",
+      },
+    };
+
+    const config = typeConfig[positionType] || {
+      label: positionType,
+      className: "bg-gray-100 text-gray-800",
+    };
+
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   const handleShortList = async () => {
-    setShortlistLoading(true);
-    setError(null);
+    const payload = {
+      application_id: applicationid,
+      created_by_id: null, // Backend will handle this automatically
+    };
 
     try {
-      await addToShortlist(applicationid);
-      console.log("Application shortlisted successfully");
-      setShortlisted(true);
+      const response = await instance.post(
+        `/ajp/application-shortlists/`,
+        payload
+      );
+      console.log("Application shortlisted successfully:", response.data);
+      setShortlisted(true); // Update local state immediately
     } catch (error) {
       console.error("Error shortlisting application:", error);
-      setError(handleApiError(error));
-    } finally {
-      setShortlistLoading(false);
+      setError("Failed to shortlist application");
     }
   };
 
   const handleRemoveShortlist = async () => {
-    setShortlistLoading(true);
-    setError(null);
-
     try {
-      await removeFromShortlist(applicationid);
-      console.log("Application removed from shortlist successfully");
-      setShortlisted(false);
+      // Get the shortlist data to find the ID
+      const shortlistResponse = await instance.get(
+        `/ajp/application-shortlists/by-application/${applicationid}/`
+      );
+
+      if (shortlistResponse.data.length > 0) {
+        const shortlistId = shortlistResponse.data[0].id;
+
+        // Delete the shortlist entry
+        await instance.delete(`/ajp/application-shortlists/${shortlistId}/`);
+
+        console.log("Application removed from shortlist successfully");
+        setShortlisted(false); // Update local state immediately
+      }
     } catch (error) {
       console.error("Error removing from shortlist:", error);
-      setError(handleApiError(error));
-    } finally {
-      setShortlistLoading(false);
+      setError("Failed to remove from shortlist");
     }
   };
 
@@ -171,13 +241,9 @@ export default function ViewStudentApplication() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">
-                {error || "Failed to load application details"}
+              <p className="text-gray-500">
+                {`An error has occured. ${error}. Contact the administrator.`}
               </p>
-              <Button onClick={loadStudentApplication} variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Try Again
-              </Button>
             </div>
           </div>
         </SidebarInset>
@@ -222,23 +288,13 @@ export default function ViewStudentApplication() {
                   </h1>
                   <p className="text-sm text-gray-600">
                     Application #{application.application_id} • Applied{" "}
-                    {formatDateTime(application.applied_at)}
+                    {formatDate(application.applied_at)}
                   </p>
                 </div>
               </div>
 
-              {/* Shortlist button */}
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadStudentApplication}
-                  disabled={loading}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
-
+              {/* Shortlist button moved to the right side */}
+              <div>
                 {shortlisted ? (
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -249,48 +305,21 @@ export default function ViewStudentApplication() {
                       variant="outline"
                       size="sm"
                       onClick={handleRemoveShortlist}
-                      disabled={shortlistLoading}
                       className="text-red-600 hover:text-red-700"
                     >
-                      {shortlistLoading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <StarOff className="h-4 w-4 mr-2" />
-                      )}
+                      <StarOff className="h-4 w-4 mr-2" />
                       Remove from Shortlist
                     </Button>
                   </div>
                 ) : (
-                  <Button onClick={handleShortList} disabled={shortlistLoading}>
-                    {shortlistLoading ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Star className="h-4 w-4 mr-2" />
-                    )}
+                  <Button onClick={handleShortList}>
+                    <Star className="h-4 w-4 mr-2" />
                     Shortlist Application
                   </Button>
                 )}
               </div>
             </div>
           </header>
-
-          {/* Error Display */}
-          {error && (
-            <div className="mx-6 mt-6">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-800">{error}</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setError(null)}
-                  className="mt-2"
-                >
-                  Dismiss
-                </Button>
-              </div>
-            </div>
-          )}
-
           {/* Main Content Area */}
           <main className="flex-1 overflow-auto p-6">
             <div className="max-w-6xl mx-auto space-y-6">
@@ -317,14 +346,6 @@ export default function ViewStudentApplication() {
                       <p className="text-gray-600">
                         {application.student.student_number}
                       </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">
-                        Application Status
-                      </h4>
-                      <div className="mt-1">
-                        {getStatusBadge(application.status)}
-                      </div>
                     </div>
                     {studentProfile && (
                       <>
@@ -365,7 +386,7 @@ export default function ViewStudentApplication() {
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-gray-900 text-lg">
+                      <h4 className="font-medium text-gray-900">
                         {application.posting.title}
                       </h4>
                       <p className="text-gray-600">
@@ -393,9 +414,9 @@ export default function ViewStudentApplication() {
                       <h4 className="font-medium text-gray-900 mb-2">
                         Selected Position Type
                       </h4>
-                      <div>
-                        {getPositionTypeBadge(application.positionType)}
-                      </div>
+                      <p className="text-gray-600">
+                        {getPositionType(application.positionType)}
+                      </p>
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900 mb-2">
@@ -406,23 +427,13 @@ export default function ViewStudentApplication() {
                           "Not specified"}
                       </p>
                     </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">
-                        Preferred Workload
-                      </h4>
-                      <p className="text-gray-600">
-                        {application.workload} hours
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="mt-6">
-                    <h4 className="font-medium text-gray-900 mb-3">
-                      Discipline Rankings
-                    </h4>
-                    {application.disciplineRankings ? (
-                      <div className="flex flex-wrap gap-4">
-                        {application.disciplineRankings.rank1 && (
+                    <div className="col-span-full">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Ranked Discplines
+                      </h4>
+                      {application.disciplineRankings ? (
+                        <div className="flex gap-4">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">
                               1st Choice:
@@ -431,8 +442,6 @@ export default function ViewStudentApplication() {
                               {application.disciplineRankings.rank1}
                             </Badge>
                           </div>
-                        )}
-                        {application.disciplineRankings.rank2 && (
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">
                               2nd Choice:
@@ -441,8 +450,6 @@ export default function ViewStudentApplication() {
                               {application.disciplineRankings.rank2}
                             </Badge>
                           </div>
-                        )}
-                        {application.disciplineRankings.rank3 && (
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">
                               3rd Choice:
@@ -451,24 +458,14 @@ export default function ViewStudentApplication() {
                               {application.disciplineRankings.rank3}
                             </Badge>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-gray-600">Not specified</p>
-                    )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-600">Not specified</p>
+                      )}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                  <br></br>
 
-              {/* Eligibility Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    Eligibility Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h4 className="font-medium text-gray-900">
@@ -481,7 +478,6 @@ export default function ViewStudentApplication() {
                           "Permanent Resident"}
                         {application.citizenshipStatus === "international" &&
                           "International Student"}
-                        {!application.citizenshipStatus && "Not specified"}
                       </p>
                     </div>
                     <div>
@@ -503,7 +499,7 @@ export default function ViewStudentApplication() {
                       <p className="text-gray-600">
                         {application.fullTimeEnrollment === "yes"
                           ? "Full-Time Enrollment"
-                          : "Not Full-time enrollment"}
+                          : "Not Full-time enrollemnt"}
                       </p>
                     </div>
                     <div>
@@ -514,10 +510,16 @@ export default function ViewStudentApplication() {
                       </h4>
                       <p className="text-gray-600">
                         {application.hasOtherPositions === "yes"
-                          ? `Yes - ${
-                              application.otherPositionHours || 0
-                            } hours/week`
+                          ? `Yes - ${application.otherPositionHours} hours/week`
                           : "No"}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Preferred Workload
+                      </h4>
+                      <p className="text-gray-600">
+                        {application.workload} hours
                       </p>
                     </div>
                   </div>
@@ -667,82 +669,6 @@ export default function ViewStudentApplication() {
                   </Card>
                 </div>
               )}
-
-              {/* Application Responses (if any) */}
-              {application.responses && application.responses.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Additional Responses
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {application.responses.map((response, index) => (
-                        <div
-                          key={index}
-                          className="border-l-4 border-blue-200 pl-4"
-                        >
-                          <h4 className="font-medium text-gray-900 mb-2">
-                            {response.question.question_text}
-                          </h4>
-                          <div className="text-gray-600">
-                            {typeof response.response_data === "object"
-                              ? JSON.stringify(response.response_data, null, 2)
-                              : response.response_data}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Application Timeline */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Application Timeline
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <div>
-                        <p className="font-medium">Application Submitted</p>
-                        <p className="text-sm text-gray-500">
-                          {formatDateTime(application.applied_at)}
-                        </p>
-                      </div>
-                    </div>
-                    {application.updated_at !== application.applied_at && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        <div>
-                          <p className="font-medium">Last Updated</p>
-                          <p className="text-sm text-gray-500">
-                            {formatDateTime(application.updated_at)}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {shortlisted && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div>
-                          <p className="font-medium">Added to Shortlist</p>
-                          <p className="text-sm text-gray-500">
-                            Current status
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </main>
         </div>
