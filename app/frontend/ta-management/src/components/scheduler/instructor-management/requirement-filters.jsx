@@ -59,7 +59,7 @@ export function RequirementsFilters({
         </Select>
 
         <Select value={selectedTerm} onValueChange={onTermChange}>
-          <SelectTrigger className="w-full sm:w-40">
+          <SelectTrigger className="w-full sm:w-56"> {/* Increased from w-48 to w-56 for "Winter Both Terms" */}
             <SelectValue placeholder="Term" />
           </SelectTrigger>
           <SelectContent>

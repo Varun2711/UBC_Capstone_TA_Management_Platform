@@ -40,7 +40,15 @@ const parseTermInfo = (termInfo) => {
   } else if (firstLetter === 'S') {
       session = 'Summer';
   }
-  const fullTerm = session ? `${session} ${termPart}` : termPart;
+  
+  // Keep the full "Both Terms" text
+  let fullTerm;
+  if (termPart === "Both Terms") {
+    fullTerm = session ? `${session} Both Terms` : "Both Terms";
+  } else {
+    fullTerm = session ? `${session} ${termPart}` : termPart;
+  }
+  
   return { year, term: fullTerm };
 };
 
