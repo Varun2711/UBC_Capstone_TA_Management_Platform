@@ -50,8 +50,7 @@ class TAScheduler(models.Model):
     email = models.EmailField(max_length=100)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
     password = models.CharField(max_length=255)
-    is_active = models.BooleanField(default=True)
-
+  
     class Meta:
         managed = False
         db_table = 'myapp_tascheduler'

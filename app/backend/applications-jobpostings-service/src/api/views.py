@@ -242,8 +242,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         
 
 
-          def update(self, request, *args, **kwargs):
-        """Disallow updates to applications"""
+    def update(self, request, *args, **kwargs):   
+            
         return Response(
             {"detail": "Updates to applications are not currently in scope. Try a Patch"},
             status=status.HTTP_405_METHOD_NOT_ALLOWED

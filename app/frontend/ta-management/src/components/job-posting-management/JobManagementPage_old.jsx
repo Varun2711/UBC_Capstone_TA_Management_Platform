@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit, Copy, Trash2, Eye } from "lucide-react";
+import {
+  Plus,
+  Edit,
+  Copy,
+  Trash2,
+  Eye,
+  Settings,
+  Briefcase,
+  FileText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -19,32 +29,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// Import components
-import FormBuilder from "@/components/job-posting-management/FormBuilder";
+import FormBuilder from "@/components/job-posting-management/FormBuilder_old";
 import JobPostingForm from "@/components/job-posting-management/JobPostingForm";
-import FormTemplatePreview from "@/components/job-posting-management/FormTemplatePreview";
+import FormTemplatePreview from "@/components/job-posting-management/FormTemplatePreview_old";
+import axios from "axios";
 
-// Import the logic layer
-import {
-  fetchAllInitialData,
-  deleteJobPosting,
-  assignTemplateToJobPosting,
-  duplicateTemplate,
-  deleteTemplate,
-  fetchJobPostings,
-  fetchTemplates,
-  handleApiError,
-} from "@/logic/job-management";
+// API instance
+
+const instance = axios.create({
+  baseURL: "http://localhost:8080/api",
+});
+
+//mock departments and terms while awaiting the course API
+const mockDepartments = [{ id: "1", name: "CMPS" }];
+const mockTerms = [
+  { id: "1", code: "W2025T1", description: "Winter 2025 Term 1" },
+  { id: "2", code: "W2025T2", description: "Winter 2025 Term 2" },
+  { id: "3", code: "W2025BOTH", description: "Winter 2025 Both Terms" },
+];
 
 const JobManagementPage = () => {
+  // Toggle state
+  const [currentView, setCurrentView] = useState("jobs"); // "jobs" or "templates"
+
   // Shared state
   const [jobPostings, setJobPostings] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [terms, setTerms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Job posting state
   const [selectedJobPosting, setSelectedJobPosting] = useState(null);
@@ -63,44 +76,62 @@ const JobManagementPage = () => {
     fetchInitialData();
   }, []);
 
-  // Fetch initial data using the logic layer
+  //on mount, fetch initial data including job postings, templates, departments, and terms
   const fetchInitialData = async () => {
     setLoading(true);
-    setError(null);
-
     try {
-      const data = await fetchAllInitialData();
-      setJobPostings(data.jobPostings);
-      setTemplates(data.templates);
-      setDepartments(data.departments);
-      setTerms(data.terms);
+      await Promise.all([
+        fetchJobPostings(),
+        fetchTemplates(),
+        fetchDepartments(),
+        fetchTerms(),
+      ]);
     } catch (error) {
       console.error("Error fetching initial data:", error);
-      setError(handleApiError(error));
     } finally {
       setLoading(false);
     }
   };
 
-  // Refresh job postings
-  const refreshJobPostings = async () => {
+  const fetchJobPostings = async () => {
     try {
-      const data = await fetchJobPostings();
-      setJobPostings(data);
+      const response = await instance.get("/ajp/jobpostings/");
+      setJobPostings(response.data);
     } catch (error) {
-      console.error("Error refreshing job postings:", error);
-      setError(handleApiError(error));
+      console.error("Error fetching job postings:", error);
     }
   };
 
-  // Refresh templates
-  const refreshTemplates = async () => {
+  const fetchTemplates = async () => {
     try {
-      const data = await fetchTemplates();
-      setTemplates(data);
+      const response = await instance.get("/ajp/form-templates/");
+      setTemplates(response.data);
+      console.log("Templates fetched:", response.data);
     } catch (error) {
-      console.error("Error refreshing templates:", error);
-      setError(handleApiError(error));
+      console.error("Error fetching templates:", error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const data = await instance.get("/courses/departments/");
+      setDepartments(data);
+    } catch (error) {
+      console.error("Error fetching departments from api:", error);
+      // Fallback to mock data
+      setDepartments(mockDepartments);
+    }
+  };
+
+  //waiting on course api
+  const fetchTerms = async () => {
+    try {
+      const data = await instance.get("/course/terms/");
+      setTerms(response.data);
+    } catch (error) {
+      console.error("Error fetching terms:", error);
+      // Fallback to mock data
+      setTerms(mockTerms);
     }
   };
 
@@ -121,21 +152,38 @@ const JobManagementPage = () => {
     }
 
     try {
-      await deleteJobPosting(postingId);
-      await refreshJobPostings();
+      console.log("Deleting job posting with ID:", postingId);
+      const response = await instance.delete(`/ajp/jobpostings/${postingId}/`);
+      console.log("Job posting deleted successfully:", response.data);
+      // Refresh job postings after deletion
+      fetchJobPostings();
     } catch (error) {
       console.error("Error deleting job posting:", error);
-      setError(handleApiError(error));
     }
   };
 
   const handleAssignTemplate = async (postingId, templateId) => {
     try {
-      await assignTemplateToJobPosting(postingId, templateId);
-      await refreshJobPostings();
+      console.log(
+        "Assigning template ID:",
+        templateId,
+        "to job posting ID:",
+        postingId
+      );
+
+      const payload = {
+        form_template_id: templateId === null ? null : templateId,
+      };
+
+      let response = await instance.patch(
+        `/ajp/jobpostings/${postingId}/`,
+        payload
+      );
+
+      console.log("Template assigned successfully:", response.data);
+      fetchJobPostings();
     } catch (error) {
       console.error("Error assigning template:", error);
-      setError(handleApiError(error));
     }
   };
 
@@ -152,11 +200,13 @@ const JobManagementPage = () => {
 
   const handleDuplicateTemplate = async (template) => {
     try {
-      await duplicateTemplate(template.template_id);
-      await refreshTemplates();
+      const response = await instance.post(
+        `/ajp/form-templates/${template.template_id}/duplicate/`
+      );
+      console.log("Template duplicated successfully:", response.data);
+      fetchTemplates();
     } catch (error) {
       console.error("Error duplicating template:", error);
-      setError(handleApiError(error));
     }
   };
 
@@ -164,13 +214,14 @@ const JobManagementPage = () => {
     if (!confirm("Are you sure you want to delete this template?")) {
       return;
     }
-
     try {
-      await deleteTemplate(templateId);
-      await refreshTemplates();
+      let response = await instance.delete(
+        `/ajp/form-templates/${templateId}/`
+      );
+      console.log("Template deleted successfully", response.data);
+      fetchTemplates();
     } catch (error) {
       console.error("Error deleting template:", error);
-      setError(handleApiError(error));
     }
   };
 
@@ -212,17 +263,6 @@ const JobManagementPage = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-lg text-red-600 mb-4">Error: {error}</div>
-          <Button onClick={fetchInitialData}>Try Again</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -234,21 +274,6 @@ const JobManagementPage = () => {
           </p>
         </div>
       </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setError(null)}
-            className="mt-2"
-          >
-            Dismiss
-          </Button>
-        </div>
-      )}
 
       {/* Main Content with Tabs */}
       <div className="space-y-6">
@@ -286,7 +311,6 @@ const JobManagementPage = () => {
                 Create Job Posting
               </Button>
             </div>
-
             {/* Job Postings Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredJobPostings.map((posting) => (
@@ -380,8 +404,8 @@ const JobManagementPage = () => {
                 </Card>
               ))}
             </div>
+            {/*if no job postings found, show message and button to create first*/}
 
-            {/* Empty state for job postings */}
             {filteredJobPostings.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">
@@ -447,6 +471,10 @@ const JobManagementPage = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
+                      {/* <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>{template.sections?.length || 0} sections</span>
+                      </div> */}
+
                       <div className="text-xs text-muted-foreground">
                         Created{" "}
                         {new Date(template.created_at).toLocaleDateString()}
@@ -463,13 +491,14 @@ const JobManagementPage = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+
                           {/* Tooltip */}
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
                             Preview Template
+                            {/* Arrow */}
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                           </div>
                         </div>
-
                         {template.is_editable && (
                           <div className="relative group">
                             <Button
@@ -482,11 +511,11 @@ const JobManagementPage = () => {
                             {/* Tooltip */}
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
                               Edit Template
+                              {/* Arrow */}
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                             </div>
                           </div>
                         )}
-
                         <div className="relative group">
                           <Button
                             variant="outline"
@@ -498,10 +527,10 @@ const JobManagementPage = () => {
                           {/* Tooltip */}
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
                             Copy Template
+                            {/* Arrow */}
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                           </div>
                         </div>
-
                         {template.is_editable && (
                           <div className="relative group">
                             <Button
@@ -517,6 +546,7 @@ const JobManagementPage = () => {
                             {/* Tooltip */}
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
                               Delete Template
+                              {/* Arrow */}
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                             </div>
                           </div>
@@ -528,7 +558,6 @@ const JobManagementPage = () => {
               ))}
             </div>
 
-            {/* Empty state for templates */}
             {filteredTemplates.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">No templates found</p>
@@ -557,11 +586,13 @@ const JobManagementPage = () => {
             departments={departments}
             terms={terms}
             templates={templates}
-            onSave={async (savedJobPosting) => {
+            //when job posting is saved, fetch job postings again and close dialog
+            onSave={(savedJobPosting) => {
               setIsJobDialogOpen(false);
-              await refreshJobPostings();
+              fetchJobPostings();
               setSelectedJobPosting(null);
             }}
+            //when job posting is cancelled, close dialog and reset selected job posting
             onCancel={() => {
               setIsJobDialogOpen(false);
               setSelectedJobPosting(null);
@@ -580,9 +611,9 @@ const JobManagementPage = () => {
           </DialogHeader>
           <FormBuilder
             templateId={selectedTemplate?.template_id}
-            onSave={async (savedTemplate) => {
+            onSave={(savedTemplate) => {
               setIsBuilderOpen(false);
-              await refreshTemplates();
+              fetchTemplates();
               setSelectedTemplate(null);
             }}
             onPreview={(template) => {
@@ -602,6 +633,20 @@ const JobManagementPage = () => {
           </DialogHeader>
           {selectedTemplate && (
             <div className="space-y-4">
+              {/* <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  This is a preview of the form template. Please note that some
+                  features like file uploads and dynamic fields may not be fully
+                  functional in this preview.
+                </p>
+              </div> */}
+              {/* <DynamicFormRenderer
+                template={selectedTemplate}
+                responses={{}}
+                setResponses={() => {}}
+                errors={{}}
+              /> */}
+
               <FormTemplatePreview template={selectedTemplate} />
             </div>
           )}

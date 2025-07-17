@@ -12,17 +12,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import QuestionDialog from "@/components/job-posting-management/QuestionDialog";
+import axios from "axios";
 
-// Import logic layer functions
-import {
-  fetchTemplateById,
-  createTemplate,
-  updateTemplate,
-  validateTemplateData,
-  handleApiError,
-} from "@/logic/job-management";
+const instance = axios.create({
+  baseURL: "http://localhost:8080/api",
+});
 
 const QUESTION_TYPES = [
   { value: "radio", label: "Radio Button", icon: "◉" },
@@ -43,9 +47,6 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
   });
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [saving, setSaving] = useState(false);
 
   // Load existing template if editing
   useEffect(() => {
@@ -55,32 +56,24 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
   }, [templateId]);
 
   const fetchTemplate = async () => {
-    setLoading(true);
-    setError(null);
-
     try {
-      const data = await fetchTemplateById(templateId);
-      setTemplate(data);
+      const response = await instance.get(`/ajp/form-templates/${templateId}/`);
+      setTemplate(response.data);
     } catch (error) {
       console.error("Error fetching template:", error);
-      setError(handleApiError(error));
-    } finally {
-      setLoading(false);
     }
   };
 
   const addSection = () => {
     const newSection = {
-      section_id: Date.now(), // Temporary ID for new sections
+      section_id: Date.now(), // Temporary ID. The db will handle the actual ID
       name: "New Section",
       section_type: "custom",
       order: template.sections.length + 1,
       is_required: true,
       description: "",
       questions: [],
-      is_editable: true,
     };
-
     setTemplate((prev) => ({
       ...prev,
       sections: [...prev.sections, newSection],
@@ -99,10 +92,6 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
   };
 
   const deleteSection = (sectionId) => {
-    if (!confirm("Are you sure you want to delete this section?")) {
-      return;
-    }
-
     setTemplate((prev) => ({
       ...prev,
       sections: prev.sections.filter(
@@ -183,9 +172,6 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
   };
 
   const openQuestionDialog = (sectionId, question = null) => {
-    const section = template.sections.find((s) => s.section_id === sectionId);
-    const nextOrder = section.questions.length + 1;
-
     setEditingQuestion({
       sectionId,
       question: question || {
@@ -193,12 +179,11 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
         question_text: "",
         question_type: "text",
         field_name: "",
-        order: nextOrder,
+        order: 1,
         is_required: false,
         help_text: "",
         options: [],
         validation_rules: {},
-        is_editable: true,
       },
     });
     setIsQuestionDialogOpen(true);
@@ -243,10 +228,6 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
   };
 
   const deleteQuestion = (sectionId, questionId) => {
-    if (!confirm("Are you sure you want to delete this question?")) {
-      return;
-    }
-
     setTemplate((prev) => ({
       ...prev,
       sections: prev.sections.map((section) =>
@@ -263,92 +244,36 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
   };
 
   const saveTemplate = async () => {
-    // Validate template data
-    const validation = validateTemplateData(template);
-    if (!validation.isValid) {
-      setError(
-        `Validation errors: ${Object.values(validation.errors).join(", ")}`
-      );
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
     console.log("Saving template:", template);
-
     try {
       let response;
       if (templateId) {
-        response = await updateTemplate(templateId, template);
+        response = await instance.put(
+          `/ajp/form-templates/${templateId}/`,
+          template
+        );
       } else {
-        response = await createTemplate(template);
+        response = await instance.post("/ajp/form-templates/", template);
       }
-
-      console.log("Template saved successfully:", response);
-      if (response) {
-        onSave?.(response);
+      console.log("Template saved successfully:", response.data);
+      if (response.data) {
+        onSave?.(response.data);
       }
     } catch (error) {
       console.error("Error saving template:", error);
-      setError(handleApiError(error));
-    } finally {
-      setSaving(false);
     }
   };
-
-  const handlePreview = () => {
-    // Validate template before preview
-    const validation = validateTemplateData(template);
-    if (!validation.isValid) {
-      setError(
-        `Please fix these issues before preview: ${Object.values(
-          validation.errors
-        ).join(", ")}`
-      );
-      return;
-    }
-
-    onPreview?.(template);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading template...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setError(null)}
-            className="mt-2"
-          >
-            Dismiss
-          </Button>
-        </div>
-      )}
-
       {/* Template Header */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            {templateId ? "Edit" : "Create"} Application Form Template
-          </CardTitle>
+          <CardTitle>Application Form Template</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="template-name">
-              Template Name <span className="text-red-500">*</span>
-            </Label>
+            <Label htmlFor="template-name">Template Name</Label>
             <Input
               id="template-name"
               value={template.name}
@@ -356,14 +281,13 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
                 setTemplate((prev) => ({ ...prev, name: e.target.value }))
               }
               placeholder="Enter template name"
-              className="mt-1"
             />
           </div>
           <div>
             <Label htmlFor="template-description">Description</Label>
             <Textarea
               id="template-description"
-              value={template.description || ""}
+              value={template.description}
               onChange={(e) =>
                 setTemplate((prev) => ({
                   ...prev,
@@ -371,7 +295,6 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
                 }))
               }
               placeholder="Describe this form template"
-              className="mt-1"
             />
           </div>
         </CardContent>
@@ -389,7 +312,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
                 {/* Section Name */}
                 <div className="flex-1">
                   <Label htmlFor={`section-name-${section.section_id}`}>
-                    Section Name <span className="text-red-500">*</span>
+                    Section Name
                   </Label>
                   <Input
                     id={`section-name-${section.section_id}`}
@@ -399,7 +322,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
                         name: e.target.value,
                       })
                     }
-                    className="font-semibold mt-1"
+                    className="font-semibold"
                     placeholder="Enter section name"
                   />
                 </div>
@@ -432,42 +355,21 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
                     </div>
                   </div>
 
-                  {section.is_editable !== false && (
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground text-center">
-                        Delete
-                      </Label>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteSection(section.section_id)}
-                        className="text-red-600 hover:text-red-700"
-                        title="Delete section"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground text-center">
+                      Delete
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteSection(section.section_id)}
+                      className="text-red-600 hover:text-red-700"
+                      title="Delete section"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Section Description */}
-              <div className="mt-3">
-                <Label htmlFor={`section-description-${section.section_id}`}>
-                  Section Description (Optional)
-                </Label>
-                <Textarea
-                  id={`section-description-${section.section_id}`}
-                  value={section.description || ""}
-                  onChange={(e) =>
-                    updateSection(section.section_id, {
-                      description: e.target.value,
-                    })
-                  }
-                  placeholder="Describe what this section covers"
-                  rows={2}
-                  className="mt-1"
-                />
               </div>
             </CardHeader>
 
@@ -583,23 +485,20 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-4">
-        <Button variant="outline" onClick={handlePreview}>
+        <Button variant="outline" onClick={() => onPreview?.(template)}>
           <Eye className="h-4 w-4 mr-2" />
           Preview
         </Button>
-        <Button onClick={saveTemplate} disabled={saving}>
+        <Button onClick={saveTemplate}>
           <Save className="h-4 w-4 mr-2" />
-          {saving ? "Saving..." : "Save Template"}
+          Save Template
         </Button>
       </div>
 
-      {/* Question Dialog */}
+      {/* Question Dialog - Now using the separate component */}
       <QuestionDialog
         isOpen={isQuestionDialogOpen}
-        onClose={() => {
-          setIsQuestionDialogOpen(false);
-          setEditingQuestion(null);
-        }}
+        onClose={() => setIsQuestionDialogOpen(false)}
         question={editingQuestion?.question}
         onSave={saveQuestion}
       />
