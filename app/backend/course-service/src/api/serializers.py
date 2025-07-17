@@ -234,20 +234,10 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
         queryset=Course.objects.all(),
         write_only=True
     )
-    # Accept both course_id and course for input
-    course = serializers.PrimaryKeyRelatedField(
-        queryset=Course.objects.all(),
-        write_only=True
-    )
     
     term_info = serializers.StringRelatedField(source='academic_term', read_only=True)
     term_id = serializers.PrimaryKeyRelatedField(
         source='academic_term',
-        queryset=Term.objects.all(),
-        write_only=True
-    )
-    # Accept both term_id and academic_term for input
-    academic_term = serializers.PrimaryKeyRelatedField(
         queryset=Term.objects.all(),
         write_only=True
     )
@@ -260,13 +250,6 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
         allow_null=True,
         write_only=True
     )
-    # Accept both instructor_id and instructor for input
-    instructor = serializers.PrimaryKeyRelatedField(
-        queryset=Instructor.objects.all(),
-        required=False,
-        allow_null=True,
-        write_only=True
-    )
     
     class Meta:
         model = CourseOffering
@@ -274,14 +257,11 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
             'course_offering_id',
             'course_info',
             'course_id',
-            'course',  # Add for test compatibility
             'section_number',
             'term_info',
             'term_id',
-            'academic_term',  # Add for test compatibility
             'instructor_info',
-            'instructor_id',
-            'instructor'  # Add for test compatibility
+            'instructor_id'
         ]
         read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info']
     
@@ -292,58 +272,6 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError("Section number cannot be empty.")
         return value.strip().upper()
-    
-    def validate(self, data):
-        """
-        Custom validation to handle both field name formats.
-        """
-        # Handle course field - accept either course_id or course
-        course_id = data.get('course_id')
-        course = data.get('course')
-        if course_id and course:
-            raise serializers.ValidationError("Provide either 'course_id' or 'course', not both.")
-        elif course:
-            # If course is provided, map it to course_id
-            data['course'] = course
-            data.pop('course_id', None)
-        elif course_id:
-            # If course_id is provided, map it to course
-            data['course'] = course_id
-            data.pop('course_id', None)
-        else:
-            raise serializers.ValidationError("Either 'course_id' or 'course' is required.")
-        
-        # Handle academic_term field - accept either term_id or academic_term
-        term_id = data.get('term_id')
-        academic_term = data.get('academic_term')
-        if term_id and academic_term:
-            raise serializers.ValidationError("Provide either 'term_id' or 'academic_term', not both.")
-        elif term_id:
-            # If term_id is provided, map it to academic_term
-            data['academic_term'] = term_id
-            data.pop('term_id', None)
-        elif academic_term:
-            # If academic_term is provided, ensure it's properly set
-            data['academic_term'] = academic_term
-            data.pop('term_id', None)
-        else:
-            raise serializers.ValidationError("Either 'term_id' or 'academic_term' is required.")
-        
-        # Handle instructor field - accept either instructor_id or instructor (both optional)
-        instructor_id = data.get('instructor_id')
-        instructor = data.get('instructor')
-        if instructor_id and instructor:
-            raise serializers.ValidationError("Provide either 'instructor_id' or 'instructor', not both.")
-        elif instructor_id:
-            # If instructor_id is provided, map it to instructor
-            data['instructor'] = instructor_id
-            data.pop('instructor_id', None)
-        elif instructor:
-            # If instructor is provided, ensure it's properly set
-            data['instructor'] = instructor
-            data.pop('instructor_id', None)
-        
-        return data
 
 
 # SharedSession Serializer
