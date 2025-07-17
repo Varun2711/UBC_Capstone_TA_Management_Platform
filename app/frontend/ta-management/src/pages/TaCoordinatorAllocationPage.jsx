@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppSidebar } from "../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import App from "@/App"
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse } from "@/logic/coordinator-allocations-page";
 
 
 // Mock data for TAs
@@ -125,7 +126,7 @@ let availableTAs = [
 ]
 
 // Mock data for courses
-const courses = [
+const mockCourses = [
   {
     id: 1,
     code: "COSC 101",
@@ -291,6 +292,7 @@ export default function TAAllocationPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [searchTermForCourse, setSearchTermForCourse] = useState("")
   const [selectedTAId, setSelectedTAId] = useState(null)
+  const [courses, setCourses] = useState([]);
   const [selectedCourses, setSelectedCourses] = useState([])
   const [filterStatus, setFilterStatus] = useState("all")
   const [courseFilterStatus, setCourseFilterStatus] = useState("all")
@@ -305,6 +307,8 @@ export default function TAAllocationPage() {
     discipline: "",
     term_code: "",
   });
+  const [courseOfferings, setCourseOfferings] = useState({});
+  const [sharedSessions, setSharedSessions] = useState({});
 
   const selectedTA = taList.find((ta) => ta.id === selectedTAId)
 
@@ -385,7 +389,7 @@ export default function TAAllocationPage() {
 
     // Update TA hours and status
     const ta = taList.find((ta) => ta.studentId === assignmentToDelete.taStudentId)
-    const course = courses.find((c) => c.code === assignmentToDelete.courseCode)
+    const course = mockCourses.find((c) => c.code === assignmentToDelete.courseCode)
     const section = course?.sections.find((s) => s.section === assignmentToDelete.section)
 
     if (ta && section) {
@@ -591,9 +595,9 @@ export default function TAAllocationPage() {
 
   const totalTAs = taList.length
   const availableTACount = taList.filter((ta) => ta.status === "Available").length
-  const totalCourses = courses.length
+  const totalCourses = mockCourses.length
 
-  const filteredCourses = courses.filter((course) => {
+  const filteredCourses = mockCourses.filter((course) => {
     
     const matchesSearch =
       course.code.toLowerCase().includes(searchTermForCourse.toLowerCase()) ||
@@ -647,6 +651,51 @@ export default function TAAllocationPage() {
     { value: "PHYS", label: "PHYS" },
     { value: "STAT", label: "STAT" },
   ];
+
+
+  useEffect(() => {
+    const loadCoursesAndRelatedData = async () => {
+      try {
+        const data = await fetchCourses();
+        const fetchedCourses = data.results;
+        setCourses(fetchedCourses);
+
+        // Loop through each course to fetch offerings and shared sessions
+        for (const course of fetchedCourses) {
+          const courseId = course.id;
+
+          try {
+            const [offerings, sharedSessions] = await Promise.all([
+              fetchOfferingsForCourse(courseId),
+              fetchSharedSessionsForCourse(courseId),
+            ]);
+
+            console.log(`Offerings for course ${courseId}:`, offerings);
+            console.log(`Shared sessions for course ${courseId}:`, sharedSessions);
+
+            setCourseOfferings((prev) => ({
+              ...prev,
+              [courseId]: offerings,
+            }));
+
+            setSharedSessions((prev) => ({
+              ...prev,
+              [courseId]: sharedSessions,
+            }));
+          } catch (err) {
+            console.error(`Error fetching data for course ${courseId}:`, err);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading courses:", error);
+        setCourses(mockCourses);
+      }
+    };
+
+    loadCoursesAndRelatedData();
+  }, []);
+
+
 
   return (
     <SidebarProvider>
@@ -945,10 +994,10 @@ export default function TAAllocationPage() {
                                   const isSelected = selectedCourses.some((s) => s.sectionId === section.id);
                                   const isOffered =
                                     selectedTA && isSectionAlreadyOfferedToTA(selectedTA.studentId, section.id);
-                                  console.log("Checking section ID:", section.id)
-                                  console.log("selectedCourses:", selectedCourses.map(s => s.sectionId))
-                                  console.log("activeOffers:", activeOffers)
-                                  console.log("isSelected:", isSelected, "isOffered:", isOffered)
+                                  //console.log("Checking section ID:", section.id)
+                                  //console.log("selectedCourses:", selectedCourses.map(s => s.sectionId))
+                                  //console.log("activeOffers:", activeOffers)
+                                  //console.log("isSelected:", isSelected, "isOffered:", isOffered)
                                   return (
                                     <div
                                       key={`${course.id}-${section.id}`}
