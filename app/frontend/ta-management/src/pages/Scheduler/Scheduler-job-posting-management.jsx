@@ -2,7 +2,7 @@ import React from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppSidebar } from "@/components/scheduler-sidebar";
-import JobManagementPage from "@/components/form-builder/JobManagementPage";
+import JobManagementPage from "@/components/job-posting-management/JobManagementPage";
 import {
   Breadcrumb,
   BreadcrumbItem,

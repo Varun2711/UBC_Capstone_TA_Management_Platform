@@ -46,26 +46,55 @@ const JobPostingForm = ({
   useEffect(() => {
     console.log(templates, "Templates in JobPostingForm");
     console.log(departments, "Departments in JobPostingForm");
+    console.log(jobPosting, "JobPosting in JobPostingForm");
 
     //fetchSchedulerProfile(); Does not have the Scheduler PK
 
     //if jobPosting prop is provided, populate formData with its values
     if (jobPosting) {
+      let departmentId = jobPosting.department_id;
+      if (
+        !departmentId &&
+        jobPosting.department &&
+        jobPosting.department.name
+      ) {
+        const matchingDept = departments.find(
+          (dept) => dept.name === jobPosting.department.name
+        );
+        departmentId = matchingDept ? matchingDept.id : "";
+      }
+
+      console.log("Department ID:", departmentId);
+      console.log("Status formData:", formData.status);
+
+      // Find the term ID by matching the term code
+      let termId = jobPosting.term_id;
+      if (!termId && jobPosting.term && jobPosting.term.code) {
+        const matchingTerm = terms.find(
+          (term) => term.code === jobPosting.term.code
+        );
+        termId = matchingTerm ? matchingTerm.id : "";
+      }
+
+      console.log("Term ID:", termId);
+
       setFormData({
         title: jobPosting.title || "",
         description: jobPosting.description || "",
         requirements: jobPosting.requirements || "",
-        department_id: jobPosting.department?.id || "",
-        term_id: jobPosting.term?.id || "",
+        department_id: departmentId ? departmentId.toString() : "",
+        term_id: termId ? termId.toString() : "",
         form_template_id: jobPosting.form_template?.template_id || "",
         post_date:
           jobPosting.post_date || new Date().toISOString().split("T")[0],
         deadline_date: jobPosting.deadline_date || "",
         status: jobPosting.status || "draft",
-        created_by_id: jobPosting.created_by_id, // Default to 1 if not provided
+        created_by_id: jobPosting.created_by_id,
       });
     }
-  }, [jobPosting]);
+
+    //console.log("Job Posting Form Data:", formData);
+  }, [jobPosting, departments, terms]);
 
   const fetchSchedulerProfile = async () => {
     const accessToken = sessionStorage.getItem("accessToken");
@@ -186,6 +215,8 @@ const JobPostingForm = ({
     }
   };
 
+  const selectedDeptId = formData.department_id ?? "";
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -251,29 +282,29 @@ const JobPostingForm = ({
         <Card>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Department Select */}
               <div>
-                <Label htmlFor="department">
+                <Label htmlFor="department_id">
                   Department <span className="text-red-500"> *</span>
                 </Label>
-                <Select
+                <select
+                  id="department_id"
+                  name="department_id"
+                  className={`w-full border p-2 rounded ${
+                    errors.department_id ? "border-red-500" : "border-gray-300"
+                  }`}
                   value={formData.department_id}
-                  onValueChange={(value) =>
-                    handleInputChange("department_id", value)
+                  onChange={(e) =>
+                    handleInputChange("department_id", e.target.value)
                   }
                 >
-                  <SelectTrigger
-                    className={errors.department_id ? "border-red-500" : ""}
-                  >
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id.toString()}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">Select department</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id.toString()}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
                 {errors.department_id && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.department_id}
@@ -282,26 +313,25 @@ const JobPostingForm = ({
               </div>
 
               <div>
-                <Label htmlFor="term">
+                <Label htmlFor="term_id">
                   Term <span className="text-red-500"> *</span>
                 </Label>
-                <Select
+                <select
+                  id="term_id"
+                  name="term_id"
+                  className={`w-full border p-2 rounded ${
+                    errors.term_id ? "border-red-500" : "border-gray-300"
+                  }`}
                   value={formData.term_id}
-                  onValueChange={(value) => handleInputChange("term_id", value)}
+                  onChange={(e) => handleInputChange("term_id", e.target.value)}
                 >
-                  <SelectTrigger
-                    className={errors.term_id ? "border-red-500" : ""}
-                  >
-                    <SelectValue placeholder="Select term" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {terms.map((term) => (
-                      <SelectItem key={term.id} value={term.id.toString()}>
-                        {term.code} - {term.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">Select term</option>
+                  {terms.map((term) => (
+                    <option key={term.id} value={term.id.toString()}>
+                      {term.code} - {term.description}
+                    </option>
+                  ))}
+                </select>
                 {errors.term_id && (
                   <p className="text-red-500 text-sm mt-1">{errors.term_id}</p>
                 )}
@@ -309,39 +339,35 @@ const JobPostingForm = ({
             </div>
 
             <div>
-              <Label htmlFor="form_template">Application Form Template</Label>
-              <Select
-                value={formData.form_template_id || "default"}
-                onValueChange={(value) =>
-                  handleInputChange(
-                    "form_template_id",
-                    value === "default" ? "" : value
-                  )
+              <Label htmlFor="form_template_id">
+                Application Form Template
+              </Label>
+              <select
+                id="form_template_id"
+                name="form_template_id"
+                className="w-full border p-2 rounded border-gray-300"
+                value={formData.form_template_id || ""}
+                onChange={(e) =>
+                  handleInputChange("form_template_id", e.target.value)
                 }
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Use default form or select custom template" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">
-                    Select Application Form
-                  </SelectItem>
-                  {templates
-                    .filter((template) => template.is_active)
-                    .map((template) => (
-                      <SelectItem
-                        key={template.template_id}
-                        value={template.template_id.toString()}
-                      >
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+                <option value="">Select Application Form</option>
+                {templates
+                  .filter((template) => template.is_active)
+                  .map((template) => (
+                    <option
+                      key={template.template_id}
+                      value={template.template_id.toString()}
+                    >
+                      {template.name}
+                    </option>
+                  ))}
+              </select>
               <p className="text-sm text-muted-foreground mt-1">
                 Choose an application form template now or update at a later
-                time. <br></br> You can create a new application form template
-                in the Job Posting Manager.
+                time. <br />
+                You can create a new application form template in the Job
+                Posting Manager.
               </p>
             </div>
           </CardContent>
@@ -389,23 +415,22 @@ const JobPostingForm = ({
 
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => handleInputChange("status", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
               <p className="text-sm text-muted-foreground mt-1">
                 Draft: Not visible to students | Open: Students can apply |
                 Closed: No new applications
               </p>
+              <select
+                id="status"
+                name="status"
+                className="w-full border p-2 rounded border-gray-300"
+                value={formData.status}
+                onChange={(e) => handleInputChange("status", e.target.value)}
+              >
+                <option value="">Select status</option>
+                <option value="draft">Draft</option>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+              </select>
             </div>
           </CardContent>
         </Card>

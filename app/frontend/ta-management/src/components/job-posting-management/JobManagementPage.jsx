@@ -29,9 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import FormBuilder from "@/components/form-builder/FormBuilder";
-import DynamicFormRenderer from "@/components/form-builder/DynamicFormRenderer";
-import JobPostingForm from "@/components/form-builder/JobPostingForm";
+import FormBuilder from "@/components/job-posting-management/FormBuilder";
+import JobPostingForm from "@/components/job-posting-management/JobPostingForm";
+import FormTemplatePreview from "@/components/job-posting-management/FormTemplatePreview";
 import axios from "axios";
 
 // API instance
@@ -40,11 +40,11 @@ const instance = axios.create({
 });
 
 //mock departments and terms while awaiting the course API
-const mockDepartments = [{ id: 1, name: "CMPS" }];
+const mockDepartments = [{ id: "1", name: "CMPS" }];
 const mockTerms = [
-  { id: 1, code: "W2025T1", description: "Winter 2025 Term 1" },
-  { id: 2, code: "W2025T2", description: "Winter 2025 Term 2" },
-  { id: 3, code: "W2025BOTH", description: "Winter 2025 Both Terms" },
+  { id: "1", code: "W2025T1", description: "Winter 2025 Term 1" },
+  { id: "2", code: "W2025T2", description: "Winter 2025 Term 2" },
+  { id: "3", code: "W2025BOTH", description: "Winter 2025 Both Terms" },
 ];
 
 const JobManagementPage = () => {
@@ -126,7 +126,7 @@ const JobManagementPage = () => {
   const fetchTerms = async () => {
     try {
       const data = await instance.get("/course/terms/");
-      setTerms(data);
+      setTerms(response.data);
     } catch (error) {
       console.error("Error fetching terms:", error);
       // Fallback to mock data
@@ -289,6 +289,7 @@ const JobManagementPage = () => {
                 placeholder="Search job postings..."
                 value={jobSearchTerm}
                 onChange={(e) => setJobSearchTerm(e.target.value)}
+                className="max-w-xs"
               />
               <Select
                 value={jobFilterStatus}
@@ -631,24 +632,21 @@ const JobManagementPage = () => {
           </DialogHeader>
           {selectedTemplate && (
             <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
+              {/* <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  <b>
-                    This is not an exact representation of how the form will
-                    appear.
-                  </b>{" "}
-                  This is a preview of how questions and sections will be
-                  organized. Please note that some features like file uploads
-                  and dynamic fields may not be fully functional in this
-                  preview.
+                  This is a preview of the form template. Please note that some
+                  features like file uploads and dynamic fields may not be fully
+                  functional in this preview.
                 </p>
-              </div>
-              <DynamicFormRenderer
+              </div> */}
+              {/* <DynamicFormRenderer
                 template={selectedTemplate}
                 responses={{}}
                 setResponses={() => {}}
                 errors={{}}
-              />
+              /> */}
+
+              <FormTemplatePreview template={selectedTemplate} />
             </div>
           )}
         </DialogContent>

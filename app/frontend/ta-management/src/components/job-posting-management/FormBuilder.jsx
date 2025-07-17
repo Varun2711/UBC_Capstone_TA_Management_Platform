@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import QuestionDialog from "@/components/form-builder/QuestionDialog";
+import QuestionDialog from "@/components/job-posting-management/QuestionDialog";
 import axios from "axios";
 
 const instance = axios.create({

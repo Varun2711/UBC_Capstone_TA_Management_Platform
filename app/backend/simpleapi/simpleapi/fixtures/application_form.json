@@ -187,13 +187,13 @@
         "required_message": "Please select which term(s) you're applying for."
       },
       "options": [
-        { "value": "W2025 both terms", "label": "W2025 both terms" },
+        { "value": "W2025BOTH", "label": "W2025 both terms" },
         {
-          "value": "W2025 Term 1 only (September 01 - December 31 2025)",
-          "label": "W2025 Term 1 only (September 01 - December 31 2025)"
+          "value": "W2025T1",
+          "label": "W2025T1 only (September 01 - December 31 2025)"
         },
         {
-          "value": "W2025 Term 2 only (January 1 - April 30) 2026",
+          "value": "W2025T2 ",
           "label": "W2025 Term 2 only (January 1 - April 30) 2026"
         }
       ],

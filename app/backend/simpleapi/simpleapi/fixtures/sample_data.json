@@ -24,7 +24,7 @@
     }
   },
   {
-    "model" : "myapp.student",
+    "model": "myapp.student",
     "pk": 2,
     "fields": {
       "student_number": "20241003",
@@ -35,13 +35,13 @@
       "study_level": "Graduate",
       "department": 1,
       "sin": "987654322",
-      "password" : "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "aadil.sh@student.ubc.ca",
       "is_active": true
-  }
+    }
   },
   {
-    "model" : "myapp.tascheduler",
+    "model": "myapp.tascheduler",
     "pk": 3,
     "fields": {
       "employee_number": 12345678,
@@ -248,7 +248,7 @@
       "post_date": "2024-11-15",
       "deadline_date": "2024-12-15",
       "department": 1,
-      "created_by": 1,
+      "created_by": 3,
       "term": 1,
       "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
       "status": "open"
@@ -263,7 +263,7 @@
       "post_date": "2024-11-20",
       "deadline_date": "2024-12-20",
       "department": 1,
-      "created_by": 1,
+      "created_by": 3,
       "term": 2,
       "requirements": " Must be a registered student. ",
       "status": "open"

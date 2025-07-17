@@ -155,20 +155,17 @@ class JobPostingSerializer(serializers.ModelSerializer):
     #fields for writes and updates
     department_id = serializers.PrimaryKeyRelatedField(  #department_id field for write/updates only
         queryset=Department.objects.all(),
-        source='department',
-        write_only=True
+        source='department'       
     ) 
 
     term_id = serializers.PrimaryKeyRelatedField(
         queryset=Term.objects.all(),
-        source='term',
-        write_only=True
+        source='term'     
     )
 
     created_by_id = serializers.PrimaryKeyRelatedField(
         queryset=TAScheduler.objects.all(),
-        source='created_by',
-        write_only=True,
+        source='created_by',        
         required=False,
         allow_null=True
     ) 
