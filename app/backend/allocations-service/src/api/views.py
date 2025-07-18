@@ -10,8 +10,12 @@ from django.db.models import Q, Sum, Case, When, IntegerField
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+
 from .models import Offer, Assignment, Student, TAScheduler, Application, ApplicationShortList
 from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer
+
+# Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
 from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsAuthenticatedUser, IsStudentUser
 
@@ -116,7 +120,6 @@ class ShortlistedApplicantViewSet(viewsets.ReadOnlyModelViewSet):
         )['total_hours'] or 0
         
         # Get active assignments HOURS (confirmed workload)
-        # This is the single source of truth for allocated hours.
         active_assignments_hours = Assignment.objects.filter(
             student=student,
             is_active=True
@@ -131,8 +134,6 @@ class ShortlistedApplicantViewSet(viewsets.ReadOnlyModelViewSet):
             )
         )['total_hours'] or 0
         
-        # The total allocated hours are the sum of confirmed work and potential work.
-        # We no longer need to query for 'accepted' offers separately.
         return {
             'pending_offers_hours': pending_offers_hours,
             'active_assignments_hours': active_assignments_hours,
@@ -162,8 +163,14 @@ class OfferViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter offers based on user role"""
-        user_type, user_id = self.get_user_info(self.request)
         queryset = Offer.objects.select_related('student', 'application', 'created_by').all()
+        
+        # Check if JWT token exists
+        if not hasattr(self.request, 'auth') or not self.request.auth:
+            return queryset.none()
+        
+        user_type = self.request.auth.payload.get('user_type', None)
+        user_id = self.request.auth.payload.get('sub', None)
         
         if user_type == 'student' and user_id:
             student_model_id = self.get_student_model_id(user_id)
@@ -176,32 +183,78 @@ class OfferViewSet(viewsets.ModelViewSet):
         
         return queryset.none()
     
-    def get_user_info(self, request):
-        user_type = getattr(request, 'user_type', None)
-        user_id = getattr(request, 'user_id', None)
-        return user_type, user_id
-    
     def get_student_model_id(self, user_id):
+        """Map JWT user_id to Student model ID - FIXED to match auth-service pattern"""
         try:
-            from django.contrib.auth.models import User
-            user = User.objects.get(id=user_id)
-            student = Student.objects.get(email=user.email)
+            # user_id from JWT 'sub' claim is actually the student_number, not database ID
+            student = Student.objects.get(student_number=user_id)
             return student.id
-        except (User.DoesNotExist, Student.DoesNotExist):
-            return None
+        except Student.DoesNotExist:
+            # Fallback: try by email if student_number doesn't work
+            try:
+                from django.contrib.auth.models import User
+                user = User.objects.get(username=user_id)  # username might be email
+                student = Student.objects.get(email=user.email)
+                return student.id
+            except (User.DoesNotExist, Student.DoesNotExist):
+                return None
     
     @action(detail=False, methods=['post'])
     def create_offer(self, request):
         """Create a new offer for a shortlisted student"""
+        from datetime import datetime
+        from django.utils import timezone
+        import pytz
+        
         application_id = request.data.get('application_id')
         course_offering_id = request.data.get('course_offering_id')
         shared_session_id = request.data.get('shared_session_id')
         required_hours = request.data.get('required_hours', '6')
-        response_deadline = request.data.get('response_deadline')
+        response_deadline_str = request.data.get('response_deadline')
         notes = request.data.get('notes', '')
         
-        # Get the scheduler who is creating the offer
-        user_type, user_id = self.get_user_info(request)
+            # Validate that either course_offering_id OR shared_session_id is provided
+        if not course_offering_id and not shared_session_id:
+            return Response(
+                {'error': 'Either course_offering_id or shared_session_id must be provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if course_offering_id and shared_session_id:
+            return Response(
+                {'error': 'Provide either course_offering_id OR shared_session_id, not both'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Parse response_deadline properly
+        response_deadline = None
+        if response_deadline_str:
+            try:
+                # Parse ISO format datetime string
+                if response_deadline_str.endswith('Z'):
+                    response_deadline_str = response_deadline_str[:-1] + '+00:00'
+                response_deadline = datetime.fromisoformat(response_deadline_str)
+                
+                # Convert to timezone-aware datetime if needed
+                if response_deadline.tzinfo is None:
+                    response_deadline = timezone.make_aware(response_deadline)
+                    
+            except ValueError as e:
+                return Response(
+                    {'error': f'Invalid response_deadline format: {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Check JWT token exists
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Get user info from JWT token
+        user_type = request.auth.payload.get('user_type', None)
+        user_id = request.auth.payload.get('sub', None)
+        
         if user_type not in ['scheduler', 'admin']:
             return Response(
                 {'error': 'Only schedulers and admins can create offers'},
@@ -233,10 +286,15 @@ class OfferViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Get scheduler
-            scheduler = TAScheduler.objects.get(id=user_id)
+            # Get scheduler using proper JWT mapping
+            scheduler = self.get_scheduler_from_jwt(user_type, user_id)
+            if not scheduler:
+                return Response(
+                    {'error': f'Scheduler not found for user_id: {user_id}'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             
-            # Create the offer
+            # Create the offer with properly parsed datetime
             offer = Offer.objects.create(
                 application=application,
                 course_offering_id=course_offering_id,
@@ -248,17 +306,27 @@ class OfferViewSet(viewsets.ModelViewSet):
                 notes=notes
             )
             
-            serializer = self.get_serializer(offer)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Serialize with error handling
+            try:
+                serializer = self.get_serializer(offer)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except Exception as serializer_error:
+                # If serialization fails, return basic success response
+                return Response(
+                    {
+                        'success': True,
+                        'message': 'Offer created successfully',
+                        'offer_id': offer.offer_id,
+                        'student': student.name,
+                        'required_hours': required_hours,
+                        'status': offer.status
+                    },
+                    status=status.HTTP_201_CREATED
+                )
             
         except ApplicationShortList.DoesNotExist:
             return Response(
                 {'error': 'Application not found in shortlist'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except TAScheduler.DoesNotExist:
-            return Response(
-                {'error': 'Scheduler not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
@@ -266,6 +334,30 @@ class OfferViewSet(viewsets.ModelViewSet):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    def get_scheduler_from_jwt(self, user_type, user_id):
+        """Map JWT token to TAScheduler model (following user-profile-service pattern)"""
+        if user_type == 'scheduler':
+            try:
+                # For scheduler, user_id should map to employee_number
+                return TAScheduler.objects.get(employee_number=user_id)
+            except TAScheduler.DoesNotExist:
+                # If not found by employee_number, try by ID
+                try:
+                    return TAScheduler.objects.get(id=user_id)
+                except TAScheduler.DoesNotExist:
+                    return None
+        
+        elif user_type == 'admin':
+            # For admin creating offers, we need to get a default scheduler
+            # or handle admin creation differently
+            try:
+                # Get the first active scheduler as fallback for admin actions
+                return TAScheduler.objects.filter(is_active=True).first()
+            except TAScheduler.DoesNotExist:
+                return None
+        
+        return None
     
     def calculate_student_allocation(self, student):
         """Calculate student's current allocation status"""
@@ -273,21 +365,6 @@ class OfferViewSet(viewsets.ModelViewSet):
         pending_offers_hours = Offer.objects.filter(
             student=student,
             status='pending'
-        ).aggregate(
-            total_hours=Sum(
-                Case(
-                    When(required_hours='6', then=6),
-                    When(required_hours='12', then=12),
-                    default=0,
-                    output_field=IntegerField()
-                )
-            )
-        )['total_hours'] or 0
-        
-        # Get accepted offers HOURS
-        accepted_offers_hours = Offer.objects.filter(
-            student=student,
-            status='accepted'
         ).aggregate(
             total_hours=Sum(
                 Case(
@@ -316,9 +393,8 @@ class OfferViewSet(viewsets.ModelViewSet):
         
         return {
             'pending_offers_hours': pending_offers_hours,
-            'accepted_offers_hours': accepted_offers_hours,
             'active_assignments_hours': active_assignments_hours,
-            'total_hours': pending_offers_hours + accepted_offers_hours + active_assignments_hours
+            'total_hours': pending_offers_hours + active_assignments_hours
         }
     
     @action(detail=False, methods=['get'])
@@ -335,6 +411,13 @@ class OfferViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(accepted_offers, many=True)
         return Response(serializer.data)
     
+    @action(detail=False, methods=['get'])
+    def rejected_offers(self, request):
+        """Get all rejected offers"""
+        rejected_offers = self.get_queryset().filter(status='rejected')
+        serializer = self.get_serializer(rejected_offers, many=True)
+        return Response(serializer.data)
+    
     @action(detail=True, methods=['post'])
     def respond_to_offer(self, request, pk=None):
         """Allow student to respond to an offer"""
@@ -347,8 +430,14 @@ class OfferViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if this is the student's offer
-        user_type, user_id = self.get_user_info(request)
+        # Check JWT token and get user info
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        user_id = request.auth.payload.get('sub', None)
         student_model_id = self.get_student_model_id(user_id)
         
         if offer.student_id != student_model_id:
@@ -426,7 +515,8 @@ def api_root(request):
             'create_offer': '/api/allocations/offers/create_offer/',
             'pending_offers': '/api/allocations/offers/pending_offers/',
             'accepted_offers': '/api/allocations/offers/accepted_offers/',
-             'respond_to_offer': '/api/allocations/offers/{offer_id}/respond_to_offer/',
+            'rejected_offers': '/api/allocations/offers/rejected_offers/',  # ← Add this line
+            'respond_to_offer': '/api/allocations/offers/{offer_id}/respond_to_offer/',
                 
              # Assignments Management
              'assignments': '/api/allocations/assignments/',
