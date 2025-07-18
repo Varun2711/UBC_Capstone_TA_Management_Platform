@@ -51,6 +51,16 @@ export default function CreateAccount3() {
   e.preventDefault()
   setError("")
 
+  const trimmedEmail = formData.email.trim()
+
+  // Basic email format check using regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(trimmedEmail)) {
+    setError("Please enter a valid email address.")
+    return
+  }
+
+
   if (formData.password !== formData.confirmPassword) {
     setError("Passwords don't match!")
     return

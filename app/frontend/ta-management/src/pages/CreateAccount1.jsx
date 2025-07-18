@@ -45,6 +45,27 @@ export default function CreateAccount1() {
       return
     }
 
+    const { firstName, lastName } = formData
+    // Validation: First Name
+    if (!firstName.trim()) {
+      setError("First name is required")
+      return
+    }
+    if (!/^[A-Za-z\s'-]+$/.test(firstName.trim())) {
+      setError("First name must only contain letters")
+      return
+    }
+
+    // Validation: Last Name
+    if (!lastName.trim()) {
+      setError("Last name is required")
+      return
+    }
+    if (!/^[A-Za-z\s'-]+$/.test(lastName.trim())) {
+      setError("Last name must only contain letters")
+      return
+    }
+
     setError("") // Clear error before proceeding
 
     // Store form data in localStorage or context
