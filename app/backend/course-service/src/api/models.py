@@ -228,6 +228,12 @@ class CourseOffering(models.Model):
         related_name='course_offerings',
         help_text="Instructor teaching this course offering"
     )
+    time_slots = models.ManyToManyField(
+        TimeSlot,
+        blank=True,
+        related_name='course_offerings',
+        help_text="Time slots when this course offering meets"
+    )
 
     class Meta:
         managed = True

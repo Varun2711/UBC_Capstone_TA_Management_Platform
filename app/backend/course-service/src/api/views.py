@@ -308,7 +308,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         course = self.get_object()
         
         # Get all course offerings for this course
-        offerings = course.offerings.select_related('academic_term', 'instructor').all()
+        offerings = course.offerings.select_related('academic_term', 'instructor').prefetch_related('time_slots').all()
         
         # Get all shared sessions for this course
         shared_sessions = course.lab_sections.select_related(
@@ -328,12 +328,30 @@ class CourseViewSet(viewsets.ModelViewSet):
         
         # Process course offerings
         for offering in offerings:
+            # Get time slot information for this offering
+            time_slots = offering.time_slots.all()
+            time_info = []
+            time_increments = []
+            
+            for slot in time_slots:
+                time_info.append({
+                    'day': slot.get_day_display(),
+                    'time': f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
+                })
+                # Add time increments from this slot
+                time_increments.extend(slot.time_increments)
+            
+            # Remove duplicates and sort time increments
+            time_increments = sorted(list(set(time_increments)))
+            
             offering_data = {
                 'id': str(offering.course_offering_id),
                 'year': str(offering.academic_term.startCalendarYear),
                 'term': offering.academic_term.code,
                 'instructor_id': offering.instructor.id if offering.instructor else None,  # Give instructor id instead of name
                 'section': offering.section_number,
+                'time_slots': time_info,
+                'time_increments': time_increments,
                 'requirements': {
                     'specialRequirements': []  # This would need to be added to model if needed
                 }
@@ -408,7 +426,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         
         for course in courses:
             # Get all course offerings for this course
-            offerings = course.offerings.select_related('academic_term', 'instructor').all()
+            offerings = course.offerings.select_related('academic_term', 'instructor').prefetch_related('time_slots').all()
             
             # Get all shared sessions for this course
             shared_sessions = course.lab_sections.select_related(
@@ -428,12 +446,30 @@ class CourseViewSet(viewsets.ModelViewSet):
             
             # Process course offerings
             for offering in offerings:
+                # Get time slot information for this offering
+                time_slots = offering.time_slots.all()
+                time_info = []
+                time_increments = []
+                
+                for slot in time_slots:
+                    time_info.append({
+                        'day': slot.get_day_display(),
+                        'time': f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
+                    })
+                    # Add time increments from this slot
+                    time_increments.extend(slot.time_increments)
+                
+                # Remove duplicates and sort time increments
+                time_increments = sorted(list(set(time_increments)))
+                
                 offering_data = {
                     'id': str(offering.course_offering_id),
                     'year': str(offering.academic_term.startCalendarYear),
                     'term': offering.academic_term.code,
                     'instructor_id': offering.instructor.id if offering.instructor else None,
                     'section': offering.section_number,
+                    'time_slots': time_info,
+                    'time_increments': time_increments,
                     'requirements': {
                         'specialRequirements': []  # This would need to be added to model if needed
                     }
