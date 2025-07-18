@@ -14,6 +14,43 @@ const generateTimeSlots = () => {
   return slots
 }
 
+function convertSlotRangeToKeys(slotString) {
+  const dayMap = {
+    M: "Monday",
+    T: "Tuesday",
+    W: "Wednesday",
+    R: "Thursday",
+    F: "Friday",
+  }
+
+  // Example: "M: 08:00–10:00"
+  const [dayAbbrev, timeRange] = slotString.split(": ")
+  const [startTime, endTime] = timeRange.split("–")
+
+  const day = dayMap[dayAbbrev]
+  if (!day) return [] // Invalid day
+
+  const [startHour, startMin] = startTime.split(":").map(Number)
+  const [endHour, endMin] = endTime.split(":").map(Number)
+
+  const result = []
+  let hour = startHour
+  let half = startMin === 0 ? "top" : "bottom"
+
+  while (hour < endHour || (hour === endHour && (half === "top" && endMin > 0))) {
+    result.push(`${day}-${hour}-${half}`)
+    if (half === "top") {
+      half = "bottom"
+    } else {
+      hour++
+      half = "top"
+    }
+  }
+
+  return result
+}
+
+
 const WeeklyAvailabilityCalendar = ({
   mode = "profile", // New prop: "profile" or "allocation"
   editable = false,
@@ -22,8 +59,9 @@ const WeeklyAvailabilityCalendar = ({
   highlightedSlots = [], // New optional prop for red overlay
 }) => {
   const [selectedSlots, setSelectedSlots] = useState(new Set(availability))
-  const highlightedSet = new Set(highlightedSlots); // Set for highlighted slots
-
+  const highlightedSet = new Set(highlightedSlots.flatMap(convertSlotRangeToKeys));
+  console.log("higlightedSet in WeeklyAvailabilityCalendar is: ", highlightedSet);
+  
   // Sync internal state with incoming props
   useEffect(() => {
     setSelectedSlots(new Set(availability))
