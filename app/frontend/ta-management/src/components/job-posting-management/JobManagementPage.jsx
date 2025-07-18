@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit, Copy, Trash2, Eye } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, Eye, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -204,6 +204,105 @@ const JobManagementPage = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const TemplateHelpText = () => {
+    const [isExpanded, setIsExpanded] = useState(true);
+
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
+        <div
+          className="flex items-center justify-between p-4 cursor-pointer hover:bg-blue-100 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <Info className="h-5 w-5 text-blue-600 flex-shrink-0" />
+            <h4 className="font-medium text-blue-900">
+              Template Management Help
+            </h4>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-blue-700">
+              {isExpanded ? "Hide" : "Show"} help
+            </span>
+            <div
+              className={`transform transition-transform duration-200 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+            >
+              <svg
+                className="h-4 w-4 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`transition-all duration-300 ease-in-out ${
+            isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="px-4 pb-4 space-y-3">
+            <div>
+              <p className="text-sm text-blue-800">
+                Templates define the application form structure for job
+                postings. A default template is provided, but you can create
+                custom templates to match specific requirements.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <h5 className="font-medium text-blue-900 text-sm">
+                Available Actions:
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-blue-800">
+                <div className="flex items-center gap-2">
+                  <Plus className="h-3 w-3" />
+                  <span>
+                    <strong>Create:</strong> Build a new template from scratch
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Eye className="h-3 w-3" />
+                  <span>
+                    <strong>Preview:</strong> See how the form will look
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Edit className="h-3 w-3" />
+                  <span>
+                    <strong>Edit:</strong> Modify existing custom templates
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Copy className="h-3 w-3" />
+                  <span>
+                    <strong>Duplicate:</strong> Copy any template as starting
+                    point
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-sm text-blue-800">
+              <strong>Tip:</strong> To create a custom template, duplicate the
+              default template or create one from scratch using the form
+              builder.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -330,6 +429,7 @@ const JobManagementPage = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            data-testid={`delete-button-${posting.posting_id}`}
                             onClick={() =>
                               handleDeleteJobPosting(posting.posting_id)
                             }
@@ -422,6 +522,9 @@ const JobManagementPage = () => {
                 Create Template
               </Button>
             </div>
+            <div>
+              <TemplateHelpText />
+            </div>
 
             {/* Template Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -491,6 +594,7 @@ const JobManagementPage = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            data-testid={`duplicate-button-${template.template_id}`}
                             onClick={() => handleDuplicateTemplate(template)}
                           >
                             <Copy className="h-4 w-4" />
