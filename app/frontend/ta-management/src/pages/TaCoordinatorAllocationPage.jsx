@@ -286,7 +286,8 @@ function getPriorityBadge(priority) {
       return <Badge variant="secondary">{priority}</Badge>
   }
 }
-
+ 
+//converts M: 8:00-10:00 to Monday-8-top and so on
 function convertSlotRangeToKeys(slotString) {
   const dayMap = {
     M: "Monday",
@@ -359,6 +360,7 @@ export default function TAAllocationPage() {
         (o) => o.taStudentId === selectedTA.studentId
       )
 
+      console.log("selectedCourse.time_slots_info in handleAddTAtoActiveOfferTab: ", selectedCourse.time_slots_info);
       const newOffer = {
         course_number: selectedCourse.course_number,
         course_name: selectedCourse.course_name,
@@ -367,7 +369,7 @@ export default function TAAllocationPage() {
         instructor: selectedCourse.instructor,
         semester: selectedCourse.semester,
         type: selectedCourse.type,
-        slots: selectedCourse.slots,
+        slots: convertSlotRangeToKeys(formatSlotsFromTimeInfo(selectedCourse.time_slots_info)),
       }
 
       if (existingTA) {
@@ -881,6 +883,7 @@ export default function TAAllocationPage() {
                           <div>
                             <div>
                               <h4 className="text-sm font-medium mb-2">Availability</h4>
+                              {console.log("activeOffers right before WeeklyAvailabilityCalendar is: ", activeOffers)}
                               <WeeklyAvailabilityCalendar
                                 mode={"allocation"}
                                 editable={false}

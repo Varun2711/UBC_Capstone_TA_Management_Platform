@@ -14,6 +14,7 @@ const generateTimeSlots = () => {
   return slots
 }
 
+//converts M: 8:00-10:00 to Monday-8-top and so on
 function convertSlotRangeToKeys(slotString) {
   const dayMap = {
     M: "Monday",
@@ -59,7 +60,20 @@ const WeeklyAvailabilityCalendar = ({
   highlightedSlots = [], // New optional prop for red overlay
 }) => {
   const [selectedSlots, setSelectedSlots] = useState(new Set(availability))
-  const highlightedSet = new Set(highlightedSlots.flatMap(convertSlotRangeToKeys));
+  //const highlightedSet = new Set(highlightedSlots.flatMap(convertSlotRangeToKeys));
+  const highlightedSet = new Set(
+    highlightedSlots.flatMap(slot => {
+      if (typeof slot === "string" && slot.includes(":")) {
+        // Format like "M: 08:00–10:00"
+        return convertSlotRangeToKeys(slot);
+      } else if (typeof slot === "string") {
+        // Already in "Monday-8-top" format
+        return [slot];
+      } else {
+        return [];
+      }
+    })
+  );
   console.log("higlightedSet in WeeklyAvailabilityCalendar is: ", highlightedSet);
   
   // Sync internal state with incoming props
