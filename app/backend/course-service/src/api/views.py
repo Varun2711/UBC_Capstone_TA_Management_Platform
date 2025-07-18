@@ -1364,6 +1364,84 @@ def api_root(request, format=None):
             'ordering': 'Use ?ordering=field_name or ?ordering=-field_name for sorting',
             'pagination': 'Results are paginated by default'
         },
+        'accepted_fields': {
+            'terms': {
+                'create_fields': {
+                    'required': ['code', 'description', 'term_type', 'start', 'end', 'startCalendarYear', 'endCalendarYear'],
+                    'optional': ['academicYear', 'is_active', 'parent_term_id'],
+                    'description': 'Fields for creating a new term'
+                },
+                'update_fields': {
+                    'optional': ['code', 'description', 'term_type', 'start', 'end', 'startCalendarYear', 'endCalendarYear', 'academicYear', 'is_active', 'parent_term_id'],
+                    'description': 'Fields for updating an existing term'
+                }
+            },
+            'courses': {
+                'create_fields': {
+                    'required': ['course_number', 'course_name', 'department_id'],
+                    'optional': ['course_description', 'course_level'],
+                    'description': 'Fields for creating a new course'
+                },
+                'update_fields': {
+                    'optional': ['course_number', 'course_name', 'department_id', 'course_description', 'course_level'],
+                    'description': 'Fields for updating an existing course'
+                }
+            },
+            'course_offerings': {
+                'create_fields': {
+                    'required': ['course_id', 'academic_term_id', 'section_number'],
+                    'optional': ['instructor_id', 'time_slot_ids', 'time_slots'],
+                    'description': 'Fields for creating a new course offering. Use time_slot_ids for existing time slots or time_slots for new ones.'
+                },
+                'update_fields': {
+                    'optional': ['course_id', 'academic_term_id', 'section_number', 'instructor_id', 'time_slot_ids', 'time_slots'],
+                    'description': 'Fields for updating an existing course offering'
+                },
+                'time_slots_format': {
+                    'description': 'Time slots can be provided as array of objects with day, start_time, end_time',
+                    'example': [
+                        {
+                            'day': 'MONDAY',
+                            'start_time': '08:00:00',
+                            'end_time': '09:30:00'
+                        }
+                    ]
+                }
+            },
+            'shared_sessions': {
+                'create_fields': {
+                    'required': ['session_type', 'course_id', 'academic_term_id', 'section_number'],
+                    'optional': ['student_id', 'time_slot_ids', 'time_slots'],
+                    'description': 'Fields for creating a new shared session. Use time_slot_ids for existing time slots or time_slots for new ones.'
+                },
+                'update_fields': {
+                    'optional': ['session_type', 'course_id', 'academic_term_id', 'section_number', 'student_id', 'time_slot_ids', 'time_slots'],
+                    'description': 'Fields for updating an existing shared session'
+                },
+                'session_types': ['LAB', 'TUTORIAL', 'SEMINAR', 'WORKSHOP'],
+                'time_slots_format': {
+                    'description': 'Time slots can be provided as array of objects with day, start_time, end_time',
+                    'example': [
+                        {
+                            'day': 'WEDNESDAY',
+                            'start_time': '14:00:00',
+                            'end_time': '17:00:00'
+                        }
+                    ]
+                }
+            },
+            'instructor_requests': {
+                'create_fields': {
+                    'required': ['instructor_id', 'course_offering_id', 'request_description'],
+                    'optional': ['request_date'],
+                    'description': 'Fields for creating a new instructor request. request_date defaults to current date.'
+                },
+                'update_fields': {
+                    'optional': ['instructor_id', 'course_offering_id', 'request_description', 'request_date'],
+                    'description': 'Fields for updating an existing instructor request'
+                }
+            }
+        },
         'examples': {
             'filter_active_terms': '/api/course-term-service/terms/?is_active=true',
             'search_terms': '/api/course-term-service/terms/?search=winter',
@@ -1386,6 +1464,78 @@ def api_root(request, format=None):
             'search_requests': '/api/course-term-service/instructor-requests/?search=database',
             'filter_requests_by_instructor': '/api/course-term-service/instructor-requests/?instructor=1',
             'filter_requests_by_term': '/api/course-term-service/instructor-requests/?course_offering__academic_term=1'
+        },
+        'post_examples': {
+            'create_term': {
+                'url': 'POST /api/course-term-service/terms/',
+                'body': {
+                    'code': 'W1',
+                    'description': 'Winter Term 1',
+                    'term_type': 'winter',
+                    'start': '2025-01-06',
+                    'end': '2025-02-28',
+                    'startCalendarYear': 2025,
+                    'endCalendarYear': 2025,
+                    'academicYear': '2024-2025',
+                    'is_active': True
+                }
+            },
+            'create_course': {
+                'url': 'POST /api/course-term-service/courses/',
+                'body': {
+                    'course_number': 'COSC 499',
+                    'course_name': 'Capstone Software Engineering Project',
+                    'department_id': 1,
+                    'course_description': 'A comprehensive software engineering project',
+                    'course_level': '400'
+                }
+            },
+            'create_course_offering': {
+                'url': 'POST /api/course-term-service/course-offerings/',
+                'body': {
+                    'course_id': 1,
+                    'academic_term_id': 1,
+                    'section_number': '001',
+                    'instructor_id': 1,
+                    'time_slots': [
+                        {
+                            'day': 'MONDAY',
+                            'start_time': '08:00:00',
+                            'end_time': '09:30:00'
+                        },
+                        {
+                            'day': 'WEDNESDAY',
+                            'start_time': '08:00:00',
+                            'end_time': '09:30:00'
+                        }
+                    ]
+                }
+            },
+            'create_shared_session': {
+                'url': 'POST /api/course-term-service/shared-sessions/',
+                'body': {
+                    'session_type': 'LAB',
+                    'course_id': 1,
+                    'academic_term_id': 1,
+                    'section_number': 'L01',
+                    'student_id': 123,
+                    'time_slots': [
+                        {
+                            'day': 'FRIDAY',
+                            'start_time': '14:00:00',
+                            'end_time': '17:00:00'
+                        }
+                    ]
+                }
+            },
+            'create_instructor_request': {
+                'url': 'POST /api/course-term-service/instructor-requests/',
+                'body': {
+                    'instructor_id': 1,
+                    'course_offering_id': 1,
+                    'request_description': ['Need additional TA support', 'Require specific lab equipment']
+                }
+            }
         },
         'notes': {
             'time_increments': 'Time slots include time_increments array with 30-minute intervals (e.g., 8:00 AM - 9:30 AM returns ["08:00", "08:30", "09:00"])',
