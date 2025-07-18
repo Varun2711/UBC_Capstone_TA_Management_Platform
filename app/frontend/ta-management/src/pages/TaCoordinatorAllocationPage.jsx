@@ -287,41 +287,34 @@ function getPriorityBadge(priority) {
   }
 }
  
-//converts M: 8:00-10:00 to Monday-8-top and so on
-function convertSlotRangeToKeys(slotString) {
-  const dayMap = {
-    M: "Monday",
-    T: "Tuesday",
-    W: "Wednesday",
-    R: "Thursday",
-    F: "Friday",
-  }
-
-  // Example: "M: 08:00–10:00"
-  const [dayAbbrev, timeRange] = slotString.split(": ")
-  const [startTime, endTime] = timeRange.split("–")
-
-  const day = dayMap[dayAbbrev]
-  if (!day) return [] // Invalid day
-
-  const [startHour, startMin] = startTime.split(":").map(Number)
-  const [endHour, endMin] = endTime.split(":").map(Number)
-
+//converts M: 08:00-10:00 to Monday-8-top and so on
+function convertTimeSlotsInfoToKeys(time_slots_info) {
   const result = []
-  let hour = startHour
-  let half = startMin === 0 ? "top" : "bottom"
 
-  while (hour < endHour || (hour === endHour && (half === "top" && endMin > 0))) {
-    result.push(`${day}-${hour}-${half}`)
-    if (half === "top") {
-      half = "bottom"
-    } else {
-      hour++
-      half = "top"
+  for (const slot of time_slots_info) {
+    const day = capitalize(slot.day) // e.g., "tuesday" → "Tuesday"
+    const [startHour, startMin] = slot.start_time.split(":").map(Number)
+    const [endHour, endMin] = slot.end_time.split(":").map(Number)
+
+    let hour = startHour
+    let half = startMin === 0 ? "top" : "bottom"
+
+    while (hour < endHour || (hour === endHour && (half === "top" && endMin > 0))) {
+      result.push(`${day}-${hour}-${half}`)
+      if (half === "top") {
+        half = "bottom"
+      } else {
+        hour++
+        half = "top"
+      }
     }
   }
 
   return result
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
 
@@ -369,7 +362,7 @@ export default function TAAllocationPage() {
         instructor: selectedCourse.instructor,
         semester: selectedCourse.semester,
         type: selectedCourse.type,
-        slots: convertSlotRangeToKeys(formatSlotsFromTimeInfo(selectedCourse.time_slots_info)),
+        slots: convertTimeSlotsInfoToKeys(selectedCourse.time_slots_info),
       }
 
       if (existingTA) {
@@ -518,11 +511,12 @@ export default function TAAllocationPage() {
 
   // Helper function to check for scheduling conflicts
   const checkForConflicts = (taAvailability, courseSlots) => {
+    console.log("courseSlots in checkForConflicts: ", courseSlots);
     const availabilitySet = new Set(taAvailability)
-    const formattedCourseSlotsToDaysAndTime = formatSlotsFromTimeInfo(courseSlots);
-    const formattedDaysAndTimeToCalendarFormat = convertSlotRangeToKeys(formattedCourseSlotsToDaysAndTime);
-    console.log("formattedCourseSlots in checkForConflicts: ", formattedDaysAndTimeToCalendarFormat);
-    for (const slot of formattedDaysAndTimeToCalendarFormat) {
+    const formattedTimeSlotsInfoToKeys = convertTimeSlotsInfoToKeys(courseSlots);
+    console.log("formattedTimeSlotsInfoToKeys in checkForConflicts: ", formattedTimeSlotsInfoToKeys);
+    console.log("availabilitySet in checkForConflicts: ", availabilitySet);
+    for (const slot of formattedTimeSlotsInfoToKeys) {
       if (!availabilitySet.has(slot)) {
         return true // ❗️Conflict: TA not available at this time
       }
@@ -894,7 +888,7 @@ export default function TAAllocationPage() {
                                     ? [
                                         // Include slots from the currently selected course section (red highlight for potential offer)
                                         ...(selectedSections.length > 0
-                                          ? selectedSections.flatMap(course => formatSlotsFromTimeInfo(course.time_slots_info) || [])
+                                          ? selectedSections.flatMap(course => course.time_slots_info || [])
                                           : []),
                                         // Include slots from accepted assignments for this TA (persistent red highlight)
                                         ...assignments
@@ -1228,8 +1222,7 @@ export default function TAAllocationPage() {
                               const newOffers = [];
 
                               for (const course of selectedSections) {
-
-                                console.log(course.time_slots_info);
+                                console.log("course in selectedSections after pressing send offer button: ", course);
                                 const hasConflict = checkForConflicts(
                                   selectedTA.availability,
                                   course.time_slots_info

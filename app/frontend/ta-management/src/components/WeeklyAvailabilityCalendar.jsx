@@ -14,42 +14,94 @@ const generateTimeSlots = () => {
   return slots
 }
 
-//converts M: 8:00-10:00 to Monday-8-top and so on
+// Converts a string like "MTh: 08:00–10:00" into keys like "Monday-8-top", "Thursday-8-top", etc.
 function convertSlotRangeToKeys(slotString) {
   const dayMap = {
     M: "Monday",
     T: "Tuesday",
     W: "Wednesday",
-    R: "Thursday",
+    Th: "Thursday",
     F: "Friday",
+  };
+
+  // Handle "Th" before "T" to avoid overlap
+  const dayAbbreviations = Object.keys(dayMap).sort((a, b) => b.length - a.length);
+
+  // Split the slot string into day part and time range part
+  const [dayPart, timeRange] = slotString.split(": ");
+  if (!dayPart || !timeRange) return [];
+
+  // Extract all matching day abbreviations from the dayPart string
+  let remaining = dayPart;
+  const matchedDays = [];
+  for (const abbrev of dayAbbreviations) {
+    if (remaining.includes(abbrev)) {
+      matchedDays.push(dayMap[abbrev]);
+      remaining = remaining.replace(abbrev, ""); // Remove matched abbrev
+    }
   }
 
-  // Example: "M: 08:00–10:00"
-  const [dayAbbrev, timeRange] = slotString.split(": ")
-  const [startTime, endTime] = timeRange.split("–")
+  if (matchedDays.length === 0) return [];
 
-  const day = dayMap[dayAbbrev]
-  if (!day) return [] // Invalid day
+  // Extract start and end times
+  const [startTime, endTime] = timeRange.split("–");
+  if (!startTime || !endTime) return [];
 
-  const [startHour, startMin] = startTime.split(":").map(Number)
-  const [endHour, endMin] = endTime.split(":").map(Number)
+  const [startHour, startMin] = startTime.split(":").map(Number);
+  const [endHour, endMin] = endTime.split(":").map(Number);
 
+  const result = [];
+
+  // For each matched day, generate slot keys
+  for (const day of matchedDays) {
+    let hour = startHour;
+    let half = startMin === 0 ? "top" : "bottom";
+
+    while (hour < endHour || (hour === endHour && half === "top" && endMin > 0)) {
+      result.push(`${day}-${hour}-${half}`);
+      if (half === "top") {
+        half = "bottom";
+      } else {
+        hour++;
+        half = "top";
+      }
+    }
+  }
+
+  return result;
+}
+
+
+//converts M: 8:00-10:00 to Monday-8-top and so on
+function convertTimeSlotsInfoToKeys(time_slots_info) {
   const result = []
-  let hour = startHour
-  let half = startMin === 0 ? "top" : "bottom"
 
-  while (hour < endHour || (hour === endHour && (half === "top" && endMin > 0))) {
-    result.push(`${day}-${hour}-${half}`)
-    if (half === "top") {
-      half = "bottom"
-    } else {
-      hour++
-      half = "top"
+  for (const slot of time_slots_info) {
+    const day = capitalize(slot.day) // e.g., "tuesday" → "Tuesday"
+    const [startHour, startMin] = slot.start_time.split(":").map(Number)
+    const [endHour, endMin] = slot.end_time.split(":").map(Number)
+
+    let hour = startHour
+    let half = startMin === 0 ? "top" : "bottom"
+
+    while (hour < endHour || (hour === endHour && (half === "top" && endMin > 0))) {
+      result.push(`${day}-${hour}-${half}`)
+      if (half === "top") {
+        half = "bottom"
+      } else {
+        hour++
+        half = "top"
+      }
     }
   }
 
   return result
 }
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+}
+
 
 
 const WeeklyAvailabilityCalendar = ({
@@ -61,6 +113,7 @@ const WeeklyAvailabilityCalendar = ({
 }) => {
   const [selectedSlots, setSelectedSlots] = useState(new Set(availability))
   //const highlightedSet = new Set(highlightedSlots.flatMap(convertSlotRangeToKeys));
+  console.log("highlightedSlots in WeeklyAvailabilityCalendar: ", highlightedSlots);
   const highlightedSet = new Set(
     highlightedSlots.flatMap(slot => {
       if (typeof slot === "string" && slot.includes(":")) {
@@ -69,6 +122,14 @@ const WeeklyAvailabilityCalendar = ({
       } else if (typeof slot === "string") {
         // Already in "Monday-8-top" format
         return [slot];
+      } else if (
+        typeof slot === "object" &&
+        slot.start_time &&
+        slot.end_time &&
+        slot.day
+      ) {
+        // It's a time_slots_info object
+        return convertTimeSlotsInfoToKeys([slot]);
       } else {
         return [];
       }
