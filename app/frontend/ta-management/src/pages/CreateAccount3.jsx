@@ -31,6 +31,14 @@ export default function CreateAccount3() {
     }
   }, [navigate])
 
+  // Load saved form data from sessionStorage if available
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("createAccount3")
+    if (savedData) {
+      setFormData(JSON.parse(savedData))
+    }
+  }, [])
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -118,7 +126,7 @@ export default function CreateAccount3() {
           const additionalProfileData = {
             student_profile: {
               minor: step2Data.minorProgram || '',
-              year_degree_start: parseInt(step2Data.yearOfDegreeStart, 10), // ✅ FIX: Use actual year here too
+              year_degree_start: parseInt(step2Data.yearOfDegreeStart, 10), // FIX: Use actual year here too
             }
           };
 

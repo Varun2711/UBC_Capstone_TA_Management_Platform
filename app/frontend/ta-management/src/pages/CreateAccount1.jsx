@@ -26,13 +26,23 @@ export default function CreateAccount1() {
     }
   }, [navigate])
 
+  // Load saved form data from sessionStorage if available
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("createAccount1")
+    if (savedData) {
+      setFormData(JSON.parse(savedData))
+    }
+  }, [])
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setError("") // Reset error on input change
-    setFormData((prev) => ({
-      ...prev,
+    const updated = {
+      ...formData,
       [name]: value,
-    }))
+    }
+    setFormData(updated)
+    sessionStorage.setItem("createAccount1", JSON.stringify(updated)) // Optional live save
   }
 
   const handleNext = (e) => {

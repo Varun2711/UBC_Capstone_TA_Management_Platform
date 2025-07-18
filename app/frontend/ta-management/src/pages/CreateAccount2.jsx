@@ -27,6 +27,15 @@ export default function CreateAccount2() {
     }
   }, [navigate])
 
+  // Load saved form data from sessionStorage if available
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("createAccount2")
+    if (savedData) {
+      setFormData(JSON.parse(savedData))
+    }
+  }, [])
+  
+
   const handleSelectChange = (name, value) => {
     setError("") // Clear error when user makes changes
     setFormData((prev) => ({
@@ -44,10 +53,12 @@ export default function CreateAccount2() {
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setError("") // Clear error when user makes changes
-    setFormData((prev) => ({
-      ...prev,
+    const updated = {
+      ...formData,
       [name]: value,
-    }))
+    }
+    setFormData(updated)
+    sessionStorage.setItem("createAccount2", JSON.stringify(updated)) // Optional live save
   }
 
   const handleNext = (e) => {
