@@ -30,7 +30,11 @@ export function CourseCard({
       if (!grouped[termKey]) {
         grouped[termKey] = []
       }
-      grouped[termKey].push(offering)
+      grouped[termKey].push({
+        ...offering,
+        // Only addition: ensure displaySection is available for backend integration
+        displaySection: offering.displaySection || `${course.code}-${offering.section}`
+      })
     })
     return grouped
   }
