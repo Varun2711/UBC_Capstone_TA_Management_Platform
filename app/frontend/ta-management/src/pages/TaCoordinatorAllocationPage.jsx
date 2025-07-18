@@ -614,6 +614,44 @@ export default function TAAllocationPage() {
       .join(" | ");
   };
 
+  function getTotalHoursFromSlotString(slotString) {
+    const dayMap = {
+      M: "Monday",
+      T: "Tuesday",
+      W: "Wednesday",
+      Th: "Thursday",
+      F: "Friday",
+    };
+
+    // Match days and time
+    const match = slotString.match(/^([MTWRFh]+)\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})$/i);
+    if (!match) return 0;
+
+    const dayStr = match[1];
+    const startTime = match[2];
+    const endTime = match[3];
+
+    // Handle special case for "Th"
+    const days = [];
+    for (let i = 0; i < dayStr.length; i++) {
+      if (dayStr[i] === 'T' && dayStr[i+1] === 'h') {
+        days.push('Th');
+        i++;
+      } else {
+        days.push(dayStr[i]);
+      }
+    }
+
+    // Convert start and end to minutes
+    const [startHour, startMin] = startTime.split(":").map(Number);
+    const [endHour, endMin] = endTime.split(":").map(Number);
+    const durationInMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+
+    const durationPerDayInHours = durationInMinutes / 60;
+
+    return days.length * durationPerDayInHours;
+  }
+
 
   // Function to get assignments for a specific TA
   function getAssignmentsForTA(taName) {
@@ -648,17 +686,22 @@ export default function TAAllocationPage() {
     const matchesSearch =
       course.course_number.toLowerCase().includes(searchTermForCourse.toLowerCase()) ||
       course.course_name.toLowerCase().includes(searchTermForCourse.toLowerCase()) ||
-      course.instructor.toLowerCase().includes(searchTermForCourse.toLowerCase()) ||
-      course.semester.toLowerCase().includes(searchTermForCourse.toLowerCase())
+      course.department_name.toLowerCase().includes(searchTermForCourse.toLowerCase()) 
 
     // Discipline filter logic
     const matchesDiscipline = filters.discipline
       ? course.course_number.startsWith(filters.discipline)
       : true;
 
-    // Term filter logic (assuming semester format is "Term Year")
+    console.log("fetchedOfferings state variable has: ", fetchedOfferings);
+      
+    // ✅ Check offerings for matching term
+    const courseOfferings = fetchedOfferings[course.id] || [];
+
     const matchesTerm = filters.term_code
-      ? course.semester.toLowerCase().includes(filters.term_code.toLowerCase())
+      ? courseOfferings.some((offering) =>
+          offering.term_info.toLowerCase().includes(filters.term_code.toLowerCase())
+        )
       : true;
     
     return matchesSearch && matchesDiscipline && matchesTerm
@@ -729,7 +772,7 @@ export default function TAAllocationPage() {
       try {
         const data = await fetchCourses();
         const fetchedCourses = data.results;
-        console.log("fetchedCourses are: ", fetchedCourses);
+        console.log("fetchedCourses from backend are: ", fetchedCourses);
         setCourses(fetchedCourses);
 
         // Loop through each course to fetch offerings and shared sessions
@@ -1147,8 +1190,9 @@ export default function TAAllocationPage() {
                                             section_type_display: section.session_type_display,
                                             section_number: section.section_number,
                                             time_slots_info: section.time_slots_info,
+                                            weeklyDuration: getTotalHoursFromSlotString(formatSlotsFromTimeInfo(section.time_slots_info)),
                                           };
-                                          console.log("selected is having the following: ", selected);
+                                          console.log("selected is having the following after clicking a lab/tutorial: ", selected);
                                           setSelectedSharedSessions((prev) => {
                                             const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
                                             return alreadySelected
@@ -1193,15 +1237,25 @@ export default function TAAllocationPage() {
                             Send offer to <span className="text-blue-600">{selectedTA.name}</span> for:
                           </p>
                           <ul className="list-disc list-inside text-sm text-muted-foreground mt-2">
-                            {selectedSections.map((c, idx) => (
-                              <li key={idx}>
-                                {c.course_number} - {c.course_name} - {c.section_type_display} Section {c.section_number} ({c.weekHours} hrs)
-                              </li>
-                            ))}
+                            {selectedSections.map((c, idx) => {
+                              const hours = c.weekHours ?? c.weeklyDuration ?? 0;
+                              return (
+                                <li key={idx}>
+                                  {c.course_number} - {c.course_name} - {c.section_type_display} Section {c.section_number} ({hours} hrs)
+                                </li>
+                              );
+                            })}
                           </ul>
                           <p className="text-sm text-muted-foreground mt-2">
                             Total workload: {selectedTA.currentHours} →{" "}
-                            {selectedTA.currentHours + selectedSections.reduce((sum, c) => sum + c.weekHours, 0)} hours
+                            {
+                              selectedTA.currentHours +
+                              selectedSections.reduce(
+                                (sum, c) => sum + (c.weekHours ?? c.weeklyDuration ?? 0),
+                                0
+                              )
+                            }{" "}
+                            hours
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -1231,7 +1285,8 @@ export default function TAAllocationPage() {
                                   alert(`Conflict with section ${course.course_number} ${course.section_number}`);
                                   return;
                                 }
-                                totalHours += course.weekHours;
+                                const hoursToAdd = course.weekHours ?? course.weeklyDuration ?? 0;
+                                totalHours += hoursToAdd;
                                 newOffers.push(course);
                               }
 
