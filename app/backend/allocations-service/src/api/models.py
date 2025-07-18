@@ -16,7 +16,7 @@ class TAScheduler(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers', db_constraint=False)
     password = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
 
@@ -26,12 +26,28 @@ class TAScheduler(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.employee_number})"
+    
+class Instructor(models.Model):
+    """Reference to instructors from simpleapi"""
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='instructors', db_constraint=False)
+    email = models.EmailField()
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_instructor'
+    
+    def __str__(self):
+        return self.name
 
 class Student(models.Model):
     student_number = models.CharField(max_length=8, unique=True)
     name = models.CharField(max_length=100)
     email = models.EmailField()
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)  # Added db_constraint=False
     study_level = models.CharField(max_length=20)
     is_active = models.BooleanField(default=True)
 
@@ -56,23 +72,43 @@ class JobPosting(models.Model):
         return f"Job Posting {self.posting_id}"
 
 class Term(models.Model):
-    """Reference to terms from applications service"""
-    id = models.AutoField(primary_key=True)
-    code = models.CharField(max_length=20)
-    #name = models.CharField(max_length=100)
-    # Add other fields as needed for reference
+    """Reference to terms from course-service - must match exact structure"""
+    code = models.CharField(max_length=20, unique=True)
+    description = models.TextField(null=True, blank=True)
     
+    # Self-referential FK for hierarchical terms (e.g., "W2025 Term 1" is subset of "W2025 Both Terms")
+    subsetOf = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subterms', db_constraint=False)
+    
+    # Use DateField for proper date handling
+    start = models.DateField(help_text="Term start date")
+    end = models.DateField(help_text="Term end date")
+    
+    startCalendarYear = models.IntegerField()
+    endCalendarYear = models.IntegerField()
+    academicYear = models.CharField(max_length=10, help_text="e.g., '2025/26'")
+    
+    # Auto-set created timestamp
+    createdAt = models.DateTimeField(default=timezone.now)
+    
+    # Add useful fields
+    is_active = models.BooleanField(default=True)
+    term_type = models.CharField(max_length=20, choices=[
+        ('winter', 'Winter'),
+        ('summer', 'Summer'),       
+        ('full_year', 'Full Year'),
+    ], null=True, blank=True)
+
     class Meta:
-        managed = False
+        managed = False  # ← This is managed by course-service
         db_table = 'myapp_term'
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return f"{self.code}"
 
 class Application(models.Model):        
     application_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
-    posting = models.ForeignKey(JobPosting, on_delete=models.SET_NULL, null=True)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, db_constraint=False)  # Added db_constraint=False
+    posting = models.ForeignKey(JobPosting, on_delete=models.SET_NULL, null=True, db_constraint=False)  # Added db_constraint=False
     status = models.CharField(max_length=20, choices=[ 
         ('draft', 'Draft'),
         ('submitted', 'Submitted'),
@@ -91,7 +127,7 @@ class Application(models.Model):
     positionType = models.CharField(max_length=100, blank=True, null=True)
 
     #Term Selection
-    termSelection = models.ForeignKey(Term, on_delete = models.SET_NULL, null=True)      
+    termSelection = models.ForeignKey(Term, on_delete = models.SET_NULL, null=True, db_constraint=False)  # Added db_constraint=False
    
     workload = models.CharField(max_length=20, blank=True, null=True)
     
@@ -142,22 +178,59 @@ class ApplicationShortList(models.Model):
 
     def __str__(self):
         return f"Shortlisted: {self.application}"
+    
+class Course(models.Model):
+    """Reference to courses from course-service"""
+    course_number = models.CharField(max_length=9, unique=True)
+    course_name = models.CharField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, db_constraint=False)
+    course_description = models.TextField(max_length=500, blank=True, null=True)
+    course_level = models.CharField(max_length=4, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'myapp_courses'
+
+    def __str__(self):
+        return f'{self.course_number} {self.course_name}'
 
 class CourseOffering(models.Model):
-    """Reference to course offerings"""
-    course_offering_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    
+    """Reference to course offerings from course-service"""
+    course_offering_id = models.UUIDField(primary_key=True)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='offerings', db_constraint=False)
+    section_number = models.CharField(max_length=3, help_text="Section number (e.g., '001', 'L01')")
+    academic_term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name='course_offerings', db_constraint=False)
+    instructor = models.ForeignKey('Instructor', on_delete=models.SET_NULL, null=True, blank=True, related_name='course_offerings', db_constraint=False)
+
     class Meta:
         managed = False
         db_table = 'myapp_course_offerings'
 
+    def __str__(self):
+        return f'{self.course.course_number} {self.section_number} ({self.academic_term})'
+
 class SharedSession(models.Model):
-    """Reference to shared sessions"""
-    shared_session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    
+    """Reference to shared sessions from course-service"""
+    SESSION_TYPE_CHOICES = [
+        ('lab', 'Lab'),
+        ('tutorial', 'Tutorial'),
+        ('seminar', 'Seminar')
+    ]
+
+    shared_session_id = models.UUIDField(primary_key=True)
+    session_type = models.CharField(max_length=10, choices=SESSION_TYPE_CHOICES, help_text="Type of shared session")
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='lab_sections', db_constraint=False)
+    section_number = models.CharField(max_length=3, help_text="Lab section number (e.g., 'L01', 'T01')")
+    academic_term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name='lab_sections', db_constraint=False)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True, related_name='shared_sessions', db_constraint=False)
+
     class Meta:
         managed = False
         db_table = 'myapp_sharedsessions'
+
+    def __str__(self):
+        return f'{self.course.course_number} {self.section_number} ({self.academic_term}) - {self.session_type}'
 
 # NEW MODELS FOR ALLOCATIONS SERVICE
 class Offer(models.Model):
