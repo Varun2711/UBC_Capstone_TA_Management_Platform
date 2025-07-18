@@ -1,5 +1,4 @@
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Bell, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -10,21 +9,48 @@ import { AppSidebar } from "@/components/scheduler-sidebar"
 import { CourseCard } from "@/components/scheduler/course_management/course-card"
 import { CourseFilters } from "@/components/scheduler/course_management/course-filters"
 import { EmptyState } from "@/components/scheduler/course_management/empty-state"
-import { mockCourses } from "@/data/mock-courses"
 import { AddCourseModal } from "@/components/scheduler/course_management/add-course-modal"
 import { EditCourseModal } from "@/components/scheduler/course_management/edit-course-modal"
 import { AddOfferingModal } from "@/components/scheduler/course_management/add-offering-modal"
 import { EditOfferingModal } from "@/components/scheduler/course_management/edit-offering-modal"
 import { AddLabTutorialModal } from "@/components/scheduler/course_management/add-lab-tutorial-modal"
 
+// Import API functions
+import {
+  getAllCoursesFullDetails,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  createCourseOffering,
+  updateCourseOffering,
+  deleteCourseOffering,
+  createSharedSession,
+  getTerms,
+  getDepartments,
+  getInstructors,
+  mapCourseData,
+  mapTermsForDropdown,
+  mapInstructorsForDropdown
+} from "@/logic/courseManagement"
+
 export default function CourseManagement() {
+  // State for courses and UI
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [selectedYear, setSelectedYear] = useState("all")
   const [expandedCourses, setExpandedCourses] = useState(new Set())
   const [expandedOfferings, setExpandedOfferings] = useState(new Set())
   const [expandedLabSections, setExpandedLabSections] = useState(new Set())
-  const [courses, setCourses] = useState(mockCourses)
+  
+  // Data state
+  const [courses, setCourses] = useState([])
+  const [departments, setDepartments] = useState([])
+  const [terms, setTerms] = useState([])
+  const [instructors, setInstructors] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  
+  // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddOfferingModalOpen, setIsAddOfferingModalOpen] = useState(false)
@@ -33,6 +59,42 @@ export default function CourseManagement() {
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [selectedOffering, setSelectedOffering] = useState(null)
 
+  // Load initial data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // Load all required data in parallel
+        const [coursesData, departmentsData, termsData, instructorsData] = await Promise.all([
+          getAllCoursesFullDetails(),
+          getDepartments(),
+          getTerms(),
+          getInstructors()
+        ])
+
+        // Map data to frontend format - pass instructors to resolve names
+        const mappedInstructors = mapInstructorsForDropdown(instructorsData, departmentsData)
+        const mappedCourses = coursesData.map(course => mapCourseData(course, instructorsData)) // Pass instructors here
+        const mappedTerms = mapTermsForDropdown(termsData)
+
+        setCourses(mappedCourses)
+        setDepartments(departmentsData)
+        setTerms(mappedTerms)
+        setInstructors(mappedInstructors)
+      } catch (err) {
+        console.error("Failed to load course management data:", err)
+        setError("Failed to load data. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+
+  // Toggle functions
   const toggleCourse = (courseId) => {
     setExpandedCourses((prev) => {
       const next = new Set(prev)
@@ -69,13 +131,27 @@ export default function CourseManagement() {
     })
   }
 
+  // Course management functions
   const handleAddCourse = () => {
     setIsAddModalOpen(true)
   }
 
-  const handleAddCourseSubmit = (newCourse) => {
-    setCourses((prev) => [...prev, newCourse])
-    console.log("Course added:", newCourse)
+  const handleAddCourseSubmit = async (newCourseData) => {
+    try {
+      const createdCourse = await createCourse(newCourseData)
+      
+      // Reload the courses to get the updated data
+      const [updatedCourses, instructorsData] = await Promise.all([
+        getAllCoursesFullDetails(),
+        getInstructors()
+      ])
+      setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
+      
+      console.log("Course added:", createdCourse)
+    } catch (error) {
+      console.error("Error adding course:", error)
+      setError("Failed to add course. Please try again.")
+    }
   }
 
   const handleCloseAddModal = () => {
@@ -87,9 +163,22 @@ export default function CourseManagement() {
     setIsEditModalOpen(true)
   }
 
-  const handleEditCourseSubmit = (updatedCourse) => {
-    setCourses((prev) => prev.map((course) => (course.id === updatedCourse.id ? updatedCourse : course)))
-    console.log("Course updated:", updatedCourse)
+  const handleEditCourseSubmit = async (updatedCourseData) => {
+    try {
+      await updateCourse(selectedCourse.id, updatedCourseData)
+      
+      // Reload the courses to get the updated data
+      const [updatedCourses, instructorsData] = await Promise.all([
+        getAllCoursesFullDetails(),
+        getInstructors()
+      ])
+      setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
+      
+      console.log("Course updated:", updatedCourseData)
+    } catch (error) {
+      console.error("Error updating course:", error)
+      setError("Failed to update course. Please try again.")
+    }
   }
 
   const handleCloseEditModal = () => {
@@ -97,19 +186,32 @@ export default function CourseManagement() {
     setSelectedCourse(null)
   }
 
+  // Course offering functions
   const handleAddOffering = (course) => {
     setSelectedCourse(course)
     setIsAddOfferingModalOpen(true)
   }
 
-  const handleAddOfferingSubmit = (courseId, newOffering) => {
-    setCourses((prev) =>
-      prev.map((course) =>
-        course.id === courseId ? { ...course, offerings: [...course.offerings, newOffering] } : course,
-      ),
-    )
-    console.log("Offering added:", newOffering)
+  const handleAddOfferingSubmit = async (courseId, newOfferingData) => {
+    try {
+      console.log("Adding offering with data:", newOfferingData)
+      
+      await createCourseOffering(newOfferingData)
+      
+      // Reload the courses to get the updated data
+      const [updatedCourses, instructorsData] = await Promise.all([
+        getAllCoursesFullDetails(),
+        getInstructors()
+      ])
+      setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
+      
+      console.log("Offering added successfully")
+    } catch (error) {
+      console.error("Error adding offering:", error)
+      setError("Failed to add offering. Please try again.")
+    }
   }
+  
 
   const handleCloseAddOfferingModal = () => {
     setIsAddOfferingModalOpen(false)
@@ -122,20 +224,24 @@ export default function CourseManagement() {
     setIsEditOfferingModalOpen(true)
   }
 
-  const handleEditOfferingSubmit = (courseId, updatedOffering) => {
-    setCourses((prev) =>
-      prev.map((course) =>
-        course.id === courseId
-          ? {
-              ...course,
-              offerings: course.offerings.map((offering) =>
-                offering.id === updatedOffering.id ? updatedOffering : offering,
-              ),
-            }
-          : course,
-      ),
-    )
-    console.log("Offering updated:", updatedOffering)
+  const handleEditOfferingSubmit = async (courseId, updatedOfferingData) => {
+    try {
+      console.log("Updating offering with data:", updatedOfferingData)
+      
+      await updateCourseOffering(updatedOfferingData.id, updatedOfferingData)
+      
+      // Reload the courses to get the updated data
+      const [updatedCourses, instructorsData] = await Promise.all([
+        getAllCoursesFullDetails(),
+        getInstructors()
+      ])
+      setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
+      
+      console.log("Offering updated successfully")
+    } catch (error) {
+      console.error("Error updating offering:", error)
+      setError("Failed to update offering. Please try again.")
+    }
   }
 
   const handleCloseEditOfferingModal = () => {
@@ -144,42 +250,38 @@ export default function CourseManagement() {
     setSelectedCourse(null)
   }
 
+  // Lab/Tutorial functions
   const handleAddLabTutorial = (course) => {
-    // Instead of taking an offering, we'll need to let the user select which offering
-    // or create a session that applies to all offerings in a term
     setSelectedCourse(course)
-    setSelectedOffering(null) // Set to null since we're working at course level
+    setSelectedOffering(null)
     setIsAddLabTutorialModalOpen(true)
   }
 
-  const handleAddLabTutorialSubmit = (courseId, term, year, sessionType, newSession) => {
-    setCourses((prev) =>
-      prev.map((course) => {
-        if (course.id === courseId) {
-          const termKey = `${term}-${year}`
-          const updatedSharedSessions = { ...course.sharedSessions }
+  const handleAddLabTutorialSubmit = async (courseId, term, year, sessionType, newSessionData) => {
+    try {
+      // Find the term ID from the term code
+      const selectedTerm = terms.find(t => t.value === term && t.year.toString() === year)
+      
+      const sessionData = {
+        sessionType: sessionType,
+        courseId: courseId,
+        section: newSessionData.section,
+        termId: selectedTerm?.id,
+        studentId: null, // No TA assigned initially
+        timeSlots: [] // Time slots will be handled separately
+      }
 
-          // Initialize term if it doesn't exist
-          if (!updatedSharedSessions[termKey]) {
-            updatedSharedSessions[termKey] = { labs: [], tutorials: [] }
-          }
-
-          // Add session to appropriate type
-          const sessionTypeKey = sessionType === "lab" ? "labs" : "tutorials"
-          updatedSharedSessions[termKey] = {
-            ...updatedSharedSessions[termKey],
-            [sessionTypeKey]: [...updatedSharedSessions[termKey][sessionTypeKey], newSession],
-          }
-
-          return {
-            ...course,
-            sharedSessions: updatedSharedSessions,
-          }
-        }
-        return course
-      }),
-    )
-    console.log("Lab/Tutorial session added:", newSession)
+      await createSharedSession(sessionData)
+      
+      // Reload the courses to get the updated data
+      const updatedCourses = await getAllCoursesFullDetails()
+      setCourses(updatedCourses.map(mapCourseData))
+      
+      console.log("Lab/Tutorial session added:", newSessionData)
+    } catch (error) {
+      console.error("Error adding lab/tutorial session:", error)
+      setError("Failed to add session. Please try again.")
+    }
   }
 
   const handleCloseAddLabTutorialModal = () => {
@@ -188,12 +290,20 @@ export default function CourseManagement() {
     setSelectedCourse(null)
   }
 
-  const handleDeleteCourse = (courseId) => {
+  const handleDeleteCourse = async (courseId) => {
     if (window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
-      setCourses(courses.filter((course) => course.id !== courseId))
+      try {
+        await deleteCourse(courseId)
+        setCourses(courses.filter((course) => course.id !== courseId))
+        console.log("Course deleted:", courseId)
+      } catch (error) {
+        console.error("Error deleting course:", error)
+        setError("Failed to delete course. Please try again.")
+      }
     }
   }
 
+  // Filter courses based on search and filters
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
       course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -204,8 +314,43 @@ export default function CourseManagement() {
     return matchesSearch && matchesDepartment && matchesYear
   })
 
-  const departments = ["Computer Science", "Mathematics", "Physics", "Engineering"]
-  const years = ["2024", "2025", "2026"]
+  // Get unique department names and years from data
+  const departmentNames = [...new Set(courses.map(course => course.department))].sort()
+  const years = [...new Set(courses.flatMap(course => course.offerings.map(offering => offering.year)))].sort()
+
+  if (loading) {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+              <p className="mt-2 text-muted-foreground">Loading courses...</p>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    )
+  }
+
+  if (error) {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+              <p className="text-red-600">{error}</p>
+              <Button onClick={() => window.location.reload()} className="mt-2">
+                Retry
+              </Button>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    )
+  }
 
   return (
     <SidebarProvider>
@@ -251,7 +396,7 @@ export default function CourseManagement() {
               onDepartmentChange={setSelectedDepartment}
               selectedYear={selectedYear}
               onYearChange={setSelectedYear}
-              departments={departments}
+              departments={departmentNames}
               years={years}
             />
           </div>
@@ -275,7 +420,7 @@ export default function CourseManagement() {
                   onDelete={handleDeleteCourse}
                   onAddOffering={handleAddOffering}
                   onEditOffering={handleEditOffering}
-                  onAddLabTutorial={handleAddLabTutorial} // This now receives the course
+                  onAddLabTutorial={handleAddLabTutorial}
                   expandedOfferings={expandedOfferings}
                   expandedLabSections={expandedLabSections}
                   onToggleOffering={toggleOffering}
@@ -296,6 +441,7 @@ export default function CourseManagement() {
         onClose={handleCloseAddModal}
         onAddCourse={handleAddCourseSubmit}
         existingCourses={courses}
+        departments={departments}
       />
 
       <EditCourseModal
@@ -304,6 +450,7 @@ export default function CourseManagement() {
         onEditCourse={handleEditCourseSubmit}
         course={selectedCourse}
         existingCourses={courses}
+        departments={departments}
       />
 
       <AddOfferingModal
@@ -312,6 +459,8 @@ export default function CourseManagement() {
         onAddOffering={handleAddOfferingSubmit}
         course={selectedCourse}
         existingOfferings={selectedCourse?.offerings || []}
+        terms={terms}
+        instructors={instructors}
       />
 
       <EditOfferingModal
@@ -321,6 +470,8 @@ export default function CourseManagement() {
         course={selectedCourse}
         offering={selectedOffering}
         existingOfferings={selectedCourse?.offerings || []}
+        terms={terms}
+        instructors={instructors}
       />
 
       <AddLabTutorialModal
@@ -337,6 +488,7 @@ export default function CourseManagement() {
               }
             : { labs: [], tutorials: [] }
         }
+        terms={terms}
       />
     </SidebarProvider>
   )
