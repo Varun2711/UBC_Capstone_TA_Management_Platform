@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { Edit, AlertCircle, Check, ChevronsUpDown } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Edit, AlertCircle, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -18,100 +18,70 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
+import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { mockProfessors } from "@/data/mock-professors"
 
-const TERMS = [
-  { value: "Winter Term 1", label: "Winter Term 1" },
-  { value: "Winter Term 2", label: "Winter Term 2" },
-  { value: "Summer Term 1", label: "Summer Term 1" },
-  { value: "Summer Term 2", label: "Summer Term 2" },
-  { value: "Winter Both Terms", label: "Winter Both Terms" },
-  { value: "Summer Both Terms", label: "Summer Both Terms" },
-]
-const YEARS = ["2024", "2025", "2026"]
-
-export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, offering, existingOfferings = [] }) {
+export function EditOfferingModal({
+  isOpen,
+  onClose,
+  onEditOffering,
+  course,
+  offering,
+  existingOfferings = [],
+  terms = [],
+  instructors = [],
+}) {
   const [formData, setFormData] = useState({
-    instructor: "",
+    section: "",
     year: "",
     term: "",
-    section: "",
+    instructor: "",
   })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [professorSearchOpen, setProfessorSearchOpen] = useState(false)
-  const [professorSearch, setProfessorSearch] = useState("")
+  const [instructorSearchOpen, setInstructorSearchOpen] = useState(false)
 
-  // Populate form when offering changes or modal opens
+  // Update form data when offering prop changes
   useEffect(() => {
     if (offering && isOpen) {
-      // Find the professor by name to get the ID
-      const professor = mockProfessors.find((prof) => prof.name === offering.instructor)
-
       setFormData({
-        instructor: professor?.id || "",
-        year: offering.year || "",
-        term: offering.term || "",
         section: offering.section || "",
+        year: offering.year?.toString() || "",
+        term: offering.term || "",
+        instructor: offering.instructor?.toString() || "",
       })
       setErrors({})
-      setProfessorSearch("")
     }
   }, [offering, isOpen])
 
-  // Filter professors based on course department and search query
-  const filteredProfessors = useMemo(() => {
-    let professors = mockProfessors
-
-    if (course?.department) {
-      professors = professors.filter((prof) => prof.department === course.department)
-    }
-
-    // Explicitly filter by your component's search state
-    if (professorSearch) {
-      professors = professors.filter((prof) =>
-        `${prof.name} ${prof.email} ${prof.title}`.toLowerCase().includes(professorSearch.toLowerCase()),
-      )
-    }
-
-    return professors
-  }, [course?.department, professorSearch])
-
-  const selectedProfessor = mockProfessors.find((prof) => prof.id === formData.instructor)
-
   const validateField = (name, value) => {
     switch (name) {
-      case "instructor":
-        if (!value) return "Instructor is required"
+      case "section":
+        if (!value.trim()) return "Section number is required"
+        if (!/^\d{3}$/.test(value.trim())) return "Section must be 3 digits (e.g., 001, 002)"
+
+        // Check for duplicate section in the same term and year (excluding current offering)
+        if (formData.term && formData.year && existingOfferings.some((off) =>
+          off.id !== offering?.id &&
+          off.section === value.trim() &&
+          off.term === formData.term &&
+          off.year.toString() === formData.year
+        )) {
+          return "A section with this number already exists for the selected term and year"
+        }
         return ""
 
       case "year":
-        if (!value) return "Year is required"
+        if (!value) return "Academic year is required"
         return ""
 
       case "term":
         if (!value) return "Term is required"
         return ""
 
-      case "section":
-        if (!value.trim()) return "Section is required"
-        if (value.trim().length < 1) return "Section must be at least 1 character"
-        if (value.trim().length > 20) return "Section must be less than 20 characters"
-
-        // Check for duplicate section in same term/year (excluding current offering)
-        const duplicateOffering = existingOfferings.find(
-          (existingOffering) =>
-            existingOffering.id !== offering?.id && // Exclude current offering
-            existingOffering.year === formData.year &&
-            existingOffering.term === formData.term &&
-            existingOffering.section.toLowerCase() === value.trim().toLowerCase(),
-        )
-        if (duplicateOffering) {
-          return `Section "${value.trim()}" already exists for ${formData.term} ${formData.year}`
-        }
+      case "instructor":
+        if (!value) return "Instructor is required"
         return ""
 
       default:
@@ -127,10 +97,10 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
       setErrors((prev) => ({ ...prev, [name]: "" }))
     }
 
-    // Also validate in real-time to clear the general error alert
-    const error = validateField(name, value)
-    if (!error) {
-      setErrors((prev) => ({ ...prev, [name]: "" }))
+    // Also validate section when term/year changes (for duplicate check)
+    if ((name === "term" || name === "year") && formData.section) {
+      const sectionError = validateField("section", formData.section)
+      setErrors((prev) => ({ ...prev, section: sectionError }))
     }
   }
 
@@ -144,23 +114,24 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
 
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key])
-      newErrors[key] = error // This will be empty string if no error
+      newErrors[key] = error
     })
 
     setErrors(newErrors)
-    return !Object.keys(newErrors).some((key) => newErrors[key]) // Check if any errors have actual messages
+    return !Object.keys(newErrors).some((key) => newErrors[key])
   }
 
   const resetForm = () => {
-    setFormData({
-      instructor: "",
-      year: "",
-      term: "",
-      section: "",
-    })
+    if (offering) {
+      setFormData({
+        section: offering.section || "",
+        year: offering.year?.toString() || "",
+        term: offering.term || "",
+        instructor: offering.instructor?.toString() || "",
+      })
+    }
     setErrors({})
     setIsSubmitting(false)
-    setProfessorSearch("")
   }
 
   const handleSubmit = async (e) => {
@@ -173,27 +144,20 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Create updated offering object
-      const updatedOffering = {
-        ...offering,
-        year: formData.year,
-        term: formData.term,
-        instructor: selectedProfessor?.name || formData.instructor,
+      // Find the selected term to get its ID
+      const selectedTerm = terms.find(term => term.value === formData.term)
+      
+      await onEditOffering(course.id, {
+        id: offering.id,
+        courseId: course.id,
         section: formData.section.trim(),
-        requirements: {
-          specialRequirements: [],
-        },
-      }
+        termId: selectedTerm?.id,  // Use the term ID from the mapped terms
+        instructorId: parseInt(formData.instructor),
+      })
 
-      onEditOffering(course.id, updatedOffering)
-      resetForm()
       onClose()
     } catch (error) {
       console.error("Error updating offering:", error)
-      // In a real app, you'd show an error message to the user
     } finally {
       setIsSubmitting(false)
     }
@@ -206,158 +170,163 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
     }
   }
 
-  // Check if form has changes
-  const hasChanges =
-    offering &&
-    (formData.year !== offering.year ||
-      formData.term !== offering.term ||
-      formData.section !== offering.section ||
-      selectedProfessor?.name !== offering.instructor)
+  if (!course || !offering) return null
+
+  // Filter instructors by course department if available
+  const availableInstructors = instructors.filter(
+    (instructor) => instructor.departmentId === course.departmentId || instructor.department === course.department,
+  )
+
+  // Get available years from terms
+  const availableYears = [...new Set(terms.map(term => term.year))].sort((a, b) => b - a)
+  
+  // Get available terms for selected year
+  const availableTerms = formData.year 
+    ? terms.filter(term => term.year.toString() === formData.year)
+    : []
+
+  // Get selected instructor for display
+  const selectedInstructor = availableInstructors.find(inst => inst.id.toString() === formData.instructor)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Edit className="h-5 w-5" />
             Edit Course Offering
           </DialogTitle>
           <DialogDescription>
-            Edit the offering for{" "}
-            <strong>
-              {course?.code} - {course?.title}
-            </strong>
+            Edit offering for <strong>{course.code} - {course.title}</strong>
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Course Info Display */}
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">
-                  {course?.code} - {course?.title}
-                </h4>
-                <p className="text-sm text-muted-foreground">{course?.department}</p>
-              </div>
-              <Badge variant="outline">Editing: {offering?.section}</Badge>
-            </div>
-          </div>
-
-          {/* Offering Information Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Offering Details</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="edit-section">Section Number *</Label>
+                <Input
+                  id="edit-section"
+                  placeholder="e.g., 001"
+                  value={formData.section}
+                  onChange={(e) => handleInputChange("section", e.target.value)}
+                  onBlur={(e) => handleBlur("section", e.target.value)}
+                  className={errors.section ? "border-red-500" : ""}
+                  maxLength={3}
+                />
+                {errors.section && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.section}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="edit-year">Academic Year *</Label>
-                <Select value={formData.year} onValueChange={(value) => handleInputChange("year", value)}>
-                  <SelectTrigger id="edit-year" className={errors.year ? "border-red-500" : ""}>
+                <Select 
+                  value={formData.year} 
+                  onValueChange={(value) => handleInputChange("year", value)}
+                >
+                  <SelectTrigger className={errors.year ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select year" />
                   </SelectTrigger>
                   <SelectContent>
-                    {YEARS.map((year) => (
-                      <SelectItem key={year} value={year}>
+                    {availableYears.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
                         {year}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {errors.year && (
-                  <div className="text-sm text-red-600 flex items-center gap-1">
+                  <p className="text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" />
                     {errors.year}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-term">Term *</Label>
-                <Select value={formData.term} onValueChange={(value) => handleInputChange("term", value)}>
-                  <SelectTrigger id="edit-term" className={errors.term ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select term" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TERMS.map((term) => (
-                      <SelectItem key={term.value} value={term.value}>
-                        {term.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.term && (
-                  <div className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
-                    {errors.term}
-                  </div>
+                  </p>
                 )}
               </div>
             </div>
 
-            {formData.term === "Winter Both Terms" || formData.term === "Summer Both Terms" ? (
-              <Alert variant="warning">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  You have selected "Both Terms". Please ensure this is the correct offering.
-                </AlertDescription>
-              </Alert>
-            ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="edit-term">Term *</Label>
+              <Select 
+                value={formData.term} 
+                onValueChange={(value) => handleInputChange("term", value)}
+                disabled={!formData.year}
+              >
+                <SelectTrigger className={errors.term ? "border-red-500" : ""}>
+                  <SelectValue placeholder={formData.year ? "Select term" : "Select year first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTerms.map((term) => (
+                    <SelectItem key={term.value} value={term.value}>
+                      {term.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.term && (
+                <p className="text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.term}
+                </p>
+              )}
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="edit-instructor">Instructor *</Label>
-              <Popover open={professorSearchOpen} onOpenChange={setProfessorSearchOpen}>
+              <Popover open={instructorSearchOpen} onOpenChange={setInstructorSearchOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
-                    id="edit-instructor"
-                    aria-expanded={professorSearchOpen}
-                    className={cn("w-full justify-between", errors.instructor ? "border-red-500" : "")}
+                    aria-expanded={instructorSearchOpen}
+                    className={cn(
+                      "w-full justify-between",
+                      errors.instructor ? "border-red-500" : ""
+                    )}
                   >
-                    {selectedProfessor ? (
-                      <div className="flex items-center gap-2">
-                        <span>{selectedProfessor.name}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {selectedProfessor.title}
-                        </Badge>
-                      </div>
+                    {selectedInstructor ? (
+                      <span>{selectedInstructor.name} - {selectedInstructor.department}</span>
                     ) : (
-                      "Select instructor..."
+                      <span className="text-muted-foreground">Search and select instructor...</span>
                     )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
+                <PopoverContent className="w-full p-0">
                   <Command>
-                    <CommandInput
-                      placeholder="Search professors..."
-                      value={professorSearch}
-                      onValueChange={setProfessorSearch}
-                    />
+                    <CommandInput placeholder="Search instructors..." className="h-9" />
+                    <CommandEmpty>No instructor found.</CommandEmpty>
                     <CommandList>
-                      <CommandEmpty>No professors found.</CommandEmpty>
                       <CommandGroup>
-                        {filteredProfessors.map((professor) => (
+                        {availableInstructors.map((instructor) => (
                           <CommandItem
-                            key={professor.id}
-                            value={`${professor.name} ${professor.email} ${professor.title} ${professor.department}`}
+                            key={instructor.id}
+                            value={`${instructor.name} ${instructor.email} ${instructor.department}`}
                             onSelect={() => {
-                              handleInputChange("instructor", professor.id)
-                              setProfessorSearchOpen(false)
+                              handleInputChange("instructor", instructor.id.toString())
+                              setInstructorSearchOpen(false)
                             }}
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.instructor === professor.id ? "opacity-100" : "opacity-0",
-                              )}
-                            />
                             <div className="flex flex-col">
-                              <span className="font-medium">{professor.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {professor.title} • {professor.department}
+                              <span className="font-medium">{instructor.name}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {instructor.email} • {instructor.department}
                               </span>
                             </div>
+                            <Check
+                              className={cn(
+                                "ml-auto h-4 w-4",
+                                formData.instructor === instructor.id.toString()
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -366,33 +335,28 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
                 </PopoverContent>
               </Popover>
               {errors.instructor && (
-                <div className="text-sm text-red-600 flex items-center gap-1">
+                <p className="text-sm text-red-600 flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" />
                   {errors.instructor}
-                </div>
-              )}
-              {course?.department && (
-                <p className="text-xs text-muted-foreground">Showing professors from {course.department} department</p>
+                </p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-section">Section *</Label>
-              <Input
-                id="edit-section"
-                placeholder="e.g., Section A"
-                value={formData.section}
-                onChange={(e) => handleInputChange("section", e.target.value)}
-                onBlur={(e) => handleBlur("section", e.target.value)}
-                className={errors.section ? "border-red-500" : ""}
-              />
-              {errors.section && (
-                <div className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.section}
+            {/* Show other offerings for reference */}
+            {existingOfferings.filter((off) => off.id !== offering.id).length > 0 && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                <p className="text-sm font-medium text-gray-700 mb-2">Other Offerings:</p>
+                <div className="space-y-1">
+                  {existingOfferings
+                    .filter((off) => off.id !== offering.id)
+                    .map((off) => (
+                      <p key={off.id} className="text-sm text-gray-600">
+                        <strong>{off.displaySection || `${course.code}-${off.section}`}</strong> - {off.term} {off.year}
+                      </p>
+                    ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {Object.keys(errors).some((key) => errors[key]) && (
@@ -401,23 +365,13 @@ export function EditOfferingModal({ isOpen, onClose, onEditOffering, course, off
               <AlertDescription>Please fix the errors above before submitting.</AlertDescription>
             </Alert>
           )}
-
-          {/* Warning about existing sessions */}
-          {offering && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Changes to term or year may affect associated lab/tutorial sessions and TA assignments.
-              </AlertDescription>
-            </Alert>
-          )}
         </form>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting || !hasChanges}>
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? "Updating Offering..." : "Update Offering"}
           </Button>
         </DialogFooter>
