@@ -38,6 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppSidebar } from "../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
+import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
 import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse } from "@/logic/coordinator-allocations-page";
 
@@ -329,6 +330,7 @@ export default function TAAllocationPage() {
   const [taList, setTaList] = useState(availableTAs)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState(null)
+  const [addedOffers, setAddedOffers] = useState([])
   const [activeOffers, setActiveOffers] = useState([])
   const [showRescindModal, setShowRescindModal] = useState(false)
   const [taToRescind, setTaToRescind] = useState(null)
@@ -347,13 +349,13 @@ export default function TAAllocationPage() {
   const selectedTA = taList.find((ta) => ta.id === selectedTAId)
 
   // Function to store the offer of a TA to a course
-  const handleAddTAtoActiveOfferTab = (selectedTA, selectedCourse) => {
-    setActiveOffers((prevOffers) => {
+  const handleAddTAtoAddedOfferTab = (selectedTA, selectedCourse) => {
+    setAddedOffers((prevOffers) => {
       const existingTA = prevOffers.find(
         (o) => o.taStudentId === selectedTA.studentId
       )
 
-      console.log("selectedCourse.time_slots_info in handleAddTAtoActiveOfferTab: ", selectedCourse.time_slots_info);
+      console.log("selectedCourse.time_slots_info in handleAddTAtoAddedOfferTab: ", selectedCourse.time_slots_info);
       const newOffer = {
         course_number: selectedCourse.course_number,
         course_name: selectedCourse.course_name,
@@ -394,7 +396,7 @@ export default function TAAllocationPage() {
   }
 
   const handleRescindOffer = (taStudentId) => {
-    setActiveOffers((prevOffers) =>
+    setAddedOffers((prevOffers) =>
       prevOffers.filter((offer) => offer.taStudentId !== taStudentId)
     )
   }
@@ -411,7 +413,7 @@ export default function TAAllocationPage() {
       )
     )
     
-    setActiveOffers((prevOffers) =>
+    setAddedOffers((prevOffers) =>
     prevOffers.filter(
       (a) =>
         !(
@@ -444,7 +446,7 @@ export default function TAAllocationPage() {
   }
 
   const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
-    const taOffer = activeOffers.find((o) => o.taStudentId === taStudentId)
+    const taOffer = addedOffers.find((o) => o.taStudentId === taStudentId)
     if (!taOffer) return false
 
     return taOffer.offers.some((offer) => String(offer.sectionId) === String(sectionId))
@@ -656,9 +658,6 @@ export default function TAAllocationPage() {
     return total;
   }
 
-
-
-
   // Function to get assignments for a specific TA
   function getAssignmentsForTA(taName) {
   return assignments.filter((assignment) => assignment.taName === taName)
@@ -853,6 +852,7 @@ export default function TAAllocationPage() {
               </div>
               <TabsList>
                 <TabsTrigger value="allocate">Allocate TAs</TabsTrigger>
+                <TabsTrigger value="added-offers">Added Offers</TabsTrigger>
                 <TabsTrigger value="active-offers">Active Offers</TabsTrigger>
                 <TabsTrigger value="allocated">Allocated TAs</TabsTrigger>
 
@@ -926,7 +926,7 @@ export default function TAAllocationPage() {
                           <div>
                             <div>
                               <h4 className="text-sm font-medium mb-2">Availability</h4>
-                              {console.log("activeOffers right before WeeklyAvailabilityCalendar is: ", activeOffers)}
+                              {console.log("addedOffers right before WeeklyAvailabilityCalendar is: ", addedOffers)}
                               <WeeklyAvailabilityCalendar
                                 mode={"allocation"}
                                 editable={false}
@@ -943,7 +943,12 @@ export default function TAAllocationPage() {
                                         ...assignments
                                             .filter(a => a.taStudentId === selectedTA.studentId)
                                             .flatMap(a => a.slots || []),
-                                        // Include slots from active (pending) offers for this TA (persistent red highlight)
+                                        // Include slots from added offers for this TA (persistent red highlight)
+                                        ...addedOffers
+                                          .filter(o => o.taStudentId === selectedTA.studentId)
+                                          .flatMap(o =>
+                                            o.offers?.flatMap(offer => offer.slots || []) || []
+                                          ),
                                         ...activeOffers
                                           .filter(o => o.taStudentId === selectedTA.studentId)
                                           .flatMap(o =>
@@ -1310,7 +1315,7 @@ export default function TAAllocationPage() {
                               );
 
                               newOffers.forEach((course) => {
-                                handleAddTAtoActiveOfferTab(updatedTA, course);
+                                handleAddTAtoAddedOfferTab(updatedTA, course);
                               });
 
                               // Reset selections
@@ -1326,6 +1331,16 @@ export default function TAAllocationPage() {
                     </CardContent>
                   </Card>
                 )}
+              </TabsContent>
+
+              {/* Added Offers Tab */}
+              <TabsContent value="added-offers">
+                <AddedOffersTab 
+                  addedOffers={addedOffers} 
+                  setAddedOffers={setAddedOffers}
+                  activeOffers={activeOffers}
+                  setActiveOffers={setActiveOffers}
+                />
               </TabsContent>
 
               {/* Active Offers Tab */}
@@ -1486,8 +1501,6 @@ export default function TAAllocationPage() {
                   </div>
                 </div>
               )}
-
-
             </Tabs>
           </main>
         </div>
