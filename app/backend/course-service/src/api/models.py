@@ -129,7 +129,7 @@ class TimeSlot(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'time_slots'
+        db_table = 'myapp_timeslots'
         ordering = ['day', 'start_time']
         unique_together = ['day', 'start_time', 'end_time']
 
@@ -227,6 +227,12 @@ class CourseOffering(models.Model):
         blank=True,
         related_name='course_offerings',
         help_text="Instructor teaching this course offering"
+    )
+    time_slots = models.ManyToManyField(
+        TimeSlot,
+        blank=True,
+        related_name='course_offerings',
+        help_text="Time slots when this course offering meets"
     )
 
     class Meta:

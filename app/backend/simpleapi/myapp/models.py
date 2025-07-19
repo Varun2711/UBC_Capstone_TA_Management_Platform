@@ -109,7 +109,7 @@ class TimeSlot(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'time_slots'
+        db_table = 'myapp_timeslots'
         ordering = ['day', 'start_time']
         unique_together = ['day', 'start_time', 'end_time']
 
