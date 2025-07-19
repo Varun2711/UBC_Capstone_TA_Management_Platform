@@ -461,6 +461,7 @@ class Offer(models.Model):
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
         ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'), 
     ]
     
     offer_id = models.AutoField(primary_key=True)
@@ -556,6 +557,14 @@ class Offer(models.Model):
         """Check if student can still respond to offer"""
         # This will auto-update expired status
         return self.status == 'pending' and not self.is_expired()
+
+    def can_be_edited(self):
+        """Check if offer can be edited"""
+        return self.status == 'pending' and not self.is_expired()
+    
+    def can_be_cancelled(self):
+        """Check if offer can be cancelled"""
+        return self.status == 'pending'
     
     def __str__(self):
         items = self.offer_items.all()
@@ -627,3 +636,43 @@ class Assignment(models.Model):
     def __str__(self):
         weekly_hours = self.weekly_hours
         return f"Assignment {self.assignment_id} - {self.student.name if self.student else 'Unknown'} ({weekly_hours}h/week)"
+
+class AssignmentModification(models.Model):
+    """Track assignment modifications that need student response"""
+    MODIFICATION_STATUS = [
+        ('pending', 'Pending Student Response'),
+        ('accepted', 'Student Accepted'),
+        ('rejected', 'Student Rejected')
+    ]
+    
+    modification_id = models.AutoField(primary_key=True)
+    original_assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='modifications')
+    new_offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='assignment_modifications')
+    
+    # Modification details
+    reason = models.TextField(help_text="Scheduler's reason for the change")
+    modification_type = models.CharField(max_length=20, choices=[
+        ('time_change', 'Time/Schedule Change'),
+        ('section_change', 'Section Change'), 
+        ('course_change', 'Course Change'),
+        ('hours_change', 'Hours Change'),
+        ('other', 'Other')
+    ], default='other')
+    
+    # Status tracking
+    status = models.CharField(max_length=20, choices=MODIFICATION_STATUS, default='pending')
+    requires_response = models.BooleanField(default=True)
+    
+    # Timestamps
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
+    student_responded_at = models.DateTimeField(null=True, blank=True)
+    student_response = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_assignment_modification'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Modification {self.modification_id} - {self.original_assignment.student.name}"

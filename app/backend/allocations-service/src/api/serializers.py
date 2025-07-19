@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Offer, Assignment, Student, CourseOffering, SharedSession, Application, 
-    ApplicationShortList, Term, JobPosting, OfferItem, Course
+    ApplicationShortList, Term, JobPosting, OfferItem, Course, AssignmentModification
 )
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -106,6 +106,10 @@ class OfferSerializer(serializers.ModelSerializer):
     
     # Multi-item support
     offer_items = OfferItemSerializer(many=True, read_only=True)
+
+    #  to identify modification offers
+    is_modification = serializers.SerializerMethodField()
+    modification_details = serializers.SerializerMethodField()
     
     # Essential computed fields only
     total_weekly_hours = serializers.SerializerMethodField()
@@ -122,8 +126,7 @@ class OfferSerializer(serializers.ModelSerializer):
             'offer_id', 'student', 'offer_items',
             'role', 'offer_date', 'response_deadline', 'status',
             'responded_at', 'student_response', 'created_by', 'notes',
-            'total_weekly_hours', 'position_summary'
-            # *** REMOVED: application, courses, terms, primary_course, primary_term, created_at, updated_at
+            'total_weekly_hours', 'position_summary','is_modification', 'modification_details'
         ]
     
     def get_total_weekly_hours(self, obj):
@@ -165,6 +168,23 @@ class OfferSerializer(serializers.ModelSerializer):
         data['is_expired'] = instance.is_expired()
         
         return data
+    
+    def get_is_modification(self, obj):
+        """Check if this offer is part of an assignment modification"""
+        return hasattr(obj, 'assignment_modifications') and obj.assignment_modifications.exists()
+    
+    def get_modification_details(self, obj):
+        """Get modification details if this is a modification offer"""
+        if hasattr(obj, 'assignment_modifications') and obj.assignment_modifications.exists():
+            modification = obj.assignment_modifications.first()
+            return {
+                'modification_id': modification.modification_id,
+                'reason': modification.reason,
+                'modification_type': modification.modification_type,
+                'original_assignment_id': modification.original_assignment.assignment_id,
+                'created_at': modification.created_at
+            }
+        return None
 
 class AssignmentSerializer(serializers.ModelSerializer):
     """Updated assignment serializer"""
@@ -197,3 +217,18 @@ class AssignmentSerializer(serializers.ModelSerializer):
     def get_required_hours_category(self, obj):
         """Get the hours category based on actual hours"""
         return obj.required_hours_category
+    
+class AssignmentModificationSerializer(serializers.ModelSerializer):
+    """Serializer for assignment modifications that appear in student's offers"""
+    original_assignment = AssignmentSerializer(read_only=True)
+    new_offer = OfferSerializer(read_only=True)
+    created_by = serializers.StringRelatedField(read_only=True)
+    
+    class Meta:
+        model = AssignmentModification
+        fields = [
+            'modification_id', 'original_assignment', 'new_offer', 
+            'reason', 'modification_type', 'status', 'requires_response',
+            'created_by', 'created_at', 'student_responded_at', 'student_response'
+        ]
+        read_only_fields = ['modification_id', 'created_at', 'student_responded_at']
