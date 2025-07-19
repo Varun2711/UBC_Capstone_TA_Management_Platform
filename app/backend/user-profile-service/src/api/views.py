@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from utils.password_utils import generate_secure_password
+from django.http import Http404
 
 # Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
@@ -116,33 +117,56 @@ class ProfileDetailView(generics.RetrieveAPIView):
             return ComprehensiveStudentProfileSerializer
     
     def get_object(self):
-        # Check if accessing specific student (admin view)
         student_id = self.kwargs.get('student_id')
         if student_id:
-            # Find the Student first, then get the corresponding User
+            # Find the Student first
             student = get_object_or_404(Student, student_number=student_id)
-            user = get_object_or_404(User, email=student.email)
-            return user
             
-        # Otherwise, get current user based on token
+            # Create Django User if it doesn't exist
+            user, created = User.objects.get_or_create(
+                email=student.email,
+                defaults={
+                    'username': student.email,
+                    'first_name': student.name.split()[0] if student.name else '',
+                    'last_name': ' '.join(student.name.split()[1:]) if len(student.name.split()) > 1 else '',
+                    'is_active': True
+                }
+            )
+            
+            if created:
+                print(f"✅ Created missing Django User for {student.email}")
+            
+            return user
+        
+        # Handle /me/ access
         user_type = self.request.auth.payload.get('user_type', None)
         user_id = self.request.auth.payload.get('sub', None)
         
         if user_type == 'student':
-            # For students, we use the Django User model
-            return self.request.user
+            # Ensure Django User exists for student
+            try:
+                student = Student.objects.get(student_number=user_id)
+                user, created = User.objects.get_or_create(
+                    email=student.email,
+                    defaults={
+                        'username': student.email,
+                        'first_name': student.name.split()[0] if student.name else '',
+                        'last_name': ' '.join(student.name.split()[1:]) if len(student.name.split()) > 1 else '',
+                        'is_active': True
+                    }
+                )
+                return user
+            except Student.DoesNotExist:
+                raise Http404("Student not found")
+        
         elif user_type == 'instructor':
-            # For instructors, find by employee_number
             return get_object_or_404(Instructor, employee_number=user_id)
         elif user_type == 'scheduler':
-            # For schedulers, find by employee_number
             return get_object_or_404(TAScheduler, employee_number=user_id)
         elif user_type == 'admin':
-            # For admins, find by employee_number
             return get_object_or_404(Admin, employee_number=user_id)
         else:
-            # Default fallback to the Django user
-            return self.request.user
+            raise Http404("Invalid user type")
 
 class ProfileUpdateView(generics.RetrieveUpdateAPIView):
     
