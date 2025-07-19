@@ -12,7 +12,7 @@ from utils.password_utils import generate_secure_password
 
 # Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
-from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsAuthenticatedUser, IsStudentUser
+from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsAuthenticatedUser, IsStudentUser, IsSchedulerOrAdmin
 
 from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Department
 from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
@@ -89,7 +89,7 @@ class ProfileDetailView(generics.RetrieveAPIView):
         student_id = self.kwargs.get('student_id')
         if student_id:
             # For specific student access, require admin OR scheduler permissions
-            return [IsAdminUser() or IsSchedulerUser()]
+            return [IsSchedulerOrAdmin()]
         else:
             # For /me/ access, any authenticated user
             return [IsAuthenticatedUser()]
