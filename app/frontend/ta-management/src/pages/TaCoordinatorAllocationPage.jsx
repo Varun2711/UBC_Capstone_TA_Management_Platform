@@ -566,6 +566,7 @@ export default function TAAllocationPage() {
   const formatSlotsFromTimeInfo = (timeSlots = []) => {
     if (!Array.isArray(timeSlots) || timeSlots.length === 0) return "No scheduled time";
 
+    console.log("timeSlot parameter in formatSlotsFromTimeInfo: ", timeSlots);
     const groupedByDay = {};
 
     for (const slot of timeSlots) {
@@ -600,7 +601,7 @@ export default function TAAllocationPage() {
 
     if (allSameTime && dayLabels.length > 1) {
       const [startMins, endMins] = allTimeRanges[0];
-      return `${dayLabels.join("")} ${minutesToTime(startMins)}–${minutesToTime(endMins)}`;
+      return `${dayLabels.join("")}: ${minutesToTime(startMins)}–${minutesToTime(endMins)}`;
     }
 
     // Fallback: day-by-day format
@@ -615,42 +616,47 @@ export default function TAAllocationPage() {
   };
 
   function getTotalHoursFromSlotString(slotString) {
-    const dayMap = {
-      M: "Monday",
-      T: "Tuesday",
-      W: "Wednesday",
-      Th: "Thursday",
-      F: "Friday",
-    };
+    console.log("slotString parameter in getTotalHoursFromSlotString: ", slotString);
 
-    // Match days and time
-    const match = slotString.match(/^([MTWRFh]+)\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})$/i);
-    if (!match) return 0;
+    // Normalize en dash to regular dash
+    slotString = slotString.replace(/–/g, "-");
 
-    const dayStr = match[1];
-    const startTime = match[2];
-    const endTime = match[3];
+    // Split only at the first colon
+    const firstColonIndex = slotString.indexOf(":");
+    console.log("firstColonIndex in getTotalHoursFromSlotString: ", firstColonIndex);
+    if (firstColonIndex === -1) return 0;
 
-    // Handle special case for "Th"
+    const dayPart = slotString.slice(0, firstColonIndex).trim(); // e.g., "MTh"
+    const timeRange = slotString.slice(firstColonIndex + 1).trim(); // e.g., "08:00-10:00"
+
+    // Handle day abbreviations including "Th"
     const days = [];
-    for (let i = 0; i < dayStr.length; i++) {
-      if (dayStr[i] === 'T' && dayStr[i+1] === 'h') {
-        days.push('Th');
-        i++;
+    for (let i = 0; i < dayPart.length; i++) {
+      if (dayPart[i] === "T" && dayPart[i + 1] === "h") {
+        days.push("Th");
+        i++; // skip 'h'
       } else {
-        days.push(dayStr[i]);
+        days.push(dayPart[i]);
       }
     }
 
-    // Convert start and end to minutes
+    const [startTime, endTime] = timeRange.split("-");
+    console.log("startTime in getTotalHoursFromSlotString: ", startTime);
+    console.log("endTime in getTotalHoursFromSlotString: ", endTime);
+    if (!startTime || !endTime) return 0;
+
     const [startHour, startMin] = startTime.split(":").map(Number);
     const [endHour, endMin] = endTime.split(":").map(Number);
+
     const durationInMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+    const durationPerDay = durationInMinutes / 60;
 
-    const durationPerDayInHours = durationInMinutes / 60;
-
-    return days.length * durationPerDayInHours;
+    const total = days.length * durationPerDay;
+    console.log("result of getTotalHoursFromSlotString: ", total);
+    return total;
   }
+
+
 
 
   // Function to get assignments for a specific TA
@@ -1239,6 +1245,8 @@ export default function TAAllocationPage() {
                           <ul className="list-disc list-inside text-sm text-muted-foreground mt-2">
                             {selectedSections.map((c, idx) => {
                               const hours = c.weekHours ?? c.weeklyDuration ?? 0;
+                              console.log("c in selectedSections.map in Send offer card is: ", c);
+                              console.log("hours in selectedSections.map in Send offer card is: ", hours);
                               return (
                                 <li key={idx}>
                                   {c.course_number} - {c.course_name} - {c.section_type_display} Section {c.section_number} ({hours} hrs)
