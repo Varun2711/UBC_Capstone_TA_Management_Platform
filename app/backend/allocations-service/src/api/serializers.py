@@ -1,10 +1,13 @@
 from rest_framework import serializers
-from .models import Offer, Assignment, Student, CourseOffering, SharedSession, Application, ApplicationShortList, Term, JobPosting
+from .models import (
+    Offer, Assignment, Student, CourseOffering, SharedSession, Application, 
+    ApplicationShortList, Term, JobPosting, OfferItem, Course
+)
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
-        fields = ['student_number', 'name', 'email', 'study_level']
+        fields = ['id', 'student_number', 'name', 'email', 'study_level']
 
 class TermSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,6 +18,11 @@ class JobPostingSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobPosting
         fields = ['posting_id']
+
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ['id', 'course_number', 'course_name', 'department', 'course_level']
 
 class ApplicationSerializer(serializers.ModelSerializer):
     student = StudentSerializer(read_only=True)
@@ -39,118 +47,9 @@ class ShortlistedApplicantSerializer(serializers.ModelSerializer):
         model = ApplicationShortList
         fields = ['application', 'shortlisted_by', 'created_at', 'notes']
 
-class OfferSerializer(serializers.ModelSerializer):
-    application = ApplicationSerializer(read_only=True)
-    student = StudentSerializer(read_only=True)
-    created_by = serializers.StringRelatedField(read_only=True)
-    
-    # Include detailed information for both course offerings and shared sessions
-    course_offering_id = serializers.CharField(read_only=True)  # ← Fixed from 'course_offering'
-    shared_session_id = serializers.CharField(read_only=True, allow_null=True)
-    
-    course_offering_details = serializers.SerializerMethodField()
-    shared_session_details = serializers.SerializerMethodField()
-    position_details = serializers.SerializerMethodField()
-    
-    # Explicitly handle datetime fields
-    response_deadline = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S%z', required=False, allow_null=True)
-    offer_date = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S%z', read_only=True)
-    responded_at = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S%z', read_only=True, allow_null=True)
-    
-    class Meta:
-        model = Offer
-        fields = [
-            'offer_id', 'application', 'course_offering_id', 'student', 'shared_session_id',
-            'required_hours', 'role', 'offer_date', 'response_deadline', 'status',
-            'responded_at', 'student_response', 'created_by', 'notes',
-            'can_respond', 'is_expired', 'created_at', 'updated_at',
-            # New detailed fields
-            'course_offering_details', 'shared_session_details', 'position_details'
-        ]
-    
-    def get_course_offering_details(self, obj):
-        """Get detailed course offering information"""
-        if obj.course_offering_id:
-            try:
-                # You'll need to fetch from course-service or have it in your database
-                # For now, return the UUID - you can enhance this later
-                return {
-                    'course_offering_id': obj.course_offering_id,
-                    'type': 'course_offering'
-                }
-            except:
-                return None
-        return None
-    
-    def get_shared_session_details(self, obj):
-        """Get detailed shared session information"""
-        if obj.shared_session_id:
-            try:
-                # You'll need to fetch from course-service or have it in your database
-                # For now, return the UUID - you can enhance this later
-                return {
-                    'shared_session_id': obj.shared_session_id,
-                    'type': 'shared_session'
-                }
-            except:
-                return None
-        return None
-    
-    def get_position_details(self, obj):
-        """Get comprehensive position details"""
-        if obj.course_offering_id:
-            return {
-                'position_type': 'Course TA',
-                'assignment_type': 'course_offering',
-                'course_offering_id': obj.course_offering_id,
-                'description': f'Teaching Assistant for course offering {obj.course_offering_id}',
-                'duties': 'Lectures, tutorials, grading, office hours'
-            }
-        elif obj.shared_session_id:
-            return {
-                'position_type': 'Lab/Tutorial TA',
-                'assignment_type': 'shared_session', 
-                'shared_session_id': obj.shared_session_id,
-                'description': f'Teaching Assistant for lab/tutorial session {obj.shared_session_id}',
-                'duties': 'Lab supervision, tutorial sessions, student assistance'
-            }
-        else:
-            return {
-                'position_type': 'TA Position',
-                'assignment_type': 'general',
-                'description': 'Teaching Assistant position',
-                'duties': 'To be determined'
-            }
-        
-
-class AssignmentSerializer(serializers.ModelSerializer):
-    student = StudentSerializer(read_only=True)
-    offer_details = OfferSerializer(source='offer', read_only=True)
-    
-    class Meta:
-        model = Assignment
-        fields = [
-            'assignment_id', 'offer', 'student', 'course_offering', 'shared_session',
-            'required_hours', 'role', 'assigned_date', 'assigned_by', 'is_active',
-            'notes', 'offer_details'
-        ]
-        read_only_fields = ['assignment_id', 'assigned_date']
-
-class SharedSessionSerializer(serializers.ModelSerializer):
-    """Serializer for shared session details in offers"""
-    course = serializers.StringRelatedField(read_only=True)
-    academic_term = TermSerializer(read_only=True)
-    
-    class Meta:
-        model = SharedSession
-        fields = [
-            'shared_session_id', 'session_type', 'course', 'section_number', 
-            'academic_term', 'student'
-        ]
-
 class CourseOfferingSerializer(serializers.ModelSerializer):
     """Serializer for course offering details in offers"""
-    course = serializers.StringRelatedField(read_only=True)
+    course = CourseSerializer(read_only=True)
     instructor = serializers.StringRelatedField(read_only=True)
     academic_term = TermSerializer(read_only=True)
     
@@ -161,3 +60,140 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
             'academic_term', 'instructor'
         ]
 
+class SharedSessionSerializer(serializers.ModelSerializer):
+    """Serializer for shared session details in offers"""
+    course = CourseSerializer(read_only=True)
+    academic_term = TermSerializer(read_only=True)
+    
+    class Meta:
+        model = SharedSession
+        fields = [
+            'shared_session_id', 'session_type', 'course', 'section_number', 
+            'academic_term', 'student'
+        ]
+
+class OfferItemSerializer(serializers.ModelSerializer):
+    """Simplified serializer for individual offer items"""
+    # Remove full course_offering and shared_session details
+    # Keep only essential computed fields
+    course_number = serializers.SerializerMethodField()
+    section_number = serializers.SerializerMethodField()
+    weekly_hours = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = OfferItem
+        fields = [
+            'offer_item_id', 'item_type', 
+            'course_number', 'section_number', 'weekly_hours'
+            # *** REMOVED: course_offering, shared_session, course, term, time_slot_details, required_hours_category
+        ]
+    
+    def get_course_number(self, obj):
+        return obj.course_number
+    
+    def get_section_number(self, obj):
+        return obj.section_number
+    
+    def get_weekly_hours(self, obj):
+        """Get calculated weekly hours from time slots"""
+        return obj.weekly_hours
+
+class OfferSerializer(serializers.ModelSerializer):
+    """Simplified serializer for multi-item offers"""
+    # Basic student info only (no full application details)
+    student = StudentSerializer(read_only=True)
+    created_by = serializers.StringRelatedField(read_only=True)
+    
+    # Multi-item support
+    offer_items = OfferItemSerializer(many=True, read_only=True)
+    
+    # Essential computed fields only
+    total_weekly_hours = serializers.SerializerMethodField()
+    position_summary = serializers.SerializerMethodField()
+    
+    # Datetime fields
+    response_deadline = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S%z', required=False, allow_null=True)
+    offer_date = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S%z', read_only=True)
+    responded_at = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S%z', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = Offer
+        fields = [
+            'offer_id', 'student', 'offer_items',
+            'role', 'offer_date', 'response_deadline', 'status',
+            'responded_at', 'student_response', 'created_by', 'notes',
+            'total_weekly_hours', 'position_summary'
+            # *** REMOVED: application, courses, terms, primary_course, primary_term, created_at, updated_at
+        ]
+    
+    def get_total_weekly_hours(self, obj):
+        """Get total weekly hours calculated from offer items"""
+        return obj.total_weekly_hours
+    
+    def get_position_summary(self, obj):
+        """Get a brief summary of positions in this offer"""
+        items = obj.offer_items.all()
+        if not items:
+            return "No positions assigned"
+        
+        summaries = []
+        for item in items:
+            if item.item_type == 'course_offering':
+                summaries.append(f"{item.course_number} {item.section_number}")
+            elif item.item_type == 'shared_session':
+                summaries.append(f"{item.course_number} {item.section_number} (Lab)")
+        
+        return " + ".join(summaries)
+
+    def to_representation(self, instance):
+        """Add computed fields that were previously model properties"""
+        data = super().to_representation(instance)
+        
+        # Add essential status fields
+        data['can_respond'] = instance.can_respond()
+        data['is_expired'] = instance.is_expired()
+        
+        return data
+
+    # *** ADD: Computed fields for backward compatibility ***
+    def to_representation(self, instance):
+        """Add computed fields that were previously model properties"""
+        data = super().to_representation(instance)
+        
+        # Add the missing method-based fields
+        data['can_respond'] = instance.can_respond()
+        data['is_expired'] = instance.is_expired()
+        
+        return data
+
+class AssignmentSerializer(serializers.ModelSerializer):
+    """Updated assignment serializer"""
+    student = StudentSerializer(read_only=True)
+    course = CourseSerializer(read_only=True)
+    course_offering = CourseOfferingSerializer(read_only=True)
+    shared_session = SharedSessionSerializer(read_only=True)
+    offer_details = OfferSerializer(source='offer', read_only=True)
+    assigned_by = serializers.StringRelatedField(read_only=True)
+    
+    # Add computed fields
+    weekly_hours = serializers.SerializerMethodField()
+    required_hours_category = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Assignment
+        fields = [
+            'assignment_id', 'offer', 'student', 'course', 'course_offering', 'shared_session',
+            # *** REMOVE: 'required_hours' (doesn't exist in model anymore)
+            'role', 'assigned_date', 'assigned_by', 'is_active',
+            'notes', 'offer_details', 'created_at', 'updated_at',
+            'weekly_hours', 'required_hours_category'  # ← Add computed fields
+        ]
+        read_only_fields = ['assignment_id', 'assigned_date']
+    
+    def get_weekly_hours(self, obj):
+        """Get calculated weekly hours from time slots"""
+        return obj.weekly_hours
+    
+    def get_required_hours_category(self, obj):
+        """Get the hours category based on actual hours"""
+        return obj.required_hours_category

@@ -12,7 +12,11 @@ from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
-from .models import Offer, Assignment, Student, TAScheduler, Application, ApplicationShortList
+    # Add this import at the top
+from .models import (
+    Offer, Assignment, Student, TAScheduler, Application, ApplicationShortList,
+    CourseOffering, SharedSession, Course, OfferItem  # ← Add OfferItem
+)
 from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer
 
 # Import shared auth utilities
@@ -103,36 +107,16 @@ class ShortlistedApplicantViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer_data)
     
     def calculate_student_allocation(self, student):
-        """Calculate student's current allocation status"""
-        # Get pending offers HOURS (potential future workload)
-        pending_offers_hours = Offer.objects.filter(
-            student=student,
-            status='pending'
-        ).aggregate(
-            total_hours=Sum(
-                Case(
-                    When(required_hours='6', then=6),
-                    When(required_hours='12', then=12),
-                    default=0,
-                    output_field=IntegerField()
-                )
-            )
-        )['total_hours'] or 0
+        """Calculate student's current allocation status using the new multi-item structure"""
+        # Get pending offers HOURS (calculated from offer items)
+        pending_offers_hours = 0
+        for offer in Offer.objects.filter(student=student, status='pending'):
+            pending_offers_hours += offer.total_weekly_hours  # ← Use the property method
         
-        # Get active assignments HOURS (confirmed workload)
-        active_assignments_hours = Assignment.objects.filter(
-            student=student,
-            is_active=True
-        ).aggregate(
-            total_hours=Sum(
-                Case(
-                    When(required_hours='6', then=6),
-                    When(required_hours='12', then=12),
-                    default=0,
-                    output_field=IntegerField()
-                )
-            )
-        )['total_hours'] or 0
+        # Get active assignments HOURS (calculated from time slots)
+        active_assignments_hours = 0
+        for assignment in Assignment.objects.filter(student=student, is_active=True):
+            active_assignments_hours += assignment.weekly_hours  # ← Use the property method
         
         return {
             'pending_offers_hours': pending_offers_hours,
@@ -143,8 +127,9 @@ class ShortlistedApplicantViewSet(viewsets.ReadOnlyModelViewSet):
 class OfferViewSet(viewsets.ModelViewSet):
     serializer_class = OfferSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['status', 'course_offering', 'required_hours', 'role']
-    search_fields = ['student__name', 'course_offering__course__course_number']
+    # *** FIXED: Remove total_required_hours from filterset_fields ***
+    filterset_fields = ['status', 'role']  # ← Removed 'total_required_hours'
+    search_fields = ['student__name', 'student__student_number']
     ordering_fields = ['offer_date', 'response_deadline', 'created_at']
     ordering = ['-created_at']
     
@@ -163,6 +148,7 @@ class OfferViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter offers based on user role"""
+        self.expire_old_offers()
         queryset = Offer.objects.select_related('student', 'application', 'created_by').all()
         
         # Check if JWT token exists
@@ -183,6 +169,39 @@ class OfferViewSet(viewsets.ModelViewSet):
         
         return queryset.none()
     
+    def expire_old_offers(self):
+        """Automatically expire offers that have passed deadline"""
+        expired_offers = Offer.objects.filter(
+            status='pending',
+            response_deadline__lt=timezone.now()
+        )
+        expired_offers.update(
+            status='expired',
+            updated_at=timezone.now()
+        )
+
+    @action(detail=False, methods=['get'])
+    def expired_offers(self, request):
+        """Get all expired offers"""
+        # Make sure expired offers are updated first
+        self.expire_old_offers()
+        
+        expired_offers = self.get_queryset().filter(status='expired')
+        serializer = self.get_serializer(expired_offers, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def respond_to_offer(self, request, pk=None):
+        """Allow student to respond to a multi-item offer"""
+        offer = self.get_object()
+        
+        # Auto-check expiration before allowing response
+        if offer.check_and_update_expiration():
+            return Response(
+                {'error': 'This offer has expired and can no longer be responded to'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
     def get_student_model_id(self, user_id):
         """Map JWT user_id to Student model ID - FIXED to match auth-service pattern"""
         try:
@@ -198,60 +217,71 @@ class OfferViewSet(viewsets.ModelViewSet):
                 return student.id
             except (User.DoesNotExist, Student.DoesNotExist):
                 return None
-    
+        
+    # Update the create_offer method in OfferViewSet
     @action(detail=False, methods=['post'])
     def create_offer(self, request):
-        """Create a new offer for a shortlisted student"""
+        """Create a new multi-item offer for a shortlisted student"""
         from datetime import datetime
         from django.utils import timezone
-        import pytz
         
         application_id = request.data.get('application_id')
-        course_offering_id = request.data.get('course_offering_id')
-        shared_session_id = request.data.get('shared_session_id')
-        required_hours = request.data.get('required_hours', '6')
+        offer_items = request.data.get('offer_items', [])
         response_deadline_str = request.data.get('response_deadline')
         notes = request.data.get('notes', '')
         
-            # Validate that either course_offering_id OR shared_session_id is provided
-        if not course_offering_id and not shared_session_id:
+        # Backward compatibility: single item offer
+        course_offering_id = request.data.get('course_offering_id')
+        shared_session_id = request.data.get('shared_session_id')
+        
+        # If no offer_items provided, create from single item (backward compatibility)
+        if not offer_items and (course_offering_id or shared_session_id):
+            if course_offering_id and shared_session_id:
+                return Response(
+                    {'error': 'Provide either course_offering_id OR shared_session_id, not both'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if course_offering_id:
+                offer_items = [{
+                    'item_type': 'course_offering',
+                    'course_offering_id': course_offering_id
+                }]
+            elif shared_session_id:
+                offer_items = [{
+                    'item_type': 'shared_session',
+                    'shared_session_id': shared_session_id
+                }]
+        
+        # Validate offer_items
+        if not offer_items or not isinstance(offer_items, list):
             return Response(
-                {'error': 'Either course_offering_id or shared_session_id must be provided'},
+                {'error': 'offer_items must be a non-empty list'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if course_offering_id and shared_session_id:
-            return Response(
-                {'error': 'Provide either course_offering_id OR shared_session_id, not both'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Parse response_deadline properly
+        # Parse response_deadline
         response_deadline = None
         if response_deadline_str:
             try:
-                # Parse ISO format datetime string
                 if response_deadline_str.endswith('Z'):
                     response_deadline_str = response_deadline_str[:-1] + '+00:00'
                 response_deadline = datetime.fromisoformat(response_deadline_str)
-                
-                # Convert to timezone-aware datetime if needed
                 if response_deadline.tzinfo is None:
                     response_deadline = timezone.make_aware(response_deadline)
-                    
             except ValueError as e:
                 return Response(
                     {'error': f'Invalid response_deadline format: {str(e)}'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         
-        # Check JWT token exists
+        # Check authentication
         if not hasattr(request, 'auth') or not request.auth:
             return Response(
                 {'error': 'Authentication required'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        # Get user info from JWT token
         user_type = request.auth.payload.get('user_type', None)
         user_id = request.auth.payload.get('sub', None)
         
@@ -270,23 +300,105 @@ class OfferViewSet(viewsets.ModelViewSet):
             application = shortlisted_app.application
             student = application.student
             
+            # Validate and process offer items
+            total_hours = 0
+            validated_items = []
+            offer_courses = set()
+            offer_terms = set()
+            
+            for item_data in offer_items:
+                item_type = item_data.get('item_type')
+                
+                if item_type == 'course_offering':
+                    course_offering_id = item_data.get('course_offering_id')
+                    try:
+                        course_offering = CourseOffering.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
+                            course_offering_id=course_offering_id
+                        )
+                        
+                        # Calculate hours automatically from time slots
+                        temp_offer_item = OfferItem(
+                            item_type='course_offering',
+                            course_offering=course_offering
+                        )
+                        calculated_hours = temp_offer_item.weekly_hours
+                        
+                        validated_items.append({
+                            'type': 'course_offering',
+                            'object': course_offering,
+                            'hours': calculated_hours,
+                            'course': course_offering.course,
+                            'term': course_offering.academic_term
+                        })
+                        
+                        offer_courses.add(course_offering.course)
+                        offer_terms.add(course_offering.academic_term)
+                        total_hours += calculated_hours
+                        
+                    except CourseOffering.DoesNotExist:
+                        return Response(
+                            {'error': f'Course offering {course_offering_id} not found'},
+                            status=status.HTTP_404_NOT_FOUND
+                        )
+                
+                elif item_type == 'shared_session':
+                    shared_session_id = item_data.get('shared_session_id')
+                    try:
+                        shared_session = SharedSession.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
+                            shared_session_id=shared_session_id
+                        )
+                        
+                        # Calculate hours automatically from time slots
+                        temp_offer_item = OfferItem(
+                            item_type='shared_session',
+                            shared_session=shared_session
+                        )
+                        calculated_hours = temp_offer_item.weekly_hours
+                        
+                        validated_items.append({
+                            'type': 'shared_session',
+                            'object': shared_session,
+                            'hours': calculated_hours,  # ← Now calculated from time slots
+                            'course': shared_session.course,
+                            'term': shared_session.academic_term
+                        })
+                        
+                        offer_courses.add(shared_session.course)
+                        offer_terms.add(shared_session.academic_term)
+                        total_hours += calculated_hours
+                        
+                    except SharedSession.DoesNotExist:
+                        return Response(
+                            {'error': f'Shared session {shared_session_id} not found'},
+                            status=status.HTTP_404_NOT_FOUND
+                        )
+                
+                else:
+                    return Response(
+                        {'error': f'Invalid item_type: {item_type}. Must be "course_offering" or "shared_session"'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
             # Check if student would exceed their maximum hours
             current_allocation = self.calculate_student_allocation(student)
-            max_hours = int(application.workload) if application.workload else 0
-            new_hours = int(required_hours)
-            
-            if current_allocation['total_hours'] + new_hours > max_hours:
+            try:
+                max_hours = int(application.workload) if application.workload else 12
+                max_hours = min(max_hours, 12)
+            except (ValueError, TypeError):
+                max_hours = 12
+
+            if current_allocation['total_hours'] + total_hours > max_hours:
                 return Response(
                     {
                         'error': f'This offer would exceed student\'s maximum hours. '
                                 f'Current: {current_allocation["total_hours"]}, '
                                 f'Max: {max_hours}, '
-                                f'Requested: {new_hours}'
+                                f'Requested: {total_hours}'
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Get scheduler using proper JWT mapping
+            # Get scheduler
             scheduler = self.get_scheduler_from_jwt(user_type, user_id)
             if not scheduler:
                 return Response(
@@ -294,35 +406,53 @@ class OfferViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Create the offer with properly parsed datetime
-            offer = Offer.objects.create(
-                application=application,
-                course_offering_id=course_offering_id,
-                student=student,
-                shared_session_id=shared_session_id,
-                required_hours=required_hours,
-                response_deadline=response_deadline,
-                created_by=scheduler,
-                notes=notes
-            )
-            
-            # Serialize with error handling
-            try:
-                serializer = self.get_serializer(offer)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            except Exception as serializer_error:
-                # If serialization fails, return basic success response
-                return Response(
-                    {
-                        'success': True,
-                        'message': 'Offer created successfully',
-                        'offer_id': offer.offer_id,
-                        'student': student.name,
-                        'required_hours': required_hours,
-                        'status': offer.status
-                    },
-                    status=status.HTTP_201_CREATED
+            # Create multi-item offer
+            with transaction.atomic():
+                # Create the main offer first
+                offer = Offer.objects.create(
+                    application=application,
+                    student=student,
+                    response_deadline=response_deadline,
+                    created_by=scheduler,
+                    notes=notes
                 )
+                
+                # Create and add offer items
+                created_offer_items = []
+                for item_data in validated_items:
+                    if item_data['type'] == 'course_offering':
+                        offer_item = OfferItem.objects.create(
+                            item_type='course_offering',
+                            course_offering=item_data['object']
+                        )
+                    else:  # shared_session
+                        offer_item = OfferItem.objects.create(
+                            item_type='shared_session',
+                            shared_session=item_data['object']
+                        )
+                    
+                    offer.offer_items.add(offer_item)
+                    created_offer_items.append(offer_item)
+            
+            # Return response with all data
+            serializer = self.get_serializer(offer)
+            # In your create_offer method, update the return statement:
+            return Response({
+                'success': True,
+                'message': 'Multi-item offer created successfully',
+                'offer': serializer.data,  # ← Simplified: just 'offer' instead of 'offer_data'
+                'summary': {
+                    'offer_id': offer.offer_id,
+                    'student_id': student.id,
+                    'student_number': student.student_number,
+                    'application_id': application.application_id,  # ← Keep reference for fetching details separately
+                    'total_weekly_hours': round(total_hours, 1),
+                    'item_count': len(validated_items),
+                    'courses': [course.course_number for course in offer_courses],
+                    'terms': [term.code for term in offer_terms]
+                    # *** REMOVED: detailed items array
+                }
+            }, status=status.HTTP_201_CREATED)
             
         except ApplicationShortList.DoesNotExist:
             return Response(
@@ -360,43 +490,23 @@ class OfferViewSet(viewsets.ModelViewSet):
         return None
     
     def calculate_student_allocation(self, student):
-        """Calculate student's current allocation status"""
-        # Get pending offers HOURS
-        pending_offers_hours = Offer.objects.filter(
-            student=student,
-            status='pending'
-        ).aggregate(
-            total_hours=Sum(
-                Case(
-                    When(required_hours='6', then=6),
-                    When(required_hours='12', then=12),
-                    default=0,
-                    output_field=IntegerField()
-                )
-            )
-        )['total_hours'] or 0
+        """Calculate student's current allocation status using actual hours from time slots"""
+        # Get pending offers HOURS (calculated from time slots)
+        pending_offers_hours = 0
+        for offer in Offer.objects.filter(student=student, status='pending'):
+            pending_offers_hours += offer.total_weekly_hours
         
-        # Get active assignments HOURS
-        active_assignments_hours = Assignment.objects.filter(
-            student=student,
-            is_active=True
-        ).aggregate(
-            total_hours=Sum(
-                Case(
-                    When(required_hours='6', then=6),
-                    When(required_hours='12', then=12),
-                    default=0,
-                    output_field=IntegerField()
-                )
-            )
-        )['total_hours'] or 0
+        # Get active assignments HOURS (calculated from time slots)
+        active_assignments_hours = 0
+        for assignment in Assignment.objects.filter(student=student, is_active=True):
+            active_assignments_hours += assignment.weekly_hours
         
         return {
             'pending_offers_hours': pending_offers_hours,
             'active_assignments_hours': active_assignments_hours,
             'total_hours': pending_offers_hours + active_assignments_hours
         }
-    
+
     @action(detail=False, methods=['get'])
     def pending_offers(self, request):
         """Get all pending offers (not responded yet)"""
@@ -420,7 +530,7 @@ class OfferViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def respond_to_offer(self, request, pk=None):
-        """Allow student to respond to an offer"""
+        """Allow student to respond to a multi-item offer"""
         offer = self.get_object()
         
         # Check if student can respond
@@ -430,7 +540,7 @@ class OfferViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check JWT token and get user info
+        # Authentication and permission checks
         if not hasattr(request, 'auth') or not request.auth:
             return Response(
                 {'error': 'Authentication required'},
@@ -462,19 +572,20 @@ class OfferViewSet(viewsets.ModelViewSet):
             offer.student_response = student_response
             offer.save()
             
-            # Create assignment if accepted
+            # Create assignments for each offer item if accepted
             if response_status == 'accepted':
-                Assignment.objects.create(
-                    offer=offer,
-                    student=offer.student,
-                    course_offering=offer.course_offering,
-                    shared_session=offer.shared_session,
-                    required_hours=offer.required_hours,
-                    role=offer.role,
-                    assigned_by=offer.created_by,
-                    notes=f"Auto-assigned from accepted offer {offer.offer_id}"
-                )
-        
+                for offer_item in offer.offer_items.all():
+                    Assignment.objects.create(
+                        offer=offer,
+                        student=offer.student,
+                        course=offer_item.course,
+                        course_offering=offer_item.course_offering,
+                        shared_session=offer_item.shared_session,
+                        role='ta',
+                        assigned_by=offer.created_by,
+                        notes=f"Auto-assigned from accepted offer {offer.offer_id} - {offer_item.item_type} ({offer_item.weekly_hours}h/week)"
+                    )
+    
         serializer = self.get_serializer(offer)
         return Response(serializer.data)
 
@@ -482,7 +593,8 @@ class AssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = AssignmentSerializer
     permission_classes = [IsSchedulerOrAdmin]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['is_active', 'course_offering', 'required_hours', 'role']
+    # *** REMOVE: 'required_hours' from filterset_fields ***
+    filterset_fields = ['is_active', 'course_offering', 'role']  # ← Removed 'required_hours'
     search_fields = ['student__name', 'course_offering__course__course_number']
     ordering_fields = ['assigned_date']
     ordering = ['-assigned_date']
@@ -515,7 +627,8 @@ def api_root(request):
             'create_offer': '/api/allocations/offers/create_offer/',
             'pending_offers': '/api/allocations/offers/pending_offers/',
             'accepted_offers': '/api/allocations/offers/accepted_offers/',
-            'rejected_offers': '/api/allocations/offers/rejected_offers/',  # ← Add this line
+            'rejected_offers': '/api/allocations/offers/rejected_offers/', 
+            'expired_offers': '/api/allocations/offers/expired_offers/',  
             'respond_to_offer': '/api/allocations/offers/{offer_id}/respond_to_offer/',
                 
              # Assignments Management
@@ -530,5 +643,11 @@ def api_root(request):
             'schedulers': 'Can create offers, view all offers, manage assignments',
             'students': 'Can view own offers, respond to offers',
             'admins': 'Full access to all endpoints'
+        },
+        'offer_lifecycle': {
+            'pending': 'Offer created, awaiting student response',
+            'accepted': 'Student accepted offer, assignments created',
+            'rejected': 'Student rejected offer',
+            'expired': 'Offer deadline passed without response (auto-updated)'
         }
     })
