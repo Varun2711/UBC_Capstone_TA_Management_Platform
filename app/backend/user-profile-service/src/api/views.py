@@ -85,7 +85,14 @@ class ProfileDetailView(generics.RetrieveAPIView):
     
     def get_permissions(self):
         """Use shared auth permissions"""
-        return [IsAuthenticatedUser()]
+        # Check if accessing specific student (admin/scheduler view)
+        student_id = self.kwargs.get('student_id')
+        if student_id:
+            # For specific student access, require admin OR scheduler permissions
+            return [IsAdminUser() or IsSchedulerUser()]
+        else:
+            # For /me/ access, any authenticated user
+            return [IsAuthenticatedUser()]
     
     def get_serializer_class(self):
         # Check if accessing specific student (admin view)
