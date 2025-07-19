@@ -89,10 +89,10 @@ export default function ManageApplications() {
       const applicationsWithShortlistStatus =
         await enrichApplicationsWithShortlistStatus(data.applications);
 
-      console.log(
-        "Applications with shortlist status:",
-        applicationsWithShortlistStatus
-      );
+      //  console.log(
+      //    "Applications with shortlist status:",
+      //   applicationsWithShortlistStatus
+      // );
       setApplications(applicationsWithShortlistStatus);
     } catch (error) {
       console.error("Error loading applications:", error);
@@ -382,6 +382,7 @@ export default function ManageApplications() {
                                     onClick={(e) =>
                                       handleRemoveShortlist(application, e)
                                     }
+                                    data-testid="remove-shortlist-btn"
                                     className="inline-flex items-center text-red-600 hover:text-red-900 p-1 rounded"
                                     title="Remove from Shortlist"
                                   >
@@ -392,6 +393,7 @@ export default function ManageApplications() {
                                     onClick={(e) =>
                                       handleQuickShortlist(application, e)
                                     }
+                                    data-testid="quick-shortlist-btn"
                                     className="inline-flex items-center text-green-600 hover:text-green-900 p-1 rounded"
                                     title="Quick Shortlist"
                                   >

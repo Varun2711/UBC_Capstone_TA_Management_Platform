@@ -275,7 +275,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
     setSaving(true);
     setError(null);
 
-    console.log("Saving template:", template);
+    //console.log("Saving template:", template);
 
     try {
       let response;
@@ -285,7 +285,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
         response = await createTemplate(template);
       }
 
-      console.log("Template saved successfully:", response);
+      // console.log("Template saved successfully:", response);
       if (response) {
         onSave?.(response);
       }

@@ -77,9 +77,6 @@ export default function ViewStudentApplication() {
       const isShortlisted = await checkApplicationShortlisted(applicationid);
       setShortlisted(isShortlisted);
 
-      // Note: Student profile fetching is commented out in original code
-      // This would require additional API endpoint implementation
-      // const profileData = await fetchStudentProfile(applicationData.student.id);
       // setStudentProfile(profileData);
     } catch (error) {
       console.error("Error loading application:", error);

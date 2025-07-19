@@ -41,10 +41,6 @@ const JobPostingForm = ({
   const [schedulerProfile, setSchedulerProfile] = useState(null);
 
   useEffect(() => {
-    console.log("Templates in JobPostingForm:", templates);
-    console.log("Departments in JobPostingForm:", departments);
-    console.log("JobPosting in JobPostingForm:", jobPosting);
-
     // Fetch scheduler profile for created_by_id
     fetchSchedulerProfileData();
 
@@ -83,8 +79,8 @@ const JobPostingForm = ({
       termId = matchingTerm ? matchingTerm.id : "";
     }
 
-    console.log("Mapped Department ID:", departmentId);
-    console.log("Mapped Term ID:", termId);
+    //console.log("Mapped Department ID:", departmentId);
+    //console.log("Mapped Term ID:", termId);
 
     setFormData({
       title: posting.title || "",
@@ -130,7 +126,7 @@ const JobPostingForm = ({
         created_by_id: formData.created_by_id || schedulerProfile?.id || null,
       };
 
-      console.log("Submitting job posting data:", submitData);
+      //  console.log("Submitting job posting data:", submitData);
 
       let response;
       if (jobPosting) {
@@ -141,7 +137,7 @@ const JobPostingForm = ({
         response = await createJobPosting(submitData);
       }
 
-      console.log("Job posting submitted successfully:", response);
+      // console.log("Job posting submitted successfully:", response);
       onSave(response);
     } catch (error) {
       console.error("Error submitting job posting:", error);
