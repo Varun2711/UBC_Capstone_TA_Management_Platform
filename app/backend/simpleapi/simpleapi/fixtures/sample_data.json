@@ -295,7 +295,6 @@
       "otherPositionHours": 8
     }
   },
-
   {
     "model": "myapp.department",
     "pk": 1,
@@ -1268,7 +1267,9 @@
       "academic_term": 10,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440016"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440016"
+      ]
     }
   },
   {
@@ -1281,7 +1282,9 @@
       "academic_term": 10,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440017"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440017"
+      ]
     }
   },
   {
@@ -1460,8 +1463,6 @@
       ]
     }
   },
-
-
   {
     "model": "myapp.application",
     "pk": 3,
@@ -1582,6 +1583,78 @@
       "created_by": 3,
       "created_at": "2024-11-26T09:20:00Z",
       "notes": "Physics graduate student, strong analytical skills"
+    }
+  },
+  {
+    "model": "myapp.offeritem",
+    "pk": 1,
+    "fields": {
+      "offer_item_id": "550e8400-e29b-41d4-a716-446655440301",
+      "item_type": "course_offering",
+      "course_offering": "550e8400-e29b-41d4-a716-446655440101",
+      "shared_session": null
+    }
+  },
+  {
+    "model": "myapp.offeritem",
+    "pk": 2,
+    "fields": {
+      "offer_item_id": "550e8400-e29b-41d4-a716-446655440302",
+      "item_type": "shared_session",
+      "course_offering": null,
+      "shared_session": "550e8400-e29b-41d4-a716-446655440201"
+    }
+  },
+  {
+    "model": "myapp.offer",
+    "pk": 1,
+    "fields": {
+      "application": 1,
+      "student": 1,
+      "role": "ta",
+      "offer_date": "2024-12-01T10:00:00Z",
+      "response_deadline": "2024-12-15T23:59:59Z",
+      "status": "pending",
+      "responded_at": null,
+      "student_response": null,
+      "created_by": 3,
+      "notes": "Multi-item offer for COSC courses",
+      "created_at": "2024-12-01T10:00:00Z",
+      "updated_at": "2024-12-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 1,
+    "fields": {
+      "offer": 1,
+      "student": 2,
+      "course": 4,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440102",
+      "shared_session": null,
+      "role": "ta",
+      "assigned_date": "2024-12-03T09:16:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Auto-assigned from accepted offer 2 - course_offering (3.0h/week)",
+      "created_at": "2024-12-03T09:16:00Z",
+      "updated_at": "2024-12-03T09:16:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignmentmodification",
+    "pk": 1,
+    "fields": {
+      "original_assignment": 1,
+      "new_offer": 1,
+      "reason": "Lab section time conflict with student's other courses",
+      "modification_type": "section_change",
+      "status": "pending",
+      "requires_response": true,
+      "created_by": 3,
+      "created_at": "2024-12-05T11:00:00Z",
+      "student_responded_at": null,
+      "student_response": null
     }
   }
 ]

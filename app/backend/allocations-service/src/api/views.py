@@ -15,9 +15,9 @@ from django.shortcuts import get_object_or_404
     # Add this import at the top
 from .models import (
     Offer, Assignment, Student, TAScheduler, Application, ApplicationShortList,
-    CourseOffering, SharedSession, Course, OfferItem  # ← Add OfferItem
+    CourseOffering, SharedSession, Course, OfferItem, AssignmentModification 
 )
-from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer
+from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer, AssignmentModificationSerializer
 
 # Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
@@ -464,6 +464,196 @@ class OfferViewSet(viewsets.ModelViewSet):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+    @action(detail=False, methods=['post'])
+    def create_modification(self, request):
+        """Create an assignment modification (for schedulers)"""
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user is scheduler/admin
+        user_type = request.auth.payload.get('user_type', '')
+        if user_type not in ['scheduler', 'admin']:
+            return Response({'error': 'Only schedulers can create modifications'}, status=status.HTTP_403_FORBIDDEN)
+        
+        assignment_id = request.data.get('assignment_id')
+        reason = request.data.get('reason', '')
+        modification_type = request.data.get('modification_type', 'other')
+        requires_response = request.data.get('requires_response', True)
+        new_offer_items = request.data.get('offer_items', [])
+        
+        try:
+            # Get original assignment
+            original_assignment = Assignment.objects.get(
+                assignment_id=assignment_id,
+                is_active=True
+            )
+            
+            with transaction.atomic():
+                # Create new offer with modified items
+                new_offer = Offer.objects.create(
+                    application=original_assignment.offer.application,
+                    student=original_assignment.student,
+                    response_deadline=timezone.now() + timezone.timedelta(days=3),
+                    status='pending',  # Always pending for modifications
+                    created_by=self.get_scheduler_from_jwt(
+                        request.auth.payload.get('user_type'),
+                        request.auth.payload.get('sub')
+                    ),
+                    notes=f"Modification of Assignment {original_assignment.assignment_id}. Reason: {reason}"
+                )
+                
+                # Add new offer items (same logic as create_offer)
+                for item_data in new_offer_items:
+                    if item_data['item_type'] == 'course_offering':
+                        course_offering = CourseOffering.objects.get(
+                            course_offering_id=item_data['course_offering_id']
+                        )
+                        offer_item = OfferItem.objects.create(
+                            item_type='course_offering',
+                            course_offering=course_offering
+                        )
+                    else:  # shared_session
+                        shared_session = SharedSession.objects.get(
+                            shared_session_id=item_data['shared_session_id']
+                        )
+                        offer_item = OfferItem.objects.create(
+                            item_type='shared_session',
+                            shared_session=shared_session
+                        )
+                    new_offer.offer_items.add(offer_item)
+                
+                # Create modification record
+                modification = AssignmentModification.objects.create(
+                    original_assignment=original_assignment,
+                    new_offer=new_offer,
+                    reason=reason,
+                    modification_type=modification_type,
+                    requires_response=requires_response,
+                    created_by=self.get_scheduler_from_jwt(
+                        request.auth.payload.get('user_type'),
+                        request.auth.payload.get('sub')
+                    )
+                )
+                
+                # Temporarily deactivate original assignment
+                original_assignment.is_active = False
+                original_assignment.notes = f"Under modification - See modification {modification.modification_id}"
+                original_assignment.save()
+                
+                # If no response required, auto-accept
+                if not requires_response:
+                    new_offer.status = 'accepted'
+                    new_offer.save()
+                    modification.status = 'auto_applied'
+                    modification.save()
+                    
+                    # Create new assignment immediately
+                    self._create_assignments_from_offer(new_offer, modification.created_by)
+            
+            return Response({
+                'success': True,
+                'message': 'Assignment modification created successfully',
+                'modification_id': modification.modification_id,
+                'new_offer_id': new_offer.offer_id,
+                'requires_student_response': requires_response
+            })
+            
+        except Assignment.DoesNotExist:
+            return Response({'error': 'Assignment not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=False, methods=['get'])
+    def pending_modifications(self, request):
+        """Get pending assignment modifications for the current student"""
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user_id = request.auth.payload.get('sub', None)
+        student_model_id = self.get_student_model_id(user_id)
+        
+        # Get pending modifications for this student
+        modifications = AssignmentModification.objects.filter(
+            original_assignment__student_id=student_model_id,
+            status='pending',
+            requires_response=True
+        ).select_related('original_assignment', 'new_offer', 'created_by')
+        
+        serializer = AssignmentModificationSerializer(modifications, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def respond_to_modification(self, request, pk=None):
+        """Student responds to an assignment modification"""
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user_id = request.auth.payload.get('sub', None)
+        student_model_id = self.get_student_model_id(user_id)
+        
+        # Get the offer (which should be part of a modification)
+        offer = self.get_object()
+        
+        # Find the modification
+        try:
+            modification = AssignmentModification.objects.get(
+                new_offer=offer,
+                original_assignment__student_id=student_model_id,
+                status='pending'
+            )
+        except AssignmentModification.DoesNotExist:
+            return Response({'error': 'Modification not found or already responded'}, status=status.HTTP_404_NOT_FOUND)
+        
+        response_status = request.data.get('status')  # 'accepted' or 'rejected'
+        student_response = request.data.get('response', '')
+        
+        if response_status not in ['accepted', 'rejected']:
+            return Response(
+                {'error': 'Status must be either "accepted" or "rejected"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        with transaction.atomic():
+            # Update modification
+            modification.status = response_status
+            modification.student_responded_at = timezone.now()
+            modification.student_response = student_response
+            modification.save()
+            
+            # Update offer
+            offer.status = response_status
+            offer.responded_at = timezone.now()
+            offer.student_response = student_response
+            offer.save()
+            
+            if response_status == 'accepted':
+                # Create new assignments from the accepted offer
+                self._create_assignments_from_offer(offer, modification.created_by)
+            else:
+                # Student rejected - reactivate original assignment
+                modification.original_assignment.is_active = True
+                modification.original_assignment.notes = f"Modification {modification.modification_id} rejected by student on {timezone.now().strftime('%Y-%m-%d')}"
+                modification.original_assignment.save()
+        
+        return Response({
+            'message': f'Modification {response_status} successfully',
+            'modification_id': modification.modification_id
+        })
+
+    def _create_assignments_from_offer(self, offer, assigned_by):
+        """Helper method to create assignments from offer items"""
+        for offer_item in offer.offer_items.all():
+            Assignment.objects.create(
+                offer=offer,
+                student=offer.student,
+                course=offer_item.course,
+                course_offering=offer_item.course_offering,
+                shared_session=offer_item.shared_session,
+                role='ta',
+                assigned_by=assigned_by,
+                notes=f"Created from offer {offer.offer_id}"
+            )
 
     def get_scheduler_from_jwt(self, user_type, user_id):
         """Map JWT token to TAScheduler model (following user-profile-service pattern)"""
@@ -513,6 +703,257 @@ class OfferViewSet(viewsets.ModelViewSet):
         pending_offers = self.get_queryset().filter(status='pending')
         serializer = self.get_serializer(pending_offers, many=True)
         return Response(serializer.data)
+    
+
+    @action(detail=True, methods=['put', 'patch'])
+    def edit_offer(self, request, pk=None):
+        """Edit a pending offer (only schedulers/admins)"""
+        offer = self.get_object()
+        
+        # Check if offer can be edited
+        if offer.status != 'pending':
+            return Response(
+                {'error': f'Cannot edit offer with status "{offer.status}". Only pending offers can be edited.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if offer has expired
+        if offer.is_expired():
+            return Response(
+                {'error': 'Cannot edit expired offer'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check authentication
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user_type = request.auth.payload.get('user_type', None)
+        if user_type not in ['scheduler', 'admin']:
+            return Response(
+                {'error': 'Only schedulers and admins can edit offers'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get updated data
+        offer_items = request.data.get('offer_items', [])
+        response_deadline_str = request.data.get('response_deadline')
+        notes = request.data.get('notes', offer.notes)
+        
+        if not offer_items or not isinstance(offer_items, list):
+            return Response(
+                {'error': 'offer_items must be a non-empty list'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Parse response_deadline if provided
+        response_deadline = offer.response_deadline
+        if response_deadline_str:
+            try:
+                from datetime import datetime
+                if response_deadline_str.endswith('Z'):
+                    response_deadline_str = response_deadline_str[:-1] + '+00:00'
+                response_deadline = datetime.fromisoformat(response_deadline_str)
+                if response_deadline.tzinfo is None:
+                    response_deadline = timezone.make_aware(response_deadline)
+            except ValueError as e:
+                return Response(
+                    {'error': f'Invalid response_deadline format: {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        try:
+            # Validate and process new offer items (same logic as create_offer)
+            total_hours = 0
+            validated_items = []
+            offer_courses = set()
+            offer_terms = set()
+            
+            for item_data in offer_items:
+                item_type = item_data.get('item_type')
+                
+                if item_type == 'course_offering':
+                    course_offering_id = item_data.get('course_offering_id')
+                    try:
+                        course_offering = CourseOffering.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
+                            course_offering_id=course_offering_id
+                        )
+                        
+                        temp_offer_item = OfferItem(
+                            item_type='course_offering',
+                            course_offering=course_offering
+                        )
+                        calculated_hours = temp_offer_item.weekly_hours
+                        
+                        validated_items.append({
+                            'type': 'course_offering',
+                            'object': course_offering,
+                            'hours': calculated_hours,
+                            'course': course_offering.course,
+                            'term': course_offering.academic_term
+                        })
+                        
+                        offer_courses.add(course_offering.course)
+                        offer_terms.add(course_offering.academic_term)
+                        total_hours += calculated_hours
+                        
+                    except CourseOffering.DoesNotExist:
+                        return Response(
+                            {'error': f'Course offering {course_offering_id} not found'},
+                            status=status.HTTP_404_NOT_FOUND
+                        )
+                
+                elif item_type == 'shared_session':
+                    shared_session_id = item_data.get('shared_session_id')
+                    try:
+                        shared_session = SharedSession.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
+                            shared_session_id=shared_session_id
+                        )
+                        
+                        temp_offer_item = OfferItem(
+                            item_type='shared_session',
+                            shared_session=shared_session
+                        )
+                        calculated_hours = temp_offer_item.weekly_hours
+                        
+                        validated_items.append({
+                            'type': 'shared_session',
+                            'object': shared_session,
+                            'hours': calculated_hours,
+                            'course': shared_session.course,
+                            'term': shared_session.academic_term
+                        })
+                        
+                        offer_courses.add(shared_session.course)
+                        offer_terms.add(shared_session.academic_term)
+                        total_hours += calculated_hours
+                        
+                    except SharedSession.DoesNotExist:
+                        return Response(
+                            {'error': f'Shared session {shared_session_id} not found'},
+                            status=status.HTTP_404_NOT_FOUND
+                        )
+                
+                else:
+                    return Response(
+                        {'error': f'Invalid item_type: {item_type}. Must be "course_offering" or "shared_session"'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # Check if student would exceed their maximum hours (excluding current offer)
+            student = offer.student
+            current_allocation = self.calculate_student_allocation(student)
+            # Subtract current offer hours from calculation
+            current_offer_hours = offer.total_weekly_hours
+            adjusted_current_hours = current_allocation['total_hours'] - current_offer_hours
+            
+            try:
+                max_hours = int(offer.application.workload) if offer.application.workload else 12
+                max_hours = min(max_hours, 12)
+            except (ValueError, TypeError):
+                max_hours = 12
+
+            if adjusted_current_hours + total_hours > max_hours:
+                return Response(
+                    {
+                        'error': f'This edit would exceed student\'s maximum hours. '
+                                f'Current (excluding this offer): {adjusted_current_hours}, '
+                                f'Max: {max_hours}, '
+                                f'New total: {total_hours}'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Update offer
+            with transaction.atomic():
+                # Remove old offer items
+                old_items = list(offer.offer_items.all())
+                offer.offer_items.clear()
+                
+                # Delete old offer items (they're no longer needed)
+                for old_item in old_items:
+                    old_item.delete()
+                
+                # Create and add new offer items
+                for item_data in validated_items:
+                    if item_data['type'] == 'course_offering':
+                        offer_item = OfferItem.objects.create(
+                            item_type='course_offering',
+                            course_offering=item_data['object']
+                        )
+                    else:  # shared_session
+                        offer_item = OfferItem.objects.create(
+                            item_type='shared_session',
+                            shared_session=item_data['object']
+                        )
+                    
+                    offer.offer_items.add(offer_item)
+                
+                # Update offer fields
+                offer.response_deadline = response_deadline
+                offer.notes = notes
+                offer.updated_at = timezone.now()
+                offer.save()
+            
+            # Return response
+            serializer = self.get_serializer(offer)
+            return Response({
+                'success': True,
+                'message': 'Offer updated successfully',
+                'offer': serializer.data,
+                'summary': {
+                    'offer_id': offer.offer_id,
+                    'student_id': student.id,
+                    'student_number': student.student_number,
+                    'total_weekly_hours': round(total_hours, 1),
+                    'item_count': len(validated_items),
+                    'courses': [course.course_number for course in offer_courses],
+                    'terms': [term.code for term in offer_terms]
+                }
+            })
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['delete'])
+    def cancel_offer(self, request, pk=None):
+        """Cancel a pending offer (only schedulers/admins)"""
+        offer = self.get_object()
+        
+        # Check if offer can be cancelled
+        if offer.status != 'pending':
+            return Response(
+                {'error': f'Cannot cancel offer with status "{offer.status}". Only pending offers can be cancelled.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check authentication
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user_type = request.auth.payload.get('user_type', None)
+        if user_type not in ['scheduler', 'admin']:
+            return Response(
+                {'error': 'Only schedulers and admins can cancel offers'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Update offer status to cancelled (or delete it)
+        reason = request.data.get('reason', 'Cancelled by scheduler')
+        
+        with transaction.atomic():
+            # Mark as cancelled (keep for history)
+            offer.status = 'cancelled'
+            offer.notes = f"{offer.notes}\n\nCANCELLED: {reason}" if offer.notes else f"CANCELLED: {reason}"
+            offer.updated_at = timezone.now()
+            offer.save()
+        
+        return Response({
+            'success': True,
+            'message': 'Offer cancelled successfully',
+            'offer_id': offer.offer_id,
+            'reason': reason
+        })
     
     @action(detail=False, methods=['get'])
     def accepted_offers(self, request):
@@ -625,6 +1066,8 @@ def api_root(request):
              # Offers Management
             'offers': '/api/allocations/offers/',
             'create_offer': '/api/allocations/offers/create_offer/',
+            'edit_offer': '/api/allocations/offers/{offer_id}/edit_offer/', 
+            'cancel_offer': '/api/allocations/offers/{offer_id}/cancel_offer/',
             'pending_offers': '/api/allocations/offers/pending_offers/',
             'accepted_offers': '/api/allocations/offers/accepted_offers/',
             'rejected_offers': '/api/allocations/offers/rejected_offers/', 
@@ -634,6 +1077,11 @@ def api_root(request):
              # Assignments Management
              'assignments': '/api/allocations/assignments/',
              'active_assignments': '/api/allocations/assignments/active_assignments/',
+
+             # Assignment Modifications
+            'create_modification': '/api/allocations/offers/create_modification/', 
+            'pending_modifications': '/api/allocations/offers/pending_modifications/', 
+            'respond_to_modification': '/api/allocations/offers/{offer_id}/respond_to_modification/',
                 
              # Service Info
             'service_info': '/api/allocations/',
