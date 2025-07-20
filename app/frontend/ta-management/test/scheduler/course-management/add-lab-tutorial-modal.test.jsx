@@ -64,7 +64,6 @@ describe('AddLabTutorialModal', () => {
         terms={mockTerms}
         {...props}
       />
-      />
     );
   };
 
