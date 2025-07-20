@@ -35,6 +35,7 @@ services:
       - .env
     volumes:
       - ./backend/user-profile-service:/app
+      - ./shared-utils:/app/shared-utils
     depends_on:
       db:
         condition: service_healthy
@@ -65,6 +66,7 @@ services:
       - .env
     volumes:
       - ./backend/auth-service:/app
+      - ./shared-utils:/app/shared-utils
     depends_on:
       db:
         condition: service_healthy
@@ -87,6 +89,44 @@ services:
       - .env
     volumes:
       - ./backend/applications-jobpostings-service:/app
+      - ./shared-utils:/app/shared-utils
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      user-profile-service:
+        condition: service_healthy
+        restart: true
+      courses-terms-service:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8003/api/')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # set app-networks as the current network
+    networks:
+      - app-networks
+
+  courses-terms-service:
+    container_name: 'courses-terms-service'
+    build:
+      context: ./backend/course-service
+    ports:
+      - "8004:8004"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/course-service:/app
+      - ./shared-utils:/app/shared-utils
     depends_on:
       db:
         condition: service_healthy
@@ -100,13 +140,49 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8003/api/applications/')",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8004/api/course-term-service/')",
         ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     # set app-networks as the current network
+    networks:
+      - app-networks
+  
+  allocations-service:
+    container_name: allocations-service
+    build:
+      context: ./backend/allocations-service
+    ports:
+      - "8005:8005"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/allocations-service:/app
+      - ./shared-utils:/app/shared-utils
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      user-profile-service:
+        condition: service_healthy
+        restart: true
+      application-service:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8005/api/allocations/')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - app-networks
 
@@ -181,6 +257,9 @@ services:
       - backend
       - user-profile-service
       - auth-service
+      - application-service
+      - courses-terms-service
+      - allocations-service
 
 volumes:
   db_data:

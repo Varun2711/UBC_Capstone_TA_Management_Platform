@@ -31,12 +31,11 @@ def sample_test_data():
     """
     Fixture to create commonly used test data.
     """
-    from api.models import Faculty, Department, TAScheduler, Student, Term, JobPosting
+    from api.models import Department, TAScheduler, Student, Term, JobPosting
     from datetime import date, timedelta
     
-    # Create test data - Faculty first, then Department
-    faculty = Faculty.objects.create(name="Test Faculty")
-    department = Department.objects.create(name="Test Department", faculty=faculty)
+    # Create test data - Remove Faculty since it doesn't exist
+    department = Department.objects.create(name="Test Department")
     ta_scheduler = TAScheduler.objects.create(
         employee_number="TEST001",
         name="Test Scheduler",
@@ -53,11 +52,13 @@ def sample_test_data():
     )
     term = Term.objects.create(
         code="TEST2025",
+        description="Test Term 2025",
         start=date.today(),
         end=date.today() + timedelta(days=120),
         startCalendarYear=2025,
         endCalendarYear=2025,
-        academicYear="2024/25"
+        academicYear="2024/25",
+        term_type="winter"
     )
     job_posting = JobPosting.objects.create(
         title="Test TA Position",
@@ -66,11 +67,11 @@ def sample_test_data():
         deadline_date=date.today() + timedelta(days=30),
         department=department,
         created_by=ta_scheduler,
+        term=term,
         status='open'
     )
     
     return {
-        'faculty': faculty,
         'department': department,
         'ta_scheduler': ta_scheduler,
         'student': student,

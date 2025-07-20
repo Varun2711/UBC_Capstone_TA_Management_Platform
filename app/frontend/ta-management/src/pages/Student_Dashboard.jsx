@@ -2,22 +2,9 @@
 
 import { useEffect, useState } from "react";
 import {
-  Bell,
-  BookOpen,
-  Calendar,
-  Clock,
-  FileText,
-  GraduationCap,
-  Home,
-  Mail,
-  Phone,
-  Plus,
-  Search,
-  Settings,
-  User,
-  Users,
+  Bell, BookOpen, Calendar, Clock, FileText, GraduationCap, Home, Mail, Phone, Plus, Search,
+  Settings, User, Users
 } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,18 +28,12 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AppSidebar } from "../components/student-dashboard-sidebar";
+} from "@/components/ui/sidebar"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { AppSidebar } from "../components/student-dashboard-sidebar"
 import axios from "axios";
+import { getProfile } from "@/logic/student-profile";
 
 // Mock data
 const studentProfile = {
@@ -67,13 +48,11 @@ const studentProfile = {
   avatar: "/placeholder.svg?height=40&width=40",
 };
 
-//fetch the students applications
-
 const mockSubmittedApplications = [
   {
     application_id: 1,
     termSelection: {
-      code: "2025 Winter Term 1 & Term 2",
+      code: "2025 Mock Term 1 & Term 2",
     },
     status: "under_review",
     applied_at: "2024-01-15",
@@ -84,40 +63,13 @@ const mockSubmittedApplications = [
   {
     application_id: 2,
     termSelection: {
-      code: "2025 Summer",
+      code: "2025 Summer Mock",
     },
     status: "accepted",
     applied_at: "2024-01-15",
     posting: {
       title: "2025 TA Applications",
     },
-  },
-];
-
-const openPositions = [
-  {
-    id: 4,
-    course: "CS 102 - Programming Fundamentals",
-    professor: "Dr. Wilson",
-    deadline: "2024-02-01",
-    requirements: "Previous TA experience preferred",
-    hours: "10 hrs/week",
-  },
-  {
-    id: 5,
-    course: "CS 250 - Computer Organization",
-    professor: "Dr. Davis",
-    deadline: "2024-02-05",
-    requirements: "Strong understanding of computer architecture",
-    hours: "15 hrs/week",
-  },
-  {
-    id: 6,
-    course: "CS 350 - Software Engineering",
-    professor: "Dr. Miller",
-    deadline: "2024-02-10",
-    requirements: "Experience with software development projects",
-    hours: "12 hrs/week",
   },
 ];
 
@@ -131,40 +83,6 @@ const upcomingDeadlines = [
     course: "Summer Session 2025 TA Applications",
     deadline: "2024-03-31",
     daysLeft: 9,
-  },
-];
-
-const sidebarItems = [
-  {
-    title: "Dashboard",
-    icon: Home,
-    url: "#",
-    isActive: true,
-  },
-  {
-    title: "My Applications",
-    icon: FileText,
-    url: "#",
-  },
-  {
-    title: "Available Positions",
-    icon: BookOpen,
-    url: "#",
-  },
-  {
-    title: "Schedule",
-    icon: Calendar,
-    url: "#",
-  },
-  {
-    title: "Profile",
-    icon: User,
-    url: "#",
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    url: "#",
   },
 ];
 
@@ -210,94 +128,131 @@ const instance = axios.create({
   baseURL: "http://localhost:8080/api",
 });
 
+// Add an interceptor to automatically include auth headers
+instance.interceptors.request.use(
+  (config) => {
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export default function StudentDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [submittedApplications, setSubmittedApplications] = useState([]);
   const [error, setError] = useState([]);
-  const [student, setStudent] = useState(null);
 
-  //on mount, load the student data
-  //this includes application data
+  // State for loading and error handling
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isLoadingApplications, setIsLoadingApplications] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+
+  // State for current user data (displayed and modified)
+  const [userData, setUserData] = useState(null);
+
+  // Helper functions for data transformation
+  const transformBackendDataToFrontend = (data) => {
+    return {
+      id: data.id || '',
+      firstName: data.first_name || '',
+      lastName: data.last_name || '',
+      email: data.email || '',
+      studentId: data.student_info?.studentId || '',
+      phone: data.student_info?.phone || '',
+      major: data.student_info?.program || '',
+      year: data.student_info?.study_level || '',
+      gpa: data.student_profile?.gpa || '',
+      minor: data.student_profile?.minor || '',
+      avatar: data.avatar || "/placeholder.svg?height=120&width=120",
+    };
+  };
+
   useEffect(() => {
-    const loadStudentDashboardData = async () => {
-      const accessToken = localStorage.getItem("accessToken");
-      //if we can't find the accces token, then for the demo, use the mock student profile data
+    const fetchUserData = async () => {
+      try {
+        setIsLoadingProfile(true);
+        const data = await getProfile();
+        console.log("Fetched user data:", data);
+        console.log("ID of student data:", data.id);
+
+        const profileData = transformBackendDataToFrontend(data);
+        console.log("Transformed user data:", profileData);
+
+        setUserData(profileData); // ✅ Let this trigger the next useEffect
+      } catch (error) {
+        setFetchError("Could not load your profile. Please try again later.");
+        console.error("Fetch profile error:", error);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    const fetchApplications = async () => {
+
+      setIsLoadingApplications(true);
+
+      console.log("In useEffect: fetchApplications has started");
+      console.log("Current userData:", userData);
+      console.log("Current userData's id:", userData?.id);
+      if (!userData || !userData.id) return;
+
+      console.log("User data is available with following details:", userData);
+      console.log("userData's studentId:", userData.studentId);
+
+      const accessToken = sessionStorage.getItem("accessToken");
       if (!accessToken) {
-        // console.log( "No access token found in localStorage, using mock student data"    );
-        setStudent(studentProfile);
+        console.log("No access token found in localStorage, using mock student data");
         setSubmittedApplications(mockSubmittedApplications);
         return;
       }
 
       try {
-        console.log("We're here!");
-        //get user profile to get the student id
-        // probably need another way to do this than getting the entire profile
-        const res = await instance.get(`/profile/me/`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        //console.log(res.data);
-        const studentId = res.data.id;
-        //console.log(studentId);
-
-        // const applicationResponse = await instance.get("/ajp/applications/", {
-        //   params: { by-student: studentId }, // or whatever field the filter expects
-        // });
-
         const applicationResponse = await instance.get(
-          `/ajp/applications/by-student/${studentId}/`
+          `/ajp/applications/by-student/${userData.id}/`
         );
 
-        //console.log(applicationResponse.data);
+        console.log("Application response data:", applicationResponse.data);
 
-        if (Array.isArray(applicationResponse.data)) {
-          const transformedApplications = applicationResponse.data.map(
-            (app) => ({
-              application_id: app.application_id,
-              termSelection: {
-                code:
-                  app.termSelection?.code || app.posting?.term?.code || "N/A",
-              },
-              status: app.status,
-              applied_at: app.applied_at,
-              posting: {
-                title: app.posting?.title || "N/A",
-                posting_id: app.posting?.posting_id,
-                description: app.posting?.description,
-                department: app.posting?.department?.name,
-              },
-            })
-          );
+        const transformedApplications = applicationResponse.data.map((app) => ({
+          application_id: app.application_id,
+          termSelection: {
+            code: app.termSelection?.code || app.posting?.term?.code || "N/A",
+          },
+          status: app.status,
+          applied_at: app.applied_at,
+          posting: {
+            title: app.posting?.title || "N/A",
+            posting_id: app.posting?.posting_id,
+            description: app.posting?.description,
+            department: app.posting?.department?.name,
+          },
+        }));
 
-          console.log(transformedApplications);
+        setSubmittedApplications(transformedApplications);
 
-          setSubmittedApplications(transformedApplications);
-        } else {
-          console.error(
-            "Applications data is not an array:",
-            applicationResponse.data
-          );
-          setSubmittedApplications(mockSubmittedApplications);
-        }
-
-        setSubmittedApplications(applicationResponse.data);
       } catch (err) {
-        //if something goes wrong and we can't load the student application, fall back on the mockdata
-        //console.log(err);
-        setSubmittedApplications(mockSubmittedApplications);
+        console.log("Error fetching applications using student id. error is:", err);
+        console.log("Using mock data for submitted applications");
+        setSubmittedApplications([]);
+      }
+      finally {
+        setIsLoadingApplications(false);
       }
     };
-    loadStudentDashboardData();
-  }, []);
 
-  const filteredOpenPositions = openPositions.filter(
-    (position) =>
-      position.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      position.professor.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    fetchApplications();
+  }, [userData]); // ✅ Runs only when userData is updated
+
+  console.log("submitted applications state contains:", submittedApplications);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -307,10 +262,14 @@ export default function StudentDashboard() {
     });
   };
 
+  if (isLoadingProfile || isLoadingApplications || !userData) {
+    return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar />
+        <AppSidebar name={userData.firstName} email={userData.email} avatar={userData.avatar} />
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center justify-between border-b bg-background px-6">
@@ -328,7 +287,7 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">
-                  Welcome back, {studentProfile.name}!
+                  Welcome back, {userData.firstName}!
                 </h2>
                 <p className="text-muted-foreground">
                   Here's your TA application overview
@@ -346,33 +305,29 @@ export default function StudentDashboard() {
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-16 w-16">
                       <AvatarImage
-                        src={studentProfile.avatar || "/placeholder.svg"}
-                        alt={studentProfile.name}
+                        src={userData.avatar || "/placeholder.svg"}
+                        alt={userData.firstName}
                       />
-                      <AvatarFallback>SJ</AvatarFallback>
+                      <AvatarFallback>{userData.firstName.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold">{studentProfile.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {studentProfile.major}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {studentProfile.year}
-                      </p>
+                      <h3 className="font-semibold">{userData.firstName}</h3>
+                      <p className="text-sm text-muted-foreground">{userData.major}</p>
+                      <p className="text-sm text-muted-foreground">{userData.year}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{studentProfile.email}</span>
+                      <span className="text-sm">{userData.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{studentProfile.phone}</span>
+                      <span className="text-sm">{userData.phone}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">GPA: {studentProfile.gpa}</span>
+                      <span className="text-sm">GPA: {userData.gpa}</span>
                     </div>
                   </div>
                 </CardContent>
