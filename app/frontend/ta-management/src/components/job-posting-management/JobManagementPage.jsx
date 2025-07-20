@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -74,6 +75,8 @@ const JobManagementPage = () => {
       setTemplates(data.templates);
       setDepartments(data.departments);
       setTerms(data.terms);
+
+      //console.log(data.departments, "Departments fetched successfully");
     } catch (error) {
       console.error("Error fetching initial data:", error);
       setError(handleApiError(error));
@@ -303,6 +306,69 @@ const JobManagementPage = () => {
     );
   };
 
+  const JobPostingHelpText = () => {
+    const [isExpanded, setIsExpanded] = useState(true);
+
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
+        <div
+          className="flex items-center justify-between p-4 cursor-pointer hover:bg-blue-100 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <Info className="h-5 w-5 text-blue-600 flex-shrink-0" />
+            <h4 className="font-medium text-blue-900">Job Postings Help</h4>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-blue-700">
+              {isExpanded ? "Hide" : "Show"} help
+            </span>
+            <div
+              className={`transform transition-transform duration-200 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+            >
+              <svg
+                className="h-4 w-4 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`transition-all duration-300 ease-in-out ${
+            isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="px-4 pb-4 space-y-3">
+            <div>
+              <p className="text-sm text-blue-800">
+                Create and edit job postings for teaching assistant positions.
+                Each posting can have a custom application form template
+                assigned to it.
+              </p>
+            </div>
+
+            <div className="text-sm text-blue-800">
+              <strong>Tip:</strong> Job postings with draft status are not
+              visible to students.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -385,6 +451,7 @@ const JobManagementPage = () => {
                 Create Job Posting
               </Button>
             </div>
+            <JobPostingHelpText />
 
             {/* Job Postings Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -422,6 +489,7 @@ const JobManagementPage = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            title="Edit Job Posting"
                             onClick={() => handleEditJobPosting(posting)}
                           >
                             <Edit className="h-4 w-4" />
@@ -429,6 +497,7 @@ const JobManagementPage = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            title="Delete Job Posting"
                             data-testid={`delete-button-${posting.posting_id}`}
                             onClick={() =>
                               handleDeleteJobPosting(posting.posting_id)
@@ -655,6 +724,7 @@ const JobManagementPage = () => {
                 ? "Edit Job Posting"
                 : "Create New Job Posting"}
             </DialogTitle>
+            <DialogDescription></DialogDescription>
           </DialogHeader>
           <JobPostingForm
             jobPosting={selectedJobPosting}
@@ -681,6 +751,7 @@ const JobManagementPage = () => {
             <DialogTitle>
               {selectedTemplate ? "Edit Template" : "Create New Template"}
             </DialogTitle>
+            <DialogDescription></DialogDescription>
           </DialogHeader>
           <FormBuilder
             templateId={selectedTemplate?.template_id}

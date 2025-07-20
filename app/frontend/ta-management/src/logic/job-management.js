@@ -96,7 +96,7 @@ export const updateJobPosting = async (postingId, jobPostingData) => {
       { headers }
     );
 
-    console.log("Job posting updated successfully:", response.data);
+    //console.log("Job posting updated successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error updating job posting:", error);
@@ -168,7 +168,7 @@ export const fetchJobPostingsByTerm = async (termId) => {
 export const fetchTemplates = async () => {
   try {
     const response = await instance.get("/ajp/form-templates/");
-    console.log("Templates fetched:", response.data);
+    // console.log("Templates fetched:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching templates:", error);
@@ -210,7 +210,7 @@ export const updateTemplate = async (templateId, templateData) => {
       { headers }
     );
 
-    console.log("Template updated successfully:", response.data);
+    //console.log("Template updated successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error updating template:", error);
@@ -227,7 +227,7 @@ export const duplicateTemplate = async (templateId) => {
       { headers }
     );
 
-    console.log("Template duplicated successfully:", response.data);
+    //console.log("Template duplicated successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error duplicating template:", error);
@@ -244,7 +244,7 @@ export const deleteTemplate = async (templateId) => {
       { headers }
     );
 
-    console.log("Template deactivated successfully:", response.data);
+    // console.log("Template deactivated successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error deactivating template:", error);
@@ -258,7 +258,8 @@ export const deleteTemplate = async (templateId) => {
 
 export const fetchDepartments = async () => {
   try {
-    const response = await instance.get("/courses/departments/");
+    const response = await instance.get("/profile/departments/");
+    console.log("Departments are here!", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching departments from API:", error);
@@ -269,8 +270,13 @@ export const fetchDepartments = async () => {
 
 export const fetchTerms = async () => {
   try {
-    const response = await instance.get("/courses/terms/");
-    return response.data;
+    const headers = getAuthHeaders();
+    const response = await instance.get("/course-term-service/terms/", {
+      headers,
+    });
+    console.log("Terms are here!", response.data.results);
+
+    return response.data.results;
   } catch (error) {
     console.error("Error fetching terms from API:", error);
     console.log("Falling back to mock terms");
@@ -287,7 +293,7 @@ export const fetchSchedulerProfile = async () => {
     const headers = getAuthHeaders();
     const response = await instance.get("/profile/me/", { headers });
 
-    console.log("Scheduler profile fetched:", response.data);
+    //  console.log("Scheduler profile fetched:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching scheduler profile:", error);
