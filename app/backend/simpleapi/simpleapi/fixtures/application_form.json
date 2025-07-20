@@ -1,0 +1,253 @@
+[
+  {
+    "model": "myapp.formtemplate",
+    "pk": 1,
+    "fields": {
+      "name": "Default Form",
+      "description": "Default Teaching Assistant Application Form for CMPS",
+      "created_by": null,
+      "created_at": "2025-01-01T00:00:00Z",
+      "is_active": true,
+      "is_editable": false
+    }
+  },
+  {
+    "model": "myapp.formsection",
+    "pk": 1,
+    "fields": {
+      "template": 1,
+      "name": "Eligibility",
+      "section_type": "eligibility",
+      "order": 1,
+      "is_required": true,
+      "description": "",
+      "is_editable": true
+    }
+  },
+  {
+    "model": "myapp.formsection",
+    "pk": 2,
+    "fields": {
+      "template": 1,
+      "name": "Selections",
+      "section_type": "selections",
+      "order": 2,
+      "is_required": true,
+      "description": "",
+      "is_editable": true
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 1,
+    "fields": {
+      "section": 1,
+      "question_text": "Are you a Canadian citizen or permanent resident?",
+      "question_type": "radio",
+      "field_name": "citizenshipStatus",
+      "order": 1,
+      "is_required": true,
+      "help_text": null,
+      "validation_rules": {
+        "required_message": "Please select your citizenship status."
+      },
+      "options": [
+        { "value": "citizen", "label": "Yes - Canadian Citizen" },
+        { "value": "pr", "label": "Yes - Permanent Resident" },
+        { "value": "international", "label": "No - International Student" }
+      ],
+      "is_editable": false
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 2,
+    "fields": {
+      "section": 1,
+      "question_text": "Will you be residing in Kelowna during the terms in which you are applying for a TA position?",
+      "question_type": "radio",
+      "field_name": "residingInKelowna",
+      "order": 2,
+      "is_required": true,
+      "help_text": null,
+      "validation_rules": {
+        "required_message": "Please indicate if you're residing in Kelowna.",
+        "disqualifying_values": ["no"],
+        "disqualifying_message": "You are not eligible to work as a TA if you are not residing in Kelowna."
+      },
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ],
+      "is_editable": false
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 3,
+    "fields": {
+      "section": 1,
+      "question_text": "Will you be enrolled as a full-time student in the terms you are applying for?",
+      "question_type": "radio",
+      "field_name": "fullTimeEnrollment",
+      "order": 3,
+      "is_required": true,
+      "help_text": "Summer 2025: minimum 9 credits (or grad program)\nWinter 2025: minimum 18 credits (or grad program)",
+      "validation_rules": {
+        "required_message": "Please confirm your enrollment status."
+      },
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ],
+      "is_editable": false
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 4,
+    "fields": {
+      "section": 1,
+      "question_text": "Have you applied, or accepted offers, for other student positions?",
+      "question_type": "radio",
+      "field_name": "hasOtherPositions",
+      "order": 4,
+      "is_required": true,
+      "help_text": "(e.g., Co-Op, Research Assistant, SL Leader, Workstudy, Tutor, etc.)",
+      "validation_rules": {
+        "required_message": "Please indicate if you have other positions."
+      },
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ],
+      "is_editable": false
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 5,
+    "fields": {
+      "section": 1,
+      "question_text": "Please indicate how many hours per week:",
+      "question_type": "number",
+      "field_name": "otherPositionHours",
+      "order": 5,
+      "is_required": false,
+      "help_text": "Hours per week for other positions",
+      "validation_rules": {
+        "min": 1,
+        "max": 60,
+        "placeholder": "e.g., 10",
+        "conditional_required": {
+          "depends_on": "hasOtherPositions",
+          "required_when": ["yes"],
+          "required_message": "Please specify hours for other positions."
+        },
+        "range_message": "Please enter valid a number of hours between 1 and 60."
+      },
+      "options": [],
+      "is_editable": false
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 6,
+    "fields": {
+      "section": 2,
+      "question_text": "Which position are you applying for?",
+      "question_type": "radio",
+      "field_name": "positionType",
+      "order": 1,
+      "is_required": true,
+      "help_text": null,
+      "validation_rules": {
+        "required_message": "Please select the position you're applying for."
+      },
+      "options": [
+        { "value": "UTA", "label": "Undergraduate Teaching Assistant" },
+        { "value": "GTA2", "label": "Graduate Teaching Assistant 2 (Masters)" },
+        { "value": "GTA1", "label": "Graduate Teaching Assistant 1 (Ph.D)" }
+      ],
+      "is_editable": false
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 7,
+    "fields": {
+      "section": 2,
+      "question_text": "For W2025 applications, which of the following terms are you applying to TA for?",
+      "question_type": "radio",
+      "field_name": "winterTerm",
+      "order": 2,
+      "is_required": true,
+      "help_text": null,
+      "validation_rules": {
+        "required_message": "Please select which term(s) you're applying for."
+      },
+      "options": [
+        { "value": "W2025BOTH", "label": "W2025 both terms" },
+        {
+          "value": "W2025T1",
+          "label": "W2025T1 only (September 01 - December 31 2025)"
+        },
+        {
+          "value": "W2025T2 ",
+          "label": "W2025 Term 2 only (January 1 - April 30) 2026"
+        }
+      ],
+      "is_editable": true
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 8,
+    "fields": {
+      "section": 2,
+      "question_text": "Please indicate your preferred maximum average hourly workload:",
+      "question_type": "radio",
+      "field_name": "workload",
+      "order": 3,
+      "is_required": true,
+      "help_text": null,
+      "validation_rules": {
+        "required_message": "Please select your preferred workload."
+      },
+      "options": [
+        { "value": "6", "label": "6 hours" },
+        { "value": "12", "label": "12 hours" }
+      ],
+      "is_editable": true
+    }
+  },
+  {
+    "model": "myapp.formquestion",
+    "pk": 9,
+    "fields": {
+      "section": 2,
+      "question_text": "Rank your top 3 preferred disciplines:",
+      "question_type": "ranking",
+      "field_name": "disciplineRankings",
+      "order": 4,
+      "is_required": true,
+      "help_text": null,
+      "validation_rules": {
+        "maxRanks": 3,
+        "required_message": "Please choose a discipline for all three ranks.",
+        "unique_values": true,
+        "unique_message": "Each rank must be a different discipline.",
+        "all_ranks_required": true
+      },
+      "options": [
+        { "value": "ASTR", "label": "ASTR" },
+        { "value": "COSC", "label": "COSC" },
+        { "value": "DATA", "label": "DATA" },
+        { "value": "MATH", "label": "MATH" },
+        { "value": "PHYS", "label": "PHYS" },
+        { "value": "STAT", "label": "STAT" }
+      ],
+      "is_editable": true
+    }
+  }
+]

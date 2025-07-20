@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Calendar, FileText, Home, CheckCircle, UserCheck, MoreVerticalIcon } from "lucide-react";
+import {
+  BookOpen,
+  Calendar,
+  FileText,
+  Home,
+  CheckCircle,
+  UserCheck,
+  MoreVerticalIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getProfile } from "@/logic/scheduler-profile"; // Ensure this path is correct for your project
 import {
@@ -23,8 +31,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { logout } from "@/logic/auth"
+} from "@/components/ui/dropdown-menu";
+import { logout } from "@/logic/auth";
 
 const navigationItems = [
   {
@@ -43,8 +51,13 @@ const navigationItems = [
     icon: UserCheck,
   },
   {
-    title: "Applications",
+    title: "Application Management",
     url: "/manage-applications",
+    icon: FileText,
+  },
+  {
+    title: "Job Posting Management",
+    url: "/manage-templates",
     icon: FileText,
   },
   {
@@ -75,8 +88,11 @@ export function AppSidebar({ activePage, ...props }) {
 
   const getInitials = (name) => {
     if (!name) return "";
-    const nameParts = name.split(' ');
-    return nameParts.map(part => part[0]).join('').toUpperCase();
+    const nameParts = name.split(" ");
+    return nameParts
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
   };
 
   return (
@@ -88,7 +104,9 @@ export function AppSidebar({ activePage, ...props }) {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold">TA Scheduler</span>
-            <span className="text-xs text-muted-foreground">Scheduler Portal</span>
+            <span className="text-xs text-muted-foreground">
+              Scheduler Portal
+            </span>
           </div>
         </div>
       </SidebarHeader>
@@ -118,8 +136,15 @@ export function AppSidebar({ activePage, ...props }) {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild className="h-10" disabled={isLoading}>
-                <SidebarMenuButton aria-label = "account menu" className="bg-background text-foreground hover:bg-muted">
+              <DropdownMenuTrigger
+                asChild
+                className="h-10"
+                disabled={isLoading}
+              >
+                <SidebarMenuButton
+                  aria-label="account menu"
+                  className="bg-background text-foreground hover:bg-muted"
+                >
                   {isLoading || !user ? (
                     <>
                       <Avatar className="h-6 w-6 bg-muted" />
@@ -131,10 +156,14 @@ export function AppSidebar({ activePage, ...props }) {
                     <>
                       <Avatar className="h-6 w-6">
                         {/* Assuming no avatar URL is provided, fallback will be used */}
-                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                        <AvatarFallback>
+                          {getInitials(user.name)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-medium">{user.name}</span>
+                        <span className="truncate font-medium">
+                          {user.name}
+                        </span>
                         <span className="truncate text-xs text-muted-foreground">
                           {user.email}
                         </span>
@@ -150,15 +179,13 @@ export function AppSidebar({ activePage, ...props }) {
               >
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/user-profile-scheduler')}>
-                  
+                <DropdownMenuItem
+                  onClick={() => navigate("/user-profile-scheduler")}
+                >
                   <button>My Profile</button>
-                
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
-                  
                   <button>Logout</button>
-                
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -167,5 +194,4 @@ export function AppSidebar({ activePage, ...props }) {
       </SidebarFooter>
     </Sidebar>
   );
-  
 }

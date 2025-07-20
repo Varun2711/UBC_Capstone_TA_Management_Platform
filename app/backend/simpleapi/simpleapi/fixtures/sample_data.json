@@ -1,5 +1,68 @@
 [
   {
+    "model": "myapp.department",
+    "pk": 1,
+    "fields": {
+      "name": "Computer Science"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 2,
+    "fields": {
+      "name": "Mathematics"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 3,
+    "fields": {
+      "name": "Physics"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 4,
+    "fields": {
+      "name": "Chemistry"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 5,
+    "fields": {
+      "name": "Biology"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 6,
+    "fields": {
+      "name": "Engineering"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 7,
+    "fields": {
+      "name": "Psychology"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 8,
+    "fields": {
+      "name": "English"
+    }
+  },
+  {
+    "model": "myapp.department",
+    "pk": 9,
+    "fields": {
+      "name": "CMPS"
+    }
+  },
+  {
     "model": "myapp.student",
     "pk": 1,
     "fields": {
@@ -8,7 +71,7 @@
       "phone": "+1-250-555-0101",
       "program": "Computer Science",
       "year_standing": 3,
-      "study_level": "MSc",
+      "study_level": "Graduate",
       "department": 6,
       "sin": "123456789",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -239,7 +302,6 @@
       "otherPositionHours": 8
     }
   },
-  
   {
     "model": "myapp.department",
     "pk": 1,
@@ -841,7 +903,7 @@
       "phone": "+1-250-555-0104",
       "program": "Computer Science",
       "year_standing": 2,
-      "study_level": "BSc",
+      "study_level": "Undergraduate",
       "department": 1,
       "sin": "987654323",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -858,7 +920,7 @@
       "phone": "+1-250-555-0105",
       "program": "Mathematics",
       "year_standing": 3,
-      "study_level": "BSc",
+      "study_level": "Undergraduate",
       "department": 2,
       "sin": "987654324",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -875,7 +937,7 @@
       "phone": "+1-250-555-0106",
       "program": "Physics",
       "year_standing": 4,
-      "study_level": "MSc",
+      "study_level": "Undergraduate",
       "department": 3,
       "sin": "987654325",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -892,7 +954,7 @@
       "phone": "+1-250-555-0107",
       "program": "Computer Science",
       "year_standing": 1,
-      "study_level": "BSc",
+      "study_level": "Undergraduate",
       "department": 1,
       "sin": "987654326",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -909,7 +971,7 @@
       "phone": "+1-250-555-0108",
       "program": "Biology",
       "year_standing": 2,
-      "study_level": "BSc",
+      "study_level": "Undergraduate",
       "department": 5,
       "sin": "987654327",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -926,7 +988,7 @@
       "phone": "+1-250-555-0109",
       "program": "Engineering",
       "year_standing": 3,
-      "study_level": "BSc",
+      "study_level": "Undergraduate",
       "department": 6,
       "sin": "987654328",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -943,7 +1005,7 @@
       "phone": "+1-250-555-0110",
       "program": "Psychology",
       "year_standing": 4,
-      "study_level": "BA",
+      "study_level": "Undergraduate",
       "department": 7,
       "sin": "987654329",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -960,7 +1022,7 @@
       "phone": "+1-250-555-0111",
       "program": "Mathematics",
       "year_standing": 1,
-      "study_level": "BSc",
+      "study_level": "Undergraduate",
       "department": 2,
       "sin": "987654330",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -1132,7 +1194,10 @@
       "academic_term": 7,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002"
+      ]
     }
   },
   {
@@ -1145,7 +1210,10 @@
       "academic_term": 7,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440004", "550e8400-e29b-41d4-a716-446655440005"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440004",
+        "550e8400-e29b-41d4-a716-446655440005"
+      ]
     }
   },
   {
@@ -1158,7 +1226,10 @@
       "academic_term": 7,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440007", "550e8400-e29b-41d4-a716-446655440008"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440007",
+        "550e8400-e29b-41d4-a716-446655440008"
+      ]
     }
   },
   {
@@ -1171,7 +1242,10 @@
       "academic_term": 8,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440010", "550e8400-e29b-41d4-a716-446655440011"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440010",
+        "550e8400-e29b-41d4-a716-446655440011"
+      ]
     }
   },
   {
@@ -1184,7 +1258,10 @@
       "academic_term": 8,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440013", "550e8400-e29b-41d4-a716-446655440014"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440013",
+        "550e8400-e29b-41d4-a716-446655440014"
+      ]
     }
   },
   {
@@ -1197,7 +1274,9 @@
       "academic_term": 10,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440016"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440016"
+      ]
     }
   },
   {
@@ -1210,7 +1289,9 @@
       "academic_term": 10,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440017"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440017"
+      ]
     }
   },
   {
@@ -1223,7 +1304,10 @@
       "academic_term": 7,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440003"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440003"
+      ]
     }
   },
   {
@@ -1236,7 +1320,10 @@
       "academic_term": 8,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440006", "550e8400-e29b-41d4-a716-446655440009"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440006",
+        "550e8400-e29b-41d4-a716-446655440009"
+      ]
     }
   },
   {
@@ -1249,7 +1336,10 @@
       "academic_term": 7,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440002", "550e8400-e29b-41d4-a716-446655440005"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440002",
+        "550e8400-e29b-41d4-a716-446655440005"
+      ]
     }
   },
   {
@@ -1262,7 +1352,10 @@
       "academic_term": 8,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": ["550e8400-e29b-41d4-a716-446655440008", "550e8400-e29b-41d4-a716-446655440011"]
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440008",
+        "550e8400-e29b-41d4-a716-446655440011"
+      ]
     }
   },
   {
@@ -1375,6 +1468,200 @@
         "Students work on real-world database projects",
         "PostgreSQL and MySQL knowledge essential"
       ]
+    }
+  },
+  {
+    "model": "myapp.application",
+    "pk": 3,
+    "fields": {
+      "student": 3,
+      "posting": 1,
+      "status": "submitted",
+      "applied_at": "2024-11-20T10:15:00Z",
+      "updated_at": "2024-11-20T10:15:00Z",
+      "positionType": "GTA1",
+      "termSelection": 7,
+      "workload": "6",
+      "disciplineRankings": {
+        "rank1": "COSC",
+        "rank2": "MATH",
+        "rank3": "PHYS"
+      },
+      "citizenshipStatus": "citizen",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "no",
+      "otherPositionHours": null
+    }
+  },
+  {
+    "model": "myapp.application",
+    "pk": 4,
+    "fields": {
+      "student": 4,
+      "posting": 2,
+      "status": "submitted",
+      "applied_at": "2024-11-21T14:30:00Z",
+      "updated_at": "2024-11-21T14:30:00Z",
+      "positionType": "GTA2",
+      "termSelection": 8,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "MATH",
+        "rank2": "COSC",
+        "rank3": "STAT"
+      },
+      "citizenshipStatus": "pr",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "yes",
+      "otherPositionHours": 4
+    }
+  },
+  {
+    "model": "myapp.application",
+    "pk": 5,
+    "fields": {
+      "student": 5,
+      "posting": 1,
+      "status": "submitted",
+      "applied_at": "2024-11-22T09:45:00Z",
+      "updated_at": "2024-11-22T09:45:00Z",
+      "positionType": "GTA1",
+      "termSelection": 7,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "PHYS",
+        "rank2": "MATH",
+        "rank3": "COSC"
+      },
+      "citizenshipStatus": "international",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "no",
+      "otherPositionHours": null
+    }
+  },
+  {
+    "model": "myapp.applicationshortlist",
+    "pk": 1,
+    "fields": {
+      "application": 1,
+      "created_by": 3,
+      "created_at": "2024-11-25T10:00:00Z",
+      "notes": "Strong programming background, good GPA"
+    }
+  },
+  {
+    "model": "myapp.applicationshortlist",
+    "pk": 2,
+    "fields": {
+      "application": 2,
+      "created_by": 3,
+      "created_at": "2024-11-25T11:30:00Z",
+      "notes": "Previous TA experience, excellent communication skills"
+    }
+  },
+  {
+    "model": "myapp.applicationshortlist",
+    "pk": 3,
+    "fields": {
+      "application": 3,
+      "created_by": 3,
+      "created_at": "2024-11-25T14:15:00Z",
+      "notes": "Good academic record, willing to take 6-hour position"
+    }
+  },
+  {
+    "model": "myapp.applicationshortlist",
+    "pk": 4,
+    "fields": {
+      "application": 4,
+      "created_by": 3,
+      "created_at": "2024-11-25T16:45:00Z",
+      "notes": "Math major with CS background, perfect for hybrid positions"
+    }
+  },
+  {
+    "model": "myapp.applicationshortlist",
+    "pk": 5,
+    "fields": {
+      "application": 5,
+      "created_by": 3,
+      "created_at": "2024-11-26T09:20:00Z",
+      "notes": "Physics graduate student, strong analytical skills"
+    }
+  },
+  {
+    "model": "myapp.offeritem",
+    "pk": 1,
+    "fields": {
+      "offer_item_id": "550e8400-e29b-41d4-a716-446655440301",
+      "item_type": "course_offering",
+      "course_offering": "550e8400-e29b-41d4-a716-446655440101",
+      "shared_session": null
+    }
+  },
+  {
+    "model": "myapp.offeritem",
+    "pk": 2,
+    "fields": {
+      "offer_item_id": "550e8400-e29b-41d4-a716-446655440302",
+      "item_type": "shared_session",
+      "course_offering": null,
+      "shared_session": "550e8400-e29b-41d4-a716-446655440201"
+    }
+  },
+  {
+    "model": "myapp.offer",
+    "pk": 1,
+    "fields": {
+      "application": 1,
+      "student": 1,
+      "role": "ta",
+      "offer_date": "2024-12-01T10:00:00Z",
+      "response_deadline": "2024-12-15T23:59:59Z",
+      "status": "pending",
+      "responded_at": null,
+      "student_response": null,
+      "created_by": 3,
+      "notes": "Multi-item offer for COSC courses",
+      "created_at": "2024-12-01T10:00:00Z",
+      "updated_at": "2024-12-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 1,
+    "fields": {
+      "offer": 1,
+      "student": 2,
+      "course": 4,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440102",
+      "shared_session": null,
+      "role": "ta",
+      "assigned_date": "2024-12-03T09:16:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Auto-assigned from accepted offer 2 - course_offering (3.0h/week)",
+      "created_at": "2024-12-03T09:16:00Z",
+      "updated_at": "2024-12-03T09:16:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignmentmodification",
+    "pk": 1,
+    "fields": {
+      "original_assignment": 1,
+      "new_offer": 1,
+      "reason": "Lab section time conflict with student's other courses",
+      "modification_type": "section_change",
+      "status": "pending",
+      "requires_response": true,
+      "created_by": 3,
+      "created_at": "2024-12-05T11:00:00Z",
+      "student_responded_at": null,
+      "student_response": null
     }
   }
 ]
