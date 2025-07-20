@@ -12,29 +12,27 @@ export function TermSection({
   expandedLabSections,
   onToggleLabSection,
   onEditOffering,
+  onDeleteOffering,
+  onEditSession,
+  onDeleteSession,
 }) {
-  const [term, year] = termKey.split("-")
+  const hasOfferings = termOfferings.length > 0
   const hasMultipleProfessors = termOfferings.length > 1
 
-  // Function to format term display name
+  // Format term display name
   const formatTermDisplay = (termCode) => {
-    // Parse term codes like "W2024 Term 2" or "W2025 Term 1"
     const match = termCode.match(/^([A-Z])(\d{4})\s+(.+)$/)
 
     if (match) {
       const [, seasonCode, year, termPart] = match
-
-      // Map season codes to full names
       const seasonMap = {
         W: "Winter",
         S: "Summer",
         F: "Fall",
         Sp: "Spring",
       }
-
       const seasonName = seasonMap[seasonCode] || seasonCode
 
-      // Handle different term formats
       if (termPart.includes("Both")) {
         return `${seasonName} Both Terms, ${year}`
       } else if (termPart.includes("Term")) {
@@ -43,23 +41,30 @@ export function TermSection({
         return `${seasonName} ${termPart}, ${year}`
       }
     }
-
-    // Fallback for unexpected formats
     return termCode
   }
 
-  const getSharedSessionsForTerm = (course, year, term) => {
-    const termKey = `${term}-${year}`
-    return course.sharedSessions[termKey] || { labs: [], tutorials: [] }
+  // Get shared sessions for this term directly
+  const sharedSessions = course.sharedSessions?.[termKey] || { labs: [], tutorials: [], seminars: [], workshops: [] }
+  
+  const hasSharedSessions = (sharedSessions.labs?.length > 0) || 
+                           (sharedSessions.tutorials?.length > 0) || 
+                           (sharedSessions.seminars?.length > 0) || 
+                           (sharedSessions.workshops?.length > 0)
+
+  const termDisplayName = formatTermDisplay(termKey)
+
+  // Extract year and term for SharedSessionsCard props
+  const termMatch = termKey.match(/^([A-Z])(\d{4})\s+(.+)$/)
+  let displayTerm = "Unknown"
+  let displayYear = "Unknown"
+  
+  if (termMatch) {
+    const [, seasonCode, year, termPart] = termMatch
+    const seasonMap = { W: "Winter", S: "Summer", F: "Fall", Sp: "Spring" }
+    displayTerm = seasonMap[seasonCode] || seasonCode
+    displayYear = year
   }
-
-  const sharedSessions = getSharedSessionsForTerm(course, year, term)
-
-  // Get the first offering's term code to format the display
-  const termDisplayName =
-    termOfferings.length > 0
-      ? formatTermDisplay(termOfferings[0].term)
-      : `${term} ${year}`
 
   return (
     <div className="ml-4 space-y-3">
@@ -67,32 +72,49 @@ export function TermSection({
       <div className="flex items-center space-x-2 pb-2 border-b">
         <Calendar className="h-4 w-4 text-blue-600" />
         <span className="font-medium text-base">{termDisplayName}</span>
-        {hasMultipleProfessors && (
-          <Badge variant="secondary" className="text-xs">
-            Multiple Sections
-          </Badge>
-        )}
+        <div className="flex items-center space-x-2">
+          {hasMultipleProfessors && (
+            <Badge variant="secondary" className="text-xs">
+              Multiple Sections
+            </Badge>
+          )}
+          {!hasOfferings && hasSharedSessions && (
+            <Badge variant="outline" className="text-xs">
+              Shared Sessions Only
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Individual Offerings for this term */}
-      {termOfferings.map((offering) => (
+      {hasOfferings && termOfferings.map((offering) => (
         <OfferingCard
           key={offering.id}
           offering={offering}
           onEdit={onEditOffering}
+          onDelete={onDeleteOffering}
         />
       ))}
 
+      {/* Message if no offerings but has shared sessions */}
+      {!hasOfferings && hasSharedSessions && (
+        <div className="text-sm text-muted-foreground italic pl-4">
+          No course offerings for this term, but shared sessions are available.
+        </div>
+      )}
+
       {/* Shared Labs and Tutorials for this term */}
-      {(sharedSessions.labs.length > 0 || sharedSessions.tutorials.length > 0) && (
+      {hasSharedSessions && (
         <SharedSessionsCard
           termKey={termKey}
-          term={term}
-          year={year}
+          term={displayTerm}
+          year={displayYear}
           termOfferings={termOfferings}
           sharedSessions={sharedSessions}
           expandedLabSections={expandedLabSections}
           onToggleLabSection={onToggleLabSection}
+          onEditSession={onEditSession}
+          onDeleteSession={onDeleteSession}
         />
       )}
     </div>
