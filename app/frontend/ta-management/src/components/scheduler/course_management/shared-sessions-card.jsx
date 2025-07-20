@@ -13,6 +13,8 @@ export function SharedSessionsCard({
   sharedSessions,
   expandedLabSections,
   onToggleLabSection,
+  onEditSession,
+  onDeleteSession,
 }) {
   const isExpanded = expandedLabSections.has(`shared-${termKey}`)
 
@@ -29,11 +31,8 @@ export function SharedSessionsCard({
               )}
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
               <span className="font-medium text-sm">
-                Shared Sessions for {term} {year}
+                Shared Sessions
               </span>
-              <Badge variant="outline" className="text-xs">
-                {termOfferings.map((o) => o.section).join(", ")}
-              </Badge>
               <Badge variant="secondary" className="text-xs">
                 {sharedSessions.labs.length + sharedSessions.tutorials.length} sessions
               </Badge>
@@ -51,6 +50,8 @@ export function SharedSessionsCard({
                   sessions={sharedSessions.labs}
                   expandedLabSections={expandedLabSections}
                   onToggleLabSection={onToggleLabSection}
+                  onEditSession={onEditSession}
+                  onDeleteSession={onDeleteSession}
                 />
               )}
 
@@ -62,6 +63,8 @@ export function SharedSessionsCard({
                   sessions={sharedSessions.tutorials}
                   expandedLabSections={expandedLabSections}
                   onToggleLabSection={onToggleLabSection}
+                  onEditSession={onEditSession}
+                  onDeleteSession={onDeleteSession}
                 />
               )}
             </div>
