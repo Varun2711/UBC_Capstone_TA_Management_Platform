@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, AlertCircle, Search } from "lucide-react"
+import { Plus, AlertCircle, Search, Clock, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -20,6 +20,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Card, CardContent } from "@/components/ui/card"
 
 export function AddOfferingModal({ 
   isOpen, 
@@ -36,10 +37,26 @@ export function AddOfferingModal({
     term: "",
     instructor: "",
   })
+
+  const [timeSlots, setTimeSlots] = useState([{
+    day: "",
+    start_time: "",
+    end_time: ""
+  }])
   
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [instructorSearchOpen, setInstructorSearchOpen] = useState(false)
+
+  const daysOfWeek = [
+    { value: "monday", label: "Monday" },
+    { value: "tuesday", label: "Tuesday" },
+    { value: "wednesday", label: "Wednesday" },
+    { value: "thursday", label: "Thursday" },
+    { value: "friday", label: "Friday" },
+    { value: "saturday", label: "Saturday" },
+    { value: "sunday", label: "Sunday" },
+  ]
 
   const validateField = (name, value) => {
     switch (name) {
@@ -74,6 +91,26 @@ export function AddOfferingModal({
     }
   }
 
+  const validateTimeSlots = () => {
+    const timeSlotErrors = []
+    
+    timeSlots.forEach((slot, index) => {
+      const slotErrors = {}
+      
+      if (!slot.day) slotErrors.day = "Day is required"
+      if (!slot.start_time) slotErrors.start_time = "Start time is required"
+      if (!slot.end_time) slotErrors.end_time = "End time is required"
+      
+      if (slot.start_time && slot.end_time && slot.start_time >= slot.end_time) {
+        slotErrors.end_time = "End time must be after start time"
+      }
+      
+      timeSlotErrors[index] = slotErrors
+    })
+    
+    return timeSlotErrors
+  }
+
   const handleInputChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
 
@@ -94,6 +131,30 @@ export function AddOfferingModal({
     setErrors((prev) => ({ ...prev, [name]: error }))
   }
 
+  const handleTimeSlotChange = (index, field, value) => {
+    const newTimeSlots = [...timeSlots]
+    newTimeSlots[index][field] = value
+    setTimeSlots(newTimeSlots)
+    
+    // Clear time slot errors when user changes values
+    setErrors(prev => ({
+      ...prev,
+      timeSlots: prev.timeSlots?.map((slotErrors, i) => 
+        i === index ? { ...slotErrors, [field]: "" } : slotErrors
+      )
+    }))
+  }
+
+  const addTimeSlot = () => {
+    setTimeSlots([...timeSlots, { day: "", start_time: "", end_time: "" }])
+  }
+
+  const removeTimeSlot = (index) => {
+    if (timeSlots.length > 1) {
+      setTimeSlots(timeSlots.filter((_, i) => i !== index))
+    }
+  }
+
   const validateForm = () => {
     const newErrors = {}
 
@@ -104,8 +165,18 @@ export function AddOfferingModal({
       newErrors[field] = error
     })
 
+    // Validate time slots
+    const timeSlotErrors = validateTimeSlots()
+    const hasTimeSlotErrors = timeSlotErrors.some(slotErrors => 
+      Object.keys(slotErrors).length > 0
+    )
+
+    if (hasTimeSlotErrors) {
+      newErrors.timeSlots = timeSlotErrors
+    }
+
     setErrors(newErrors)
-    return !Object.keys(newErrors).some((key) => newErrors[key])
+    return !Object.keys(newErrors).some((key) => newErrors[key]) && !hasTimeSlotErrors
   }
 
   const resetForm = () => {
@@ -115,6 +186,11 @@ export function AddOfferingModal({
       term: "",
       instructor: "",
     })
+    setTimeSlots([{
+      day: "",
+      start_time: "",
+      end_time: ""
+    }])
     setErrors({})
     setIsSubmitting(false)
   }
@@ -135,8 +211,9 @@ export function AddOfferingModal({
       await onAddOffering(course.id, {
         courseId: course.id,
         section: formData.section.trim(),
-        termId: selectedTerm?.id,  // Use the term ID from the mapped terms
+        termId: selectedTerm?.id,
         instructorId: parseInt(formData.instructor),
+        time_slots: timeSlots.filter(slot => slot.day && slot.start_time && slot.end_time)
       })
 
       resetForm()
@@ -208,7 +285,7 @@ export function AddOfferingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
@@ -370,6 +447,94 @@ export function AddOfferingModal({
               )}
             </div>
 
+            {/* Time Slots Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-md font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Class Schedule *
+                </h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addTimeSlot}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Time Slot
+                </Button>
+              </div>
+
+              {timeSlots.map((slot, index) => (
+                <Card key={index} className="p-4">
+                  <CardContent className="p-0">
+                    <div className="grid grid-cols-4 gap-4 items-end">
+                      <div className="space-y-2">
+                        <Label>Day *</Label>
+                        <Select
+                          value={slot.day}
+                          onValueChange={(value) => handleTimeSlotChange(index, "day", value)}
+                        >
+                          <SelectTrigger className={errors.timeSlots?.[index]?.day ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Select day" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {daysOfWeek.map((day) => (
+                              <SelectItem key={day.value} value={day.value}>
+                                {day.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.timeSlots?.[index]?.day && (
+                          <p className="text-sm text-red-600">{errors.timeSlots[index].day}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Start Time *</Label>
+                        <Input
+                          type="time"
+                          value={slot.start_time}
+                          onChange={(e) => handleTimeSlotChange(index, "start_time", e.target.value)}
+                          className={errors.timeSlots?.[index]?.start_time ? "border-red-500" : ""}
+                        />
+                        {errors.timeSlots?.[index]?.start_time && (
+                          <p className="text-sm text-red-600">{errors.timeSlots[index].start_time}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>End Time *</Label>
+                        <Input
+                          type="time"
+                          value={slot.end_time}
+                          onChange={(e) => handleTimeSlotChange(index, "end_time", e.target.value)}
+                          className={errors.timeSlots?.[index]?.end_time ? "border-red-500" : ""}
+                        />
+                        {errors.timeSlots?.[index]?.end_time && (
+                          <p className="text-sm text-red-600">{errors.timeSlots[index].end_time}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        {timeSlots.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeTimeSlot(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
             {/* Show existing offerings for reference */}
             {existingOfferings.length > 0 && (
               <div className="mt-4 p-3 bg-gray-50 rounded-md">
@@ -385,7 +550,7 @@ export function AddOfferingModal({
             )}
           </div>
 
-          {Object.keys(errors).some((key) => errors[key]) && (
+          {(Object.keys(errors).some((key) => key !== 'timeSlots' && errors[key]) || errors.timeSlots) && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>Please fix the errors above before submitting.</AlertDescription>
