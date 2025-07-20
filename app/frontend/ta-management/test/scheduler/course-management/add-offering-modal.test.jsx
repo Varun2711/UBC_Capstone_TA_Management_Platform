@@ -72,6 +72,7 @@ describe('AddOfferingModal', () => {
         instructors={mockInstructors}
         {...props}
       />
+      />
     );
   };
 

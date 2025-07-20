@@ -28,9 +28,9 @@ vi.mock('lucide-react', () => ({
 
 // Mock data
 const mockCourse = {
-  id: 'cs101',
-  code: 'CS 101',
-  title: 'Introduction to Programming',
+  id: "cs101",
+  code: "CS 101",
+  title: "Introduction to Programming",
 };
 
 const mockTerms = [
@@ -63,6 +63,7 @@ describe('AddLabTutorialModal', () => {
         existingSessions={mockExistingSessions}
         terms={mockTerms}
         {...props}
+      />
       />
     );
   };

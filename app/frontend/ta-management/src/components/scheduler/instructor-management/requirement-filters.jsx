@@ -59,7 +59,7 @@ export function RequirementsFilters({
         </Select>
 
         <Select value={selectedTerm} onValueChange={onTermChange}>
-          <SelectTrigger className="w-full sm:w-40">
+          <SelectTrigger className="w-full sm:w-56"> {/* Increased from w-48 to w-56 for "Winter Both Terms" */}
             <SelectValue placeholder="Term" />
           </SelectTrigger>
           <SelectContent>
@@ -77,9 +77,7 @@ export function RequirementsFilters({
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Filter className="h-4 w-4" />
         <span>
-          Showing {selectedDepartment !== "all" ? selectedDepartment : "all departments"} •
-          {selectedYear !== "all" ? ` ${selectedYear}` : " all years"} •
-          {selectedTerm !== "all" ? ` ${selectedTerm}` : " all terms"}
+          Showing {selectedDepartment !== "all" ? selectedDepartment : "all departments"} • {selectedYear !== "all" ? selectedYear : "all years"} • {selectedTerm !== "all" ? selectedTerm : "all terms"}
         </span>
       </div>
     </div>
