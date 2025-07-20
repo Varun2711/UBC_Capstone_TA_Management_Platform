@@ -114,7 +114,7 @@ class InstructorProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Instructor
-        fields = ['employee_number', 'name', 'email', 'department', 'department_name']
+        fields = ['id', 'employee_number', 'name', 'email', 'department', 'department_name']  # Add 'id' to fields
 
 class AdminProfileSerializer(serializers.ModelSerializer):
     class Meta:
