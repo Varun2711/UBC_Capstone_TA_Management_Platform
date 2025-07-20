@@ -3,28 +3,44 @@ import sys
 import django
 import pytest
 import uuid
+from django.apps import apps
 
 # Set test-specific Django settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tests.test_settings')
 
 def pytest_configure():
-    """Configure Django for pytest"""
-    if not django.conf.settings.configured:
-        django.setup()
+    """
+    Make unmanaged models managed before any tests run.
+    This runs very early in the pytest lifecycle.
+    """
+    from django.conf import settings
+    if settings.configured:
+        # Make all unmanaged models managed for testing
+        unmanaged_models = []
+        for app in apps.get_app_configs():
+            unmanaged_models.extend([m for m in app.get_models() if not m._meta.managed])
+        
+        for model in unmanaged_models:
+            model._meta.managed = True
 
 @pytest.fixture(autouse=True)
 def enable_db_access(db):
-    """Automatically enable database access for all tests"""
+    """
+    Automatically enable database access for all tests.
+    """
     pass
 
 @pytest.fixture
 def complete_test_data():
-    """Fixture with all required models for testing"""
+    """
+    Fixture with all required models for testing
+    """
     from api.models import (
         Department, TAScheduler, Student, Term, JobPosting, 
         Application, ApplicationShortList, Course, TimeSlot,
         CourseOffering, SharedSession
     )
+    from datetime import date, timedelta
     
     # Create test data with all required fields
     department = Department.objects.create(name="Computer Science")
@@ -33,24 +49,30 @@ def complete_test_data():
         employee_number="TA001",
         name="Test Scheduler",
         email="scheduler@test.com",
-        department=department
+        department=department,
+        password="test_password",
+        is_active=True
     )
     
     student = Student.objects.create(
         student_number="12345678",
         name="Test Student",
         email="student@test.com",
-        study_level="undergraduate"
+        study_level="undergraduate",
+        department=department,
+        is_active=True
     )
     
     term = Term.objects.create(
         code="W2025T1",
         description="Winter 2025 Term 1",
-        start="2025-01-01",
-        end="2025-04-30",
+        start=date.today(),
+        end=date.today() + timedelta(days=120),
         startCalendarYear=2025,
         endCalendarYear=2025,
-        academicYear="2025/26"
+        academicYear="2025/26",
+        is_active=True,
+        term_type="winter"
     )
     
     job_posting = JobPosting.objects.create(posting_id=1)
@@ -64,7 +86,8 @@ def complete_test_data():
         citizenshipStatus='citizen',
         residingInKelowna='yes',
         fullTimeEnrollment='yes',
-        hasOtherPositions='no'
+        hasOtherPositions='no',
+        termSelection=term
     )
     
     shortlist = ApplicationShortList.objects.create(
@@ -76,7 +99,9 @@ def complete_test_data():
     course = Course.objects.create(
         course_number="COSC 121",
         course_name="Computer Programming II",
-        department=department
+        department=department,
+        course_level="200",
+        is_active=True
     )
     
     time_slot = TimeSlot.objects.create(
@@ -85,7 +110,6 @@ def complete_test_data():
         end_time="10:00:00"
     )
     
-    # ✅ ADD: CourseOffering and SharedSession with required UUIDs
     course_offering = CourseOffering.objects.create(
         course_offering_id=uuid.uuid4(),
         course=course,

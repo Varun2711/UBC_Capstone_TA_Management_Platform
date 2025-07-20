@@ -1,11 +1,11 @@
 import pytest
+import uuid
 from django.test import TestCase
 from django.utils import timezone
-import uuid
-from datetime import timedelta
+from datetime import timedelta, date
 from api.models import (
     Department, TAScheduler, Student, Term, JobPosting,
-    Application, Assignment,
+    Application, Assignment, Offer, OfferItem,
     CourseOffering, SharedSession, TimeSlot, Course
 )
 
@@ -13,32 +13,41 @@ class AssignmentModelTest(TestCase):
     """Core Assignment model functionality tests"""
     
     def setUp(self):
-        # Create minimal test data
+        # Create minimal test data in correct order
         self.department = Department.objects.create(name="Computer Science")
+        
         self.ta_scheduler = TAScheduler.objects.create(
             employee_number="TA001",
             name="Test Scheduler",
             email="scheduler@test.com",
-            department=self.department
+            department=self.department,
+            password="test_password",
+            is_active=True
         )
+        
         self.student = Student.objects.create(
             student_number="12345678",
             name="Test Student",
             email="student@test.com",
-            study_level="undergraduate"
+            study_level="undergraduate",
+            department=self.department,
+            is_active=True
         )
+        
         self.term = Term.objects.create(
             code="W2025T1",
             description="Winter 2025 Term 1",
-            start="2025-01-01",
-            end="2025-04-30",
+            start=date.today(),
+            end=date.today() + timedelta(days=120),
             startCalendarYear=2025,
             endCalendarYear=2025,
-            academicYear="2025/26"
+            academicYear="2025/26",
+            is_active=True,
+            term_type="winter"
         )
         
-        # ✅ ADD: JobPosting and Application (required for offers)
         self.job_posting = JobPosting.objects.create(posting_id=1)
+        
         self.application = Application.objects.create(
             student=self.student,
             posting=self.job_posting,
@@ -48,42 +57,59 @@ class AssignmentModelTest(TestCase):
             citizenshipStatus='citizen',
             residingInKelowna='yes',
             fullTimeEnrollment='yes',
-            hasOtherPositions='no'
+            hasOtherPositions='no',
+            termSelection=self.term
         )
         
         self.course = Course.objects.create(
             course_number="COSC 121",
             course_name="Computer Programming II",
-            department=self.department
+            department=self.department,
+            course_level="200",
+            is_active=True
         )
+        
         self.time_slot = TimeSlot.objects.create(
             day="monday",
             start_time="09:00:00",
             end_time="11:00:00"  # 2 hour slot
         )
         
-        # ✅ FIX: Add required shared_session_id
         self.shared_session = SharedSession.objects.create(
-            shared_session_id=uuid.uuid4(),  # ← Add required UUID
+            shared_session_id=uuid.uuid4(),
             course=self.course,
             section_number="L01",
             academic_term=self.term,
             session_type="lab"
         )
-        # Add time slot to session
         self.shared_session.time_slots.add(self.time_slot)
         
-        # ✅ ADD: CourseOffering with required course_offering_id
         self.course_offering = CourseOffering.objects.create(
-            course_offering_id=uuid.uuid4(),  # ← Add required UUID
+            course_offering_id=uuid.uuid4(),
             course=self.course,
             section_number="001",
             academic_term=self.term
         )
-    
+        
+        # Create offer and offer item
+        self.offer = Offer.objects.create(
+            application=self.application,
+            student=self.student,
+            response_deadline=timezone.now() + timedelta(days=7),
+            created_by=self.ta_scheduler,
+            status='pending'
+        )
+        
+        offer_item = OfferItem.objects.create(
+            item_type='shared_session',
+            shared_session=self.shared_session
+        )
+        self.offer.offer_items.add(offer_item)
+
     def test_assignment_creation(self):
         """Test basic assignment creation"""
         assignment = Assignment.objects.create(
+            offer=self.offer,
             student=self.student,
             course=self.course,
             shared_session=self.shared_session,
@@ -100,6 +126,7 @@ class AssignmentModelTest(TestCase):
     def test_assignment_hours_calculation(self):
         """Test hours calculation from time slots"""
         assignment = Assignment.objects.create(
+            offer=self.offer,
             student=self.student,
             course=self.course,
             shared_session=self.shared_session,
@@ -113,6 +140,7 @@ class AssignmentModelTest(TestCase):
     def test_assignment_string_representation(self):
         """Test assignment __str__ method"""
         assignment = Assignment.objects.create(
+            offer=self.offer,
             student=self.student,
             course=self.course,
             shared_session=self.shared_session,
