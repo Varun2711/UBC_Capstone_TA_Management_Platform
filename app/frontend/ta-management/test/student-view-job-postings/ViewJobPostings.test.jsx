@@ -3,7 +3,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BrowserRouter } from "react-router-dom";
-import ViewJobPostings from "@/pages/ViewJobPostings_Student";
+import ViewJobPostings from "@/pages/Student/Student_ViewJobPostings";
 
 /* ────────────────────────────────────────────────────────────
  *  axios mock (hoist-safe)
