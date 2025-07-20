@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FileText, Plus, X, AlertCircle } from "lucide-react"
+import { FileText, Plus, X, AlertCircle, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,10 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export function TARequirementsModal({ isOpen, onClose, onSubmit, course, isEditing = false }) {
+export function TARequirementsModal({ isOpen, onClose, onSubmit, course, isEditing = false, isSubmitting = false }) {
   const [requirements, setRequirements] = useState([])
   const [newRequirement, setNewRequirement] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Populate requirements when editing
   useEffect(() => {
@@ -56,23 +55,13 @@ export function TARequirementsModal({ isOpen, onClose, onSubmit, course, isEditi
       return
     }
 
-    setIsSubmitting(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      onSubmit(course.id, requirements)
-      handleClose()
-    } catch (error) {
-      console.error("Error submitting requirements:", error)
-    } finally {
-      setIsSubmitting(false)
-    }
+    await onSubmit(course.id, requirements)
+    handleClose()
   }
 
   const handleClose = () => {
     setRequirements([])
     setNewRequirement("")
-    setIsSubmitting(false)
     onClose()
   }
 
@@ -132,11 +121,12 @@ export function TARequirementsModal({ isOpen, onClose, onSubmit, course, isEditi
                   onChange={(e) => setNewRequirement(e.target.value)}
                   onKeyPress={handleKeyPress}
                   className="flex-1"
+                  disabled={isSubmitting}
                 />
                 <Button
                   type="button"
                   onClick={handleAddRequirement}
-                  disabled={!newRequirement.trim()}
+                  disabled={!newRequirement.trim() || isSubmitting}
                   size="sm"
                   className="px-3"
                 >
@@ -165,6 +155,7 @@ export function TARequirementsModal({ isOpen, onClose, onSubmit, course, isEditi
                         size="sm"
                         onClick={() => handleRemoveRequirement(index)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1 h-auto"
+                        disabled={isSubmitting}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -201,13 +192,14 @@ export function TARequirementsModal({ isOpen, onClose, onSubmit, course, isEditi
             Cancel
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={requirements.length === 0 || isSubmitting}>
-            {isSubmitting
-              ? isEditing
-                ? "Updating..."
-                : "Submitting..."
-              : isEditing
-                ? "Update Requirements"
-                : "Submit Requirements"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {isEditing ? "Updating..." : "Submitting..."}
+              </>
+            ) : (
+              isEditing ? "Update Requirements" : "Submit Requirements"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
