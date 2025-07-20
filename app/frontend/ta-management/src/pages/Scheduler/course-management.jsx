@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react"
-import { Bell, Plus } from "lucide-react"
+"use client"
+
+import { useState, useEffect, useMemo } from "react"
+import { Bell, Plus, Calendar } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+
 import { AppSidebar } from "@/components/scheduler-sidebar"
-import { CourseCard } from "@/components/scheduler/course_management/course-card"
 import { CourseFilters } from "@/components/scheduler/course_management/course-filters"
+import { CourseCard } from "@/components/scheduler/course_management/course-card"
 import { EmptyState } from "@/components/scheduler/course_management/empty-state"
 import { AddCourseModal } from "@/components/scheduler/course_management/add-course-modal"
 import { EditCourseModal } from "@/components/scheduler/course_management/edit-course-modal"
 import { AddOfferingModal } from "@/components/scheduler/course_management/add-offering-modal"
 import { EditOfferingModal } from "@/components/scheduler/course_management/edit-offering-modal"
 import { AddLabTutorialModal } from "@/components/scheduler/course_management/add-lab-tutorial-modal"
+import { EditSessionModal } from "@/components/scheduler/course_management/edit-session-modal"
 
 // Import API functions
 import {
@@ -25,12 +29,15 @@ import {
   updateCourseOffering,
   deleteCourseOffering,
   createSharedSession,
+  updateSharedSession,
+  deleteSharedSession,
   getTerms,
   getDepartments,
   getInstructors,
   mapCourseData,
   mapTermsForDropdown,
-  mapInstructorsForDropdown
+  mapInstructorsForDropdown,
+  parseTermCode
 } from "@/logic/courseManagement"
 
 export default function CourseManagement() {
@@ -38,10 +45,11 @@ export default function CourseManagement() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [selectedYear, setSelectedYear] = useState("all")
+  const [selectedTerm, setSelectedTerm] = useState("all")
   const [expandedCourses, setExpandedCourses] = useState(new Set())
   const [expandedOfferings, setExpandedOfferings] = useState(new Set())
   const [expandedLabSections, setExpandedLabSections] = useState(new Set())
-  
+
   // Data state
   const [courses, setCourses] = useState([])
   const [departments, setDepartments] = useState([])
@@ -49,15 +57,19 @@ export default function CourseManagement() {
   const [instructors, setInstructors] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  
+
   // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddOfferingModalOpen, setIsAddOfferingModalOpen] = useState(false)
   const [isEditOfferingModalOpen, setIsEditOfferingModalOpen] = useState(false)
   const [isAddLabTutorialModalOpen, setIsAddLabTutorialModalOpen] = useState(false)
+  const [isEditSharedSessionModalOpen, setIsEditSharedSessionModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [selectedOffering, setSelectedOffering] = useState(null)
+  const [selectedSharedSession, setSelectedSharedSession] = useState(null)
+  const [selectedSessionType, setSelectedSessionType] = useState(null)
+  const [selectedTermKey, setSelectedTermKey] = useState(null)
 
   // Load initial data
   useEffect(() => {
@@ -65,7 +77,7 @@ export default function CourseManagement() {
       try {
         setLoading(true)
         setError(null)
-        
+
         // Load all required data in parallel
         const [coursesData, departmentsData, termsData, instructorsData] = await Promise.all([
           getAllCoursesFullDetails(),
@@ -76,7 +88,7 @@ export default function CourseManagement() {
 
         // Map data to frontend format - pass instructors to resolve names
         const mappedInstructors = mapInstructorsForDropdown(instructorsData, departmentsData)
-        const mappedCourses = coursesData.map(course => mapCourseData(course, instructorsData)) // Pass instructors here
+        const mappedCourses = coursesData.map(course => mapCourseData(course, instructorsData))
         const mappedTerms = mapTermsForDropdown(termsData)
 
         setCourses(mappedCourses)
@@ -139,14 +151,14 @@ export default function CourseManagement() {
   const handleAddCourseSubmit = async (newCourseData) => {
     try {
       const createdCourse = await createCourse(newCourseData)
-      
+
       // Reload the courses to get the updated data
       const [updatedCourses, instructorsData] = await Promise.all([
         getAllCoursesFullDetails(),
         getInstructors()
       ])
       setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
-      
+
       console.log("Course added:", createdCourse)
     } catch (error) {
       console.error("Error adding course:", error)
@@ -166,14 +178,14 @@ export default function CourseManagement() {
   const handleEditCourseSubmit = async (updatedCourseData) => {
     try {
       await updateCourse(selectedCourse.id, updatedCourseData)
-      
+
       // Reload the courses to get the updated data
       const [updatedCourses, instructorsData] = await Promise.all([
         getAllCoursesFullDetails(),
         getInstructors()
       ])
       setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
-      
+
       console.log("Course updated:", updatedCourseData)
     } catch (error) {
       console.error("Error updating course:", error)
@@ -195,23 +207,22 @@ export default function CourseManagement() {
   const handleAddOfferingSubmit = async (courseId, newOfferingData) => {
     try {
       console.log("Adding offering with data:", newOfferingData)
-      
+
       await createCourseOffering(newOfferingData)
-      
+
       // Reload the courses to get the updated data
       const [updatedCourses, instructorsData] = await Promise.all([
         getAllCoursesFullDetails(),
         getInstructors()
       ])
       setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
-      
+
       console.log("Offering added successfully")
     } catch (error) {
       console.error("Error adding offering:", error)
       setError("Failed to add offering. Please try again.")
     }
   }
-  
 
   const handleCloseAddOfferingModal = () => {
     setIsAddOfferingModalOpen(false)
@@ -219,25 +230,70 @@ export default function CourseManagement() {
   }
 
   const handleEditOffering = (offering) => {
-    setSelectedOffering(offering)
-    setSelectedCourse(courses.find((course) => course.offerings.some((o) => o.id === offering.id)))
-    setIsEditOfferingModalOpen(true)
+    try {
+      console.log("Edit offering clicked:", offering)
+      
+      // Find the course that contains this offering
+      const parentCourse = courses.find((course) => 
+        course.offerings && course.offerings.some((o) => o.id === offering.id)
+      )
+      
+      if (!parentCourse) {
+        console.error("Could not find parent course for offering:", offering)
+        setError("Could not find the course for this offering.")
+        return
+      }
+      
+      console.log("Found parent course:", parentCourse)
+      
+      setSelectedOffering(offering)
+      setSelectedCourse(parentCourse)
+      setIsEditOfferingModalOpen(true)
+    } catch (error) {
+      console.error("Error in handleEditOffering:", error)
+      setError("Failed to open edit offering dialog.")
+    }
+  }
+
+  const handleDeleteOffering = async (offering) => {
+    if (window.confirm(`Are you sure you want to delete Section ${offering.section}? This action cannot be undone.`)) {
+      try {
+        await deleteCourseOffering(offering.id)
+
+        // Reload the courses to get the updated data
+        const [updatedCourses, instructorsData] = await Promise.all([
+          getAllCoursesFullDetails(),
+          getInstructors()
+        ])
+        setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
+
+        console.log("Offering deleted successfully")
+      } catch (error) {
+        console.error("Error deleting offering:", error)
+        setError("Failed to delete offering. Please try again.")
+      }
+    }
   }
 
   const handleEditOfferingSubmit = async (courseId, updatedOfferingData) => {
     try {
       console.log("Updating offering with data:", updatedOfferingData)
-      
+
       await updateCourseOffering(updatedOfferingData.id, updatedOfferingData)
-      
+
       // Reload the courses to get the updated data
       const [updatedCourses, instructorsData] = await Promise.all([
         getAllCoursesFullDetails(),
         getInstructors()
       ])
       setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
-      
+
       console.log("Offering updated successfully")
+      
+      // Close the modal and clear selections
+      setIsEditOfferingModalOpen(false)
+      setSelectedOffering(null)
+      setSelectedCourse(null)
     } catch (error) {
       console.error("Error updating offering:", error)
       setError("Failed to update offering. Please try again.")
@@ -259,24 +315,47 @@ export default function CourseManagement() {
 
   const handleAddLabTutorialSubmit = async (courseId, term, year, sessionType, newSessionData) => {
     try {
-      // Find the term ID from the term code
+      // Find the term ID from the term code FIRST
       const selectedTerm = terms.find(t => t.value === term && t.year.toString() === year)
       
+      console.log("=== ADDING SHARED SESSION DEBUG ===");
+      console.log("Session data being sent:", {
+        sessionType: sessionType,
+        courseId: courseId,
+        section: newSessionData.section,
+        termId: selectedTerm?.id || newSessionData.termId,
+        timeSlots: newSessionData.timeSlots || []
+      });
+
       const sessionData = {
         sessionType: sessionType,
         courseId: courseId,
         section: newSessionData.section,
-        termId: selectedTerm?.id,
+        termId: selectedTerm?.id || newSessionData.termId,
         studentId: null, // No TA assigned initially
-        timeSlots: [] // Time slots will be handled separately
+        timeSlots: newSessionData.timeSlots || [] // Include time slots
       }
 
-      await createSharedSession(sessionData)
-      
+      const createdSession = await createSharedSession(sessionData)
+      console.log("Created session response:", createdSession);
+
       // Reload the courses to get the updated data
-      const updatedCourses = await getAllCoursesFullDetails()
-      setCourses(updatedCourses.map(mapCourseData))
+      const [updatedCourses, instructorsData] = await Promise.all([
+        getAllCoursesFullDetails(),
+        getInstructors()
+      ])
       
+      console.log("Raw backend response after creation:", updatedCourses);
+      
+      // Find the specific course that was updated
+      const updatedCourse = updatedCourses.find(course => course.id === courseId);
+      console.log("Updated course:", updatedCourse);
+      console.log("Updated course shared sessions:", updatedCourse?.sharedSessions);
+      
+      const mappedCourses = updatedCourses.map(course => mapCourseData(course, instructorsData))
+      setCourses(mappedCourses)
+
+      console.log("=== END DEBUG ===");
       console.log("Lab/Tutorial session added:", newSessionData)
     } catch (error) {
       console.error("Error adding lab/tutorial session:", error)
@@ -294,8 +373,15 @@ export default function CourseManagement() {
     if (window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
       try {
         await deleteCourse(courseId)
-        setCourses(courses.filter((course) => course.id !== courseId))
-        console.log("Course deleted:", courseId)
+
+        // Reload the courses to get the updated data
+        const [updatedCourses, instructorsData] = await Promise.all([
+          getAllCoursesFullDetails(),
+          getInstructors()
+        ])
+        setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
+
+        console.log("Course deleted successfully")
       } catch (error) {
         console.error("Error deleting course:", error)
         setError("Failed to delete course. Please try again.")
@@ -303,20 +389,350 @@ export default function CourseManagement() {
     }
   }
 
-  // Filter courses based on search and filters
-  const filteredCourses = courses.filter((course) => {
-    const matchesSearch =
-      course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesDepartment = selectedDepartment === "all" || course.department === selectedDepartment
-    const matchesYear = selectedYear === "all" || course.offerings.some((offering) => offering.year === selectedYear)
+  // Add edit shared session handler
+  const handleEditSharedSession = (session, sessionType, termKey) => {
+    console.log("=== MAIN HANDLER: handleEditSharedSession called ===")
+    console.log("Session:", session)
+    console.log("Session Type:", sessionType)
+    console.log("Term Key:", termKey)
+    
+    setSelectedSharedSession(session)
+    setSelectedSessionType(sessionType)
+    setSelectedTermKey(termKey)
+    
+    // Find the course that contains this shared session
+    const foundCourse = courses.find(course => {
+      if (course.sharedSessions && course.sharedSessions[termKey]) {
+        const sessionsInTerm = course.sharedSessions[termKey]
+        const sessionTypePlural = sessionType === 'lab' ? 'labs' : 'tutorials'
+        
+        if (sessionsInTerm[sessionTypePlural]) {
+          return sessionsInTerm[sessionTypePlural].some(s => s.id === session.id)
+        }
+      }
+      return false
+    })
+    
+    console.log("Found course:", foundCourse)
+    setSelectedCourse(foundCourse)
+    setIsEditSharedSessionModalOpen(true)
+  }
 
-    return matchesSearch && matchesDepartment && matchesYear
+  // Add edit shared session submit handler
+  const handleEditSharedSessionSubmit = async (sessionId, updatedSessionData) => {
+    try {
+      console.log("=== UPDATING SHARED SESSION DEBUG ===")
+      console.log("Session ID:", sessionId)
+      console.log("Updated data:", updatedSessionData)
+
+      await updateSharedSession(sessionId, updatedSessionData)
+
+      // Reload courses
+      const [updatedCourses, instructorsData] = await Promise.all([
+        getAllCoursesFullDetails(),
+        getInstructors()
+      ])
+      
+      const mappedCourses = updatedCourses.map(course => mapCourseData(course, instructorsData))
+      setCourses(mappedCourses)
+
+      console.log("=== SHARED SESSION UPDATED SUCCESSFULLY ===")
+    } catch (error) {
+      console.error("Error updating shared session:", error)
+      setError("Failed to update session. Please try again.")
+    }
+  }
+
+  // Add delete shared session handler
+  const handleDeleteSharedSession = async (session, sessionType, termKey) => {
+    console.log("=== MAIN HANDLER: handleDeleteSharedSession called ===")
+    console.log("Session:", session)
+    console.log("Session Type:", sessionType)
+    console.log("Term Key:", termKey)
+    
+    const sessionTypeLabel = sessionType === 'lab' ? 'laboratory' : 'tutorial'
+    
+    if (window.confirm(`Are you sure you want to delete ${sessionTypeLabel} section ${session.section}? This action cannot be undone.`)) {
+      try {
+        await deleteSharedSession(session.id)
+
+        // Reload courses
+        const [updatedCourses, instructorsData] = await Promise.all([
+          getAllCoursesFullDetails(),
+          getInstructors()
+        ])
+        
+        const mappedCourses = updatedCourses.map(course => mapCourseData(course, instructorsData))
+        setCourses(mappedCourses)
+
+        console.log("=== SHARED SESSION DELETED SUCCESSFULLY ===")
+      } catch (error) {
+        console.error("Error deleting shared session:", error)
+        setError("Failed to delete session. Please try again.")
+      }
+    }
+  }
+
+  // close handler for edit modal
+  const handleCloseEditSharedSessionModal = () => {
+    setIsEditSharedSessionModalOpen(false)
+    setSelectedSharedSession(null)
+    setSelectedSessionType(null)
+    setSelectedTermKey(null)
+    setSelectedCourse(null)
+  }
+
+  // Filter courses based on search and filters AND filter course content
+  const filteredCourses = courses.filter((course) => {
+    // Search filter
+    const matchesSearch = !searchQuery || (
+      course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    // Department filter
+    const matchesDepartment = selectedDepartment === "all" || course.department === selectedDepartment
+
+    // Year filter
+    const matchesYear = selectedYear === "all" || (() => {
+      // Check offerings for the year
+      const hasOfferingForYear = course.offerings?.some(offering => 
+        String(offering.year) === String(selectedYear)
+      ) || false
+
+      // Check shared sessions for the year
+      const hasSharedSessionForYear = Object.keys(course.sharedSessions || {}).some(termKey => {
+        const termMatch = termKey.match(/^([A-Z])(\d{4})\s+(.+)$/)
+        return termMatch && termMatch[2] === String(selectedYear)
+      }) || false
+    
+      return hasOfferingForYear || hasSharedSessionForYear
+    })()
+
+    // Term filter - FIXED using parseTermCode
+    const matchesTerm = selectedTerm === "all" || (() => {
+      console.log("=== TERM FILTER DEBUG ===")
+      console.log("Selected term:", selectedTerm)
+      console.log("Course:", course.code)
+      
+      // Helper function to format term for comparison using parseTermCode
+      const formatTermForComparison = (termCode) => {
+        const parsedTerm = parseTermCode(termCode)
+        if (!parsedTerm) {
+          console.log(`  Could not parse term: ${termCode}`)
+          return null
+        }
+        
+        let formattedTerm = ""
+        if (parsedTerm.term === 'Both') {
+          formattedTerm = `${parsedTerm.season} Both Terms`
+        } else {
+          formattedTerm = `${parsedTerm.season} Term ${parsedTerm.term}`
+        }
+        
+        console.log(`  Formatted ${termCode} -> ${formattedTerm}`)
+        return formattedTerm
+      }
+
+      // Check offerings for the term
+      const hasOfferingForTerm = course.offerings?.some(offering => {
+        const formattedOfferingTerm = formatTermForComparison(offering.term)
+        const matches = formattedOfferingTerm === selectedTerm
+        console.log(`  Offering ${offering.id}: ${offering.term} -> ${formattedOfferingTerm} matches ${selectedTerm}? ${matches}`)
+        return matches
+      }) || false
+
+      // Check shared sessions for the term
+      const hasSharedSessionForTerm = Object.keys(course.sharedSessions || {}).some(termKey => {
+        const formattedSessionTerm = formatTermForComparison(termKey)
+        const matches = formattedSessionTerm === selectedTerm
+        console.log(`  Shared session term: ${termKey} -> ${formattedSessionTerm} matches ${selectedTerm}? ${matches}`)
+        return matches
+      }) || false
+    
+      const finalResult = hasOfferingForTerm || hasSharedSessionForTerm
+      console.log(`  Final term match result: ${finalResult}`)
+      console.log("=== END TERM FILTER DEBUG ===")
+      
+      return finalResult
+    })()
+
+    const finalResult = matchesSearch && matchesDepartment && matchesYear && matchesTerm
+    
+    // Debug the overall filtering
+    if (selectedTerm !== "all") {
+      console.log(`Course ${course.code}: search(${matchesSearch}) dept(${matchesDepartment}) year(${matchesYear}) term(${matchesTerm}) = ${finalResult}`)
+    }
+
+    return finalResult
+  }).map((course) => {
+    // FILTER COURSE CONTENT based on selected filters
+    const filteredCourse = { ...course }
+
+    // Filter offerings based on year and term
+    if (selectedYear !== "all" || selectedTerm !== "all") {
+      filteredCourse.offerings = course.offerings?.filter((offering) => {
+        const matchesYear = selectedYear === "all" || String(offering.year) === String(selectedYear)
+        
+        const matchesTerm = selectedTerm === "all" || (() => {
+          const parsedTerm = parseTermCode(offering.term)
+          if (!parsedTerm) return false
+          
+          let formattedTerm = ""
+          if (parsedTerm.term === 'Both') {
+            formattedTerm = `${parsedTerm.season} Both Terms`
+          } else {
+            formattedTerm = `${parsedTerm.season} Term ${parsedTerm.term}`
+          }
+          
+          return formattedTerm === selectedTerm
+        })()
+        
+        return matchesYear && matchesTerm
+      }) || []
+    }
+
+    // Filter shared sessions based on year and term
+    if (selectedYear !== "all" || selectedTerm !== "all") {
+      const filteredSharedSessions = {}
+      
+      Object.keys(course.sharedSessions || {}).forEach((termKey) => {
+        const termMatch = termKey.match(/^([A-Z])(\d{4})\s+(.+)$/)
+        let includeThisTerm = true
+        
+        // Check year filter
+        if (selectedYear !== "all" && termMatch) {
+          includeThisTerm = termMatch[2] === String(selectedYear)
+        }
+        
+        // Check term filter
+        if (selectedTerm !== "all" && includeThisTerm) {
+          const parsedTerm = parseTermCode(termKey)
+          if (parsedTerm) {
+            let formattedTerm = ""
+            if (parsedTerm.term === 'Both') {
+              formattedTerm = `${parsedTerm.season} Both Terms`
+            } else {
+              formattedTerm = `${parsedTerm.season} Term ${parsedTerm.term}`
+            }
+            includeThisTerm = formattedTerm === selectedTerm
+          } else {
+            includeThisTerm = false
+          }
+        }
+        
+        if (includeThisTerm) {
+          filteredSharedSessions[termKey] = course.sharedSessions[termKey]
+        }
+      })
+      
+      filteredCourse.sharedSessions = filteredSharedSessions
+    }
+
+    console.log(`Filtered course ${course.code}:`, {
+      originalOfferings: course.offerings?.length || 0,
+      filteredOfferings: filteredCourse.offerings?.length || 0,
+      originalSharedSessions: Object.keys(course.sharedSessions || {}).length,
+      filteredSharedSessions: Object.keys(filteredCourse.sharedSessions || {}).length
+    })
+
+    return filteredCourse
   })
 
   // Get unique department names and years from data
   const departmentNames = [...new Set(courses.map(course => course.department))].sort()
-  const years = [...new Set(courses.flatMap(course => course.offerings.map(offering => offering.year)))].sort()
+  
+  // Update the years calculation to use parseTermCode:
+  const years = (() => {
+    const yearSet = new Set()
+    
+    console.log("=== YEARS CALCULATION DEBUG ===")
+    
+    // Add years from offerings
+    courses.forEach(course => {
+      console.log(`Processing course: ${course.code}`)
+      
+      course.offerings?.forEach(offering => {
+        if (offering.year) {
+          yearSet.add(String(offering.year))
+          console.log(`  Added year from offering: ${offering.year}`)
+        }
+      })
+      
+      // Add years from shared sessions using parseTermCode
+      if (course.sharedSessions) {
+        Object.keys(course.sharedSessions).forEach(termKey => {
+          const parsedTerm = parseTermCode(termKey)
+          if (parsedTerm && parsedTerm.year) {
+            yearSet.add(String(parsedTerm.year))
+            console.log(`  Added year from shared session: ${parsedTerm.year} (from ${termKey})`)
+          }
+        })
+      }
+    })
+    
+    const finalYears = Array.from(yearSet).sort((a, b) => parseInt(a) - parseInt(b))
+    console.log("Final years array:", finalYears)
+    console.log("=== END YEARS DEBUG ===")
+    
+    return finalYears
+  })()
+
+  // Extract unique terms for the term filter
+  const uniqueTerms = useMemo(() => {
+    const termSet = new Set()
+    
+    console.log("=== UNIQUE TERMS EXTRACTION DEBUG ===")
+    
+    // Helper function to format terms consistently using parseTermCode
+    const formatTermForDisplay = (termCode) => {
+      const parsedTerm = parseTermCode(termCode)
+      if (!parsedTerm) {
+        console.log(`  Could not parse term: ${termCode}`)
+        return null
+      }
+      
+      // Format consistently
+      let formattedTerm = ""
+      if (parsedTerm.term === 'Both') {
+        formattedTerm = `${parsedTerm.season} Both Terms`
+      } else {
+        formattedTerm = `${parsedTerm.season} Term ${parsedTerm.term}`
+      }
+      
+      console.log(`  Formatted ${termCode} -> ${formattedTerm}`)
+      return formattedTerm
+    }
+    
+    courses.forEach(course => {
+      console.log(`Processing course: ${course.code}`)
+      
+      // Add terms from offerings
+      course.offerings?.forEach(offering => {
+        const formattedTerm = formatTermForDisplay(offering.term)
+        if (formattedTerm) {
+          termSet.add(formattedTerm)
+          console.log(`  Added term from offering: ${formattedTerm}`)
+        }
+      })
+      
+      // Add terms from shared sessions
+      Object.keys(course.sharedSessions || {}).forEach(termKey => {
+        const formattedTerm = formatTermForDisplay(termKey)
+        if (formattedTerm) {
+          termSet.add(formattedTerm)
+          console.log(`  Added term from shared session: ${formattedTerm}`)
+        }
+      })
+    })
+    
+    const sortedTerms = Array.from(termSet).sort()
+    console.log("Final unique terms:", sortedTerms)
+    console.log("=== END UNIQUE TERMS EXTRACTION DEBUG ===")
+    
+    return sortedTerms
+  }, [courses])
 
   if (loading) {
     return (
@@ -354,7 +770,7 @@ export default function CourseManagement() {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar activePage={"Course Management"}/>
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -396,17 +812,20 @@ export default function CourseManagement() {
               onDepartmentChange={setSelectedDepartment}
               selectedYear={selectedYear}
               onYearChange={setSelectedYear}
+              selectedTerm={selectedTerm}
+              onTermChange={setSelectedTerm}
               departments={departmentNames}
               years={years}
+              terms={uniqueTerms}
             />
           </div>
 
           {/* Courses List */}
           <div className="space-y-4">
             {filteredCourses.map((course) => {
-              // Calculate visible offerings count based on current filters
+              // Calculate visible offerings count based on current filters (FIXED)
               const visibleOfferingsCount = course.offerings.filter((offering) => {
-                const matchesYear = selectedYear === "all" || offering.year === selectedYear
+                const matchesYear = selectedYear === "all" || String(offering.year) === String(selectedYear)
                 return matchesYear
               }).length
 
@@ -420,12 +839,16 @@ export default function CourseManagement() {
                   onDelete={handleDeleteCourse}
                   onAddOffering={handleAddOffering}
                   onEditOffering={handleEditOffering}
+                  onDeleteOffering={handleDeleteOffering}
                   onAddLabTutorial={handleAddLabTutorial}
+                  onEditSharedSession={handleEditSharedSession}
+                  onDeleteSharedSession={handleDeleteSharedSession}
                   expandedOfferings={expandedOfferings}
                   expandedLabSections={expandedLabSections}
                   onToggleOffering={toggleOffering}
                   onToggleLabSection={toggleLabSection}
                   visibleOfferingsCount={visibleOfferingsCount}
+                  selectedYear={selectedYear}
                 />
               )
             })}
@@ -481,15 +904,20 @@ export default function CourseManagement() {
         course={selectedCourse}
         offering={selectedOffering}
         existingSessions={
-          selectedCourse && selectedOffering
-            ? selectedCourse.sharedSessions[`${selectedOffering.term}-${selectedOffering.year}`] || {
-                labs: [],
-                tutorials: [],
-              }
-            : { labs: [], tutorials: [] }
+          selectedCourse?.sharedSessions || { labs: [], tutorials: [] }
         }
+        terms={terms}
+      />
+
+      <EditSessionModal
+        isOpen={isEditSharedSessionModalOpen}
+        onClose={handleCloseEditSharedSessionModal}
+        onEditSession={handleEditSharedSessionSubmit}
+        course={selectedCourse}
+        session={selectedSharedSession}
         terms={terms}
       />
     </SidebarProvider>
   )
 }
+
