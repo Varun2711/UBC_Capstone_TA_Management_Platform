@@ -141,7 +141,8 @@ export const createCourseOffering = async (offeringData) => {
     course_id: offeringData.courseId,
     section_number: offeringData.section,
     term_id: offeringData.termId,
-    instructor_id: offeringData.instructorId
+    instructor_id: offeringData.instructorId,
+    time_slots: offeringData.time_slots || []
   }, {
     headers: getAuthHeaders()
   });
@@ -156,7 +157,8 @@ export const updateCourseOffering = async (offeringId, offeringData) => {
     course_id: offeringData.courseId,
     section_number: offeringData.section,
     term_id: offeringData.termId,
-    instructor_id: offeringData.instructorId
+    instructor_id: offeringData.instructorId,
+    time_slots: offeringData.time_slots || []
   }, {
     headers: getAuthHeaders()
   });
@@ -181,10 +183,9 @@ export const deleteCourseOffering = async (offeringId) => {
 export const createSharedSession = async (sessionData) => {
   const response = await axios.post(`${COURSE_TERM_API_URL}/shared-sessions/`, {
     session_type: sessionData.sessionType,
-    course: sessionData.courseId,
+    course_id: sessionData.courseId,           // Changed from 'course'
     section_number: sessionData.section,
-    academic_term: sessionData.termId,
-    student: sessionData.studentId,
+    academic_term_id: sessionData.termId,     // Changed from 'academic_term'
     time_slots: sessionData.timeSlots || []
   }, {
     headers: getAuthHeaders()
@@ -198,10 +199,9 @@ export const createSharedSession = async (sessionData) => {
 export const updateSharedSession = async (sessionId, sessionData) => {
   const response = await axios.put(`${COURSE_TERM_API_URL}/shared-sessions/${sessionId}/`, {
     session_type: sessionData.sessionType,
-    course: sessionData.courseId,
+    course_id: sessionData.courseId,
     section_number: sessionData.section,
-    academic_term: sessionData.termId,
-    student: sessionData.studentId,
+    academic_term_id: sessionData.termId,
     time_slots: sessionData.timeSlots || []
   }, {
     headers: getAuthHeaders()
@@ -282,7 +282,7 @@ const extractLevelFromCode = (code) => {
 };
 
 /**
- * Maps backend course data to frontend format
+ * Maps backend course data to frontend format with instructor names resolved
  */
 export const mapCourseData = (backendCourse, instructors = []) => {
   // Create instructor lookup map
@@ -301,7 +301,7 @@ export const mapCourseData = (backendCourse, instructors = []) => {
     departmentId: backendCourse.departmentId,
     description: backendCourse.description,
     level: extractLevelFromCode(backendCourse.code),
-    offerings: backendCourse.offerings.map(offering => {
+    offerings: (backendCourse.offerings || []).map(offering => {
       const instructorName = instructorMap.get(offering.instructor_id) ||
                             instructorMap.get(String(offering.instructor_id)) ||
                             instructorMap.get(Number(offering.instructor_id)) ||
@@ -315,13 +315,18 @@ export const mapCourseData = (backendCourse, instructors = []) => {
         termData: termData,
         instructor: offering.instructor_id,
         instructorId: offering.instructor_id,
-        instructorName: instructorName, // This is correctly resolved
+        instructorName: instructorName,
         section: offering.section,
         displaySection: `${backendCourse.code}-${offering.section}`,
-        requirements: offering.requirements
+        requirements: offering.requirements,
+        // Add time slots handling
+        time_slots: offering.time_slots || [],
+        timeSlots: offering.time_slots || [], // For compatibility
+        time_increments: offering.time_increments || []
       };
     }),
-    sharedSessions: backendCourse.sharedSessions
+    // The backend already returns sharedSessions grouped by term - just use it directly!
+    sharedSessions: backendCourse.sharedSessions || {}
   };
 };
 
@@ -397,6 +402,8 @@ export const handleOfferingSubmission = async (courseId, offeringData, terms, is
       section: offeringData.section,
       termId: selectedTerm?.id,
       instructorId: offeringData.instructor,
+      // Add time_slots to the submission data
+      time_slots: offeringData.time_slots || [],
       // Add year for additional context
       academicYear: offeringData.year
     };
