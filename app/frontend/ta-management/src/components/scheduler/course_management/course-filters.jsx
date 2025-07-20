@@ -12,8 +12,11 @@ export function CourseFilters({
   onDepartmentChange,
   selectedYear,
   onYearChange,
+  selectedTerm,
+  onTermChange,
   departments = [],
   years = [],
+  terms = [],
 }) {
   return (
     <div className="space-y-4">
@@ -55,6 +58,20 @@ export function CourseFilters({
             ))}
           </SelectContent>
         </Select>
+
+        <Select value={selectedTerm} onValueChange={onTermChange}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Term" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Terms</SelectItem>
+            {terms.map((term) => (
+              <SelectItem key={term} value={term}>
+                {term}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Active Filters Summary */}
@@ -62,7 +79,8 @@ export function CourseFilters({
         <Filter className="h-4 w-4" />
         <span>
           Showing {selectedDepartment !== "all" ? selectedDepartment : "all departments"} •
-          {selectedYear !== "all" ? ` ${selectedYear}` : " all years"}
+          {selectedYear !== "all" ? ` ${selectedYear}` : " all years"} •
+          {selectedTerm !== "all" ? ` ${selectedTerm}` : " all terms"}
         </span>
       </div>
     </div>
