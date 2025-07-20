@@ -1,192 +1,213 @@
-import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import InstructorTARequirements from '@/pages/Instructor/instructor-ta-requirements';
-import { FileText, X } from 'lucide-react';
+import { render, screen, waitFor , within} from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { vi } from "vitest"
+import { MemoryRouter } from "react-router-dom"
 
-// =================================================================
-// SETUP & MOCKS
-// =================================================================
+// Mock window.matchMedia BEFORE importing components
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
-// Mock lucide-react icons
-vi.mock('lucide-react', () => ({
-  Bell: () => <div data-testid="bell-icon" />,
-  BookOpen: () => <div data-testid="book-open-icon" />,
-  Check: () => <div data-testid="check-icon" />,
-  Clock: () => <div data-testid="clock-icon" />,
-  Plus: () => <div data-testid="plus-icon" />,
-  AlertCircle: () => <div data-testid="alert-icon" />,
-  PanelLeft: () => <div data-testid="panel-left-icon" />,
-  Calendar: () => <div data-testid="calendar-icon" />,
-  FileText : () => <div data-testid="filetext-icon" />,
-  X : () => <div data-testid="x-icon" />,
+// Mock window.innerWidth
+Object.defineProperty(window, 'innerWidth', {
+  writable: true,
+  configurable: true,
+  value: 1024,
+});
+
+// Mock ResizeObserver
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
 }));
 
-// Mock the sidebar component
-vi.mock('@/components/instructor-dashboard-sidebar', () => ({
-  InstructorSidebar: () => <div data-testid="instructor-sidebar" />,
-}));
+import InstructorTARequirements from "@/pages/Instructor/instructor-ta-requirements"
 
-// Mock the data file to provide a controlled data set
-const mockData = [
-  {
-    id: 'course-1',
-    courseCode: 'CS101',
-    section: 'A',
-    courseTitle: 'Introduction to Programming',
-    term: 'Fall',
-    year: '2025',
-    hasSubmittedRequirements: true,
-    submittedAt: '2025-09-01T10:00:00Z',
-    requirements: {
-      generalRequirements: ['Knows Python'],
-    },
-  },
-  {
-    id: 'course-2',
-    courseCode: 'MATH201',
-    section: 'B',
-    courseTitle: 'Calculus II',
-    term: 'Fall',
-    year: '2025',
-    hasSubmittedRequirements: false,
-    submittedAt: null,
-    requirements: {
-      generalRequirements: [],
-    },
-  },
-    // Adding two more courses to match the rendered output's stats
-  {
-    id: 'course-3',
-    courseCode: 'CS301',
-    section: 'A',
-    courseTitle: 'Software Engineering',
-    term: 'Winter',
-    year: '2024',
-    hasSubmittedRequirements: false,
-    submittedAt: '2024-01-15T14:00:00Z',
-    requirements: {
-        generalRequirements: ['Knows Java'],
-    },
-  },
-  {
-    id: 'course-4',
-    courseCode: 'CS221',
-    section: 'C',
-    courseTitle: 'Data Structures',
-    term: 'Winter',
-    year: '2025',
-    hasSubmittedRequirements: false,
-    submittedAt: null,
-    requirements: {
-        generalRequirements: [],
-    },
-  },
-];
-vi.mock('../data/mock-instructor-courses', () => ({
-  mockInstructorCourses: mockData,
-}));
-
-// Mock the modal to verify it opens with the correct props
-vi.mock('@/components/ta-requirements-modal', () => ({
-  TARequirementsModal: ({ isOpen, course, isEditing }) => {
-    if (!isOpen) return null;
-    return (
-      <div data-testid="ta-requirements-modal">
-        <p>Course: {course.courseCode}-{course.section}</p>
-        <p>Editing: {isEditing.toString()}</p>
+vi.mock("@/components/instructor/ta-requirements-modal", () => ({
+  TARequirementsModal: (props) => (
+    props.isOpen ? (
+      <div data-testid="modal">
+        <button onClick={props.onClose}>Close Modal</button>
+        <button onClick={() => props.onSubmit(props.course?.id, { generalRequirements: ["Test requirement"] })}>
+          Submit Requirements
+        </button>
       </div>
-    );
-  },
-}));
+    ) : null
+  )
+}))
 
-// =================================================================
-// TEST SUITE
-// =================================================================
 
-describe('InstructorTARequirements Page', () => {
-  const user = userEvent.setup();
+// Mock logic functions
+vi.mock("@/logic/instructor-ta-requirements", async () => {
+  return {
+    getInstructorCourseOfferings: vi.fn(),
+    submitTARequirements: vi.fn(),
+    updateTARequirements: vi.fn(),
+  }
+})
 
-  const renderPage = () => {
-    render(
+import {
+  getInstructorCourseOfferings,
+  submitTARequirements,
+  updateTARequirements,
+} from "@/logic/instructor-ta-requirements"
+
+describe("InstructorTARequirements", () => {
+  const mockCourses = [
+    {
+      id: 1,
+      courseCode: "COSC123",
+      courseTitle: "Intro to Testing",
+      section: "001",
+      year: 2025,
+      term: "Fall",
+      hasSubmittedRequirements: false,
+      requirements: { generalRequirements: [] },
+      submittedAt: null,
+    },
+    {
+      id: 2,
+      courseCode: "COSC456",
+      courseTitle: "Advanced React",
+      section: "002",
+      year: 2025,
+      term: "Fall",
+      hasSubmittedRequirements: true,
+      requirements: { generalRequirements: ["Must know React"] },
+      submittedAt: "2025-06-01T00:00:00Z",
+      requestId: 12
+    }
+  ]
+
+  const renderComponent = () => {
+    return render(
       <MemoryRouter>
         <InstructorTARequirements />
       </MemoryRouter>
-    );
-  };
+    )
+  }
 
-  describe('Initial Rendering', () => {
-    it('should render the header, stats, and course cards correctly', () => {
-      renderPage();
-      // Header
-      expect(screen.getByRole('heading', { name: /ta requirements/i })).toBeInTheDocument();
-      expect(screen.getByTestId('instructor-sidebar')).toBeInTheDocument();
+  beforeEach(() => {
+    vi.resetAllMocks()
+    // Reset the window.matchMedia mock for each test
+    window.matchMedia.mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+  })
 
-      // Stats Cards
-      const totalCoursesCard = screen.getByText(/total courses/i).closest('.rounded-lg');
-      const submittedCard = screen.getByText(/requirements submitted/i).closest('.rounded-lg');
-      const pendingCard = screen.getByText(/pending submissions/i).closest('.rounded-lg');
+  it("renders courses after loading", async () => {
+    getInstructorCourseOfferings.mockResolvedValueOnce(mockCourses)
+    renderComponent()
 
-      // Corrected assertions to match the rendered HTML
-      expect(within(totalCoursesCard).getByText('4')).toBeInTheDocument();
-      expect(within(submittedCard).getByText('2')).toBeInTheDocument();
-      expect(within(pendingCard).getByText('2')).toBeInTheDocument();
+    // Use a more specific selector for the main heading
+    expect(await screen.findByRole('heading', { name: /TA Requirements/i })).toBeInTheDocument()
+    expect(screen.getByText(/COSC123/)).toBeInTheDocument()
+    expect(screen.getByText(/COSC456/)).toBeInTheDocument()
+  })
 
-      // Course Cards - Use a regex to find the text, which ignores whitespace issues
-      const submittedCourseCard = screen.getByText(/CS 101 - Section A/i).closest('.rounded-lg');
-      expect(within(submittedCourseCard).getByText('Pending')).toBeInTheDocument();
-      expect(within(submittedCourseCard).getByRole('button', { name: /submit requirements/i })).toBeInTheDocument();
+  it("shows error on API failure", async () => {
+    getInstructorCourseOfferings.mockRejectedValueOnce(new Error("API failed"))
+    renderComponent()
 
-      const pendingCourseCard = screen.getByText(/cs 221 - section b/i).closest('.rounded-lg');
-      expect(within(pendingCourseCard).getByText('Submitted')).toBeInTheDocument();
-      expect(within(pendingCourseCard).getByRole('button', { name: /edit requirements/i })).toBeInTheDocument();
-    });
-  });
+    expect(await screen.findByText(/failed to load course offerings/i)).toBeInTheDocument()
+  })
 
-  describe('Modal Interactions', () => {
-    it.only('should open the modal in "add" mode when "Submit Requirements" is clicked', async () => {
-      renderPage();
-      
-      // Ensure modal is not visible
-      expect(screen.queryByTestId('ta-requirements-modal')).not.toBeInTheDocument();
+  it("filters courses by search", async () => {
+    getInstructorCourseOfferings.mockResolvedValueOnce(mockCourses)
+    renderComponent()
 
-      // Find the pending course card using a regex and click its submit button
-      const pendingCourseCard = screen.getByText(/CS 301 - Section A/i).closest('.rounded-lg');
-      const submitButton = within(pendingCourseCard).getByRole('button', { name: /submit requirements/i });
-      
-      await user.click(submitButton);
+    // Wait for the component to load first
+    await screen.findByRole('heading', { name: /TA Requirements/i })
+    
+    const input = await screen.findByPlaceholderText(/course code, title, or section/i)
+    await userEvent.type(input, "456")
 
-      screen.logTestingPlaygroundURL();
+    expect(screen.queryByText(/COSC123/)).not.toBeInTheDocument()
+    expect(screen.getByText(/COSC456/)).toBeInTheDocument()
+  })
 
-      
+  it("opens modal to submit requirements", async () => {
+    getInstructorCourseOfferings.mockResolvedValueOnce(mockCourses)
+    renderComponent()
 
-      
+    // Wait for loading to complete first
+    await screen.findByRole('heading', { name: /TA Requirements/i })
+    
+    const submitBtn = await screen.findByRole("button", { name: /submit requirements/i })
+    await userEvent.click(submitBtn)
 
-      // Check that the modal opened with the correct props
-      const modal = await screen.findByTestId('ta-requirements-modal');
-      expect(modal).toBeInTheDocument();
-      expect(within(modal).getByText('Course: CS 301-Section A')).toBeInTheDocument();
-      expect(within(modal).getByText('Editing: false')).toBeInTheDocument();
-    });
+    expect(await screen.findByTestId("modal")).toBeInTheDocument()
+  })
 
-    it('should open the modal in "edit" mode when "Edit Requirements" is clicked', async () => {
-        renderPage();
-        
-        // Ensure modal is not visible
-        expect(screen.queryByTestId('ta-requirements-modal')).not.toBeInTheDocument();
-  
-        // Find the submitted course card using a regex and click its edit button
-        const submittedCourseCard = screen.getByText(/cs 221 - section b/i).closest('.rounded-lg');
-        const editButton = within(submittedCourseCard).getByRole('button', { name: /edit requirements/i });
-        
-        await user.click(editButton);
-  
-        // Check that the modal opened with the correct props
-        const modal = await screen.findByTestId('ta-requirements-modal');
-        expect(modal).toBeInTheDocument();
-        expect(within(modal).getByText('Course: CS 221-Section B')).toBeInTheDocument();
-        expect(within(modal).getByText('Editing: true')).toBeInTheDocument();
-    });
-  });
-});
+  it("opens modal to edit requirements", async () => {
+    getInstructorCourseOfferings.mockResolvedValueOnce(mockCourses)
+    renderComponent()
+
+    // Wait for loading to complete first
+    await screen.findByRole('heading', { name: /TA Requirements/i })
+    
+    const editBtn = await screen.findByRole("button", { name: /edit requirements/i })
+    await userEvent.click(editBtn)
+
+    expect(await screen.findByTestId("modal")).toBeInTheDocument()
+  })
+
+  it("submits new requirements", async () => {
+    getInstructorCourseOfferings.mockResolvedValue(mockCourses)
+    renderComponent()
+
+    // Wait for loading to complete first
+    await screen.findByRole('heading', { name: /TA Requirements/i })
+    
+    const submitBtn = await screen.findByRole("button", { name: /submit requirements/i })
+    await userEvent.click(submitBtn)
+
+    const modal = await screen.findByTestId("modal")
+    // Use within() to scope the search to the modal
+    const modalSubmit = within(modal).getByText("Submit Requirements")
+
+    await userEvent.click(modalSubmit)
+
+    await waitFor(() => {
+      expect(submitTARequirements).toHaveBeenCalledWith(1, { generalRequirements: ["Test requirement"] })
+    })
+  })
+
+  it("updates existing requirements", async () => {
+    getInstructorCourseOfferings.mockResolvedValue(mockCourses)
+    renderComponent()
+
+    // Wait for loading to complete first
+    await screen.findByRole('heading', { name: /TA Requirements/i })
+    
+    const editBtn = await screen.findByRole("button", { name: /edit requirements/i })
+    await userEvent.click(editBtn)
+
+    const modal = await screen.findByTestId("modal")
+    // Use within() to scope the search to the modal
+    const modalSubmit = within(modal).getByText("Submit Requirements")
+    await userEvent.click(modalSubmit)
+
+    await waitFor(() => {
+      expect(updateTARequirements).toHaveBeenCalledWith(12, 2, { generalRequirements: ["Test requirement"] })
+    })
+  })
+})

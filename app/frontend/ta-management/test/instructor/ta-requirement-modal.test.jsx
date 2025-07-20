@@ -3,29 +3,38 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TARequirementsModal } from '@/components/instructor/ta-requirements-modal';
 
-// Mock lucide-react icons for cleaner test output
+// Mock lucide-react icons
 vi.mock('lucide-react', () => ({
   FileText: () => <div data-testid="file-text-icon" />,
   Plus: () => <div data-testid="plus-icon" />,
   X: () => <div data-testid="x-icon" />,
   AlertCircle: () => <div data-testid="alert-icon" />,
+  Loader2: () => <div data-testid="loader-icon" />,
 }));
 
-// Mock data for the tests
+// Mock course data matching the new backend integration format
 const mockCourse = {
-  id: 'cs101-offering-1',
-  courseCode: 'CS101',
-  courseTitle: 'Introduction to Programming',
-  section: 'A',
-  term: 'Fall',
-  year: '2025',
+  id: '550e8400-e29b-41d4-a716-446655440101',
+  courseCode: 'COSC 121',
+  courseTitle: 'Computer Programming II',
+  section: '001',
+  term: 'Winter Term 1',
+  year: 2025,
+  hasSubmittedRequirements: false,
+  requirements: {
+    generalRequirements: []
+  }
 };
 
 const mockCourseWithRequirements = {
   ...mockCourse,
+  hasSubmittedRequirements: true,
   requirements: {
-    generalRequirements: ['Knows Python', 'Good communication'],
-  },
+    generalRequirements: [
+      'Strong Java programming skills',
+      'Experience with debugging concepts'
+    ]
+  }
 };
 
 describe('TARequirementsModal', () => {
@@ -38,8 +47,8 @@ describe('TARequirementsModal', () => {
     mockOnSubmit = vi.fn();
   });
 
-  describe('"Add" Mode (isEditing = false)', () => {
-    const renderAddComponent = (props) => {
+  describe('Submit new requirements', () => {
+    it('renders correctly and allows adding requirements', async () => {
       render(
         <TARequirementsModal
           isOpen={true}
@@ -47,81 +56,68 @@ describe('TARequirementsModal', () => {
           onSubmit={mockOnSubmit}
           course={mockCourse}
           isEditing={false}
-          {...props}
-        />,
+          isSubmitting={false}
+        />
       );
-    };
 
-    it('should render the correct title and initial state', () => {
-      renderAddComponent();
-      expect(screen.getByRole('heading', { name: /submit ta requirements/i })).toBeInTheDocument();
-      expect(screen.getByPlaceholderText(/strong python programming skills/i)).toBeInTheDocument();
+      // Check modal title and course info
+      expect(screen.getByText('Submit TA Requirements')).toBeInTheDocument();
+      expect(screen.getByText('COSC 121 - Computer Programming II')).toBeInTheDocument();
+      expect(screen.getByText('001 • Winter Term 1 2025')).toBeInTheDocument();
+
+      // Should show validation message initially
       expect(screen.getByText('Please add at least one TA requirement before submitting.')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /submit requirements/i })).toBeDisabled();
+
+      // Add a requirement
+      const input = screen.getByPlaceholderText(/strong python programming skills/i);
+      await user.type(input, 'Strong Java programming skills');
+      
+      const addButton = screen.getByTestId('plus-icon').closest('button');
+      await user.click(addButton);
+
+      // Requirement should appear and submit button should be enabled
+      expect(screen.getByText('Strong Java programming skills')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /submit requirements/i })).not.toBeDisabled();
     });
 
-    it('should allow adding and removing requirements', async () => {
-        renderAddComponent();
-        const input = screen.getByRole('textbox', { name: /add requirement/i });
-        
-        // Find the add button by its icon's test ID and then find the parent button
-        const addButton = screen.getByTestId('plus-icon').closest('button');
-  
-        // Add a requirement by clicking the button
-        await user.type(input, 'First requirement');
-        await user.click(addButton);
-        expect(await screen.findByText('First requirement')).toBeInTheDocument();
-        expect(input).toHaveValue(''); // Input should clear
-  
-        // Add another requirement by pressing Enter
-        await user.type(input, 'Second requirement');
-        await user.keyboard('{enter}');
-        expect(await screen.findByText('Second requirement')).toBeInTheDocument();
-  
-        // Submit button should now be enabled
-        expect(screen.getByRole('button', { name: /submit requirements/i })).not.toBeDisabled();
-  
-        // Find remove buttons by their icon's test ID
-        const removeIcons = screen.getAllByTestId('x-icon');
-        const removeButtons = removeIcons.map(icon => icon.closest('button'));
-        
-        // Remove the first requirement
-        await user.click(removeButtons[0]);
-        expect(screen.queryByText('First requirement')).not.toBeInTheDocument();
-        expect(screen.getByText('Second requirement')).toBeInTheDocument(); // Second should remain
-      });
-  
+    it('submits requirements correctly', async () => {
+      mockOnSubmit.mockResolvedValue();
 
-    it('should call onSubmit with the new list of requirements', async () => {
-      renderAddComponent();
-      const input = screen.getByRole('textbox', { name: /add requirement/i });
+      render(
+        <TARequirementsModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          course={mockCourse}
+          isEditing={false}
+          isSubmitting={false}
+        />
+      );
 
-      await user.type(input, 'Must be available on Mondays');
+      // Add two requirements
+      const input = screen.getByPlaceholderText(/strong python programming skills/i);
+      
+      await user.type(input, 'Java programming experience');
       await user.keyboard('{enter}');
-      await user.type(input, 'Experience with Git');
+      
+      await user.type(input, 'Good communication skills');
       await user.keyboard('{enter}');
 
+      // Submit
       const submitButton = screen.getByRole('button', { name: /submit requirements/i });
       await user.click(submitButton);
 
-      await waitFor(() => {
-        expect(submitButton).toBeDisabled();
-        expect(screen.getByText(/submitting.../i)).toBeInTheDocument();
-      });
-
-      await waitFor(() => {
-        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
-        expect(mockOnSubmit).toHaveBeenCalledWith(mockCourse.id, ['Must be available on Mondays', 'Experience with Git']);
-      });
-
-      await waitFor(() => {
-        expect(mockOnClose).toHaveBeenCalledTimes(1);
-      });
+      // Check that onSubmit was called with correct data
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        mockCourse.id,
+        ['Java programming experience', 'Good communication skills']
+      );
     });
   });
 
-  describe('"Edit" Mode (isEditing = true)', () => {
-    const renderEditComponent = (props) => {
+  describe('Edit existing requirements', () => {
+    it('renders with existing requirements and allows editing', async () => {
       render(
         <TARequirementsModal
           isOpen={true}
@@ -129,51 +125,107 @@ describe('TARequirementsModal', () => {
           onSubmit={mockOnSubmit}
           course={mockCourseWithRequirements}
           isEditing={true}
-          {...props}
-        />,
+          isSubmitting={false}
+        />
       );
-    };
 
-    it('should render the correct title and pre-populate existing requirements', async () => {
-      renderEditComponent();
-      expect(screen.getByRole('heading', { name: /edit ta requirements/i })).toBeInTheDocument();
+      // Check modal title
+      expect(screen.getByText('Edit TA Requirements')).toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(screen.getByText('Knows Python')).toBeInTheDocument();
-        expect(screen.getByText('Good communication')).toBeInTheDocument();
-      });
-      
-      // Submit button should be enabled as there are existing requirements
+      // Existing requirements should be pre-populated
+      expect(screen.getByText('Strong Java programming skills')).toBeInTheDocument();
+      expect(screen.getByText('Experience with debugging concepts')).toBeInTheDocument();
+
+      // Update button should be enabled
       expect(screen.getByRole('button', { name: /update requirements/i })).not.toBeDisabled();
     });
 
-    it('should allow editing the list and call onSubmit with the updated list', async () => {
-        renderEditComponent();
-        await waitFor(() => {
-            expect(screen.getByText('Knows Python')).toBeInTheDocument();
-        });
+    it('allows removing and adding requirements', async () => {
+      render(
+        <TARequirementsModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          course={mockCourseWithRequirements}
+          isEditing={true}
+          isSubmitting={false}
+        />
+      );
 
-        const removeIcons = screen.getAllByTestId('x-icon');
-        const removeButtons = removeIcons.map(icon => icon.closest('button'));
-        await user.click(removeButtons[0]);
-        expect(screen.queryByText('Knows Python')).not.toBeInTheDocument();
+      // Remove first requirement
+      const removeButtons = screen.getAllByTestId('x-icon').map(icon => icon.closest('button'));
+      await user.click(removeButtons[0]);
 
-        const input = screen.getByRole('textbox', { name: /add requirement/i });
-        await user.type(input, 'Familiar with Agile');
-        await user.keyboard('{enter}');
-        expect(await screen.findByText('Familiar with Agile')).toBeInTheDocument();
+      expect(screen.queryByText('Strong Java programming skills')).not.toBeInTheDocument();
+      expect(screen.getByText('Experience with debugging concepts')).toBeInTheDocument();
 
-        const updateButton = screen.getByRole('button', { name: /update requirements/i });
-        await user.click(updateButton);
+      // Add new requirement
+      const input = screen.getByPlaceholderText(/strong python programming skills/i);
+      await user.type(input, 'Available for evening lab sessions');
+      await user.keyboard('{enter}');
 
-        await waitFor(() => {
-            expect(mockOnSubmit).toHaveBeenCalledTimes(1);
-            expect(mockOnSubmit).toHaveBeenCalledWith(mockCourse.id, ['Good communication', 'Familiar with Agile']);
-        });
+      expect(screen.getByText('Available for evening lab sessions')).toBeInTheDocument();
+    });
+  });
 
-        await waitFor(() => {
-            expect(mockOnClose).toHaveBeenCalledTimes(1);
-        });
+  describe('Loading state', () => {
+    it('shows loading state when submitting', () => {
+      render(
+        <TARequirementsModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          course={mockCourse}
+          isEditing={false}
+          isSubmitting={true}
+        />
+      );
+
+      // Should show loading spinner and disabled state
+      expect(screen.getByTestId('loader-icon')).toBeInTheDocument();
+      expect(screen.getByText(/submitting.../i)).toBeInTheDocument();
+      
+      // Input and buttons should be disabled
+      const input = screen.getByPlaceholderText(/strong python programming skills/i);
+      expect(input).toBeDisabled();
+      
+      const submitButton = screen.getByRole('button', { name: /submitting.../i });
+      expect(submitButton).toBeDisabled();
+    });
+  });
+
+  describe('Modal controls', () => {
+    it('closes modal when cancel is clicked', async () => {
+      render(
+        <TARequirementsModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          course={mockCourse}
+          isEditing={false}
+          isSubmitting={false}
+        />
+      );
+
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      await user.click(cancelButton);
+
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('returns null when no course is provided', () => {
+      const { container } = render(
+        <TARequirementsModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          course={null}
+          isEditing={false}
+          isSubmitting={false}
+        />
+      );
+
+      expect(container.firstChild).toBeNull();
     });
   });
 });
