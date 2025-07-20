@@ -1548,7 +1548,7 @@
       "applied_at": "2024-11-20T10:15:00Z",
       "updated_at": "2024-11-20T10:15:00Z",
       "positionType": "GTA1",
-      "termSelection": 7,
+      "termSelection": 1,
       "workload": "6",
       "disciplineRankings": {
         "rank1": "COSC",
@@ -1572,7 +1572,7 @@
       "applied_at": "2024-11-21T14:30:00Z",
       "updated_at": "2024-11-21T14:30:00Z",
       "positionType": "GTA2",
-      "termSelection": 8,
+      "termSelection": 2,
       "workload": "12",
       "disciplineRankings": {
         "rank1": "MATH",
@@ -1596,7 +1596,7 @@
       "applied_at": "2024-11-22T09:45:00Z",
       "updated_at": "2024-11-22T09:45:00Z",
       "positionType": "GTA1",
-      "termSelection": 7,
+      "termSelection": 1,
       "workload": "12",
       "disciplineRankings": {
         "rank1": "PHYS",
