@@ -109,7 +109,7 @@ class TimeSlot(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'time_slots'
+        db_table = 'myapp_timeslots'
         ordering = ['day', 'start_time']
         unique_together = ['day', 'start_time', 'end_time']
 
@@ -589,60 +589,125 @@ class ApplicationShortList(models.Model):
         return f"Shortlisted: {self.application} by {self.created_by}"
 
 
+class OfferItem(models.Model):
+    """Individual items that can be part of an offer"""
+    ITEM_TYPE_CHOICES = [
+        ('course_offering', 'Course Offering'),
+        ('shared_session', 'Lab/Tutorial'),
+    ]
+
+    offer_item_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
+    
+    # Foreign keys to different item types
+    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
+    shared_session = models.ForeignKey(SharedSession, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
+    
+    class Meta:
+        managed = False
+        db_table = 'myapp_offer_item'
+
 class Offer(models.Model):
-    requiredhours_choices ={
-        ('1', '6 hours'),
-        ('2', '12 hours') 
-    }
-
-    role_choices= {
-        ('rta', 'Regular TA'),
-        ('tac', 'TA Captain'),
-    }
-
+    """Enhanced offer model supporting multiple items"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Response'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'), 
+    ]
+    
     offer_id = models.AutoField(primary_key=True)
-    application = models.ForeignKey(Application, on_delete=models.CASCADE, db_constraint=False)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, db_constraint=False)
+    application = models.ForeignKey('Application', on_delete=models.CASCADE, db_constraint=False)
+    
+    # Many-to-many relationship for multiple items
+    offer_items = models.ManyToManyField(OfferItem, related_name='offers', blank=False)
+    
     student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
-    shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True)
-    required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
-    role = models.CharField(max_length=3, choices=role_choices, default='rta')
-    offer_date = models.DateField()
-    status = models.CharField(max_length=50)
+    role = models.CharField(max_length=3, choices=[('ta', 'Teaching Assistant')], default='ta')
+    
+    # Offer lifecycle
+    offer_date = models.DateTimeField(default=timezone.now)
+    response_deadline = models.DateTimeField(help_text="Deadline for student to respond")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Response tracking
+    responded_at = models.DateTimeField(null=True, blank=True)
+    student_response = models.TextField(null=True, blank=True, help_text="Student's response message")
+    
+    # Administrative
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created', db_constraint=False)
     notes = models.TextField(null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created',db_constraint=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = False
+        db_table = 'myapp_offer'
+        ordering = ['-created_at']
 
 class Assignment(models.Model):
-    role_choices= {
-        ('rta', 'Regular TA'),
-        ('tac', 'TA Captain'),
-    }
-    requiredhours_choices ={
-        ('1', '6 hours'),
-        ('2', '12 hours'),
-    }
-    
+    """Final assignment after offer acceptance"""
     assignment_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, db_constraint=False)
-    offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, null=True, blank=True)
-    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE)
-    shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True)
-    required_hours = models.CharField(max_length=2, choices=requiredhours_choices, default='1')
-    role = models.CharField(max_length=3, choices=role_choices, default='rta')
-    assigned_date = models.DateField()
-    assigned_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_made', db_constraint=False )
+    offer = models.OneToOneField('Offer', on_delete=models.CASCADE, related_name='assignment', null=True, blank=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, db_constraint=False)
+    course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
+    shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+    
+    role = models.CharField(max_length=3, choices=[('ta', 'Teaching Assistant')], default='ta')
+    
+    # Assignment tracking
+    assigned_date = models.DateTimeField(default=timezone.now)
+    assigned_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_made', db_constraint=False)
+    
+    # Status tracking
+    is_active = models.BooleanField(default=True)
     notes = models.TextField(null=True, blank=True)
-    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='assignments_created', db_constraint=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = False
+        db_table = 'myapp_assignment'
+        ordering = ['-assigned_date']
 
-class Shift(models.Model):
-    shift_id = models.AutoField(primary_key=True)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    notes = models.TextField(null=True, blank=True)
-
-
+class AssignmentModification(models.Model):
+    """Track assignment modifications that need student response"""
+    MODIFICATION_STATUS = [
+        ('pending', 'Pending Student Response'),
+        ('accepted', 'Student Accepted'),
+        ('rejected', 'Student Rejected')
+    ]
+    
+    modification_id = models.AutoField(primary_key=True)
+    original_assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='modifications')
+    new_offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='assignment_modifications')
+    
+    # Modification details
+    reason = models.TextField(help_text="Scheduler's reason for the change")
+    modification_type = models.CharField(max_length=20, choices=[
+        ('time_change', 'Time/Schedule Change'),
+        ('section_change', 'Section Change'), 
+        ('course_change', 'Course Change'),
+        ('hours_change', 'Hours Change'),
+        ('other', 'Other')
+    ], default='other')
+    
+    # Status tracking
+    status = models.CharField(max_length=20, choices=MODIFICATION_STATUS, default='pending')
+    requires_response = models.BooleanField(default=True)
+    
+    # Timestamps
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
+    student_responded_at = models.DateTimeField(null=True, blank=True)
+    student_response = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        managed = False
+        db_table = 'myapp_assignment_modification'
+        ordering = ['-created_at']
 
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
