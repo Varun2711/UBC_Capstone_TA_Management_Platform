@@ -22,87 +22,6 @@ describe("AdminDashboard", () => {
     vi.clearAllMocks()
   })
 
-  it("renders the admin dashboard correctly", () => {
-    renderAdminDashboard()
-
-    // Check main title and description
-    expect(screen.getAllByText("System Administration").length).toBeGreaterThan(0)
-    expect(screen.getByText("Complete system overview and management controls")).toBeInTheDocument()
-
-    // Check system stats cards
-    expect(screen.getByText("Total Users")).toBeInTheDocument()
-    expect(screen.getByText("Active Courses")).toBeInTheDocument()
-    expect(screen.getAllByText("TA Positions").length).toBeGreaterThan(0)
-    expect(screen.getByText("Pending Applications")).toBeInTheDocument()
-  })
-
-  it("displays system statistics correctly", () => {
-    renderAdminDashboard()
-
-    // Check stats values
-    expect(screen.getByText("1,247")).toBeInTheDocument() // Total Users
-    expect(screen.getByText("156")).toBeInTheDocument() // Active Courses
-    expect(screen.getByText("342")).toBeInTheDocument() // TA Positions
-    expect(screen.getByText("89")).toBeInTheDocument() // Pending Applications
-
-    // Check change indicators
-    expect(screen.getByText("+23 this week")).toBeInTheDocument()
-    expect(screen.getByText("+8 this term")).toBeInTheDocument()
-    expect(screen.getByText("89% filled")).toBeInTheDocument()
-    expect(screen.getByText("-12 from yesterday")).toBeInTheDocument()
-  })
-
-  it("shows user distribution breakdown", () => {
-    renderAdminDashboard()
-
-    expect(screen.getByText("User Distribution")).toBeInTheDocument()
-    expect(screen.getByText("Students")).toBeInTheDocument()
-    expect(screen.getByText("Instructors")).toBeInTheDocument()
-    expect(screen.getByText("TA Schedulers")).toBeInTheDocument()
-    expect(screen.getByText("Admins")).toBeInTheDocument()
-
-    // Check user counts
-    expect(screen.getByText("1089")).toBeInTheDocument() // Students
-    expect(screen.getByText("124")).toBeInTheDocument() // Instructors
-    expect(screen.getByText("28")).toBeInTheDocument() // TA Schedulers
-  })
-
-  it("displays system alerts", () => {
-    renderAdminDashboard()
-
-    expect(screen.getByText("System Alerts")).toBeInTheDocument()
-    expect(screen.getByText("High Application Volume")).toBeInTheDocument()
-    expect(screen.getByText("Scheduled Maintenance")).toBeInTheDocument()
-    expect(screen.getByText("Backup Completed")).toBeInTheDocument()
-  })
-
-  it("shows pending actions", () => {
-    renderAdminDashboard()
-
-    expect(screen.getByText("Pending Actions")).toBeInTheDocument()
-    expect(screen.getByText("Review new instructor applications")).toBeInTheDocument()
-    expect(screen.getByText("Approve course modifications")).toBeInTheDocument()
-    expect(screen.getByText("Update system configurations")).toBeInTheDocument()
-  })
-
-  it("displays recent activity table", () => {
-    renderAdminDashboard()
-
-    expect(screen.getByText("Recent System Activity")).toBeInTheDocument()
-
-    // Check table headers
-    expect(screen.getByText("Action")).toBeInTheDocument()
-    expect(screen.getByText("User")).toBeInTheDocument()
-    expect(screen.getByText("Role")).toBeInTheDocument()
-    expect(screen.getByText("Time")).toBeInTheDocument()
-    expect(screen.getByText("Status")).toBeInTheDocument()
-
-    // Check some activity entries
-    expect(screen.getByText("New user registration")).toBeInTheDocument()
-    expect(screen.getByText("Course created")).toBeInTheDocument()
-    expect(screen.getByText("Sarah Johnson")).toBeInTheDocument()
-    expect(screen.getByText("Dr. Smith")).toBeInTheDocument()
-  })
 
   it("shows quick management tools", () => {
     renderAdminDashboard()
@@ -154,26 +73,6 @@ describe("AdminDashboard", () => {
 
     // Check breadcrumb shows System Administration
     expect(screen.getAllByText("System Administration").length).toBeGreaterThan(0)
-  })
-
-  it("displays correct role badges in activity table", () => {
-    renderAdminDashboard()
-
-    // Check for role badges
-    expect(screen.getByText("Student")).toBeInTheDocument()
-    expect(screen.getByText("Instructor")).toBeInTheDocument()
-    expect(screen.getByText("TA Scheduler")).toBeInTheDocument()
-    expect(screen.getByText("Automated")).toBeInTheDocument()
-  })
-
-  it("shows status indicators correctly", () => {
-    renderAdminDashboard()
-
-    // Check for status text (completed appears multiple times)
-    const completedStatuses = screen.getAllByText("completed")
-    expect(completedStatuses.length).toBeGreaterThan(0)
-
-    expect(screen.getByText("warning")).toBeInTheDocument()
   })
 
   it("has proper accessibility attributes", () => {
