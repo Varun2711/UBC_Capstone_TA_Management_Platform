@@ -38,4 +38,20 @@ export const fetchSharedSessionsForCourse = async (courseId) => {
   if (!response.ok) throw new Error("Failed to fetch shared sessions for course of course id: ", courseId);
   return response.json();
 };
+
+export const fetchShortlistedApplicants = async () => {
+  const response = await fetch(`${API_URL}/allocations/shortlisted-applicants/`, {
+    headers: getAuthHeaders()
+});
+  if (!response.ok) throw new Error("Failed to fetch shortlisted applicants");
+  return response.json();
+};
+
+export const fetchProfilesOfShortlistedApplicants = async (student_number) => {
+  const response = await fetch(`${API_URL}/profile/student/${student_number}/`, {
+    headers: getAuthHeaders()
+});
+  if (!response.ok) throw new Error("Failed to fetch profile of shortlisted applicant with student number: ", student_number);
+  return response.json();
+};
 // Add more functions as needed

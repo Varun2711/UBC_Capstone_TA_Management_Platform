@@ -40,8 +40,8 @@ import { AppSidebar } from "../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse } from "@/logic/coordinator-allocations-page";
-
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants } from "@/logic/coordinator-allocations-page";
+import { fetchProfilesOfShortlistedApplicants } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -341,6 +341,8 @@ export default function TAAllocationPage() {
   const [courseOfferings, setCourseOfferings] = useState({});
   const [sharedSessions, setSharedSessions] = useState({});
   const [fetchedOfferings, setFetchedOfferings] = useState({});
+  const [shortlistedApplicants, setShortlistedApplicants] = useState({})
+  const [profilesOfShortlistedApplicants, setProfilesOfShortlistedApplicants] = useState({})
 
   const [selectedCourseOfferings, setSelectedCourseOfferings] = useState([]);
   const [selectedSharedSessions, setSelectedSharedSessions] = useState([]);
@@ -513,11 +515,10 @@ export default function TAAllocationPage() {
 
   // Helper function to check for scheduling conflicts
   const checkForConflicts = (taAvailability, courseSlots) => {
-    console.log("courseSlots in checkForConflicts: ", courseSlots);
+
     const availabilitySet = new Set(taAvailability)
     const formattedTimeSlotsInfoToKeys = convertTimeSlotsInfoToKeys(courseSlots);
-    console.log("formattedTimeSlotsInfoToKeys in checkForConflicts: ", formattedTimeSlotsInfoToKeys);
-    console.log("availabilitySet in checkForConflicts: ", availabilitySet);
+
     for (const slot of formattedTimeSlotsInfoToKeys) {
       if (!availabilitySet.has(slot)) {
         return true // ❗️Conflict: TA not available at this time
@@ -568,7 +569,6 @@ export default function TAAllocationPage() {
   const formatSlotsFromTimeInfo = (timeSlots = []) => {
     if (!Array.isArray(timeSlots) || timeSlots.length === 0) return "No scheduled time";
 
-    console.log("timeSlot parameter in formatSlotsFromTimeInfo: ", timeSlots);
     const groupedByDay = {};
 
     for (const slot of timeSlots) {
@@ -618,14 +618,13 @@ export default function TAAllocationPage() {
   };
 
   function getTotalHoursFromSlotString(slotString) {
-    console.log("slotString parameter in getTotalHoursFromSlotString: ", slotString);
 
     // Normalize en dash to regular dash
     slotString = slotString.replace(/–/g, "-");
 
     // Split only at the first colon
     const firstColonIndex = slotString.indexOf(":");
-    console.log("firstColonIndex in getTotalHoursFromSlotString: ", firstColonIndex);
+
     if (firstColonIndex === -1) return 0;
 
     const dayPart = slotString.slice(0, firstColonIndex).trim(); // e.g., "MTh"
@@ -643,8 +642,7 @@ export default function TAAllocationPage() {
     }
 
     const [startTime, endTime] = timeRange.split("-");
-    console.log("startTime in getTotalHoursFromSlotString: ", startTime);
-    console.log("endTime in getTotalHoursFromSlotString: ", endTime);
+
     if (!startTime || !endTime) return 0;
 
     const [startHour, startMin] = startTime.split(":").map(Number);
@@ -812,7 +810,38 @@ export default function TAAllocationPage() {
       }
     };
 
+    const loadShortlistedApplicants = async () => {
+      try {
+        const data = await fetchShortlistedApplicants();
+        const fetchedShortlistedApplicants = data;
+        console.log("fetchedShortlistedApplicants from backend are: ", fetchedShortlistedApplicants);
+        setShortlistedApplicants(fetchedShortlistedApplicants);
+
+        // Loop through each shortlisted applicant to fetch offerings and shared sessions
+        for (const item of fetchedShortlistedApplicants) {
+          console.log("Shortlisted by:", item.shortlisted_by);
+          console.log("Created at:", item.created_at);
+          console.log("Notes:", item.notes);
+          console.log("Application:", item.application);
+
+          const student_number = item.application.student.student_number;
+          console.log("Curent shortlisted applicant's student number is :", student_number);
+
+          try {
+            const profileData = await fetchProfilesOfShortlistedApplicants(student_number);
+            console.log(`Current ${student_number} shortlisted applicant's profile is:`, profileData);
+          } catch (err) {
+            console.error(`Error fetching profile for student ${student_number}:`, err);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading shortlisted applicants:", error);
+        setCourses(availableTAs);
+      }
+    };
+
     loadCoursesAndRelatedData();
+    loadShortlistedApplicants();
   }, []);
 
   const selectedSections = [...selectedCourseOfferings, ...selectedSharedSessions];
@@ -1144,6 +1173,7 @@ export default function TAAllocationPage() {
                                                   course_name: course.course_name,
                                                   course_number: course.course_number,
                                                   sectionId: offering.course_offering_id,
+                                                  time_slots_info: section.time_slots_info,
                                                 };
 
                                                 setSelectedCourseOfferings((prev) => {
