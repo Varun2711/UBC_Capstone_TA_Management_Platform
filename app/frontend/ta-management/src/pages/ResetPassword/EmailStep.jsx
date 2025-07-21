@@ -82,7 +82,7 @@ export default function EmailStep({ onNext }) {
                 required
               />
               
-              {error && <span className="text-red-700">{error}</span>}
+              {error && <span className="text-red-700" role="alert">{error}</span>}
             </div>
 
             <Button

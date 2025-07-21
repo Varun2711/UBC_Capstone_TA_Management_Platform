@@ -96,7 +96,7 @@ export default function NewPasswordStep({ onNext }) {
                 placeholder="Enter a new password"
                 required
               />
-              {errors.password && <span className="text-red-700">{errors.password}</span>}
+              {errors.password && <span className="text-red-700" role="alert">{errors.password}</span>}
             </div>
 
             <div className="space-y-2">
@@ -113,7 +113,7 @@ export default function NewPasswordStep({ onNext }) {
                 placeholder="Confirm password"
                 required
               />
-              {errors.confirm && <span className="text-red-700">{errors.confirm}</span>}
+              {errors.confirm && <span className="text-red-700" role="alert">{errors.confirm}</span>}
             </div>
 
             <Button

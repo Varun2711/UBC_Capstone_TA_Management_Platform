@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import EmailStep from "@/pages/ResetPassword/EmailStep"
 import userEvent from "@testing-library/user-event"
-import { render, screen, waitFor } from "@testing-library/react"
+import { getAllByRole, render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import VerifyIdStep from "@/pages/ResetPassword/VerifyIdStep"
 import NewPasswordStep from "@/pages/ResetPassword/NewPasswordStep"
@@ -222,4 +222,116 @@ describe('Reset Password', () => {
         expect(screen.getByRole("heading"), { name: /success!/i }).toBeInTheDocument();
       })
   })
+
+  // test input validation error handling
+  it('displays error message when email address not provided', async () => {
+    renderStep1();
+
+    // Click "next" button without inputting anything
+    let nextButton = screen.getByRole("button", {name: /next/i });
+    await userEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert"), {name: /email address is required/i });
+    })
+  })
+  
+  it('displays error message when inputted email address invalid', async () => {
+    renderStep1();
+    const user = userEvent.setup()
+
+    // Type invalid email into input field
+      const emailInput = screen.getByLabelText(/email address/i);
+      await user.type(emailInput, "spaghetti@");
+
+    // Click "next" button
+    let nextButton = screen.getByRole("button", {name: /next/i });
+    await userEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert"), {name: /email address must be in valid format: name@example.com/i });
+    })
+  })
+
+  it('displays error message when student/employee number not provided', async () => {
+    renderStep2();
+
+    // Click "next" button without inputting anything
+    let nextButton = screen.getByRole("button", {name: /next/i });
+    await userEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert"), {name: /student\/employee id is required/i });
+    })
+  })
+
+  it('displays error message when inputted student/employee number invalid', async () => {
+    renderStep2();
+    const user = userEvent.setup()
+
+    // Type invalid email into input field
+      const idInput = screen.getByLabelText(/student or employee id/i);
+      await user.type(idInput, "123"); // not enough digits
+
+    // Click "next" button
+    let nextButton = screen.getByRole("button", {name: /next/i });
+    await userEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert"), {name: /student\/employee id must be an 8 digit number/i });
+    })
+  })
+
+  it('displays error messages when password/confirm password not provided', async () => {
+    renderStep3();
+
+    // Click "reset passsword" button without inputting anything
+    let nextButton = screen.getByRole("button", {name: /reset password/i });
+    await userEvent.click(nextButton);
+
+    // Test that both error messages have correct role and display text
+    const errorAlerts = await screen.findAllByRole("alert");
+    expect(errorAlerts).toHaveLength(2)
+
+    expect(screen.getByText("Password is required")).toBeInTheDocument()
+    expect(screen.getByText("Confirm password is required")).toBeInTheDocument()
+  })
+
+  it('displays error message when password does not satisfy minimum requirements', async () => {
+    // for now, this is just length >= 8
+    renderStep3();
+    const user = userEvent.setup()
+
+    // Type new password and confirm password that do not meet password requirements (too short) into input fields
+    const passInput = screen.getByLabelText(/new password/i);
+    const confirmPassInput = screen.getByLabelText(/confirm password/i);
+
+    await user.type(passInput, "123");
+    await user.type(confirmPassInput, "123");
+
+    // Click "reset passsword" button
+    let nextButton = screen.getByRole("button", {name: /reset password/i });
+    await userEvent.click(nextButton);
+
+    expect(screen.getByRole("alert"), {name: /password must be at least 8 characters in length/i}).toBeInTheDocument();
+  })
+
+  it('displays error message when inputted passwords do not match', async () => {
+    renderStep3();
+    const user = userEvent.setup()
+
+    // Type non-matching password and confirm password into input fields
+    const passInput = screen.getByLabelText(/new password/i);
+    const confirmPassInput = screen.getByLabelText(/confirm password/i);
+
+    await user.type(passInput, "Orange#1");
+    await user.type(confirmPassInput, "Banana#1");
+
+    // Click "reset passsword" button
+    let nextButton = screen.getByRole("button", {name: /reset password/i });
+    await userEvent.click(nextButton);
+
+    expect(screen.getByRole("alert"), {name: /passwords must match/i}).toBeInTheDocument();
+  })
+
 })
