@@ -6,7 +6,7 @@ import UnauthorizedPage from "./pages/UnauthorizedPage";
 
 import LoginPage from "./pages/LoginPage";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
-import ApplicationForm from "./pages/Student/ApplicationForm";
+import ApplicationForm from "./pages/Student/ApplicationForm2";
 import StudentDashboard from "./pages/Student_Dashboard";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/AdminDashboard";

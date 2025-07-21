@@ -273,24 +273,24 @@ const DynamicFormRenderer = ({
     }
 
     return (
-      <Card key={section.section_id} className="col-span-full">
-        <CardHeader>
-          <CardTitle className="flex items-center">
+      <div className="space-y-8 col-span-full">
+        <Header>
+          <p>
             {section.name}
             {section.is_required && (
               <span className="text-red-500 ml-1">*</span>
             )}
-          </CardTitle>
+          </p>
           {section.description && (
             <p className="text-muted-foreground">{section.description}</p>
           )}
-        </CardHeader>
-        <CardContent>
+        </Header>
+        <div>
           {section.questions
             .sort((a, b) => a.order - b.order)
             .map(renderQuestion)}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 

@@ -559,18 +559,18 @@ class ApplicationShortListViewSet(viewsets.ModelViewSet):
     queryset = ApplicationShortList.objects.all()
     serializer_class = ApplicationShortListSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = ApplicationShortListFilter
+    filterset_fields = ['application_id', 'created_by_id']
     
     # Enable search on related fields
-    search_fields = [
-        'application__student__name',
-        'application__student__student_number',
-        'application__posting__title',
-        'created_by__name'
-    ]
+    # search_fields = [
+    #     'application__student__name',
+    #     'application__student__student_number',
+    #     'application__posting__title',
+    #     'created_by__name'
+    # ]
     
     # Ordering options
-    ordering_fields = ['id', 'application__applied_at']
+    ordering_fields = ['id']
     ordering = ['-id']  # Most recent shortlists first
     
     def perform_create(self, serializer):
@@ -587,12 +587,12 @@ class ApplicationShortListViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(shortlists, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
-    def by_posting(self, request, posting_id=None):
-        """Get all shortlisted applications for a specific job posting"""
-        shortlists = self.queryset.filter(application__posting__posting_id=posting_id)
-        serializer = self.get_serializer(shortlists, many=True)
-        return Response(serializer.data)
+    # @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
+    # def by_posting(self, request, posting_id=None):
+    #     """Get all shortlisted applications for a specific job posting"""
+    #     shortlists = self.queryset.filter(application__posting__posting_id=posting_id)
+    #     serializer = self.get_serializer(shortlists, many=True)
+    #     return Response(serializer.data)
     
     @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)')
     def by_application(self, request, application_id=None):

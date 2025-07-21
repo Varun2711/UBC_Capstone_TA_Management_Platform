@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/student-dashboard-sidebar";
 import Eligibility from "@/components/application-form/Eligibility";
-import PersonalDetails from "@/components/application-form/PersonalDetails2";
+import PersonalDetails from "@/components/application-form/PersonalDetails";
 import Selections from "@/components/application-form/Selections";
 import ReviewSection from "@/components/application-form/ReviewSection";
 import SupportingDocuments from "@/components/application-form/SupportingDocuments";
