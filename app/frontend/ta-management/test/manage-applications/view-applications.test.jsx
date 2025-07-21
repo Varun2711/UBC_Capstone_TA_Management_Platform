@@ -2,7 +2,7 @@
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
-import ViewStudentApplication from "@/pages/Coordinator_ViewApplication";
+import ViewStudentApplication from "@/pages/Scheduler/Scheduler_ViewApplication";
 import axios, { getMock } from "axios";
 
 // Create a mockNavigate and mock axios
@@ -80,11 +80,7 @@ describe("ViewStudentApplication", () => {
     await waitFor(() =>
       expect(screen.queryByText(/Loading application/)).not.toBeInTheDocument()
     );
-    expect(
-      screen.getByText(
-        /An error has occured. Failed to load application details. Contact the administrator\./
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Load fail/)).toBeInTheDocument();
   });
 
   test("renders student information", async () => {

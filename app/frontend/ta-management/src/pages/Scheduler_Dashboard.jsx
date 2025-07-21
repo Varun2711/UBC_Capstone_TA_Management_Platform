@@ -1,18 +1,39 @@
+import { useState } from "react";
+import {
+  BookOpen,
+  UserCheck,
+  FileText,
+  Search,
+  Bell,
+  CheckCircle,
+} from "lucide-react";
 
-import { useState } from "react"
-import { BookOpen, UserCheck, FileText, Search, Bell, CheckCircle } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "../components/scheduler-sidebar"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { AppSidebar } from "../components/scheduler-sidebar";
 
 export default function TASchedulerDashboard() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Mock data for demonstration
   const stats = [
@@ -44,7 +65,7 @@ export default function TASchedulerDashboard() {
       icon: CheckCircle,
       color: "text-orange-600",
     },
-  ]
+  ];
 
   const upcomingTasks = [
     {
@@ -65,11 +86,11 @@ export default function TASchedulerDashboard() {
       priority: "medium",
       dueDate: "Next week",
     },
-  ]
+  ];
 
   return (
     <SidebarProvider>
-      <AppSidebar activePage="Dashboard"/>
+      <AppSidebar activePage="Dashboard" />
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -106,8 +127,12 @@ export default function TASchedulerDashboard() {
         <main className="flex-1 space-y-4 p-4 md:p-8">
           {/* Welcome Section */}
           <div className="flex flex-col space-y-2">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome back, Admin</h1>
-            <p className="text-muted-foreground">Here's what's happening with your TA scheduling system today.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Welcome back, Admin
+            </h1>
+            <p className="text-muted-foreground">
+              Here's what's happening with your TA scheduling system today.
+            </p>
           </div>
 
           {/* Stats Cards */}
@@ -115,7 +140,9 @@ export default function TASchedulerDashboard() {
             {stats.map((stat, index) => (
               <Card key={index}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {stat.title}
+                  </CardTitle>
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </CardHeader>
                 <CardContent>
@@ -131,7 +158,9 @@ export default function TASchedulerDashboard() {
             <Card className="col-span-full md:col-span-1">
               <CardHeader>
                 <CardTitle>Upcoming Tasks</CardTitle>
-                <CardDescription>Items that need your attention</CardDescription>
+                <CardDescription>
+                  Items that need your attention
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -139,11 +168,19 @@ export default function TASchedulerDashboard() {
                     <div key={index} className="space-y-2">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 pr-2">
-                          <p className="text-sm font-medium text-gray-900">{task.task}</p>
-                          <p className="text-xs text-gray-500">{task.dueDate}</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {task.task}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {task.dueDate}
+                          </p>
                         </div>
                         <Badge
-                          variant={task.priority === "high" ? "destructive" : "secondary"}
+                          variant={
+                            task.priority === "high"
+                              ? "destructive"
+                              : "secondary"
+                          }
                           className="flex-shrink-0"
                         >
                           {task.count}
@@ -159,15 +196,32 @@ export default function TASchedulerDashboard() {
             <Card className="col-span-full md:col-span-1 lg:col-span-2">
               <CardHeader>
                 <CardTitle>Department Overview</CardTitle>
-                <CardDescription>TA distribution and workload by department</CardDescription>
+                <CardDescription>
+                  TA distribution and workload by department
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   {[
-                    { dept: "Computer Science", tas: 18, positions: 22, percentage: 82 },
-                    { dept: "Mathematics", tas: 12, positions: 15, percentage: 80 },
+                    {
+                      dept: "Computer Science",
+                      tas: 18,
+                      positions: 22,
+                      percentage: 82,
+                    },
+                    {
+                      dept: "Mathematics",
+                      tas: 12,
+                      positions: 15,
+                      percentage: 80,
+                    },
                     { dept: "Physics", tas: 8, positions: 10, percentage: 80 },
-                    { dept: "Engineering", tas: 4, positions: 6, percentage: 67 },
+                    {
+                      dept: "Engineering",
+                      tas: 4,
+                      positions: 6,
+                      percentage: 67,
+                    },
                   ].map((dept, index) => (
                     <div key={index} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -180,7 +234,10 @@ export default function TASchedulerDashboard() {
                         <Badge variant="outline">{dept.percentage}%</Badge>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${dept.percentage}%` }}></div>
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${dept.percentage}%` }}
+                        ></div>
                       </div>
                     </div>
                   ))}
@@ -194,7 +251,9 @@ export default function TASchedulerDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>System Status & Management Tools</CardTitle>
-                <CardDescription>Current system information and quick management access</CardDescription>
+                <CardDescription>
+                  Current system information and quick management access
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -226,5 +285,5 @@ export default function TASchedulerDashboard() {
         </main>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

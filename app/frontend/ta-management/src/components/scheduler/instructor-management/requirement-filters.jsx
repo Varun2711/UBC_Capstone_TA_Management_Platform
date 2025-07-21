@@ -1,3 +1,5 @@
+"use client"
+
 import { Search, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -21,7 +23,7 @@ export function RequirementsFilters({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search instructors or courses..."
+            placeholder="Search instructors by Name, ID or Email..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10"
@@ -29,7 +31,7 @@ export function RequirementsFilters({
         </div>
 
         <Select value={selectedDepartment} onValueChange={onDepartmentChange}>
-          <SelectTrigger aria-label = "Department" className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Department" />
           </SelectTrigger>
           <SelectContent>
@@ -43,7 +45,7 @@ export function RequirementsFilters({
         </Select>
 
         <Select value={selectedYear} onValueChange={onYearChange}>
-          <SelectTrigger aria-label = 'year' className="w-full sm:w-32">
+          <SelectTrigger className="w-full sm:w-32">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>
@@ -57,7 +59,7 @@ export function RequirementsFilters({
         </Select>
 
         <Select value={selectedTerm} onValueChange={onTermChange}>
-          <SelectTrigger aria-label = 'term' className="w-full sm:w-40">
+          <SelectTrigger className="w-full sm:w-56"> {/* Increased from w-48 to w-56 for "Winter Both Terms" */}
             <SelectValue placeholder="Term" />
           </SelectTrigger>
           <SelectContent>
@@ -75,9 +77,7 @@ export function RequirementsFilters({
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Filter className="h-4 w-4" />
         <span>
-          Showing {selectedDepartment !== "all" ? selectedDepartment : "all departments"} •
-          {selectedYear !== "all" ? ` ${selectedYear}` : " all years"} •
-          {selectedTerm !== "all" ? ` ${selectedTerm}` : " all terms"}
+          Showing {selectedDepartment !== "all" ? selectedDepartment : "all departments"} • {selectedYear !== "all" ? selectedYear : "all years"} • {selectedTerm !== "all" ? selectedTerm : "all terms"}
         </span>
       </div>
     </div>

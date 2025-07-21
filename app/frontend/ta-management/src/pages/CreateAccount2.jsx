@@ -15,7 +15,7 @@ export default function CreateAccount2() {
     majorProgram: "",
     otherMajorProgram: "", // ADDED: Track custom major program entry
     minorProgram: "",
-    otherMinorProgram: "", // ADDED: Track custom minor program entry
+    otherMinorProgram: "",
   })
   const [error, setError] = useState("")
 
@@ -26,6 +26,15 @@ export default function CreateAccount2() {
       navigate("/create-account/step1")
     }
   }, [navigate])
+
+  // Load saved form data from sessionStorage if available
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("createAccount2")
+    if (savedData) {
+      setFormData(JSON.parse(savedData))
+    }
+  }, [])
+  
 
   const handleSelectChange = (name, value) => {
     setError("") // Clear error when user makes changes
@@ -44,10 +53,12 @@ export default function CreateAccount2() {
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setError("") // Clear error when user makes changes
-    setFormData((prev) => ({
-      ...prev,
+    const updated = {
+      ...formData,
       [name]: value,
-    }))
+    }
+    setFormData(updated)
+    sessionStorage.setItem("createAccount2", JSON.stringify(updated)) // Optional live save
   }
 
   const handleNext = (e) => {
@@ -59,7 +70,13 @@ export default function CreateAccount2() {
       return
     }
 
-    // ADDED: Check if "Other" is selected for major but no custom major is provided
+    // Validate year of degree start is selected
+    if (!formData.yearOfDegreeStart) {
+      setError("Year of degree start is required")
+      return
+    }
+
+    // Check if "Other" is selected for major but no custom major is provided
     if (formData.majorProgram === "Other (please specify)" && !formData.otherMajorProgram.trim()) {
       setError("Please specify your major program")
       return
