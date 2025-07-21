@@ -6,8 +6,20 @@ import { MemoryRouter } from "react-router-dom"
 import VerifyIdStep from "@/pages/ResetPassword/VerifyIdStep"
 import NewPasswordStep from "@/pages/ResetPassword/NewPasswordStep"
 import SuccessStep from "@/pages/ResetPassword/SuccessStep"
+import ResetPasswordController from "@/pages/ResetPassword/ResetPasswordController"
 
-// helper functions to render the pages wrapped in memoryrouter
+// helper functions to render pages wrapped in memoryrouter
+
+// master page that /forgot-password routes to in the actual application
+const renderResetPassword = () => {
+  return render(
+    <MemoryRouter initialEntries={["/forgot-password"]}>
+      <ResetPasswordController />
+    </MemoryRouter>
+  )
+}
+
+// individual pages to test each step of the process
 const renderStep1 = () => {
   return render(
     <MemoryRouter initialEntries={["/forgot-password"]}>
@@ -39,6 +51,11 @@ const renderStep4 = () => {
     </MemoryRouter>
   )
 }
+
+// mock api requests
+vi.mock("@hooks/useResetPassword", () => ({
+    requestPasswordReset: vi.fn().mockResolvedValue({ valid: true }),
+}))
 
 // begin tests
 describe('Reset Password', () => {
@@ -150,5 +167,59 @@ describe('Reset Password', () => {
     expect(screen.getByRole("heading"), { name: /success!/i }).toBeInTheDocument();
     expect(screen.getByText(/your password has been reset and you may now/i)).toBeInTheDocument();
     expect(screen.getByRole("link", {name: "login"})).toBeInTheDocument()
+  })
+
+  // test program flow/behavior with good input --------------------------------------
+
+  it('executes each step of reset password flow in sequence when valid user input provided', async () => {
+      // Set up
+      renderResetPassword();
+      const user = userEvent.setup()
+
+      // STEP 1:
+      // Type email into input field
+      const emailInput = screen.getByLabelText(/email address/i);
+      await user.type(emailInput, "johncena@wwe.com");
+
+      // Click "next" button
+      let nextButton = screen.getByRole("button", {name: /next/i });
+      await userEvent.click(nextButton);
+      
+      // Ensure that step 2 renders
+      await waitFor(() => {
+        expect(screen.getByRole("heading"), { name: /confirm your identity/i }).toBeInTheDocument();
+      })
+
+      // STEP 2:
+      // Type id into input field
+      const idInput = screen.getByLabelText(/student or employee id/i);
+      await user.type(idInput, "12345678");
+
+      // Click "next" button
+      nextButton = screen.getByRole("button", {name: /next/i });
+      await userEvent.click(nextButton);
+
+      // Ensure that step 3 renders
+      await waitFor(() => {
+        expect(screen.getByRole("heading"), { name: /set new password/i }).toBeInTheDocument();
+      })
+
+      // STEP 3:
+      // Type new password and confirm password into input fields
+      const passInput = screen.getByLabelText(/new password/i);
+      const confirmPassInput = screen.getByLabelText(/confirm password/i);
+
+      // password must be at least 8 characters
+      await user.type(passInput, "Banana#1");
+      await user.type(confirmPassInput, "Banana#1");
+
+      // Click "next" button
+      const resetPassButton = screen.getByRole("button", { name: /reset password/i });
+      await userEvent.click(resetPassButton);
+
+      // Ensure that step 4 (success) renders
+      await waitFor(() => {
+        expect(screen.getByRole("heading"), { name: /success!/i }).toBeInTheDocument();
+      })
   })
 })
