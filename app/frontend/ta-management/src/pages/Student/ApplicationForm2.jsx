@@ -9,14 +9,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/student-dashboard-sidebar";
-import Eligibility from "@/components/application-form/Eligibility";
 import PersonalDetails from "@/components/application-form/PersonalDetails";
-import Selections from "@/components/application-form/Selections";
 import ReviewSection from "@/components/application-form/ReviewSection";
 import SupportingDocuments from "@/components/application-form/SupportingDocuments";
 import ProgressBar from "@/components/ProgressBar";
-import { validateCurrentStep } from "@/components/application-form/utils/applicationFormValidationUtils";
+//import { validateCurrentStep } from "@/components/application-form/utils/applicationFormValidationUtils";
 import { useParams, useNavigate } from "react-router-dom";
+import DynamicFormRenderer from "@/components/application-form/DynamicFormRenderer";
+import {
+  validateDynamicStep,
+  validateAllResponses,
+} from "@/components/application-form/utils/dynamicFormValidation";
 
 // Import the logic functions from student-applications.js
 import {
@@ -26,9 +29,12 @@ import {
   fetchTemplateDetails,
   handleNextStep,
   handlePreviousStep,
+  checkApplicationFields,
+  getAllResponses,
+  handleFormSubmission,
 } from "@/logic/student-applications";
 
-//Application responses
+// Initial application defaultResponses
 const applicationResponses = {
   citizenshipStatus: "",
   residingInKelowna: "",
@@ -45,34 +51,31 @@ const applicationResponses = {
   },
 };
 
-//set up step title for the progress bar
-const stepTitles = {
-  1: "Eligibility",
-  2: "Selections",
-  3: "Personal Details",
-  4: "Supporting Documents",
-  5: "Review",
-};
-
 export default function ApplicationForm() {
   const { postingId } = useParams();
   const navigate = useNavigate();
 
   // State management
   const [student, setStudent] = useState(null);
-  const [responses, setResponses] = useState(applicationResponses);
-  const [step, setStep] = useState(1);
+  const [defaultResponses, setdefaultResponses] =
+    useState(applicationResponses);
+  const [dynamicResponses, setDynamicResponses] = useState({});
+  const [currentStep, setCurrentStep] = useState(1);
+  const [totalSteps, setTotalSteps] = useState(5); // Default fallback
   const [validationErrors, setValidationErrors] = useState({});
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [confirmation, setConfirmation] = useState(false);
   const [supportingDocs, setSupportingDocs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fieldMapping, setFieldMapping] = useState({});
+
+  // Template and form structure
   const [jobPosting, setJobPosting] = useState(null);
   const [templateDetails, setTemplateDetails] = useState(null);
+  const [dynamicSections, setDynamicSections] = useState([]);
+  const [stepLabels, setStepLabels] = useState({});
 
-  //console.log("Posting ID:", postingId);
-
-  // Fetch student profile and job posting on mount
+  // Fetch data and initialize form on mount
   useEffect(() => {
     const initializeData = async () => {
       setLoading(true);
@@ -81,37 +84,86 @@ export default function ApplicationForm() {
         const studentData = await fetchStudentProfile();
         setStudent(studentData);
 
-        // Fetch job posting details if needed
+        // Fetch job posting details
         if (postingId) {
-          try {
-            const jobData = await fetchJobPostingDetails(postingId);
-            setJobPosting(jobData);
-          } catch (jobError) {
-            console.warn(
-              "Could not fetch job posting details:",
-              jobError.message
-            );
-            // Continue without job posting data
-          }
-        }
+          const jobData = await fetchJobPostingDetails(postingId);
+          setJobPosting(jobData);
 
-        // Fetch template details
-        if (jobData.form_template_id) {
-          try {
-            const templateData = await fetchTemplateDetails(
-              jobData.form_template_id
-            );
-            setTemplateDetails(templateData);
-          } catch (templateError) {
-            console.warn(
-              "Could not fetch template details:",
-              templateError.message
-            );
+          console.log("Job posting template id:", jobData.form_template_id);
+
+          // Fetch template details if available
+          if (jobData.form_template_id) {
+            try {
+              const templateData = await fetchTemplateDetails(
+                jobData.form_template_id
+              );
+              setTemplateDetails(templateData);
+              //   console.log("Template details:", templateData);
+
+              if (templateData && templateData.sections) {
+                // Sort sections by order
+                const sortedSections = templateData.sections.sort(
+                  (a, b) => a.order - b.order
+                );
+                setDynamicSections(sortedSections);
+
+                // Check field mapping
+                const mapping = checkApplicationFields(sortedSections);
+                setFieldMapping(mapping);
+                // console.log("Field mapping:", mapping);
+
+                // Calculate total steps: dynamic sections + static sections (Personal Details + Supporting Docs + Review)
+                const dynamicStepCount = sortedSections.length;
+                const staticStepCount = 3; // Personal Details, Supporting Documents, Review
+                const totalStepCount = dynamicStepCount + staticStepCount;
+                setTotalSteps(totalStepCount);
+
+                // Create step labels
+                const labels = {};
+                sortedSections.forEach((section, index) => {
+                  labels[index + 1] = section.name;
+                });
+                labels[dynamicStepCount + 1] = "Personal Details";
+                labels[dynamicStepCount + 2] = "Supporting Documents";
+                labels[dynamicStepCount + 3] = "Review";
+                setStepLabels(labels);
+              }
+            } catch (templateError) {
+              console.warn(
+                "Could not fetch template details:",
+                templateError.message
+              );
+              // Fall back to default static form structure
+              setStepLabels({
+                1: "Eligibility",
+                2: "Selections",
+                3: "Personal Details",
+                4: "Supporting Documents",
+                5: "Review",
+              });
+            }
+          } else {
+            // No template, use default static form
+            setStepLabels({
+              1: "Eligibility",
+              2: "Selections",
+              3: "Personal Details",
+              4: "Supporting Documents",
+              5: "Review",
+            });
           }
         }
       } catch (error) {
         console.error("Error initializing application form:", error);
-        // The fetchStudentProfile already handles fallback to mock data
+        // Set default step labels as fallback
+        // setStepLabels({
+        //   1: "Eligibility",
+        //   2: "Selections",
+        //   3: "Personal Details",
+        //   4: "Supporting Documents",
+        //   5: "Review",
+        // });
+        //show message to contact administrator
       } finally {
         setLoading(false);
       }
@@ -120,80 +172,69 @@ export default function ApplicationForm() {
     initializeData();
   }, [postingId]);
 
-  // Navigation handlers using the logic functions
+  // Navigation handlers
   const handleNext = (e) => {
     e.preventDefault();
 
-    console.log("");
-
-    const success = handleNextStep(step, setStep, validateCurrentStep, {
-      student,
-      responses,
-    });
-
-    if (!success) {
-      // Get validation errors and set them
-      const { errors } = validateCurrentStep(step, student, responses);
-      setValidationErrors(errors);
-    } else {
-      setValidationErrors({});
-    }
+    // All validation logic is now handled in student-applications.js
+    handleNextStep(
+      currentStep,
+      setCurrentStep,
+      null, // Your existing legacy validation function
+      {
+        student,
+        defaultResponses,
+        dynamicResponses,
+        dynamicSections,
+        fieldMapping,
+        totalSteps,
+        setValidationErrors,
+      }
+    );
   };
 
   const handleBack = (e) => {
     e.preventDefault();
-    handlePreviousStep(step, setStep, () => setValidationErrors({}));
+    handlePreviousStep(currentStep, setCurrentStep, () =>
+      setValidationErrors({})
+    );
   };
 
-  // Form submission handler using the logic function
+  // Form submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    let allValid = true;
-    let allErrors = {};
+    // All submission logic is now handled in student-applications.js
+    await handleFormSubmission({
+      student,
+      defaultResponses,
+      dynamicResponses,
+      dynamicSections,
+      fieldMapping,
+      postingId,
+      confirmation,
+      supportingDocs,
+      setSubmissionStatus,
+      setValidationErrors,
+      setCurrentStep,
+    });
+  };
+  // Helper functions to determine current section type
+  const isDynamicSection = () => currentStep <= dynamicSections.length;
+  const isPersonalDetailsSection = () =>
+    currentStep === dynamicSections.length + 1;
+  const isSupportingDocsSection = () =>
+    currentStep === dynamicSections.length + 2;
+  const isReviewSection = () => currentStep === dynamicSections.length + 3;
 
-    // Validate all steps
-    for (let stepNum = 1; stepNum <= 4; stepNum++) {
-      const { isValid, errors } = validateCurrentStep(
-        stepNum,
-        student,
-        responses
-      );
-      if (!isValid) {
-        allValid = false;
-        allErrors = { ...allErrors, ...errors };
-      }
+  const getCurrentDynamicSection = () => {
+    if (isDynamicSection()) {
+      return dynamicSections[currentStep - 1];
     }
-
-    if (!allValid) {
-      setValidationErrors(allErrors);
-      console.log("Form has validation errors:", allErrors);
-      return;
-    }
-
-    // Clear any existing errors
-    setValidationErrors({});
-
-    try {
-      // Submit application using the logic function
-      await submitApplication({
-        student,
-        responses,
-        postingId,
-        confirmation,
-        supportingDocs,
-        setSubmissionStatus,
-        setValidationErrors,
-      });
-
-      console.log("Application submitted successfully!");
-    } catch (error) {
-      console.error("Application submission failed:", error);
-      // setSubmissionStatus is handled inside submitApplication
-    }
+    return null;
   };
 
-  // Show loading state
+  // Loading state
   if (loading) {
     return (
       <SidebarProvider>
@@ -303,9 +344,9 @@ export default function ApplicationForm() {
                 )}
               </h1>
               <ProgressBar
-                step={step}
-                totalSteps={5}
-                stepLabel={stepTitles[step]}
+                step={currentStep}
+                totalSteps={totalSteps}
+                stepLabel={stepLabels[currentStep] || `Step ${currentStep}`}
               />
             </div>
 
@@ -313,33 +354,39 @@ export default function ApplicationForm() {
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
               onSubmit={handleSubmit}
             >
-              {step === 1 && (
-                <Eligibility
-                  responses={responses}
-                  setResponses={setResponses}
+              {/* Dynamic Sections */}
+              {isDynamicSection() && (
+                <DynamicFormRenderer
+                  template={{
+                    ...templateDetails,
+                    sections: [getCurrentDynamicSection()].filter(Boolean),
+                  }}
+                  responses={defaultResponses}
+                  setResponses={setdefaultResponses}
+                  dynamicResponses={dynamicResponses}
+                  setDynamicResponses={setDynamicResponses}
                   errors={validationErrors}
+                  currentSection={getCurrentDynamicSection()?.section_id}
+                  fieldMapping={fieldMapping}
                 />
               )}
-              {step === 2 && (
-                <Selections
-                  selections={responses}
-                  setSelections={setResponses}
-                  errors={validationErrors}
-                />
-              )}
-              {step === 3 && (
+
+              {/* Static Sections */}
+              {isPersonalDetailsSection() && (
                 <PersonalDetails student={student} setStudent={setStudent} />
               )}
-              {step === 4 && (
+
+              {isSupportingDocsSection() && (
                 <SupportingDocuments
                   documents={supportingDocs}
                   setDocuments={setSupportingDocs}
                 />
               )}
-              {step === 5 && (
+
+              {isReviewSection() && (
                 <ReviewSection
                   student={student}
-                  selections={responses}
+                  selections={defaultResponses}
                   confirmation={confirmation}
                   setConfirmation={setConfirmation}
                   documents={supportingDocs}
@@ -350,7 +397,7 @@ export default function ApplicationForm() {
 
               {/* Navigation Buttons */}
               <div className="md:col-span-2 flex justify-center gap-4">
-                {step > 1 && (
+                {currentStep > 1 && (
                   <Button
                     className="bg-white text-gray-900 border border-gray-700 shadow"
                     onClick={handleBack}
@@ -360,7 +407,7 @@ export default function ApplicationForm() {
                     Back
                   </Button>
                 )}
-                {step < 5 ? (
+                {currentStep < totalSteps ? (
                   <Button
                     className="bg-blue-600"
                     onClick={handleNext}

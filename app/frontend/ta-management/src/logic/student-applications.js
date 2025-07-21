@@ -1,5 +1,8 @@
 // src/logic/student-applications.js
-
+import {
+  validateDynamicStep,
+  validateAllResponses,
+} from "@/components/application-form/utils/dynamicFormValidation";
 import axios from "axios";
 
 const API_URL = "http://localhost:8080/api";
@@ -181,6 +184,113 @@ export const submitApplication = async ({
   }
 };
 
+export const handleFormSubmission = async (submissionData) => {
+  const {
+    student,
+    defaultResponses,
+    dynamicResponses,
+    dynamicSections,
+    fieldMapping,
+    postingId,
+    confirmation,
+    supportingDocs,
+    setSubmissionStatus,
+    setValidationErrors,
+    setCurrentStep,
+  } = submissionData;
+
+  console.log("=== FORM SUBMISSION STARTED ===");
+  console.log("Default responses:", defaultResponses);
+  console.log("Dynamic responses:", dynamicResponses);
+  console.log("Field mapping:", fieldMapping);
+
+  // Use the comprehensive validation system
+  const { isValid, errors } = validateAllResponses(
+    defaultResponses,
+    dynamicResponses,
+    dynamicSections,
+    fieldMapping
+  );
+
+  // Also validate confirmation checkbox
+  const finalErrors = { ...errors };
+  if (!confirmation) {
+    finalErrors.confirmation =
+      "You must check the confirmation box before submitting.";
+  }
+
+  const finalIsValid = isValid && confirmation;
+
+  if (!finalIsValid) {
+    setValidationErrors(finalErrors);
+    console.log("❌ Form submission blocked - validation errors:", finalErrors);
+
+    // Navigate to the first step with errors
+    const errorFields = Object.keys(finalErrors);
+    if (errorFields.length > 0) {
+      let errorStep = 1;
+
+      // Check dynamic sections for errors
+      for (let i = 0; i < dynamicSections.length; i++) {
+        const section = dynamicSections[i];
+        const hasErrorInSection = section.questions?.some((q) =>
+          errorFields.includes(q.field_name)
+        );
+
+        if (hasErrorInSection) {
+          errorStep = i + 1;
+          console.log(
+            `Error found in dynamic section ${i + 1}: ${section.name}`
+          );
+          break;
+        }
+      }
+
+      // If no error in dynamic sections, check static sections
+      if (errorStep === 1 && dynamicSections.length > 0) {
+        // Check for confirmation error (Review section)
+        if (errorFields.includes("confirmation")) {
+          errorStep = dynamicSections.length + 3; // Review section
+          console.log("Confirmation error - navigating to Review section");
+        }
+      }
+
+      console.log(
+        `🔄 Navigating to step ${errorStep} due to validation errors`
+      );
+      setCurrentStep(errorStep);
+    }
+
+    console.log("=== FORM SUBMISSION FAILED ===");
+    return false;
+  }
+
+  console.log("✅ All validation passed, proceeding with submission");
+  setValidationErrors({});
+
+  try {
+    // Combine all responses for submission
+    const allResponses = getAllResponses(defaultResponses, dynamicResponses);
+    console.log("Combined responses for submission:", allResponses);
+
+    await submitApplication({
+      student,
+      responses: allResponses,
+      postingId,
+      confirmation,
+      supportingDocs,
+      setSubmissionStatus,
+      setValidationErrors,
+    });
+
+    console.log("🎉 Application submitted successfully!");
+    return true;
+  } catch (error) {
+    console.error("💥 Application submission failed:", error);
+    setSubmissionStatus("error");
+    return false;
+  }
+};
 /**
  * Submits supporting documents for an application
  * @param {string} applicationId - Application ID
@@ -238,7 +348,7 @@ export const fetchJobPostingDetails = async (postingId) => {
 
 export const fetchTemplateDetails = async (templateId) => {
   try {
-    const response = await instance.get(`/ajp/form-templates/${templateId}`);
+    const response = await instance.get(`/ajp/form-templates/${templateId}/`);
     return response.data;
   } catch (error) {
     console.error(
@@ -618,22 +728,43 @@ export const getMockStudentProfile = () => {
   };
 };
 
-const applicationResponsesExist = {
-  citizenshipStatus: false,
-  residingInKelowna: false,
-  fullTimeEnrollment: false,
-  hasOtherPositions: false,
-  otherPositionHours: false,
-  positionType: false,
-  winterTerm: false,
-  workload: false,
-  disciplineRanking: false,
+export const checkApplicationFields = (sections) => {
+  const fieldsExist = {
+    citizenshipStatus: false,
+    residingInKelowna: false,
+    fullTimeEnrollment: false,
+    hasOtherPositions: false,
+    otherPositionHours: false,
+    positionType: false,
+    winterTerm: false,
+    workload: false,
+    disciplineRanking: false,
+  };
+
+  // Check each section and question
+  if (sections && Array.isArray(sections)) {
+    sections.forEach((section) => {
+      if (section.questions && Array.isArray(section.questions)) {
+        section.questions.forEach((question) => {
+          if (
+            question.field_name &&
+            fieldsExist.hasOwnProperty(question.field_name)
+          ) {
+            fieldsExist[question.field_name] = true;
+          }
+        });
+      }
+    });
+  }
+
+  return fieldsExist;
 };
 
-export const checkApplicationFields = (sections) => {
-  //to be filled in
-  //if sections.questions.field name is present in the default applicationform,
-  // then set applicationResponsesExist to true
+export const getAllResponses = (defaultResponses, dynamicResponses) => {
+  return {
+    ...defaultResponses,
+    ...dynamicResponses,
+  };
 };
 
 /**
@@ -649,33 +780,108 @@ export const checkApplicationFields = (sections) => {
 // ===========================
 
 /**
- * Handles moving to the next step in the application form
+ * Enhanced navigation handler that supports both dynamic and static validation
  * @param {number} currentStep - Current step number
  * @param {Function} setStep - Step setter function
- * @param {Function} validateStep - Step validation function
- * @param {Object} validationData - Data needed for validation
+ * @param {Function} legacyValidateStep - Legacy validation function for static forms
+ * @param {Object} navigationData - All data needed for navigation and validation
  * @returns {boolean} Whether navigation was successful
  */
 export const handleNextStep = (
   currentStep,
   setStep,
-  validateStep,
-  validationData
+  legacyValidateStep,
+  navigationData
 ) => {
-  console.log("Current step is", currentStep);
-  console.log("Validaton data", validationData.responses);
-  const { isValid, errors } = validateStep(
-    currentStep,
-    validationData.student,
-    validationData.responses
-  );
+  const {
+    student,
+    defaultResponses,
+    dynamicResponses,
+    dynamicSections = [],
+    fieldMapping = {},
+    totalSteps,
+    setValidationErrors,
+  } = navigationData;
 
-  if (isValid) {
-    setStep(currentStep + 1);
-    return true;
+  //console.log("=== ENHANCED NAVIGATION STARTED ===");
+  //console.log("Current step:", currentStep);
+  //console.log("Total steps:", totalSteps);
+  //console.log("Dynamic sections count:", dynamicSections.length);
+
+  const isDynamicStep = currentStep <= dynamicSections.length;
+
+  if (isDynamicStep) {
+    console.log("=== DYNAMIC STEP VALIDATION ===");
+    console.log("Validating dynamic step:", currentStep);
+
+    const currentSection = dynamicSections[currentStep - 1];
+    console.log("Current section:", currentSection?.name);
+
+    // Use the new dynamic validation system
+    const { isValid, errors } = validateDynamicStep(
+      currentStep,
+      dynamicSections,
+      defaultResponses,
+      dynamicResponses,
+      fieldMapping
+    );
+
+    if (isValid) {
+      console.log(
+        "✅ Dynamic step validation passed, moving to step:",
+        currentStep + 1
+      );
+      setStep(currentStep + 1);
+      if (setValidationErrors) setValidationErrors({});
+      return true;
+    } else {
+      //  console.log("❌ Dynamic step validation failed:", errors);
+      if (setValidationErrors) setValidationErrors(errors);
+      return false;
+    }
   } else {
-    console.log("Validation errors:", errors);
-    return false;
+    console.log("=== STATIC STEP NAVIGATION ===");
+    const adjustedStep = currentStep - dynamicSections.length;
+    console.log("Adjusted step for static validation:", adjustedStep);
+
+    // Handle specific static sections
+    if (adjustedStep === 1) {
+      // Personal Details section
+      console.log("Personal Details section - moving to next step");
+      setStep(currentStep + 1);
+      if (setValidationErrors) setValidationErrors({});
+      return true;
+    } else if (adjustedStep === 2) {
+      // Supporting Documents section
+      console.log("Supporting Documents section - moving to next step");
+      setStep(currentStep + 1);
+      if (setValidationErrors) setValidationErrors({});
+      return true;
+    } else if (legacyValidateStep) {
+      // Use legacy validation for other static sections
+      console.log("Using legacy validation for static section");
+      const { isValid, errors } = legacyValidateStep(
+        adjustedStep,
+        student,
+        defaultResponses
+      );
+
+      if (isValid) {
+        setStep(currentStep + 1);
+        if (setValidationErrors) setValidationErrors({});
+        return true;
+      } else {
+        console.log("Legacy validation errors:", errors);
+        if (setValidationErrors) setValidationErrors(errors);
+        return false;
+      }
+    } else {
+      // No validation function provided, just move forward
+      console.log("No validation function, moving to next step");
+      setStep(currentStep + 1);
+      if (setValidationErrors) setValidationErrors({});
+      return true;
+    }
   }
 };
 
@@ -704,4 +910,7 @@ export default {
   getMockStudentProfile,
   handleNextStep,
   handlePreviousStep,
+  checkApplicationFields,
+  getAllResponses,
+  handleFormSubmission,
 };

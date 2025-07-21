@@ -74,53 +74,6 @@ export const validateStep2 = (responses) => {
   };
 };
 
-export const validateStep3 = (student) => {
-  const errors = {};
-
-  // if (!student.firstName || student.firstName.trim().length < 2) {
-  //   errors.firstName = "First name must be at least 2 characters.";
-  // }
-
-  // if (!student.lastName || student.lastName.trim().length < 2) {
-  //   errors.lastName = "Last name must be at least 2 characters.";
-  // }
-
-  // if (!student.email) {
-  //   errors.email = "Email is required";
-  // } else {
-  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  //   if (!emailRegex.test(student.email)) {
-  //     errors.email = "Please enter a valid email address.";
-  //   }
-  // }
-
-  // if (!student.phone) {
-  //   errors.phone = "Phone number is required";
-  // }
-
-  // if (!student.gpa) {
-  //   errors.gpa = "GPA is required";
-  // } else {
-  //   const gpa = parseFloat(student.gpa);
-  //   if (isNaN(gpa) || gpa < 0 || gpa > 4.0) {
-  //     errors.gpa = "GPA must be between 0.0 and 4.0";
-  //   }
-  // }
-
-  // if (!student.resume) {
-  //   errors.resume = "Resume is required";
-  // }
-
-  // if (!student.transcript) {
-  //  errors.transcript = "Transcript is required";
-  // }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors,
-  };
-};
-
 // Main validation function
 export const validateCurrentStep = (step, student, responses) => {
   console.log("these are responses", responses);
@@ -129,8 +82,6 @@ export const validateCurrentStep = (step, student, responses) => {
       return validateStep1(responses);
     case 2:
       return validateStep2(responses);
-    case 3:
-      return validateStep3(student);
     default:
       return { isValid: true, errors: {} };
   }

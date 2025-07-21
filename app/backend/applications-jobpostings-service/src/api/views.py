@@ -561,14 +561,7 @@ class ApplicationShortListViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['application_id', 'created_by_id']
     
-    # Enable search on related fields
-    # search_fields = [
-    #     'application__student__name',
-    #     'application__student__student_number',
-    #     'application__posting__title',
-    #     'created_by__name'
-    # ]
-    
+       
     # Ordering options
     ordering_fields = ['id']
     ordering = ['-id']  # Most recent shortlists first
