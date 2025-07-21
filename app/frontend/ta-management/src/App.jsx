@@ -13,7 +13,6 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
 import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
 import UserManagement from "./pages/Admin/UserManagement";
-import AdminCourseManagement from "./pages/Admin/AdminCourseManagement";
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -179,6 +178,14 @@ function App() {
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <UserManagement />
           </ProtectedRoute>
         }
       />
