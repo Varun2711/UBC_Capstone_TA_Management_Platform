@@ -6,8 +6,7 @@ import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { useResetPassword } from "@/hooks/useResetPassword"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { SlashIcon } from "lucide-react"
+import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 
 export default function EmailStep({ onNext }) {
   // state
@@ -55,25 +54,7 @@ export default function EmailStep({ onNext }) {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 p-2">
       {/*Breadcrumb showing Home / Login / Forgot Password so that user is informed of their location w/in the app */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/" className="hover:text-gray-900 underline">Home</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator> 
-            <SlashIcon />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/login" className="hover:text-gray-900 underline">Login</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator> 
-            <SlashIcon />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            Forgot Password
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <ResetPasswordBreadcrumb />
       
       {/* Main page content */}
       <div className="flex-grow flex items-center justify-center p-4">

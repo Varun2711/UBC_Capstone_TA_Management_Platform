@@ -6,8 +6,7 @@ import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { useResetPassword } from "@/hooks/useResetPassword"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { SlashIcon } from "lucide-react"
+import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 
 export default function NewPasswordStep({ onNext }) {
   // state
@@ -68,25 +67,7 @@ export default function NewPasswordStep({ onNext }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 p-2">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/" className="hover:text-gray-900 underline">Home</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator> 
-            <SlashIcon />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/login" className="hover:text-gray-900 underline">Login</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator> 
-            <SlashIcon />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            Forgot Password
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <ResetPasswordBreadcrumb />
         
       <div className="flex-grow flex items-center justify-center p-4">      
         <div className="w-full max-w-md space-y-8">
