@@ -1,118 +1,160 @@
-import { render, screen, fireEvent} from '@testing-library/react';
-import { expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OfferingCard } from '@/components/scheduler/course_management/offering-card';
-import { ChevronDown, ChevronRight, MoreHorizontal, FileText, Edit } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
-  ChevronDown: () => <svg data-testid="chevron-down-icon" />,
-  ChevronRight: () => <svg data-testid="chevron-right-icon" />,
-  MoreHorizontal: () => <svg data-testid="more-horizontal-icon" />,
-  FileText: () => <svg data-testid="file-text-icon" />,
-  Edit: () => <svg data-testid="edit-icon" />,
-  Trash2: () => <svg data-testid="trash-icon" />,
-  Plus: () => <svg data-testid="plus-icon" />,
+  ChevronDown: () => <span data-testid="chevron-down-icon" />,
+  ChevronRight: () => <span data-testid="chevron-right-icon" />,
+  MoreHorizontal: () => <span data-testid="more-horizontal-icon" />,
+  FileText: () => <span data-testid="file-text-icon" />,
+  Edit: () => <span data-testid="edit-icon" />,
+  Trash2: () => <span data-testid="trash-icon" />,
+  Plus: () => <span data-testid="plus-icon" />,
+  Clock: () => <span data-testid="clock-icon" />,
 }));
 
-// Mock the sidebar component (kept from UserProfile tests)
-vi.mock('@/components/scheduler-sidebar', () => ({
-  AppSidebar: () => <div data-testid="mock-sidebar">Mocked Sidebar</div>,
-}));
-
-describe('OfferingCard Component', () => {
-  const user = userEvent.setup();
+describe('OfferingCard', () => {
   const mockOffering = {
-    section: 'CS101',
-    instructor: 'Dr. Smith',
-    requirements: {
-      specialRequirements: ['Python', 'Database'],
-    },
+    id: 'offering1',
+    section: '001',
+    instructorName: 'Dr. Smith',
+    time_slots: [
+      { day: 'monday', time: '02:00 PM - 04:00 PM' }
+    ]
   };
-  const mockOnToggle = vi.fn();
+
+  let mockOnEdit;
+  let mockOnDelete;
 
   beforeEach(() => {
+    mockOnEdit = vi.fn();
+    mockOnDelete = vi.fn();
     vi.clearAllMocks();
+  });
+
+  const renderComponent = (props = {}) => {
     render(
       <OfferingCard
         offering={mockOffering}
-        isExpanded={false}
-        onToggle={mockOnToggle}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+        {...props}
       />
     );
-  });
-  
-  it('renders the card with section and instructor', () => {
-    expect(screen.getByText('CS101')).toBeInTheDocument();
+  };
+
+  it('renders offering information', () => {
+    renderComponent();
+
+    expect(screen.getByText('Section 001')).toBeInTheDocument();
     expect(screen.getByText('Dr. Smith')).toBeInTheDocument();
+    expect(screen.getByText('Monday 02:00 PM - 04:00 PM')).toBeInTheDocument();
+    expect(screen.getByTestId('clock-icon')).toBeInTheDocument();
   });
 
-  it('renders collapsed state with ChevronRight icon by default', () => {
-    expect(screen.getByTestId('chevron-right-icon')).toBeInTheDocument();
-    expect(screen.queryByTestId('chevron-down-icon')).not.toBeInTheDocument();
-    expect(screen.queryByText('TA Requirements - CS101')).not.toBeInTheDocument();
+  it('shows unassigned when no instructor', () => {
+    renderComponent({
+      offering: { ...mockOffering, instructorName: null }
+    });
+
+    expect(screen.getByText('Unassigned')).toBeInTheDocument();
   });
 
-  it('renders expanded state with ChevronDown icon and requirements', () => {
-    render(
-      <OfferingCard
-        offering={mockOffering}
-        isExpanded={true}
-        onToggle={mockOnToggle}
-      />
-    );
-    expect(screen.getByTestId('chevron-down-icon')).toBeInTheDocument();
-    expect(screen.getByText('TA Requirements - CS101')).toBeInTheDocument();
-    expect(screen.getByTestId('file-text-icon')).toBeInTheDocument();
-    expect(screen.getAllByText(/Python|Database/)).toHaveLength(2); // Two badges for requirements
+  it('shows no schedule when no time slots', () => {
+    renderComponent({
+      offering: { ...mockOffering, time_slots: [] }
+    });
+
+    expect(screen.getByText('No schedule set')).toBeInTheDocument();
   });
 
-  it('toggles collapsible state and calls onToggle when clicking header', async () => {
-    const header = screen.getByTestId('collapsible-header');
-    await user.click(header);
-    expect(mockOnToggle).toHaveBeenCalledWith(true);
-    expect(mockOnToggle).toHaveBeenCalledTimes(1);
+  it('formats multiple time slots correctly', () => {
+    renderComponent({
+      offering: {
+        ...mockOffering,
+        time_slots: [
+          { day: 'monday', time: '02:00 PM - 04:00 PM' },
+          { day: 'wednesday', time: '10:00 AM - 12:00 PM' }
+        ]
+      }
+    });
+
+    expect(screen.getByText(/Monday 02:00 PM - 04:00 PM, Wednesday 10:00 AM - 12:00 PM/)).toBeInTheDocument();
   });
 
-  it('renders dropdown menu with correct items', async () => {
+  it('opens dropdown menu when clicked', async () => {
+    renderComponent();
+
     const dropdownTrigger = screen.getByTestId('more-horizontal-icon').closest('button');
-    expect(dropdownTrigger).toBeInTheDocument();
-    expect(screen.getByTestId('more-horizontal-icon')).toBeInTheDocument();
+    await userEvent.click(dropdownTrigger);
 
-    // Simulate opening dropdown
-    await user.click(dropdownTrigger);
     expect(screen.getByText('Edit Offering')).toBeInTheDocument();
-    expect(screen.getByText('Add Lab/Tutorial')).toBeInTheDocument();
     expect(screen.getByText('Delete Offering')).toBeInTheDocument();
-    expect(screen.getByText('Delete Offering').closest('div')).toHaveClass('text-red-600');
     expect(screen.getByTestId('edit-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('plus-icon')).toBeInTheDocument();
     expect(screen.getByTestId('trash-icon')).toBeInTheDocument();
-    
   });
 
-  it('does not render requirements badges when specialRequirements is empty', () => {
-    render(
-      <OfferingCard
-        offering={{
-          ...mockOffering,
-          requirements: { specialRequirements: [] },
-        }}
-        isExpanded={true}
-        onToggle={mockOnToggle}
-      />
-    );
-    expect(screen.getByText('TA Requirements - CS101')).toBeInTheDocument();
-    expect(screen.queryAllByText(/Python|Database/)).toHaveLength(0);
+  it('calls onEdit when edit is clicked', async () => {
+    renderComponent();
+
+    const dropdownTrigger = screen.getByTestId('more-horizontal-icon').closest('button');
+    await userEvent.click(dropdownTrigger);
+
+    const editButton = screen.getByText('Edit Offering');
+    await userEvent.click(editButton);
+
+    expect(mockOnEdit).toHaveBeenCalledWith(mockOffering);
   });
 
-  it('applies hover styles to card header', () => {
-    const header = screen.getByTestId('collapsible-header');
-    expect(header).toHaveClass('hover:bg-muted/50');
+  it('calls onDelete when delete is clicked', async () => {
+    renderComponent();
+
+    const dropdownTrigger = screen.getByTestId('more-horizontal-icon').closest('button');
+    await userEvent.click(dropdownTrigger);
+
+    const deleteButton = screen.getByText('Delete Offering');
+    await userEvent.click(deleteButton);
+
+    expect(mockOnDelete).toHaveBeenCalledWith(mockOffering);
+  });
+
+  it('shows delete option in red', async () => {
+    renderComponent();
+
+    const dropdownTrigger = screen.getByTestId('more-horizontal-icon').closest('button');
+    await userEvent.click(dropdownTrigger);
+
+    const deleteButton = screen.getByText('Delete Offering').closest('div');
+    expect(deleteButton).toHaveClass('text-red-600');
+  });
+
+  it('handles empty offering data gracefully', () => {
+    renderComponent({
+      offering: {
+        id: 'empty',
+        section: '002',
+        instructorName: null,
+        time_slots: null
+      }
+    });
+
+    expect(screen.getByText('Section 002')).toBeInTheDocument();
+    expect(screen.getByText('Unassigned')).toBeInTheDocument();
+    expect(screen.getByText('No schedule set')).toBeInTheDocument();
+  });
+
+  it('capitalizes day names correctly', () => {
+    renderComponent({
+      offering: {
+        ...mockOffering,
+        time_slots: [
+          { day: 'tuesday', time: '01:00 PM - 03:00 PM' }
+        ]
+      }
+    });
+
+    expect(screen.getByText('Tuesday 01:00 PM - 03:00 PM')).toBeInTheDocument();
   });
 });

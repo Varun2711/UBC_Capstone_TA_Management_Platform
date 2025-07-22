@@ -133,176 +133,6 @@
     }
   },
   {
-    "model": "myapp.course",
-    "pk": 1,
-    "fields": {
-      "course_number": "COSC 111",
-      "course_name": "Introduction to Programming",
-      "course_description": "Fundamental concepts of programming using Python. Variables, control structures, functions, and basic data structures.",
-      "department": 1,
-      "course_level": "100",
-      "is_active": true
-    }
-  },
-  {
-    "model": "myapp.course",
-    "pk": 2,
-    "fields": {
-      "course_number": "COSC 221",
-      "course_name": "Data Structures and Algorithms",
-      "course_description": "Advanced programming concepts including arrays, linked lists, trees, graphs, and algorithmic analysis.",
-      "department": 1,
-      "course_level": "200",
-      "is_active": true
-    }
-  },
-  {
-    "model": "myapp.term",
-    "pk": 1,
-    "fields": {
-      "code": "W2025T1",
-      "description": "Winter 2025 Term 1",
-      "subsetOf": null,
-      "start": "2025-01-06",
-      "end": "2025-04-04",
-      "startCalendarYear": 2025,
-      "endCalendarYear": 2025,
-      "academicYear": "2024/25",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": true,
-      "term_type": "winter"
-    }
-  },
-  {
-    "model": "myapp.term",
-    "pk": 2,
-    "fields": {
-      "code": "W2025T2",
-      "description": "Winter 2025 Term 2",
-      "subsetOf": null,
-      "start": "2025-01-06",
-      "end": "2025-04-04",
-      "startCalendarYear": 2025,
-      "endCalendarYear": 2025,
-      "academicYear": "2024/25",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": true,
-      "term_type": "winter"
-    }
-  },
-  {
-    "model": "myapp.term",
-    "pk": 3,
-    "fields": {
-      "code": "W2025BOTH",
-      "description": "Winter 2025 Both Terms",
-      "subsetOf": null,
-      "start": "2025-01-06",
-      "end": "2025-04-04",
-      "startCalendarYear": 2025,
-      "endCalendarYear": 2025,
-      "academicYear": "2024/25",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": true,
-      "term_type": "winter"
-    }
-  },
-  {
-    "model": "myapp.term",
-    "pk": 4,
-    "fields": {
-      "code": "S2025",
-      "description": "Summer 2025",
-      "subsetOf": null,
-      "start": "2025-05-05",
-      "end": "2025-08-15",
-      "startCalendarYear": 2025,
-      "endCalendarYear": 2025,
-      "academicYear": "2024/25",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": true,
-      "term_type": "summer"
-    }
-  },
-  {
-    "model": "myapp.jobposting",
-    "pk": 1,
-    "fields": {
-      "title": "Teaching Assistant - CMPS Summer 2025",
-      "description": "We are seeking enthusiastic Teaching Assistants for Summer 2025. Responsibilities include assisting students during lab sessions, grading assignments, and supporting the instructor during lectures.",
-      "post_date": "2024-11-15",
-      "deadline_date": "2024-12-15",
-      "department": 1,
-      "created_by": 3,
-      "term": 1,
-      "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
-      "status": "open"
-    }
-  },
-  {
-    "model": "myapp.jobposting",
-    "pk": 2,
-    "fields": {
-      "title": "Teaching Assistant - CMPS Winter 2025",
-      "description": "Seeking qualified Teaching Assistants for CMPS department. TAs will help students understand complex concepts, assist with assignments, and facilitate lab sessions.",
-      "post_date": "2024-11-20",
-      "deadline_date": "2024-12-20",
-      "department": 1,
-      "created_by": 3,
-      "term": 2,
-      "requirements": "Must be a registered student.",
-      "status": "open"
-    }
-  },
-  {
-    "model": "myapp.application",
-    "pk": 1,
-    "fields": {
-      "student": 1,
-      "posting": 1,
-      "status": "submitted",
-      "applied_at": "2024-11-18T14:30:00Z",
-      "updated_at": "2024-11-18T14:30:00Z",
-      "positionType": "GTA2",
-      "termSelection": 1,
-      "workload": "12",
-      "disciplineRankings": {
-        "rank1": "COSC",
-        "rank2": "MATH",
-        "rank3": "STAT"
-      },
-      "citizenshipStatus": "citizen",
-      "residingInKelowna": "yes",
-      "fullTimeEnrollment": "yes",
-      "hasOtherPositions": "no",
-      "otherPositionHours": null
-    }
-  },
-  {
-    "model": "myapp.application",
-    "pk": 2,
-    "fields": {
-      "student": 2,
-      "posting": 2,
-      "status": "submitted",
-      "applied_at": "2024-11-22T16:45:00Z",
-      "updated_at": "2024-11-22T16:45:00Z",
-      "positionType": "GTA1",
-      "termSelection": 2,
-      "workload": "12",
-      "disciplineRankings": {
-        "rank1": "COSC",
-        "rank2": "DATA",
-        "rank3": "ASTR"
-      },
-      "citizenshipStatus": "pr",
-      "residingInKelowna": "yes",
-      "fullTimeEnrollment": "yes",
-      "hasOtherPositions": "yes",
-      "otherPositionHours": 8
-    }
-  },
-  {
     "model": "myapp.department",
     "pk": 1,
     "fields": {
@@ -359,122 +189,128 @@
     }
   },
   {
-    "model": "myapp.instructor",
+    "model": "myapp.term",
+    "pk": 1,
+    "fields": {
+      "code": "W2025 Term 1",
+      "description": "Winter 2025 Term 1",
+      "subsetOf": null,
+      "start": "2025-01-06",
+      "end": "2025-04-04",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
+    }
+  },
+  {
+    "model": "myapp.term",
     "pk": 2,
     "fields": {
-      "employee_number": "EMP1001",
-      "name": "Dr. Sarah Johnson",
-      "department": 1,
-      "email": "sarah.johnson@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
+      "code": "W2025 Term 2",
+      "description": "Winter 2025 Term 2",
+      "subsetOf": null,
+      "start": "2025-01-06",
+      "end": "2025-04-04",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
     }
   },
   {
-    "model": "myapp.instructor",
+    "model": "myapp.term",
     "pk": 3,
     "fields": {
-      "employee_number": "EMP1002",
-      "name": "Dr. Michael Chen",
-      "department": 1,
-      "email": "michael.chen@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
+      "code": "W2025 Both Terms",
+      "description": "Winter 2025 Both Terms",
+      "subsetOf": null,
+      "start": "2025-01-06",
+      "end": "2025-04-04",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": true,
+      "term_type": "winter"
     }
   },
   {
-    "model": "myapp.instructor",
+    "model": "myapp.term",
     "pk": 4,
     "fields": {
-      "employee_number": "EMP1003",
-      "name": "Prof. Emily Davis",
-      "department": 2,
-      "email": "emily.davis@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
+      "code": "W2024 Term 1",
+      "description": "Winter Term 1 2024/2025",
+      "subsetOf": null,
+      "start": "2024-09-01",
+      "end": "2024-12-31",
+      "startCalendarYear": 2024,
+      "endCalendarYear": 2024,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "winter"
     }
   },
   {
-    "model": "myapp.instructor",
+    "model": "myapp.term",
     "pk": 5,
     "fields": {
-      "employee_number": "EMP1004",
-      "name": "Dr. Robert Wilson",
-      "department": 3,
-      "email": "robert.wilson@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
+      "code": "W2024 Term 2",
+      "description": "Winter Term 2 2024/2025",
+      "subsetOf": null,
+      "start": "2025-01-01",
+      "end": "2025-04-30",
+      "startCalendarYear": 2025,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "winter"
     }
   },
   {
-    "model": "myapp.instructor",
+    "model": "myapp.term",
     "pk": 6,
     "fields": {
-      "employee_number": "EMP1005",
-      "name": "Dr. Lisa Anderson",
-      "department": 4,
-      "email": "lisa.anderson@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
+      "code": "W2024 Both Terms",
+      "description": "Winter Both Terms 2024/2025",
+      "subsetOf": null,
+      "start": "2024-09-01",
+      "end": "2025-04-30",
+      "startCalendarYear": 2024,
+      "endCalendarYear": 2025,
+      "academicYear": "2024/25",
+      "createdAt": "2024-08-01T10:00:00Z",
+      "is_active": false,
+      "term_type": "full_year"
     }
   },
   {
-    "model": "myapp.instructor",
-    "pk": 7,
+    "model": "myapp.course",
+    "pk": 1,
     "fields": {
-      "employee_number": "EMP1006",
-      "name": "Prof. David Brown",
+      "course_number": "COSC 111",
+      "course_name": "Introduction to Programming",
+      "course_description": "Fundamental concepts of programming using Python. Variables, control structures, functions, and basic data structures.",
       "department": 1,
-      "email": "david.brown@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "course_level": "100",
       "is_active": true
     }
   },
   {
-    "model": "myapp.instructor",
-    "pk": 8,
+    "model": "myapp.course",
+    "pk": 2,
     "fields": {
-      "employee_number": "EMP1007",
-      "name": "Dr. Jennifer Lee",
-      "department": 5,
-      "email": "jennifer.lee@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
-    }
-  },
-  {
-    "model": "myapp.instructor",
-    "pk": 9,
-    "fields": {
-      "employee_number": "EMP1008",
-      "name": "Dr. Mark Taylor",
-      "department": 6,
-      "email": "mark.taylor@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
-    }
-  },
-  {
-    "model": "myapp.instructor",
-    "pk": 10,
-    "fields": {
-      "employee_number": "EMP1009",
-      "name": "Dr. Anna Garcia",
-      "department": 7,
-      "email": "anna.garcia@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "is_active": true
-    }
-  },
-  {
-    "model": "myapp.instructor",
-    "pk": 11,
-    "fields": {
-      "employee_number": "EMP1010",
-      "name": "Prof. James Miller",
-      "department": 8,
-      "email": "james.miller@university.edu",
-      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "course_number": "COSC 221",
+      "course_name": "Data Structures and Algorithms",
+      "course_description": "Advanced programming concepts including arrays, linked lists, trees, graphs, and algorithmic analysis.",
+      "department": 1,
+      "course_level": "200",
       "is_active": true
     }
   },
@@ -623,105 +459,337 @@
     }
   },
   {
-    "model": "myapp.term",
+    "model": "myapp.instructor",
+    "pk": 2,
+    "fields": {
+      "employee_number": "EMP1001",
+      "name": "Dr. Sarah Johnson",
+      "department": 1,
+      "email": "sarah.johnson@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 3,
+    "fields": {
+      "employee_number": "EMP1002",
+      "name": "Dr. Michael Chen",
+      "department": 1,
+      "email": "michael.chen@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 4,
+    "fields": {
+      "employee_number": "EMP1003",
+      "name": "Prof. Emily Davis",
+      "department": 2,
+      "email": "emily.davis@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
     "pk": 5,
     "fields": {
-      "code": "W2024 Term 1",
-      "description": "Winter Term 1 2024/2025",
-      "subsetOf": 9,
-      "start": "2024-09-01",
-      "end": "2024-12-31",
-      "startCalendarYear": 2024,
-      "endCalendarYear": 2024,
-      "academicYear": "2024/25",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": false,
-      "term_type": "winter"
+      "employee_number": "EMP1004",
+      "name": "Dr. Robert Wilson",
+      "department": 3,
+      "email": "robert.wilson@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
     }
   },
   {
-    "model": "myapp.term",
+    "model": "myapp.instructor",
     "pk": 6,
     "fields": {
-      "code": "W2024 Term 2",
-      "description": "Winter Term 2 2024/2025",
-      "subsetOf": 9,
-      "start": "2025-01-01",
-      "end": "2025-04-30",
-      "startCalendarYear": 2025,
-      "endCalendarYear": 2025,
-      "academicYear": "2024/25",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": false,
-      "term_type": "winter"
+      "employee_number": "EMP1005",
+      "name": "Dr. Lisa Anderson",
+      "department": 4,
+      "email": "lisa.anderson@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
     }
   },
   {
-    "model": "myapp.term",
+    "model": "myapp.instructor",
     "pk": 7,
     "fields": {
-      "code": "W2025 Term 1",
-      "description": "Winter Term 1 2025/2026",
-      "subsetOf": 10,
-      "start": "2025-09-01",
-      "end": "2025-12-31",
-      "startCalendarYear": 2025,
-      "endCalendarYear": 2025,
-      "academicYear": "2025/26",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": true,
-      "term_type": "winter"
+      "employee_number": "EMP1006",
+      "name": "Prof. David Brown",
+      "department": 1,
+      "email": "david.brown@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
     }
   },
   {
-    "model": "myapp.term",
+    "model": "myapp.instructor",
     "pk": 8,
     "fields": {
-      "code": "W2025 Term 2",
-      "description": "Winter Term 2 2025/2026",
-      "subsetOf": 10,
-      "start": "2026-01-01",
-      "end": "2026-04-30",
-      "startCalendarYear": 2026,
-      "endCalendarYear": 2026,
-      "academicYear": "2025/26",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": true,
-      "term_type": "winter"
+      "employee_number": "EMP1007",
+      "name": "Dr. Jennifer Lee",
+      "department": 5,
+      "email": "jennifer.lee@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
     }
   },
   {
-    "model": "myapp.term",
+    "model": "myapp.instructor",
     "pk": 9,
     "fields": {
-      "code": "W2024 Both Terms",
-      "description": "Winter Both Terms 2024/2025",
-      "subsetOf": null,
-      "start": "2024-09-01",
-      "end": "2025-04-30",
-      "startCalendarYear": 2024,
-      "endCalendarYear": 2025,
-      "academicYear": "2024/25",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": false,
-      "term_type": "full_year"
+      "employee_number": "EMP1008",
+      "name": "Dr. Mark Taylor",
+      "department": 6,
+      "email": "mark.taylor@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
     }
   },
   {
-    "model": "myapp.term",
+    "model": "myapp.instructor",
     "pk": 10,
     "fields": {
-      "code": "W2025 Both Terms",
-      "description": "Winter Both Terms 2025/2026",
-      "subsetOf": null,
-      "start": "2025-09-01",
-      "end": "2026-04-30",
-      "startCalendarYear": 2025,
-      "endCalendarYear": 2026,
-      "academicYear": "2025/26",
-      "createdAt": "2024-08-01T10:00:00Z",
-      "is_active": true,
-      "term_type": "full_year"
+      "employee_number": "EMP1009",
+      "name": "Dr. Anna Garcia",
+      "department": 7,
+      "email": "anna.garcia@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.instructor",
+    "pk": 11,
+    "fields": {
+      "employee_number": "EMP1010",
+      "name": "Prof. James Miller",
+      "department": 8,
+      "email": "james.miller@university.edu",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.jobposting",
+    "pk": 1,
+    "fields": {
+      "title": "Teaching Assistant - CMPS Summer 2025",
+      "description": "We are seeking enthusiastic Teaching Assistants for Summer 2025. Responsibilities include assisting students during lab sessions, grading assignments, and supporting the instructor during lectures.",
+      "post_date": "2024-11-15",
+      "deadline_date": "2024-12-15",
+      "department": 1,
+      "created_by": 3,
+      "term": 1,
+      "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
+      "status": "open"
+    }
+  },
+  {
+    "model": "myapp.jobposting",
+    "pk": 2,
+    "fields": {
+      "title": "Teaching Assistant - CMPS Winter 2025",
+      "description": "Seeking qualified Teaching Assistants for CMPS department. TAs will help students understand complex concepts, assist with assignments, and facilitate lab sessions.",
+      "post_date": "2024-11-20",
+      "deadline_date": "2024-12-20",
+      "department": 1,
+      "created_by": 3,
+      "term": 2,
+      "requirements": "Must be a registered student.",
+      "status": "open"
+    }
+  },
+  {
+    "model": "myapp.application",
+    "pk": 1,
+    "fields": {
+      "student": 1,
+      "posting": 1,
+      "status": "submitted",
+      "applied_at": "2024-11-18T14:30:00Z",
+      "updated_at": "2024-11-18T14:30:00Z",
+      "positionType": "GTA2",
+      "termSelection": 1,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "COSC",
+        "rank2": "MATH",
+        "rank3": "STAT"
+      },
+      "citizenshipStatus": "citizen",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "no",
+      "otherPositionHours": null
+    }
+  },
+  {
+    "model": "myapp.application",
+    "pk": 2,
+    "fields": {
+      "student": 2,
+      "posting": 2,
+      "status": "submitted",
+      "applied_at": "2024-11-22T16:45:00Z",
+      "updated_at": "2024-11-22T16:45:00Z",
+      "positionType": "GTA1",
+      "termSelection": 2,
+      "workload": "12",
+      "disciplineRankings": {
+        "rank1": "COSC",
+        "rank2": "DATA",
+        "rank3": "ASTR"
+      },
+      "citizenshipStatus": "pr",
+      "residingInKelowna": "yes",
+      "fullTimeEnrollment": "yes",
+      "hasOtherPositions": "yes",
+      "otherPositionHours": 8
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 3,
+    "fields": {
+      "student_number": "20241004",
+      "name": "Emily Wilson",
+      "phone": "+1-250-555-0104",
+      "program": "Computer Science",
+      "year_standing": 2,
+      "study_level": "BSc",
+      "department": 1,
+      "sin": "987654323",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "emily.wilson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 4,
+    "fields": {
+      "student_number": "20241005",
+      "name": "David Kim",
+      "phone": "+1-250-555-0105",
+      "program": "Mathematics",
+      "year_standing": 3,
+      "study_level": "BSc",
+      "department": 2,
+      "sin": "987654324",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "david.kim@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 5,
+    "fields": {
+      "student_number": "20241006",
+      "name": "Lisa Chen",
+      "phone": "+1-250-555-0106",
+      "program": "Physics",
+      "year_standing": 4,
+      "study_level": "MSc",
+      "department": 3,
+      "sin": "987654325",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "lisa.chen@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 6,
+    "fields": {
+      "student_number": "20241007",
+      "name": "Michael Rodriguez",
+      "phone": "+1-250-555-0107",
+      "program": "Computer Science",
+      "year_standing": 1,
+      "study_level": "BSc",
+      "department": 1,
+      "sin": "987654326",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "michael.rodriguez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 7,
+    "fields": {
+      "student_number": "20241008",
+      "name": "Jennifer Thompson",
+      "phone": "+1-250-555-0108",
+      "program": "Biology",
+      "year_standing": 2,
+      "study_level": "BSc",
+      "department": 5,
+      "sin": "987654327",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "jennifer.thompson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 8,
+    "fields": {
+      "student_number": "20241009",
+      "name": "Alex Martinez",
+      "phone": "+1-250-555-0109",
+      "program": "Engineering",
+      "year_standing": 3,
+      "study_level": "BSc",
+      "department": 6,
+      "sin": "987654328",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "alex.martinez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 9,
+    "fields": {
+      "student_number": "20241010",
+      "name": "Rachel Adams",
+      "phone": "+1-250-555-0110",
+      "program": "Psychology",
+      "year_standing": 4,
+      "study_level": "BA",
+      "department": 7,
+      "sin": "987654329",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "rachel.adams@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 10,
+    "fields": {
+      "student_number": "20241011",
+      "name": "Kevin Zhang",
+      "phone": "+1-250-555-0111",
+      "program": "Mathematics",
+      "year_standing": 1,
+      "study_level": "BSc",
+      "department": 2,
+      "sin": "987654330",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "kevin.zhang@student.ubc.ca",
+      "is_active": true
     }
   },
   {
@@ -1050,7 +1118,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440101",
       "course": 3,
       "instructor": 2,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "001"
     }
   },
@@ -1061,7 +1129,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440102",
       "course": 4,
       "instructor": 3,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "001"
     }
   },
@@ -1072,7 +1140,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440103",
       "course": 5,
       "instructor": 2,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "001"
     }
   },
@@ -1083,7 +1151,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440104",
       "course": 6,
       "instructor": 7,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "001"
     }
   },
@@ -1094,7 +1162,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440105",
       "course": 7,
       "instructor": 3,
-      "academic_term": 10,
+      "academic_term": 3,
       "section_number": "001"
     }
   },
@@ -1105,7 +1173,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440106",
       "course": 8,
       "instructor": 7,
-      "academic_term": 10,
+      "academic_term": 3,
       "section_number": "001"
     }
   },
@@ -1116,7 +1184,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440107",
       "course": 9,
       "instructor": 4,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "001"
     }
   },
@@ -1127,7 +1195,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440108",
       "course": 10,
       "instructor": 4,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "001"
     }
   },
@@ -1138,7 +1206,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440109",
       "course": 11,
       "instructor": 4,
-      "academic_term": 10,
+      "academic_term": 3,
       "section_number": "001"
     }
   },
@@ -1149,7 +1217,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440110",
       "course": 12,
       "instructor": 4,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "001"
     }
   },
@@ -1160,7 +1228,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440111",
       "course": 13,
       "instructor": 5,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "001"
     }
   },
@@ -1171,7 +1239,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440112",
       "course": 14,
       "instructor": 5,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "001"
     }
   },
@@ -1182,7 +1250,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440113",
       "course": 1,
       "instructor": 2,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "002"
     }
   },
@@ -1193,7 +1261,7 @@
       "course_offering_id": "550e8400-e29b-41d4-a716-446655440114",
       "course": 2,
       "instructor": 3,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "002"
     }
   },
@@ -1204,7 +1272,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440201",
       "course": 3,
       "student": 1,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "L01",
       "session_type": "lab",
       "time_slots": [
@@ -1220,7 +1288,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440202",
       "course": 3,
       "student": 2,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "T01",
       "session_type": "tutorial",
       "time_slots": [
@@ -1236,7 +1304,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440203",
       "course": 4,
       "student": 3,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "L01",
       "session_type": "lab",
       "time_slots": [
@@ -1252,7 +1320,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440204",
       "course": 5,
       "student": 4,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "T01",
       "session_type": "tutorial",
       "time_slots": [
@@ -1268,7 +1336,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440205",
       "course": 6,
       "student": 5,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "L01",
       "session_type": "lab",
       "time_slots": [
@@ -1284,7 +1352,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440206",
       "course": 7,
       "student": 6,
-      "academic_term": 10,
+      "academic_term": 3,
       "section_number": "T01",
       "session_type": "tutorial",
       "time_slots": [
@@ -1299,7 +1367,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440207",
       "course": 8,
       "student": 7,
-      "academic_term": 10,
+      "academic_term": 3,
       "section_number": "L01",
       "session_type": "lab",
       "time_slots": [
@@ -1314,7 +1382,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440208",
       "course": 9,
       "student": 8,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "T01",
       "session_type": "tutorial",
       "time_slots": [
@@ -1330,7 +1398,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440209",
       "course": 10,
       "student": 9,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "T01",
       "session_type": "tutorial",
       "time_slots": [
@@ -1346,7 +1414,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440210",
       "course": 13,
       "student": 10,
-      "academic_term": 7,
+      "academic_term": 1,
       "section_number": "L01",
       "session_type": "lab",
       "time_slots": [
@@ -1362,7 +1430,7 @@
       "shared_session_id": "550e8400-e29b-41d4-a716-446655440211",
       "course": 14,
       "student": 1,
-      "academic_term": 8,
+      "academic_term": 2,
       "section_number": "L01",
       "session_type": "lab",
       "time_slots": [
@@ -1493,7 +1561,7 @@
       "applied_at": "2024-11-20T10:15:00Z",
       "updated_at": "2024-11-20T10:15:00Z",
       "positionType": "GTA1",
-      "termSelection": 7,
+      "termSelection": 1,
       "workload": "6",
       "disciplineRankings": {
         "rank1": "COSC",
@@ -1517,7 +1585,7 @@
       "applied_at": "2024-11-21T14:30:00Z",
       "updated_at": "2024-11-21T14:30:00Z",
       "positionType": "GTA2",
-      "termSelection": 8,
+      "termSelection": 2,
       "workload": "12",
       "disciplineRankings": {
         "rank1": "MATH",
@@ -1541,7 +1609,7 @@
       "applied_at": "2024-11-22T09:45:00Z",
       "updated_at": "2024-11-22T09:45:00Z",
       "positionType": "GTA1",
-      "termSelection": 7,
+      "termSelection": 1,
       "workload": "12",
       "disciplineRankings": {
         "rank1": "PHYS",

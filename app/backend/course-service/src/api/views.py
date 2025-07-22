@@ -396,7 +396,8 @@ class CourseViewSet(viewsets.ModelViewSet):
                 'time': time_info[0]['time'] if time_info else 'TBD',
                 'time_increments': time_increments,  # Add the 30-minute increments
                 'location': location,
-                'student_id': session.student.id if session.student else None,  # Changed from instructor to student
+                'student_id': session.student.id if session.student else None,
+                'student_name': session.student.name if session.student else None,  # Add student name
                 'forCourse': course.id  # Change from forOfferings to forCourse with course id
             }
             
@@ -515,6 +516,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                     'time_increments': time_increments,
                     'location': location,
                     'student_id': session.student.id if session.student else None,
+                    'student_name': session.student.name if session.student else None,  # Add student name
                     'forCourse': course.id
                 }
                 
