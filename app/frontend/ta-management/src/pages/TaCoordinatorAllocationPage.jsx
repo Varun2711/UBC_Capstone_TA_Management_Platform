@@ -836,6 +836,7 @@ export default function TAAllocationPage() {
 
         // Loop through each shortlisted applicant to fetch offerings and shared sessions
         for (const item of fetchedShortlistedApplicants) {
+          console.log("item of fetchedShortlistedApplicants:", item);
           console.log("Shortlisted by:", item.shortlisted_by);
           console.log("Created at:", item.created_at);
           console.log("Notes:", item.notes);
@@ -843,6 +844,9 @@ export default function TAAllocationPage() {
 
           const student_number = item.application.student.student_number;
           console.log("Curent shortlisted applicant's student number is :", student_number);
+
+          const student_id = item.application.student.id;
+          console.log("Curent shortlisted applicant's id is :", student_id);
 
           /*
           try {
@@ -852,6 +856,12 @@ export default function TAAllocationPage() {
             console.error(`Error fetching profile for student ${student_number}:`, err);
           }
           */
+          try {
+            const profileData = await fetchProfilesOfShortlistedApplicants(student_id);
+            console.log(`Current ${student_id} shortlisted applicant's profile is:`, profileData);
+          } catch (err) {
+            console.error(`Error fetching profile for student ${student_id}:`, err);
+          }
         }
       } catch (error) {
         console.error("Error loading shortlisted applicants:", error);

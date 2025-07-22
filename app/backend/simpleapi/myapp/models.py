@@ -323,7 +323,7 @@ class StudentSkill(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        managed = True
+        managed = False
         unique_together = ['user', 'name']
         ordering = ['skill_type', 'name']
         db_table = 'profiles_studentskill'
@@ -336,7 +336,7 @@ class StudentAvailability(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'profiles_studentavailability'
         
 class StudentCoursePreference(models.Model):
@@ -348,7 +348,7 @@ class StudentCoursePreference(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        managed = True
+        managed = False
         unique_together = ['user', 'course_code']
         ordering = ['preference_rank']
         db_table = 'profiles_studentcoursepreference'
