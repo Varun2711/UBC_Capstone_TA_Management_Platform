@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { data, Link } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { useResetPassword } from "@/hooks/useResetPassword"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
+import { toast } from "sonner"
 
 export default function EmailStep({ onNext }) {
   // state
@@ -19,17 +20,21 @@ export default function EmailStep({ onNext }) {
     e.preventDefault()
 
     if(validInput()) {
-      // check that email address is associated with an account (todo)
-      const success = await requestAccountLookup(email);
-      if(success) {
-        console.log("valid email")
+      // lookup email address in db to check that is associated with an account
+      const response = await requestAccountLookup(email);
+
+      // if email found, proceed to next step of password reset
+      if(response.success) {
         onNext(email);
+      // if email not found, display error toast
+      } else {
+        toast.error(response.data)
       }
     }
   }
 
   /* 
-  Perform input validation and return true if valid, false if invalid
+  * Perform input validation and return true if valid, false if invalid
   */
   function validInput() {
     let emailError = "";

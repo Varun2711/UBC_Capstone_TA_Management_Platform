@@ -1,3 +1,27 @@
+/*
+ * Test file for rendering and behavior of Reset Password components
+ */
+
+// mock useResetPassword hook so that doesn't rely on docker containers for testing (have to do this at top of file before imports)
+vi.mock('@/hooks/useResetPassword', () => {
+  return {
+    useResetPassword: () => ({
+      requestAccountLookup: vi.fn().mockResolvedValue({
+        success: true,
+        data: {
+          email: 'johncena@wwe.com',
+          user_type: 'student',
+          id_number: 63847593,
+        },
+      }),
+
+      // todo, works for now, will adjust as i write the actual backend logic
+      verifyId: vi.fn().mockResolvedValue(true),
+      requestPasswordReset: vi.fn().mockResolvedValue(true),
+    }),
+  };
+});
+
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import EmailStep from "@/pages/ResetPassword/EmailStep"
 import userEvent from "@testing-library/user-event"
@@ -51,11 +75,6 @@ const renderStep4 = () => {
     </MemoryRouter>
   )
 }
-
-// mock api requests
-vi.mock("@hooks/useResetPassword", () => ({
-    requestPasswordReset: vi.fn().mockResolvedValue({ valid: true }),
-}))
 
 // begin tests
 describe('Reset Password', () => {

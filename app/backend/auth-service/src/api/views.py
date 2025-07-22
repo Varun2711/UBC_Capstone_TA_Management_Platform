@@ -209,7 +209,75 @@ def validate_token_view(request):
         return Response({"error": f"Invalid token: {str(e)}", "valid": False}, status=401)
     except Exception as e:
         return Response({"error": f"Token validation failed: {str(e)}", "valid": False}, status=500)
-    
+
+# Reset Password Views
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def lookup_account_view(request):
+    email = request.data.get('email')
+
+    # No email address provided, return error
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user_data = None
+
+    # Look up email address in each table to determine if an account exists
+    try:
+        student = Student.objects.get(email=email)
+        user_data = {
+            'user_type': 'student',
+            'id_number': student.student_number
+        }
+    except Student.DoesNotExist:
+        pass
+
+    try:
+        instructor = Instructor.objects.get(email=email)
+        user_data = {
+            'user_type': 'instructor',
+            'id_number': instructor.employee_number
+        }
+    except Instructor.DoesNotExist:
+        pass
+
+    try:
+        scheduler = TAScheduler.objects.get(email=email)
+        user_data = {
+            'user_type': 'tascheduler',
+            'id_number': scheduler.employee_number
+        }
+    except TAScheduler.DoesNotExist:
+        pass
+
+    try:
+        admin = Admin.objects.get(email=email)
+        user_data = {
+            'user_type': 'admin',
+            'id_number': admin.employee_number
+        }
+    except Admin.DoesNotExist:
+        pass
+
+    # Found a match: return success response and relevant user info
+    if user_data:
+        return Response(
+            {
+                'email': email,
+                'user_type': user_data['user_type'],
+                'id_number': user_data['id_number']
+            }, 
+            status=status.HTTP_200_OK
+        )
+    else:
+        return Response(
+            {
+                'error': 'Account not found'
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def api_root(request):
@@ -222,5 +290,6 @@ def api_root(request):
             'validate': '/api/auth/validate/',
             'token_refresh': '/api/auth/token/refresh/',
             'logout': '/api/auth/logout/',
+            'lookup_account': '/api/auth/reset-password/lookup/'
         }
     })
