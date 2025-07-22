@@ -21,5 +21,8 @@ END
 echo "Loading sample data from fixture..."
 python manage.py loaddata simpleapi/fixtures/sample_data.json
 
+echo "Loading application form data from it's fixture..."
+python manage.py loaddata simpleapi/fixtures/application_form.json
+
 echo "Starting the server..."
 exec python manage.py runserver 0.0.0.0:8000

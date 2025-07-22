@@ -14,20 +14,6 @@ class Department(models.Model):
         return self.name
 
 
-class TAScheduler(models.Model):
-    employee_number = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, related_name='ta_schedulers', null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'myapp_tascheduler'
-
-    def __str__(self):
-        return f"{self.name} ({self.employee_number})"
-
-
 class Student(models.Model):
     student_number = models.CharField(max_length=8, unique=True)
     name = models.CharField(max_length=100)
@@ -35,30 +21,39 @@ class Student(models.Model):
     program = models.CharField(max_length=100, null=True, blank=True)
     year_standing = models.IntegerField(null=True, blank=True)
     study_level = models.CharField(max_length=20)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
+    is_active = models.BooleanField(default=True)
+    expected_graduation = models.CharField(max_length=20, null=True, blank=True)  # Add this line
 
     class Meta:
         managed = False
         db_table = 'myapp_student'
 
-    def __str__(self):
-        return f"{self.name}"
-
 class Instructor(models.Model):
     employee_number = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='instructors')
     email = models.EmailField()
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
 
-    class Meta: 
+    class Meta:
         managed = False
         db_table = 'myapp_instructor'
 
-    def __str__(self):
-        return f"{self.name}"
+class TAScheduler(models.Model):
+    employee_number = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='ta_schedulers')
+    password = models.CharField(max_length=255)
+  
+    class Meta:
+        managed = False
+        db_table = 'myapp_tascheduler'
 
 
 class Term(models.Model):
@@ -88,7 +83,7 @@ class Term(models.Model):
     ], null=True, blank=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'myapp_term'  
       
 
@@ -109,6 +104,88 @@ class Term(models.Model):
     def is_subset_of(self, other_term):
         """Check if this term is a subset of another term"""
         return self.subsetOf == other_term
+    
+
+#adding new models to service    
+
+class FormTemplate(models.Model):
+    """Template for application forms that can be reused across job postings"""
+    template_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+    is_editable = models.BooleanField(default=True)
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_formtemplate'
+    
+    def __str__(self):
+        return self.name
+
+class FormSection(models.Model):
+    """Sections within a form (e.g., Eligibility, Selections, etc.)"""
+    SECTION_TYPES = [
+        ('eligibility', 'Eligibility'),
+        ('selections', 'Selections'), 
+        ('personal_details', 'Personal Details'),
+        ('documents', 'Supporting Documents'),
+        ('custom', 'Custom Section'),
+    ]
+    
+    section_id = models.AutoField(primary_key=True)
+    template = models.ForeignKey(FormTemplate, on_delete=models.CASCADE, related_name='sections')
+    name = models.CharField(max_length=100)
+    section_type = models.CharField(max_length=20, choices=SECTION_TYPES)
+    order = models.PositiveIntegerField()
+    is_required = models.BooleanField(default=True)
+    description = models.TextField(null=True, blank=True)
+    is_editable =models.BooleanField(default=True)
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_formsection'
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.template.name} - {self.name}"
+
+class FormQuestion(models.Model):
+    """Individual questions within form sections"""
+    QUESTION_TYPES = [
+        ('radio', 'Radio Button'),
+        ('checkbox', 'Checkbox'),
+        ('text', 'Text Input'),
+        ('textarea', 'Text Area'),
+        ('select', 'Dropdown Select'),
+        ('number', 'Number Input'),
+        ('email', 'Email Input'),
+        ('file', 'File Upload'),
+        ('ranking', 'Ranking/Ordering'),
+    ]
+    
+    question_id = models.AutoField(primary_key=True)
+    section = models.ForeignKey(FormSection, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    field_name = models.CharField(max_length=100)  # For mapping to response data
+    order = models.PositiveIntegerField()
+    is_required = models.BooleanField(default=False)
+    help_text = models.TextField(null=True, blank=True)
+    validation_rules = models.JSONField(null=True, blank=True)  # Store validation rules
+    options = models.JSONField(null=True, blank=True)  # For select/radio options
+    is_editable = models.BooleanField(default=True)
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_formquestion'
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.section.name} - {self.question_text[:50]}"
+
 
 class JobPosting(models.Model):
     
@@ -131,7 +208,17 @@ class JobPosting(models.Model):
         ('cancelled', 'Cancelled'),
         ('draft', 'Draft'),
         ('archived', 'Archived'),
+
     ], default='draft')
+    
+    # reference the template used for the job posting
+    form_template = models.ForeignKey(
+        FormTemplate, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        help_text="Custom form template for this job posting"
+    )
 
     class Meta:
         managed = True
@@ -144,6 +231,7 @@ class JobPosting(models.Model):
     def is_expired(self):        
         return self.deadline_date < timezone.now().date()
     
+
 
 class JobPostingQuestion(models.Model):
     question_id = models.AutoField(primary_key=True)
@@ -168,38 +256,27 @@ class Application(models.Model):
         ('submitted', 'Submitted'),
         ('under_review', 'Under Review'),
         ('accepted', 'Accepted'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'No Longer In Consideration'),
         ('withdrawn', 'Withdrawn'),
         ('archived', 'Archived'),
-        ('deleted', 'Deleted'),], default='draft')
+        ('deleted', 'Deleted'),], default='draft')     
     
     # Timestamps
     applied_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
         
     # Selections (from Selections.jsx)
-    positionType = models.CharField(max_length=100, choices=[
-        ('UTA', 'Undergraduate Teaching Assistant'),
-        ('GTA2', 'Graduate Teaching Assistant 2 (Master\'s Student)'),
-        ('GTA1', 'Graduate Teaching Assistant 1 (Ph.D student)'),
-    ], blank=True, null=True)
+    positionType = models.CharField(max_length=100, blank=True, null=True)
 
     #Term Selection
     termSelection = models.ForeignKey('Term', on_delete = models.SET_NULL, null=True)      
    
-    workload = models.CharField(max_length=20, choices=[
-        ('6', '6 hours'),
-        ('12', '12 hours'),
-    ], blank=True, null=True)
+    workload = models.CharField(max_length=20, blank=True, null=True)
     
     # Discipline Rankings 
     disciplineRankings = models.JSONField() 
     
-    citizenshipStatus = models.CharField(max_length=50, choices=[
-        ('citizen', 'Canadian Citizen'),
-        ('pr', 'Permanent Resident'),
-        ('international', 'International Student'),
-    ], blank=True, null=True)
+    citizenshipStatus = models.CharField(max_length=50, blank=True, null=True)
     
     residingInKelowna = models.CharField(max_length=10, choices=[
         ('yes', 'Yes'),
@@ -228,8 +305,42 @@ class Application(models.Model):
     def can_withdraw(self):
         """Check if application can be withdrawn"""
         return self.status in ['submitted', 'under_review']     
+
+
+ # Here we're storing dynamic application responses
+class ApplicationResponse(models.Model):
+    """Store responses to dynamic form questions"""
+    response_id = models.AutoField(primary_key=True)
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='responses')
+    question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE)
+    response_data = models.JSONField()  # Store the actual response
     
+    class Meta:
+        managed = True
+        db_table = 'myapp_applicationresponse'
+        unique_together = ('application', 'question')
+    
+    def __str__(self):
+        return f"Response to {self.question.question_text[:30]} for {self.application}"   
    
+
+class ApplicationShortList(models.Model):    
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='shortlists')    
+    created_by = models.ForeignKey(TAScheduler, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    created_at = models.DateTimeField(default=timezone.now)  # Track when shortlisted
+    notes = models.TextField(null=True, blank=True)  # Some optional notes about why shortlisted??
+    
+    class Meta:
+        managed = True
+        db_table = 'myapp_applicationshortlist'
+        # Prevent duplicate shortlists by same scheduler for same application
+        unique_together = ('application', 'created_by')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Shortlisted: {self.application} by {self.created_by}"
+
+
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
     application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
