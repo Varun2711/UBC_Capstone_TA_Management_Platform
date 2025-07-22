@@ -1,80 +1,120 @@
-import { ChevronDown, ChevronRight, MoreHorizontal, FileText, Edit, Trash2, Plus } from "lucide-react";
+"use client"
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Edit, Trash2, Clock } from "lucide-react"
 
-export function OfferingCard({ offering, isExpanded, onToggle, onEdit, onAddLabTutorial }) {
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+
+export function OfferingCard({ offering, onEdit, onDelete }) {
+  // Format time slots for display - handle the API format
+  const formatTimeSlots = (offering) => {
+    // Your API returns time_slots with {day, time} format
+    let timeSlots = offering.time_slots || []
+    
+    console.log("OfferingCard formatting time slots:", timeSlots)
+    
+    if (!timeSlots || timeSlots.length === 0) {
+      return "No schedule set"
+    }
+
+    return timeSlots.map(slot => {
+      const day = slot.day?.charAt(0).toUpperCase() + slot.day?.slice(1) || "Unknown"
+      // The time is already formatted as "02:22 PM - 04:22 PM"
+      const timeStr = slot.time || "Time TBD"
+      
+      return `${day} ${timeStr}`
+    }).join(', ')
+  }
+
+  const handleEdit = () => {
+    try {
+      console.log("OfferingCard edit clicked, offering:", offering)
+      onEdit(offering)
+    } catch (error) {
+      console.error("Error in OfferingCard handleEdit:", error)
+    }
+  }
+
+  const handleDelete = () => {
+    try {
+      console.log("OfferingCard delete clicked, offering:", offering)
+      onDelete(offering)
+    } catch (error) {
+      console.error("Error in OfferingCard handleDelete:", error)
+    }
+  }
+
+  // Check if any time slot data exists
+  const hasTimeSlots = offering.time_slots?.length > 0
+
   return (
     <Card className="ml-2">
-      <Collapsible open={isExpanded} onOpenChange={onToggle}>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3" data-testid="collapsible-header">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                )}
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium">{offering.section}</span>
-                    <Badge variant="secondary">{offering.instructor}</Badge>
-                  </div>
-                </div>
+      <CardHeader className="py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div>
+              <div className="flex items-center space-x-2 mb-1">
+                <span className="font-medium">Section {offering.section}</span>
+                <Badge variant="secondary">{offering.instructorName || 'Unassigned'}</Badge>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(offering)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Offering
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onAddLabTutorial(offering)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Lab/Tutorial
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Offering</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                <span>{formatTimeSlots(offering)}</span>
+              </div>
             </div>
-          </CardHeader>
-        </CollapsibleTrigger>
-
-        <CollapsibleContent>
-          <CardContent className="pt-0">
-            {/* TA Requirements */}
-            <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-              <h5 className="font-medium text-sm mb-2 flex items-center">
-                <FileText className="h-4 w-4 mr-2" />
-                TA Requirements - {offering.section}
-              </h5>
-              {offering.requirements.specialRequirements.length > 0 ? (
-                <div className="flex flex-wrap gap-1">
-                  {offering.requirements.specialRequirements.map((req, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {req}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  No TA requirements have been specified.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Offering
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-red-600"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Offering
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
     </Card>
-  );
+  )
+}
+
+export function TermSection({
+  termKey,
+  termOfferings,
+  course,
+  expandedLabSections,
+  onToggleLabSection,
+  onEditOffering,
+  onDeleteOffering,
+}) {
+  return (
+    <div className="ml-4 space-y-3">
+      {/* ... existing code ... */}
+
+      {/* Individual Offerings for this term */}
+      {termOfferings.map((offering) => (
+        <OfferingCard
+          key={offering.id}
+          offering={offering}
+          onEdit={onEditOffering}
+          onDelete={onDeleteOffering}
+        />
+      ))}
+
+      {/* ... rest of existing code ... */}
+    </div>
+  )
 }
