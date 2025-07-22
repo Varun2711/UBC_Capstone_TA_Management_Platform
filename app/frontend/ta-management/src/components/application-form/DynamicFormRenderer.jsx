@@ -25,6 +25,7 @@ const DynamicFormRenderer = ({
   errors = {},
   currentSection = null,
   fieldMapping = {},
+  termDetails = {}, // New prop for term details
 }) => {
   const [localResponses, setLocalResponses] = useState(responses);
   const [localDynamicResponses, setLocalDynamicResponses] =
@@ -81,9 +82,21 @@ const DynamicFormRenderer = ({
       validation_rules = {},
     } = question;
 
+    //if field_name == termSelection, use the term details from the parent component
+
     // Transform options to consistent array format
     let normalizedOptions = [];
-    if (Array.isArray(options)) {
+
+    // Special handling for termSelection field - use termDetails from props
+    if (
+      field_name === "termSelection" &&
+      termDetails &&
+      Array.isArray(termDetails) &&
+      termDetails.length > 0
+    ) {
+      console.log("Using termDetails for termSelection:", termDetails);
+      normalizedOptions = termDetails;
+    } else if (Array.isArray(options)) {
       // Already in correct format
       normalizedOptions = options;
     } else if (typeof options === "object" && options !== null) {

@@ -162,7 +162,7 @@
     "fields": {
       "code": "W2025T1",
       "description": "Winter 2025 Term 1",
-      "subsetOf": null,
+      "subsetOf": 3,
       "start": "2025-01-06",
       "end": "2025-04-04",
       "startCalendarYear": 2025,
@@ -179,7 +179,7 @@
     "fields": {
       "code": "W2025T2",
       "description": "Winter 2025 Term 2",
-      "subsetOf": null,
+      "subsetOf": 3,
       "start": "2025-01-06",
       "end": "2025-04-04",
       "startCalendarYear": 2025,
@@ -231,10 +231,10 @@
       "title": "Teaching Assistant - CMPS Summer 2025",
       "description": "We are seeking enthusiastic Teaching Assistants for Summer 2025. Responsibilities include assisting students during lab sessions, grading assignments, and supporting the instructor during lectures.",
       "post_date": "2024-11-15",
-      "deadline_date": "2024-12-15",
+      "deadline_date": "2026-12-15",
       "department": 1,
       "created_by": 3,
-      "term": 1,
+      "term": 4,
       "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
       "status": "open"
     }
@@ -246,10 +246,10 @@
       "title": "Teaching Assistant - CMPS Winter 2025",
       "description": "Seeking qualified Teaching Assistants for CMPS department. TAs will help students understand complex concepts, assist with assignments, and facilitate lab sessions.",
       "post_date": "2024-11-20",
-      "deadline_date": "2024-12-20",
+      "deadline_date": "2026-12-20",
       "department": 1,
       "created_by": 3,
-      "term": 2,
+      "term": 3,
       "requirements": "Must be a registered student.",
       "status": "open"
     }
@@ -1274,9 +1274,7 @@
       "academic_term": 10,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": [
-        "550e8400-e29b-41d4-a716-446655440016"
-      ]
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440016"]
     }
   },
   {
@@ -1289,9 +1287,7 @@
       "academic_term": 10,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": [
-        "550e8400-e29b-41d4-a716-446655440017"
-      ]
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440017"]
     }
   },
   {

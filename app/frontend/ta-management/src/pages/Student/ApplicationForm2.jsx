@@ -10,10 +10,9 @@ import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/student-dashboard-sidebar";
 import PersonalDetails from "@/components/application-form/PersonalDetails";
-import ReviewSection from "@/components/application-form/ReviewSection";
+import ReviewSection from "@/components/application-form/ReviewSection2";
 import SupportingDocuments from "@/components/application-form/SupportingDocuments";
 import ProgressBar from "@/components/ProgressBar";
-//import { validateCurrentStep } from "@/components/application-form/utils/applicationFormValidationUtils";
 import { useParams, useNavigate } from "react-router-dom";
 import DynamicFormRenderer from "@/components/application-form/DynamicFormRenderer";
 import {
@@ -24,7 +23,6 @@ import {
 // Import the logic functions from student-applications.js
 import {
   fetchStudentProfile,
-  submitApplication,
   fetchJobPostingDetails,
   fetchTemplateDetails,
   handleNextStep,
@@ -32,6 +30,7 @@ import {
   checkApplicationFields,
   getAllResponses,
   handleFormSubmission,
+  fetchTermDetails,
 } from "@/logic/student-applications";
 
 // Initial application defaultResponses
@@ -74,6 +73,8 @@ export default function ApplicationForm() {
   const [templateDetails, setTemplateDetails] = useState(null);
   const [dynamicSections, setDynamicSections] = useState([]);
   const [stepLabels, setStepLabels] = useState({});
+  const [templateId, setTemplateId] = useState(null);
+  const [termDetails, setTermDetails] = useState([]);
 
   // Fetch data and initialize form on mount
   useEffect(() => {
@@ -93,6 +94,8 @@ export default function ApplicationForm() {
 
           // Fetch template details if available
           if (jobData.form_template_id) {
+            // IMPORTANT: Store the template ID for submission
+            setTemplateId(jobData.form_template_id);
             try {
               const templateData = await fetchTemplateDetails(
                 jobData.form_template_id
@@ -151,6 +154,11 @@ export default function ApplicationForm() {
               4: "Supporting Documents",
               5: "Review",
             });
+          }
+
+          if (jobData.term_id) {
+            const termOptions = await fetchTermDetails(jobData.term_id);
+            setTermDetails(termOptions);
           }
         }
       } catch (error) {
@@ -212,6 +220,7 @@ export default function ApplicationForm() {
       dynamicSections,
       fieldMapping,
       postingId,
+      templateId,
       confirmation,
       supportingDocs,
       setSubmissionStatus,
@@ -221,9 +230,11 @@ export default function ApplicationForm() {
   };
   // Helper functions to determine current section type
   const isDynamicSection = () => currentStep <= dynamicSections.length;
-  const isPersonalDetailsSection = () =>
-    currentStep === dynamicSections.length + 1;
+
   const isSupportingDocsSection = () =>
+    currentStep === dynamicSections.length + 1;
+
+  const isPersonalDetailsSection = () =>
     currentStep === dynamicSections.length + 2;
   const isReviewSection = () => currentStep === dynamicSections.length + 3;
 
@@ -239,7 +250,6 @@ export default function ApplicationForm() {
     return (
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
-          <AppSidebar />
           <div className="flex-1">
             <header className="flex h-16 items-center justify-between border-b bg-background px-6">
               <SidebarTrigger />
@@ -320,7 +330,11 @@ export default function ApplicationForm() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar />
+        <AppSidebar
+          name={student.name}
+          email={student.email}
+          avatar={student.avatar}
+        />
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center justify-between border-b bg-background px-6">
@@ -368,12 +382,8 @@ export default function ApplicationForm() {
                   errors={validationErrors}
                   currentSection={getCurrentDynamicSection()?.section_id}
                   fieldMapping={fieldMapping}
+                  termDetails={termDetails} // Pass term details for dynamic sections
                 />
-              )}
-
-              {/* Static Sections */}
-              {isPersonalDetailsSection() && (
-                <PersonalDetails student={student} setStudent={setStudent} />
               )}
 
               {isSupportingDocsSection() && (
@@ -383,10 +393,18 @@ export default function ApplicationForm() {
                 />
               )}
 
+              {/* Static Sections */}
+              {isPersonalDetailsSection() && (
+                <PersonalDetails student={student} setStudent={setStudent} />
+              )}
+
               {isReviewSection() && (
                 <ReviewSection
                   student={student}
                   selections={defaultResponses}
+                  dynamicResponses={dynamicResponses}
+                  dynamicSections={dynamicSections}
+                  fieldMapping={fieldMapping}
                   confirmation={confirmation}
                   setConfirmation={setConfirmation}
                   documents={supportingDocs}

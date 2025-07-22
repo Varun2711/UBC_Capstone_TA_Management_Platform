@@ -188,7 +188,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         - Students can create/view/update their own applications.
         - Schedulers/Admins can view any application.
         """
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student', 'submit_with_responses']:
             return [IsStudentUser()]
         elif self.action in ['list', 'retrieve', 'by_posting', 'by_id']:
             return [IsSchedulerOrAdmin()]
@@ -272,7 +272,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[IsStudentUser])
     def submit_with_responses(self, request):
         """Submit application with dynamic form responses in one call"""
         serializer = ApplicationWithResponsesSerializer(data=request.data)
@@ -281,14 +281,38 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         validated_data = serializer.validated_data
-        application_data = validated_data['application']
+        #application_data = validated_data['application']
+        #use raw application data instead to prevent bad request error
+        raw_application = request.data.get('application', {})
         responses_data = validated_data.get('responses', {})
         template_id = validated_data.get('template_id')
         
         try:
             with transaction.atomic():  # Ensure atomicity
+                  # Get user info for student validation
+                user_type, user_id = self.get_user_info(request)
+                print(f"User type: {user_type}, User ID: {user_id}")
+            
+                if user_type != 'student':
+                    return Response(
+                        {"error": "Only students can submit applications"}, 
+                        status=status.HTTP_403_FORBIDDEN
+                )            
+            # Get the student model ID
+                # student_model_id = self.get_student_model_id(user_id)
+                # if not student_model_id:
+                #     return Response(
+                #     {"error": "Could not find matching student record"}, 
+                #     status=status.HTTP_404_NOT_FOUND
+                # )
+            
+                # # Override the student_id in application_data with the authenticated user's student ID
+                # application_data['student_id'] = student_model_id
+
                 # Create the application
-                application_serializer = ApplicationSerializer(data=application_data)
+                #application_serializer = ApplicationSerializer(data=application_data)
+                application_serializer = ApplicationSerializer(data=raw_application)
+
                 if not application_serializer.is_valid():
                     return Response(
                         application_serializer.errors, 

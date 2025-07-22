@@ -13,6 +13,7 @@ import { Bell, Calendar, MapPin, Clock, Users } from "lucide-react";
 import axios from "axios";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/student-dashboard-sidebar";
+import { getProfile } from "@/logic/student-profile";
 
 const instance = axios.create({
   baseURL: "http://localhost:8080/api",
@@ -24,6 +25,7 @@ export default function ViewJobPostings() {
   //const [applications, SetApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userData, setUserData] = useState();
 
   useEffect(() => {
     const fetchJobPostings = async () => {
@@ -44,7 +46,18 @@ export default function ViewJobPostings() {
       }
     };
 
+    const fetchUserData = async () => {
+      try {
+        const profile = await getProfile();
+        setUserData(profile);
+        console.log("User Profile:", profile);
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+      }
+    };
+
     fetchJobPostings();
+    fetchUserData();
   }, []);
 
   const handleApply = (postingId) => {
@@ -59,7 +72,7 @@ export default function ViewJobPostings() {
     });
   };
 
-  if (loading) {
+  if (loading || !userData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -84,7 +97,12 @@ export default function ViewJobPostings() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar />
+        <AppSidebar
+          name={`${userData.first_name} ${userData.last_Name || ""}`}
+          email={userData.email}
+          avatar={userData.avatar}
+        />
+
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center justify-between border-b bg-background px-6">

@@ -99,8 +99,11 @@ export const updateStudentProfile = async (studentData) => {
  */
 export const submitApplication = async ({
   student,
-  responses,
+  defaultResponses,
+  dynamicResponses,
+  dynamicSections,
   postingId,
+  templateId,
   confirmation,
   supportingDocs = [],
   setSubmissionStatus,
@@ -116,35 +119,54 @@ export const submitApplication = async ({
       throw new Error("Confirmation required");
     }
 
-    // Prepare application data
+    const allResponses = getAllResponses(defaultResponses, dynamicResponses);
+
+    console.log("All combined responses:", allResponses);
+    console.log("Default responses:", defaultResponses);
+    console.log("Dynamic responses:", dynamicResponses);
+
+    // Prepare application data (static fields that go in Application model)
     const applicationData = {
       student_id: student.id,
       posting_id: postingId,
-      termSelection_id: 1, // You may want to make this dynamic
-      positionType: responses.positionType,
-      workload: responses.workload,
-      disciplineRankings: responses.disciplineRanking,
-      citizenshipStatus: responses.citizenshipStatus,
-      residingInKelowna: responses.residingInKelowna,
-      fullTimeEnrollment: responses.fullTimeEnrollment,
-      hasOtherPositions: responses.hasOtherPositions,
-      otherPositionHours: responses.otherPositionHours || null,
+      termSelection_id: allResponses.termSelection, // You may want to make this dynamic
+      positionType: allResponses.positionType || null,
+      workload: allResponses.workload || null,
+      disciplineRankings:
+        allResponses.disciplineRanking || allResponses.disciplineRankings || {},
+      citizenshipStatus: allResponses.citizenshipStatus || null,
+      residingInKelowna: allResponses.residingInKelowna || null,
+      fullTimeEnrollment: allResponses.fullTimeEnrollment || null,
+      hasOtherPositions: allResponses.hasOtherPositions || null,
+      otherPositionHours: allResponses.otherPositionHours || null,
       status: "submitted",
     };
 
-    console.log("Submitting application:", applicationData);
+    console.log("here's application data:", applicationData);
+    // Prepare dynamic responses data
+    const responsesData = formatDynamicResponsesForSubmission(
+      allResponses, // Use combined responses instead of just dynamicResponses
+      dynamicSections
+    );
+
+    // Prepare the complete submission payload
+    const submissionPayload = {
+      application: applicationData,
+      responses: responsesData,
+      template_id: templateId,
+    };
+
+    console.log("Submitting application:", submissionPayload);
 
     // Submit the application
     const headers = getAuthHeaders();
-    const applicationResponse = await instance.post(
-      "/ajp/applications/",
-      applicationData,
+    console.log(headers);
+    const response = await instance.post(
+      "/ajp/applications/submit_with_responses/",
+      submissionPayload,
       { headers }
     );
-    console.log(
-      "Application submitted successfully:",
-      applicationResponse.data
-    );
+    console.log("Application submitted successfully:", response.data);
 
     // Update student profile if needed
     try {
@@ -173,7 +195,7 @@ export const submitApplication = async ({
     }
 
     setSubmissionStatus("success");
-    return applicationResponse.data;
+    return response.data;
   } catch (error) {
     console.error(
       "Application submission failed:",
@@ -184,6 +206,61 @@ export const submitApplication = async ({
   }
 };
 
+/**
+ * Formats dynamic responses for submission to ApplicationResponse model
+ * @param {Object} allResponses - Combined responses from form (default + dynamic)
+ * @param {Array} dynamicSections - Template sections with questions
+ * @returns {Object} Formatted responses with field_name as keys (excluding Application model fields)
+ */
+export const formatDynamicResponsesForSubmission = (
+  allResponses,
+  dynamicSections
+) => {
+  const formattedResponses = {};
+
+  // Fields that are stored directly in the Application model (not in ApplicationResponse)
+  const applicationModelFields = [
+    "positionType",
+    "workload",
+    "disciplineRanking",
+    "disciplineRankings",
+    "citizenshipStatus",
+    "residingInKelowna",
+    "fullTimeEnrollment",
+    "hasOtherPositions",
+    "otherPositionHours",
+  ];
+
+  // Go through each section and question to map responses
+  dynamicSections.forEach((section) => {
+    if (section.questions && Array.isArray(section.questions)) {
+      section.questions.forEach((question) => {
+        const fieldName = question.field_name;
+        const responseValue = allResponses[fieldName];
+
+        // Only include responses that:
+        // 1. Have values
+        // 2. Are NOT already stored in the Application model
+        if (
+          responseValue !== undefined &&
+          responseValue !== null &&
+          responseValue !== "" &&
+          !applicationModelFields.includes(fieldName)
+        ) {
+          formattedResponses[fieldName] = responseValue;
+        }
+      });
+    }
+  });
+
+  console.log(
+    "Formatted dynamic responses (excluding Application model fields):",
+    formattedResponses
+  );
+  console.log("Application model fields excluded:", applicationModelFields);
+  return formattedResponses;
+};
+
 export const handleFormSubmission = async (submissionData) => {
   const {
     student,
@@ -192,6 +269,7 @@ export const handleFormSubmission = async (submissionData) => {
     dynamicSections,
     fieldMapping,
     postingId,
+    templateId,
     confirmation,
     supportingDocs,
     setSubmissionStatus,
@@ -199,69 +277,17 @@ export const handleFormSubmission = async (submissionData) => {
     setCurrentStep,
   } = submissionData;
 
-  console.log("=== FORM SUBMISSION STARTED ===");
-  console.log("Default responses:", defaultResponses);
-  console.log("Dynamic responses:", dynamicResponses);
-  console.log("Field mapping:", fieldMapping);
-
-  // Use the comprehensive validation system
-  const { isValid, errors } = validateAllResponses(
-    defaultResponses,
-    dynamicResponses,
-    dynamicSections,
-    fieldMapping
-  );
+  // console.log("=== FORM SUBMISSION STARTED ===");
+  //console.log("Default responses:", defaultResponses);
+  //console.log("Dynamic responses:", dynamicResponses);
+  //console.log("Field mapping:", fieldMapping);
 
   // Also validate confirmation checkbox
-  const finalErrors = { ...errors };
+  const finalErrors = {};
   if (!confirmation) {
     finalErrors.confirmation =
       "You must check the confirmation box before submitting.";
-  }
-
-  const finalIsValid = isValid && confirmation;
-
-  if (!finalIsValid) {
     setValidationErrors(finalErrors);
-    console.log("❌ Form submission blocked - validation errors:", finalErrors);
-
-    // Navigate to the first step with errors
-    const errorFields = Object.keys(finalErrors);
-    if (errorFields.length > 0) {
-      let errorStep = 1;
-
-      // Check dynamic sections for errors
-      for (let i = 0; i < dynamicSections.length; i++) {
-        const section = dynamicSections[i];
-        const hasErrorInSection = section.questions?.some((q) =>
-          errorFields.includes(q.field_name)
-        );
-
-        if (hasErrorInSection) {
-          errorStep = i + 1;
-          console.log(
-            `Error found in dynamic section ${i + 1}: ${section.name}`
-          );
-          break;
-        }
-      }
-
-      // If no error in dynamic sections, check static sections
-      if (errorStep === 1 && dynamicSections.length > 0) {
-        // Check for confirmation error (Review section)
-        if (errorFields.includes("confirmation")) {
-          errorStep = dynamicSections.length + 3; // Review section
-          console.log("Confirmation error - navigating to Review section");
-        }
-      }
-
-      console.log(
-        `🔄 Navigating to step ${errorStep} due to validation errors`
-      );
-      setCurrentStep(errorStep);
-    }
-
-    console.log("=== FORM SUBMISSION FAILED ===");
     return false;
   }
 
@@ -269,14 +295,16 @@ export const handleFormSubmission = async (submissionData) => {
   setValidationErrors({});
 
   try {
-    // Combine all responses for submission
     const allResponses = getAllResponses(defaultResponses, dynamicResponses);
-    console.log("Combined responses for submission:", allResponses);
+    //console.log("Combined responses before submission:", allResponses);
 
     await submitApplication({
       student,
-      responses: allResponses,
+      defaultResponses,
+      dynamicResponses,
+      dynamicSections,
       postingId,
+      templateId,
       confirmation,
       supportingDocs,
       setSubmissionStatus,
@@ -359,26 +387,76 @@ export const fetchTemplateDetails = async (templateId) => {
   }
 };
 
+export const fetchTermDetails = async (termId) => {
+  try {
+    console.log("Fetching term details for term ID:", termId);
+    const headers = getAuthHeaders();
+
+    // Fetch the main term details
+    const termResponse = await instance.get(
+      `/course-term-service/terms/${termId}`,
+      { headers }
+    );
+
+    // Fetch subterms for this term
+    const subtermResponse = await instance.get(
+      `/course-term-service/terms/${termId}/subterms/`,
+      { headers }
+    );
+
+    console.log("Main term info:", termResponse.data);
+    console.log("Subterms info:", subtermResponse.data);
+
+    // Create options array for the termSelection field
+    const termOptions = [];
+
+    // Add the main term as an option
+    if (termResponse.data) {
+      termOptions.push({
+        value: termResponse.data.id?.toString() || termId.toString(),
+        label: termResponse.data.description,
+      });
+    }
+
+    // Add subterms as additional options
+    if (subtermResponse.data && Array.isArray(subtermResponse.data)) {
+      subtermResponse.data.forEach((subterm) => {
+        termOptions.push({
+          value: subterm.id?.toString(),
+          label: subterm.description,
+        });
+      });
+    }
+
+    console.log("Generated term options:", termOptions);
+    return termOptions;
+  } catch (error) {
+    console.error(
+      "Error fetching term information:",
+      error.response?.data || error.message
+    );
+  }
+};
 /**
  * Fetches student's application history
  * @returns {Promise<Array>} Array of student applications
  */
-export const fetchStudentApplications = async () => {
-  try {
-    const headers = getAuthHeaders();
-    const response = await instance.get("/ajp/applications/my-applications/", {
-      headers,
-    });
-    console.log("Student applications:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Error fetching student applications:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
+// export const fetchStudentApplications = async () => {
+//   try {
+//     const headers = getAuthHeaders();
+//     const response = await instance.get("/ajp/applications/my-applications/", {
+//       headers,
+//     });
+//     console.log("Student applications:", response.data);
+//     return response.data;
+//   } catch (error) {
+//     console.error(
+//       "Error fetching student applications:",
+//       error.response?.data || error.message
+//     );
+//     throw error;
+//   }
+// };
 
 // ===========================
 // DATA TRANSFORMATION FUNCTIONS
@@ -504,7 +582,7 @@ export const cleanApiDataFormat = (apiData) => {
   // console.log("=== FINAL CLEANED DATA ===");
   // console.log("Availability in result:", result.availability);
   // console.log("=== END FINAL DATA ===");
-
+  // console.log("student", result);
   return result;
 };
 
@@ -736,7 +814,7 @@ export const checkApplicationFields = (sections) => {
     hasOtherPositions: false,
     otherPositionHours: false,
     positionType: false,
-    winterTerm: false,
+    termSelection: false,
     workload: false,
     disciplineRanking: false,
   };
@@ -903,7 +981,7 @@ export default {
   submitSupportingDocuments,
   fetchJobPostingDetails,
   fetchTemplateDetails,
-  fetchStudentApplications,
+  //fetchStudentApplications,
   cleanApiDataFormat,
   transformStudentToApiFormat,
   extractSemesterFromDate,
@@ -913,4 +991,6 @@ export default {
   checkApplicationFields,
   getAllResponses,
   handleFormSubmission,
+  formatDynamicResponsesForSubmission,
+  fetchTermDetails,
 };
