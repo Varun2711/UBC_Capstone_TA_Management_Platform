@@ -1,3 +1,4 @@
+"use client"
 
 import { useState } from "react"
 import { Plus, AlertCircle } from "lucide-react"
@@ -17,18 +18,30 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-const DEPARTMENTS = ["Computer Science", "Mathematics", "Physics", "Engineering", "Chemistry", "Biology"]
-
-export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses = [] }) {
+export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses = [], departments = [] }) {
   const [formData, setFormData] = useState({
     code: "",
     title: "",
-    department: "",
+    departmentId: "",
     description: "",
   })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Function to calculate course level from course code
+  const calculateCourseLevel = (courseCode) => {
+    if (!courseCode.trim()) return "100"
+
+    // Extract the number part from course code (e.g., "COSC 111" -> "111")
+    const match = courseCode.match(/(\d+)/)
+    if (match) {
+      const number = match[1]
+      const firstDigit = number.charAt(0)
+      return firstDigit + "00" // Convert 1 to 100, 2 to 200, etc.
+    }
+    return "100" // Default
+  }
 
   const validateField = (name, value) => {
     switch (name) {
@@ -50,7 +63,7 @@ export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses =
         if (value.trim().length > 100) return "Course title must be less than 100 characters"
         return ""
 
-      case "department":
+      case "departmentId":
         if (!value) return "Department is required"
         return ""
 
@@ -90,18 +103,18 @@ export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses =
 
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key])
-      newErrors[key] = error // This will be empty string if no error
+      newErrors[key] = error
     })
 
     setErrors(newErrors)
-    return !Object.keys(newErrors).some((key) => newErrors[key]) // Check if any errors have actual messages
+    return !Object.keys(newErrors).some((key) => newErrors[key])
   }
 
   const resetForm = () => {
     setFormData({
       code: "",
       title: "",
-      department: "",
+      departmentId: "",
       description: "",
     })
     setErrors({})
@@ -118,26 +131,21 @@ export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses =
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Calculate course level from course code
+      const calculatedLevel = calculateCourseLevel(formData.code)
 
-      // Create new course object
-      const newCourse = {
-        id: `${formData.code.toLowerCase().replace(/\s+/g, "")}-${Date.now()}`,
+      await onAddCourse({
         code: formData.code.trim().toUpperCase().replace(/\s+/g, " "),
         title: formData.title.trim(),
-        department: formData.department,
+        departmentId: parseInt(formData.departmentId),
         description: formData.description.trim(),
-        offerings: [],
-        sharedSessions: {},
-      }
+        level: calculatedLevel,
+      })
 
-      onAddCourse(newCourse)
       resetForm()
       onClose()
     } catch (error) {
       console.error("Error adding course:", error)
-      // In a real app, you'd show an error message to the user
     } finally {
       setIsSubmitting(false)
     }
@@ -149,6 +157,9 @@ export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses =
       onClose()
     }
   }
+
+  // Get the calculated level for display
+  const calculatedLevel = calculateCourseLevel(formData.code)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -164,11 +175,10 @@ export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses =
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Course Information Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Course Information</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="code">Course Code *</Label>
                 <Input
@@ -185,29 +195,34 @@ export function AddCourseModal({ isOpen, onClose, onAddCourse, existingCourses =
                     {errors.code}
                   </p>
                 )}
+                {formData.code && (
+                  <p className="text-sm text-muted-foreground">
+                    Course Level: <strong>{calculatedLevel}</strong> (automatically calculated)
+                  </p>
+                )}
               </div>
+            </div>
 
-              <div className="space-y-2">
-  <Label htmlFor="department">Department *</Label>
-  <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
-    <SelectTrigger id="department" className={errors.department ? "border-red-500" : ""}>
-      <SelectValue placeholder="Select department" />
-    </SelectTrigger>
-    <SelectContent>
-      {DEPARTMENTS.map((dept) => (
-        <SelectItem key={dept} value={dept}>
-          {dept}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-  {errors.department && (
-    <p className="text-sm text-red-600 flex items-center gap-1">
-      <AlertCircle className="h-4 w-4" />
-      {errors.department}
-    </p>
-  )}
-</div>
+            <div className="space-y-2">
+              <Label htmlFor="departmentId">Department *</Label>
+              <Select value={formData.departmentId} onValueChange={(value) => handleInputChange("departmentId", value)}>
+                <SelectTrigger className={errors.departmentId ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id.toString()}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.departmentId && (
+                <p className="text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.departmentId}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

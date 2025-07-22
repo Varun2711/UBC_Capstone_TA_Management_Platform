@@ -1,97 +1,55 @@
-import { render, screen , within} from '@testing-library/react';
-import { vi } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import CourseManagement from '@/pages/Scheduler/course-management';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { X, ChevronDown, Edit, ChevronsUpDown, Check, Calendar, AlertCircle } from 'lucide-react';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
-  Bell: () => <svg data-testid="bell-icon" />,
-  Plus: () => <svg data-testid="plus-icon" />,
-  PanelLeft: () => <svg data-testid="panel-left-icon" />,
-  X: () => <X data-testid="close-icon" />,
-  ChevronDown: () => <ChevronDown data-testid="chevron-down-icon" />,
-  Edit: () => <svg data-testid="edit-icon" />,
-  ChevronsUpDown: () => <ChevronsUpDown data-testid="chevrons-up-down-icon" />,
-  Check: () => <svg data-testid="check-icon" />,
-  Calendar: () => <Calendar data-testid="calendar-icon" />,
-  AlertCircle: () => <AlertCircle data-testid="alert-circle-icon" />,
+  Bell: () => <span data-testid="bell-icon" />,
+  Plus: () => <span data-testid="plus-icon" />,
+  PanelLeft: () => <span data-testid="panel-left-icon" />,
+  X: () => <span data-testid="x-icon" />,
+  ChevronDown: () => <span data-testid="chevron-down-icon" />,
+  Edit: () => <span data-testid="edit-icon" />,
+  ChevronsUpDown: () => <span data-testid="chevrons-up-down-icon" />,
+  Check: () => <span data-testid="check-icon" />,
+  Calendar: () => <span data-testid="calendar-icon" />,
+  AlertCircle: () => <span data-testid="alert-circle-icon" />,
 }));
 
-// Mock useMobile hook
+// Mock mobile hook
 vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => ({ isMobile: false }),
 }));
 
-
-// Mock mockCourses to match HTML
-vi.mock('@/data/mock-courses', () => ({
-  mockCourses: [
-    {
-      id: 'cs101',
-      code: 'CS101',
-      title: 'Introduction to Computer Science',
-      department: 'Computer Science',
-      description: 'A foundational course in programming.',
-      offerings: [
-        { id: '1', term: 'Fall', year: '2025', section: 'A' },
-        { id: '2', term: 'Spring', year: '2025', section: 'B' },
-        { id: '3', term: 'Winter', year: '2025', section: 'C' },
-      ],
-      sharedSessions: {
-        'Fall-2025': { labs: [], tutorials: [] },
-        'Spring-2025': { labs: [], tutorials: [] },
-        'Winter-2025': { labs: [], tutorials: [] },
-      },
-    },
-    {
-      id: 'math201',
-      code: 'MATH201',
-      title: 'Calculus II',
-      department: 'Mathematics',
-      description: 'Advanced calculus concepts.',
-      offerings: [
-        { id: '4', term: 'Fall', year: '2024', section: 'A' },
-        { id: '5', term: 'Spring', year: '2024', section: 'B' },
-      ],
-      sharedSessions: {
-        'Fall-2024': { labs: [], tutorials: [] },
-        'Spring-2024': { labs: [], tutorials: [] },
-      },
-    },
-    {
-      id: 'phys301',
-      code: 'PHYS301',
-      title: 'Quantum Mechanics',
-      department: 'Physics',
-      description: 'An introductory quantum mechanics course.',
-      offerings: [{ id: '6', term: 'Fall', year: '2024', section: 'A' }],
-      sharedSessions: {
-        'Fall-2024': { labs: [], tutorials: [] },
-      },
-    },
-  ],
+// Mock all course management API functions
+vi.mock('@/logic/courseManagement', () => ({
+  getAllCoursesFullDetails: vi.fn(),
+  createCourse: vi.fn(),
+  updateCourse: vi.fn(),
+  deleteCourse: vi.fn(),
+  createCourseOffering: vi.fn(),
+  updateCourseOffering: vi.fn(),
+  deleteCourseOffering: vi.fn(),
+  createSharedSession: vi.fn(),
+  updateSharedSession: vi.fn(),
+  deleteSharedSession: vi.fn(),
+  getTerms: vi.fn(),
+  getDepartments: vi.fn(),
+  getInstructors: vi.fn(),
+  mapCourseData: vi.fn((course) => course),
+  mapTermsForDropdown: vi.fn((terms) => terms),
+  mapInstructorsForDropdown: vi.fn((instructors) => instructors),
+  parseTermCode: vi.fn((code) => ({ season: 'Fall', term: '1', year: 2024 })),
 }));
 
-// Mock CourseCard with props to simulate all interactions
-vi.mock('@/components/scheduler/course_management/course-card', () => ({
-  CourseCard: ({ course, onEdit, onEditOffering, onAddLabTutorial }) => (
-    <div data-testid={`course-card-${course.id}`}>
-      {course.code} - {course.title}
-      <button onClick={() => onEdit(course)}>Edit Course</button>
-      {course.offerings.map(offering => (
-        <div key={offering.id} data-testid={`offering-${offering.id}`}>
-            <button onClick={() => onEditOffering(offering)}>Edit Offering: {offering.section}</button>
-            <button onClick={() => onAddLabTutorial(offering)}>Add Lab/Tutorial to {offering.section}</button>
-        </div>
-      ))}
-    </div>
-  ),
+// Mock all child components
+vi.mock('@/components/scheduler-sidebar', () => ({
+  AppSidebar: ({ activePage }) => <div data-testid="app-sidebar">Sidebar: {activePage}</div>,
 }));
 
-// Mock CourseFilters with minimal data-testid
 vi.mock('@/components/scheduler/course_management/course-filters', () => ({
   CourseFilters: ({ searchQuery, onSearchChange }) => (
     <div data-testid="course-filters">
@@ -99,47 +57,152 @@ vi.mock('@/components/scheduler/course_management/course-filters', () => ({
         data-testid="search-input"
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
+        placeholder="Search courses"
       />
     </div>
   ),
 }));
 
-// Mock all modals to check for their presence
-vi.mock('@/components/scheduler/course_management/edit-course-modal', () => ({
-  EditCourseModal: ({ isOpen, course }) =>
-    isOpen ? <div data-testid="edit-course-modal">Editing Course: {course.title}</div> : null,
+vi.mock('@/components/scheduler/course_management/course-card', () => ({
+  CourseCard: ({ course, onEdit, onEditOffering, onAddLabTutorial }) => (
+    <div data-testid={`course-card-${course.id}`}>
+      <h3>{course.code} - {course.title}</h3>
+      <button onClick={() => onEdit(course)}>Edit Course</button>
+      <button onClick={() => onAddLabTutorial(course)}>Add Lab/Tutorial</button>
+      {course.offerings?.map(offering => (
+        <div key={offering.id} data-testid={`offering-${offering.id}`}>
+          <button onClick={() => onEditOffering(offering)}>Edit Offering: {offering.section}</button>
+        </div>
+      ))}
+    </div>
+  ),
 }));
 
+vi.mock('@/components/scheduler/course_management/empty-state', () => ({
+  EmptyState: ({ onAddCourse }) => (
+    <div data-testid="empty-state">
+      <p>No courses found</p>
+      <button onClick={onAddCourse}>Add First Course</button>
+    </div>
+  ),
+}));
+
+// Mock all modals
 vi.mock('@/components/scheduler/course_management/add-course-modal', () => ({
-  AddCourseModal: ({ isOpen }) =>
-    isOpen ? <div data-testid="add-course-modal">Add Course Modal</div> : null,
+  AddCourseModal: ({ isOpen, onClose, onAddCourse }) =>
+    isOpen ? (
+      <div data-testid="add-course-modal">
+        <h2>Add Course Modal</h2>
+        <button onClick={() => onAddCourse({ code: 'NEW101', title: 'New Course' })}>Submit</button>
+        <button onClick={onClose}>Cancel</button>
+      </div>
+    ) : null,
+}));
+
+vi.mock('@/components/scheduler/course_management/edit-course-modal', () => ({
+  EditCourseModal: ({ isOpen, course, onClose, onEditCourse }) =>
+    isOpen ? (
+      <div data-testid="edit-course-modal">
+        <h2>Edit Course: {course?.title}</h2>
+        <button onClick={() => onEditCourse({ ...course, title: 'Updated Course' })}>Update</button>
+        <button onClick={onClose}>Cancel</button>
+      </div>
+    ) : null,
+}));
+
+vi.mock('@/components/scheduler/course_management/add-offering-modal', () => ({
+  AddOfferingModal: ({ isOpen, course, onClose, onAddOffering }) =>
+    isOpen ? (
+      <div data-testid="add-offering-modal">
+        <h2>Add Offering for {course?.code}</h2>
+        <button onClick={() => onAddOffering(course?.id, { section: '001' })}>Add</button>
+        <button onClick={onClose}>Cancel</button>
+      </div>
+    ) : null,
 }));
 
 vi.mock('@/components/scheduler/course_management/edit-offering-modal', () => ({
-  EditOfferingModal: ({ isOpen, course, offering }) =>
-    isOpen ? <div data-testid="edit-offering-modal">Editing Offering: {offering.section} for {course.code}</div> : null,
+  EditOfferingModal: ({ isOpen, course, offering, onClose, onEditOffering }) =>
+    isOpen ? (
+      <div data-testid="edit-offering-modal">
+        <h2>Edit Offering: {offering?.section} for {course?.code}</h2>
+        <button onClick={() => onEditOffering(course?.id, { ...offering, section: 'Updated' })}>Update</button>
+        <button onClick={onClose}>Cancel</button>
+      </div>
+    ) : null,
 }));
 
 vi.mock('@/components/scheduler/course_management/add-lab-tutorial-modal', () => ({
-    AddLabTutorialModal: ({ isOpen, course, offering }) =>
-        isOpen ? <div data-testid="add-lab-tutorial-modal">Adding Lab/Tutorial for: {offering.section}</div> : null,
+  AddLabTutorialModal: ({ isOpen, course, onClose, onAddSession }) =>
+    isOpen ? (
+      <div data-testid="add-lab-tutorial-modal">
+        <h2>Add Lab/Tutorial for {course?.code}</h2>
+        <button onClick={() => onAddSession(course?.id, 'Fall', '2024', 'lab', { section: 'L01' })}>Add</button>
+        <button onClick={onClose}>Cancel</button>
+      </div>
+    ) : null,
 }));
 
-
-// Mock EmptyState with minimal data-testid
-vi.mock('@/components/scheduler/course_management/empty-state', () => ({
-  EmptyState: () => <div data-testid="empty-state">No courses found</div>,
+vi.mock('@/components/scheduler/course_management/edit-session-modal', () => ({
+  EditSessionModal: ({ isOpen, onClose }) =>
+    isOpen ? <div data-testid="edit-session-modal">Edit Session Modal</div> : null,
 }));
 
-// Mock AppSidebar with minimal data-testid
-vi.mock('@/components/scheduler-sidebar', () => ({
-  AppSidebar: () => <div data-testid="app-sidebar"></div>,
-}));
+// Import the mocked API functions
+import * as courseManagementApi from '@/logic/courseManagement';
 
 describe('CourseManagement Page', () => {
-  const user = userEvent.setup();
+  const mockCourses = [
+    {
+      id: 'cs101',
+      code: 'CS101',
+      title: 'Introduction to Computer Science',
+      description: 'Basic programming concepts and computer science fundamentals',
+      department: 'Computer Science',
+      offerings: [
+        { id: '1', section: '001', year: 2024, term: 'F2024 Term 1' },
+        { id: '2', section: '002', year: 2024, term: 'F2024 Term 1' },
+      ],
+      sharedSessions: {},
+    },
+    {
+      id: 'math201',
+      code: 'MATH201', 
+      title: 'Calculus II',
+      description: 'Advanced calculus including integration techniques and applications',
+      department: 'Mathematics',
+      offerings: [
+        { id: '3', section: '001', year: 2024, term: 'F2024 Term 2' },
+      ],
+      sharedSessions: {},
+    },
+  ];
+
+  const mockDepartments = [
+    { id: 1, name: 'Computer Science' },
+    { id: 2, name: 'Mathematics' },
+  ];
+
+  const mockTerms = [
+    { id: 1, value: 'F2024 Term 1', label: 'Fall Term 1', year: 2024 },
+    { id: 2, value: 'F2024 Term 2', label: 'Fall Term 2', year: 2024 },
+  ];
+
+  const mockInstructors = [
+    { id: 1, name: 'Dr. Smith', department: 'Computer Science' },
+    { id: 2, name: 'Dr. Johnson', department: 'Mathematics' },
+  ];
 
   beforeEach(() => {
+    // Setup default API responses
+    vi.mocked(courseManagementApi.getAllCoursesFullDetails).mockResolvedValue(mockCourses);
+    vi.mocked(courseManagementApi.getDepartments).mockResolvedValue(mockDepartments);
+    vi.mocked(courseManagementApi.getTerms).mockResolvedValue(mockTerms);
+    vi.mocked(courseManagementApi.getInstructors).mockResolvedValue(mockInstructors);
+    vi.mocked(courseManagementApi.mapCourseData).mockImplementation((course) => course);
+    vi.mocked(courseManagementApi.mapTermsForDropdown).mockImplementation((terms) => terms);
+    vi.mocked(courseManagementApi.mapInstructorsForDropdown).mockImplementation((instructors) => instructors);
+    
     vi.clearAllMocks();
   });
 
@@ -147,129 +210,207 @@ describe('CourseManagement Page', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders header with SidebarTrigger, Breadcrumb, and action buttons', () => {
-    render(
+  const renderComponent = () => {
+    return render(
       <MemoryRouter>
         <SidebarProvider>
           <CourseManagement />
         </SidebarProvider>
       </MemoryRouter>
     );
-    expect(screen.getByRole('navigation')).toHaveTextContent('Course Management');
-    expect(screen.getByRole('button', { name: /toggle sidebar/i })).toBeInTheDocument();
-  });
+  };
 
-  it('renders main content with title and description', () => {
-    render(
-      <MemoryRouter>
-        <SidebarProvider>
-          <CourseManagement />
-        </SidebarProvider>
-      </MemoryRouter>
-    );
-    expect(screen.getByRole('heading', { name: 'Course Management' })).toBeInTheDocument();
-    expect(screen.getByText('Manage courses, offerings, and associated lab/tutorial sessions')).toBeInTheDocument();
-  });
+  it('loads and displays courses after initial load', async () => {
+    renderComponent();
 
-  it('renders AppSidebar and CourseFilters', () => {
-    render(
-      <MemoryRouter>
-        <SidebarProvider>
-          <CourseManagement />
-        </SidebarProvider>
-      </MemoryRouter>
-    );
-    expect(screen.getByTestId('app-sidebar')).toBeInTheDocument();
-    expect(screen.getByTestId('course-filters')).toBeInTheDocument();
-  });
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Course Management' })).toBeInTheDocument();
+    });
 
-  it('renders CourseCards for non-empty course list', () => {
-    render(
-      <MemoryRouter>
-        <SidebarProvider>
-          <CourseManagement />
-        </SidebarProvider>
-      </MemoryRouter>
-    );
+    expect(courseManagementApi.getAllCoursesFullDetails).toHaveBeenCalledTimes(1);
+    expect(courseManagementApi.getDepartments).toHaveBeenCalledTimes(1);
+    expect(courseManagementApi.getTerms).toHaveBeenCalledTimes(1);
+    expect(courseManagementApi.getInstructors).toHaveBeenCalledTimes(1);
+
     expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
     expect(screen.getByTestId('course-card-math201')).toBeInTheDocument();
   });
 
-  it('renders EmptyState when no courses match filters', async () => {
-    render(
-      <MemoryRouter>
-        <SidebarProvider>
-          <CourseManagement />
-        </SidebarProvider>
-      </MemoryRouter>
-    );
-    await user.type(screen.getByTestId('search-input'), 'Nonexistent');
-    expect(screen.queryByTestId('course-card-cs101')).not.toBeInTheDocument();
-    expect(screen.getByTestId('empty-state')).toBeInTheDocument();
+  it('displays error state when API fails', async () => {
+    vi.mocked(courseManagementApi.getAllCoursesFullDetails).mockRejectedValue(new Error('API Error'));
+    
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load data. Please try again.')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 
-  it('opens the AddCourseModal when clicking the Add Course button', async () => {
-    render(
-      <MemoryRouter>
-        <CourseManagement />
-      </MemoryRouter>
-    );
-    expect(screen.queryByTestId('add-course-modal')).not.toBeInTheDocument();
+  it('renders header with navigation and add button', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByRole('navigation')).toHaveTextContent('Course Management');
+    });
+
+    expect(screen.getByRole('button', { name: /toggle sidebar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Course' })).toBeInTheDocument();
+  });
+
+  it('renders main content with filters and course cards', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Course Management' })).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Manage courses, offerings, and associated lab/tutorial sessions')).toBeInTheDocument();
+    expect(screen.getByTestId('course-filters')).toBeInTheDocument();
+    expect(screen.getByTestId('app-sidebar')).toBeInTheDocument();
+  });
+
+  it('filters courses based on search query', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByTestId('search-input');
+    await user.type(searchInput, 'Math');
+
+    expect(screen.queryByTestId('course-card-cs101')).not.toBeInTheDocument();
+    expect(screen.getByTestId('course-card-math201')).toBeInTheDocument();
+  });
+
+  it('shows empty state when no courses match filters', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByTestId('search-input');
+    await user.type(searchInput, 'Nonexistent Course');
+
+    expect(screen.getByTestId('empty-state')).toBeInTheDocument();
+    expect(screen.getByText('No courses found')).toBeInTheDocument();
+  });
+
+  it('opens add course modal and handles submission', async () => {
+    const user = userEvent.setup();
+    vi.mocked(courseManagementApi.createCourse).mockResolvedValue({ id: 'new-course' });
+    
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add Course' })).toBeInTheDocument();
+    });
+
     await user.click(screen.getByRole('button', { name: 'Add Course' }));
     expect(screen.getByTestId('add-course-modal')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Submit'));
+    
+    await waitFor(() => {
+      expect(courseManagementApi.createCourse).toHaveBeenCalledWith({ code: 'NEW101', title: 'New Course' });
+    });
   });
 
-  it('opens the EditCourseModal with the correct course when a course edit button is clicked', async () => {
-    render(
-      <MemoryRouter>
-        <CourseManagement />
-      </MemoryRouter>
-    );
-    expect(screen.queryByTestId('edit-course-modal')).not.toBeInTheDocument();
+  it('opens edit course modal and handles updates', async () => {
+    const user = userEvent.setup();
+    vi.mocked(courseManagementApi.updateCourse).mockResolvedValue({});
+    
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
+    });
+
+    // Find the specific Edit Course button within the cs101 course card
     const cs101Card = screen.getByTestId('course-card-cs101');
-    const editButton = within(cs101Card).getByRole('button', { name: /edit course/i });
+    const editButton = within(cs101Card).getByText('Edit Course');
+    
     await user.click(editButton);
-    const editModal = screen.getByTestId('edit-course-modal');
-    expect(editModal).toBeInTheDocument();
-    expect(editModal).toHaveTextContent('Editing Course: Introduction to Computer Science');
+    expect(screen.getByTestId('edit-course-modal')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Update'));
+    
+    await waitFor(() => {
+      expect(courseManagementApi.updateCourse).toHaveBeenCalledWith('cs101', expect.objectContaining({
+        title: 'Updated Course'
+      }));
+    });
   });
 
-  it('opens the EditOfferingModal with correct data when an offering edit button is clicked', async () => {
-    render(
-        <MemoryRouter>
-          <CourseManagement />
-        </MemoryRouter>
-      );
-    expect(screen.queryByTestId('edit-offering-modal')).not.toBeInTheDocument();
-    const offeringB_Card = screen.getByTestId('offering-2');
-    const editOfferingButton = within(offeringB_Card).getByRole('button', { name: /edit offering: b/i });
-    await user.click(editOfferingButton);
-    const editOfferingModal = screen.getByTestId('edit-offering-modal');
-    expect(editOfferingModal).toBeInTheDocument();
-    expect(editOfferingModal).toHaveTextContent('Editing Offering: B for CS101');
+  it('opens edit offering modal with correct data', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('offering-1')).toBeInTheDocument();
+    });
+
+    // Find the specific Edit Offering button within the offering-1 element
+    const offering1 = screen.getByTestId('offering-1');
+    const editButton = within(offering1).getByText('Edit Offering: 001');
+    
+    await user.click(editButton);
+    expect(screen.getByTestId('edit-offering-modal')).toBeInTheDocument();
+    expect(screen.getByText('Edit Offering: 001 for CS101')).toBeInTheDocument();
   });
 
-  it('opens the AddLabTutorialModal with correct data when button is clicked', async () => {
-    render(
-      <MemoryRouter>
-        <CourseManagement />
-      </MemoryRouter>
-    );
-    // Ensure modal is not visible initially
-    expect(screen.queryByTestId('add-lab-tutorial-modal')).not.toBeInTheDocument();
+  it('opens add lab/tutorial modal', async () => {
+    const user = userEvent.setup();
+    renderComponent();
 
-    // Find the button to add a lab/tutorial to section 'C'
-    const offeringC_Card = screen.getByTestId('offering-3');
-    const addLabButton = within(offeringC_Card).getByRole('button', { name: /add lab\/tutorial to c/i });
+    await waitFor(() => {
+      expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
+    });
 
-    // Click the button
+    // Find the specific Add Lab/Tutorial button within the cs101 course card
+    const cs101Card = screen.getByTestId('course-card-cs101');
+    const addLabButton = within(cs101Card).getByText('Add Lab/Tutorial');
+    
     await user.click(addLabButton);
+    expect(screen.getByTestId('add-lab-tutorial-modal')).toBeInTheDocument();
+  });
 
-    // Assert that the modal is now visible
-    const addLabModal = screen.getByTestId('add-lab-tutorial-modal');
-    expect(addLabModal).toBeInTheDocument();
+  it('handles modal close actions', async () => {
+    const user = userEvent.setup();
+    renderComponent();
 
-    // Assert that the modal received the correct offering data
-    expect(addLabModal).toHaveTextContent('Adding Lab/Tutorial for: C');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add Course' })).toBeInTheDocument();
+    });
+
+    // Open and close add course modal
+    await user.click(screen.getByRole('button', { name: 'Add Course' }));
+    expect(screen.getByTestId('add-course-modal')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Cancel'));
+    expect(screen.queryByTestId('add-course-modal')).not.toBeInTheDocument();
+  });
+
+  it('reloads data after successful operations', async () => {
+    const user = userEvent.setup();
+    vi.mocked(courseManagementApi.createCourse).mockResolvedValue({ id: 'new-course' });
+    
+    renderComponent();
+
+    await waitFor(() => {
+      expect(courseManagementApi.getAllCoursesFullDetails).toHaveBeenCalledTimes(1);
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Add Course' }));
+    await user.click(screen.getByText('Submit'));
+    
+    await waitFor(() => {
+      expect(courseManagementApi.getAllCoursesFullDetails).toHaveBeenCalledTimes(2);
+    });
   });
 });
