@@ -75,7 +75,7 @@ describe("AdminDashboard", () => {
     expect(screen.getAllByText("System Administration").length).toBeGreaterThan(0)
   })
 
-  it("has proper accessibility attributes", () => {
+  it("has basic admin features", () => {
     renderAdminDashboard()
 
     // Check search input has proper labeling
