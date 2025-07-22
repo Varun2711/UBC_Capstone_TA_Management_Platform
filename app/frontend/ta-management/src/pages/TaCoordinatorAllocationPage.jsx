@@ -341,7 +341,7 @@ export default function TAAllocationPage() {
   const [courseOfferings, setCourseOfferings] = useState({});
   const [sharedSessions, setSharedSessions] = useState({});
   const [fetchedOfferings, setFetchedOfferings] = useState({});
-  const [shortlistedApplicants, setShortlistedApplicants] = useState({})
+  const [shortlistedApplicants, setShortlistedApplicants] = useState([])
   const [profilesOfShortlistedApplicants, setProfilesOfShortlistedApplicants] = useState({})
 
   const [selectedCourseOfferings, setSelectedCourseOfferings] = useState([]);
@@ -677,6 +677,23 @@ export default function TAAllocationPage() {
     return matchesSearch && matchesFilter
   })
 
+  const filteredShortlistedApplicants = shortlistedApplicants.filter((item) => {
+    console.log("In filteredShortlistedApplicants, shortlistedApplicants item from backend is: ", item);
+    const matchesSearch =
+      item.application.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.application.student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.application.student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.application.student.study_level.toLowerCase().includes(searchTerm.toLowerCase()) 
+      //application.skills.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      //application.experience.some((exp) => exp.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      //application.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      //application.availability.some((day) => day.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      //application.year.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesFilter = filterStatus === "all" || ta.status.toLowerCase().includes(filterStatus.toLowerCase())
+    return matchesSearch && matchesFilter
+  })
+
   const totalTAs = taList.length
   const availableTACount = taList.filter((ta) => ta.status === "Available").length
   const totalCourses = mockCourses.length
@@ -827,12 +844,14 @@ export default function TAAllocationPage() {
           const student_number = item.application.student.student_number;
           console.log("Curent shortlisted applicant's student number is :", student_number);
 
+          /*
           try {
             const profileData = await fetchProfilesOfShortlistedApplicants(student_number);
             console.log(`Current ${student_number} shortlisted applicant's profile is:`, profileData);
           } catch (err) {
             console.error(`Error fetching profile for student ${student_number}:`, err);
           }
+          */
         }
       } catch (error) {
         console.error("Error loading shortlisted applicants:", error);
