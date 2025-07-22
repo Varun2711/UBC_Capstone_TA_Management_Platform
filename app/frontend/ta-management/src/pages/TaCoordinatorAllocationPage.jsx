@@ -682,7 +682,6 @@ export default function TAAllocationPage() {
     const matchesSearch =
       item.application.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.application.student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.application.student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.application.student.study_level.toLowerCase().includes(searchTerm.toLowerCase()) 
       //application.skills.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
       //application.experience.some((exp) => exp.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -848,20 +847,14 @@ export default function TAAllocationPage() {
           const student_id = item.application.student.id;
           console.log("Curent shortlisted applicant's id is :", student_id);
 
-          /*
+          
           try {
             const profileData = await fetchProfilesOfShortlistedApplicants(student_number);
             console.log(`Current ${student_number} shortlisted applicant's profile is:`, profileData);
           } catch (err) {
             console.error(`Error fetching profile for student ${student_number}:`, err);
           }
-          */
-          try {
-            const profileData = await fetchProfilesOfShortlistedApplicants(student_id);
-            console.log(`Current ${student_id} shortlisted applicant's profile is:`, profileData);
-          } catch (err) {
-            console.error(`Error fetching profile for student ${student_id}:`, err);
-          }
+          
         }
       } catch (error) {
         console.error("Error loading shortlisted applicants:", error);
@@ -1038,50 +1031,50 @@ export default function TAAllocationPage() {
                           />
                           
                           <div className="space-y-3">
-                            {filteredTAs
-                              .filter((ta) => ta.status !== "Fully Allocated")
-                              .map((ta) => (
+                            {filteredShortlistedApplicants
+                              .map((item) => {
+                                const currentStudent = item.application.student;
+                                const currentStudentApplicationId = item.application.application_id;
+                                const currentStudentId = item.application.student.id;
                                 <div
-                                  key={ta.id}
+                                  key={currentStudentApplicationId}
                                   className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                                    selectedTA?.id === ta.id ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
+                                    selectedTA?.id === currentStudentId ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
                                   }`}
-                                  onClick={() => setSelectedTAId(ta.id)}
+                                  onClick={() => setSelectedTAId(currentStudentId)}
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                       <Avatar className="h-8 w-8">
-                                        <AvatarImage src={ta.avatar || "/placeholder.svg"} alt={ta.name} />
+                                        <AvatarImage src={"/placeholder.svg"} alt={currentStudent.name} />
                                         <AvatarFallback>
-                                          {ta.name
+                                          {currentStudent.name
                                             .split(" ")
                                             .map((n) => n[0])
                                             .join("")}
                                         </AvatarFallback>
                                       </Avatar>
                                       <div>
-                                        <p className="font-medium">{ta.name}</p>
+                                        <p className="font-medium">{currentStudent.name}</p>
                                         <p className="text-sm text-muted-foreground">
-                                          {ta.currentHours}/{ta.maxHours} hours • {ta.major}
+                                          {item.application.workload} hours • {currentStudent.study_level}
                                         </p>
                                       </div>
                                     </div>
-                                    {getStatusBadge(ta.status)}
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <div className="mt-2 flex flex-wrap gap-1">
-                                      {ta.skills.slice(0, 3).map((skill, index) => (
-                                        <Badge key={index} variant="outline" className="text-xs">
-                                          {skill}
-                                        </Badge>
-                                      ))}
+                                      {/* Example: Use discipline rankings as tags */}
+                                      {Object.values(item.application.disciplineRankings)
+                                        .slice(0, 3)
+                                        .map((rank, index) => (
+                                          <Badge key={index} variant="outline" className="text-xs">
+                                            {rank}
+                                          </Badge>
+                                        ))}
                                     </div>
                                     <div className="mt-2 flex flex-wrap gap-1">
                                       <button
-                                        //onClick={() =>
-                                          //handleViewApplication(application)
-                                        //}
-                                        //
                                         className="inline-flex items-center text-blue-600 hover:text-blue-900 p-1 rounded"
                                       >
                                         Select Applicant <Eye className="h-4 w-4 ml-1" />
@@ -1089,9 +1082,9 @@ export default function TAAllocationPage() {
                                     </div>
                                   </div>
                                 </div>
-                              ))
+                              })
                             }
-                            {filteredTAs.filter((ta) => ta.status !== "Fully Allocated").length === 0 && (
+                            {filteredShortlistedApplicants.length === 0 && (
                               <p className="text-sm text-muted-foreground text-center">No TAs match your search.</p>
                             )}
                           </div>
