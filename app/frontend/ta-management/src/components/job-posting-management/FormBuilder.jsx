@@ -155,6 +155,7 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
     ];
 
     // Update order numbers
+    // Re-index all questions to ensure consistent ordering
     const updatedQuestions = newQuestions.map((question, index) => ({
       ...question,
       order: index + 1,
@@ -168,12 +169,13 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
     if (questionIndex === section.questions.length - 1) return;
 
     const newQuestions = [...section.questions];
+    // Swap questions
     [newQuestions[questionIndex], newQuestions[questionIndex + 1]] = [
       newQuestions[questionIndex + 1],
       newQuestions[questionIndex],
     ];
 
-    // Update order numbers
+    // Re-index all questions to ensure consistent ordering
     const updatedQuestions = newQuestions.map((question, index) => ({
       ...question,
       order: index + 1,
@@ -215,24 +217,28 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
             (q) => q.question_id === question.question_id
           );
 
+          let updatedQuestions;
+
           if (existingQuestionIndex >= 0) {
-            // Update existing question
-            const updatedQuestions = [...section.questions];
-            updatedQuestions[existingQuestionIndex] = {
-              ...question,
-              ...questionData,
-            };
-            return { ...section, questions: updatedQuestions };
+            // Update existing question - keep its current order
+            updatedQuestions = section.questions.map((q, index) =>
+              index === existingQuestionIndex
+                ? { ...question, ...questionData }
+                : q
+            );
           } else {
-            // Add new question
-            return {
-              ...section,
-              questions: [
-                ...section.questions,
-                { ...question, ...questionData },
-              ],
-            };
+            // Add new question to the end
+            const newQuestion = { ...question, ...questionData };
+            updatedQuestions = [...section.questions, newQuestion];
           }
+
+          // Re-index all questions to ensure consistent ordering
+          const reorderedQuestions = updatedQuestions.map((q, index) => ({
+            ...q,
+            order: index + 1,
+          }));
+
+          return { ...section, questions: reorderedQuestions };
         }
         return section;
       }),
@@ -253,9 +259,12 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
         section.section_id === sectionId
           ? {
               ...section,
-              questions: section.questions.filter(
-                (q) => q.question_id !== questionId
-              ),
+              questions: section.questions
+                .filter((q) => q.question_id !== questionId)
+                .map((question, index) => ({
+                  ...question,
+                  order: index + 1, // Re-index after deletion
+                })),
             }
           : section
       ),

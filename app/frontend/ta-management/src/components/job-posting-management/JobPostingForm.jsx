@@ -39,6 +39,7 @@ const JobPostingForm = ({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [schedulerProfile, setSchedulerProfile] = useState(null);
+  const [originalStatus, setOriginalStatus] = useState("");
 
   useEffect(() => {
     // Fetch scheduler profile for created_by_id
@@ -47,6 +48,9 @@ const JobPostingForm = ({
     // If jobPosting prop is provided, populate formData with its values
     if (jobPosting) {
       populateFormData(jobPosting);
+      setOriginalStatus(jobPosting.status || "draft");
+    } else {
+      setOriginalStatus("draft");
     }
   }, [jobPosting, departments, terms]);
 
@@ -102,6 +106,25 @@ const JobPostingForm = ({
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
+  };
+
+  const canSetToOpen = () => {
+    return formData.form_template_id && formData.form_template_id !== "";
+  };
+
+  // Add helper functions to determine status change and button text
+  const isChangingToOpen = () => {
+    return originalStatus === "draft" && formData.status === "open";
+  };
+
+  const getSubmitButtonText = () => {
+    if (loading) return "Saving...";
+
+    if (isChangingToOpen()) {
+      return "Post Job";
+    }
+
+    return jobPosting ? "Update Job Posting" : "Create Job Posting";
   };
 
   const handleSubmit = async (e) => {
@@ -298,9 +321,9 @@ const JobPostingForm = ({
                   ))}
               </select>
               <p className="text-sm text-muted-foreground mt-1">
-                Choose an application form template now or update at a later
-                time. You can create a new application form template in the Job
-                Posting Manager.
+                The application form template determines the questions that
+                applicants see for the Job Posting. You can use an existing
+                template or create a new template in the Template Manager.
               </p>
             </div>
           </CardContent>
@@ -349,7 +372,7 @@ const JobPostingForm = ({
             <div>
               <Label htmlFor="status">Status</Label>
               <p className="text-sm text-muted-foreground mt-1">
-                Draft: Not visible to students | Open: Students can apply |
+                Draft: Not visible to students | Open: Students can apply. |
                 Closed: No new applications
               </p>
               <select
@@ -360,9 +383,37 @@ const JobPostingForm = ({
                 onChange={(e) => handleInputChange("status", e.target.value)}
               >
                 <option value="draft">Draft</option>
-                <option value="open">Open</option>
+                <option value="open" disabled={!canSetToOpen()}>
+                  Open
+                  {!canSetToOpen()
+                    ? " (Disabled Until Application Form Template is Assigned)"
+                    : ""}
+                </option>
                 <option value="closed">Closed</option>
               </select>
+              {/* Warning message when changing from draft to open */}
+              {isChangingToOpen() && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="h-4 w-4 text-red-600 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                    <p className="text-sm text-dark-800 font-medium">
+                      This will make the job visible to applicants.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -380,11 +431,7 @@ const JobPostingForm = ({
             Cancel
           </Button>
           <Button type="submit" disabled={loading}>
-            {loading
-              ? "Saving..."
-              : jobPosting
-              ? "Update Job Posting"
-              : "Create Job Posting"}
+            {getSubmitButtonText()}
           </Button>
         </div>
       </form>

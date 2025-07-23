@@ -467,7 +467,8 @@ class JobPosting(models.Model):
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        help_text="Custom form template for this job posting"
+        help_text="Custom form template for this job posting",
+        db_constraint =False
     )
 
     class Meta:

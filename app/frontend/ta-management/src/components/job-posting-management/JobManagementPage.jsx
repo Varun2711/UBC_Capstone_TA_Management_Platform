@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit, Copy, Trash2, Eye, Info } from "lucide-react";
+import {
+  Plus,
+  Edit,
+  Copy,
+  Trash2,
+  Eye,
+  Info,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,6 +67,11 @@ const JobManagementPage = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [templateSearchTerm, setTemplateSearchTerm] = useState("");
   const [templateFilterActive, setTemplateFilterActive] = useState("all");
+
+  //Template assignment warning state
+  const [templateWarningOpen, setTemplateWarningOpen] = useState(false);
+  const [pendingTemplateAssignment, setPendingTemplateAssignment] =
+    useState(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -133,13 +146,31 @@ const JobManagementPage = () => {
   };
 
   const handleAssignTemplate = async (postingId, templateId) => {
+    setPendingTemplateAssignment({ postingId, templateId });
+    setTemplateWarningOpen(true);
+  };
+
+  const handleConfirmTemplateAssignment = async () => {
+    if (!pendingTemplateAssignment) return;
+
+    const { postingId, templateId } = pendingTemplateAssignment;
+
     try {
       await assignTemplateToJobPosting(postingId, templateId);
       await refreshJobPostings();
     } catch (error) {
       console.error("Error assigning template:", error);
       setError(handleApiError(error));
+    } finally {
+      setTemplateWarningOpen(false);
+      setPendingTemplateAssignment(null);
     }
+  };
+
+  // Add this new function to handle canceling the assignment
+  const handleCancelTemplateAssignment = () => {
+    setTemplateWarningOpen(false);
+    setPendingTemplateAssignment(null);
   };
 
   // Template Handlers
@@ -464,8 +495,11 @@ const JobManagementPage = () => {
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg">{posting.title}</CardTitle>
                       <Badge
-                        variant={
-                          posting.status === "open" ? "default" : "secondary"
+                        variant={"primary"}
+                        className={
+                          posting.status === "open"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
                         }
                       >
                         {posting.status}
@@ -780,6 +814,50 @@ const JobManagementPage = () => {
               <FormTemplatePreview template={selectedTemplate} />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Template Assignment Warning Dialog */}
+      <Dialog open={templateWarningOpen} onOpenChange={setTemplateWarningOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Confirm Template Change
+            </DialogTitle>
+            <DialogDescription>
+              Changing the form template for this job posting may affect the
+              application form that applicants see. This could impact:
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+              <li>• Current applicants viewing the form</li>
+              <li>• Data structure of submitted applications</li>
+              <li>• Questions and sections available to applicants</li>
+            </ul>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-dark-800">
+                <strong>Recommendation:</strong> Only change templates before
+                the job posting goes live or when no applications have been
+                submitted yet.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={handleCancelTemplateAssignment}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmTemplateAssignment}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Change Template
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
