@@ -40,6 +40,8 @@ const JobPostingForm = ({
   const [loading, setLoading] = useState(false);
   const [schedulerProfile, setSchedulerProfile] = useState(null);
   const [originalStatus, setOriginalStatus] = useState("");
+  // Also add this state variable at the top of your component to track original template:
+  const [originalTemplateId, setOriginalTemplateId] = useState(null);
 
   useEffect(() => {
     // Fetch scheduler profile for created_by_id
@@ -98,6 +100,10 @@ const JobPostingForm = ({
       status: posting.status || "draft",
       created_by_id: posting.created_by_id || "",
     });
+
+    // Track original template for comparison
+    setOriginalTemplateId(posting.form_template_id);
+    console.log("Original Template ID:", posting.form_template_id);
   };
 
   const handleInputChange = (field, value) => {
@@ -114,7 +120,19 @@ const JobPostingForm = ({
 
   // Add helper functions to determine status change and button text
   const isChangingToOpen = () => {
-    return originalStatus === "draft" && formData.status === "open";
+    return originalStatus !== "open" && formData.status === "open";
+  };
+
+  const isChangingToDraft = () => {
+    return originalStatus === "open" && formData.status === "draft";
+  };
+
+  const isChangingToClosed = () => {
+    return originalStatus !== "closed" && formData.status === "closed";
+  };
+
+  const canRemoveTemplate = () => {
+    return formData.status !== "open";
   };
 
   const getSubmitButtonText = () => {
@@ -122,6 +140,9 @@ const JobPostingForm = ({
 
     if (isChangingToOpen()) {
       return "Post Job";
+    }
+    if (isChangingToClosed()) {
+      return "Close Job";
     }
 
     return jobPosting ? "Update Job Posting" : "Create Job Posting";
@@ -308,7 +329,17 @@ const JobPostingForm = ({
                   handleInputChange("form_template_id", e.target.value)
                 }
               >
-                <option value="">Select Application Form</option>
+                {canRemoveTemplate() && (
+                  <option value="">Select Application Form</option>
+                )}
+
+                {/* If job is open but has no template, show placeholder option */}
+                {!canRemoveTemplate() && !formData.form_template_id && (
+                  <option value="" disabled>
+                    Please select a template (required for open jobs)
+                  </option>
+                )}
+
                 {templates
                   .filter((template) => template.is_active)
                   .map((template) => (
@@ -320,11 +351,58 @@ const JobPostingForm = ({
                     </option>
                   ))}
               </select>
-              <p className="text-sm text-muted-foreground mt-1">
-                The application form template determines the questions that
-                applicants see for the Job Posting. You can use an existing
-                template or create a new template in the Template Manager.
-              </p>
+
+              {/* Show info message based on job status */}
+              {formData.status === "open" ? (
+                <p className="text-sm text-muted-foreground mt-1">
+                  <strong>Required:</strong> Open job postings must have an
+                  assigned application form template. <br /> Application form
+                  template determines the questions that applicants see when
+                  applying for the job.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground mt-1">
+                  The application form template determines the questions that
+                  applicants see when applying for the job. <br />
+                  You can use an existing template or create a new template in
+                  the Template Manager.
+                </p>
+              )}
+
+              {/* Warning when switching templates on open job */}
+              {formData.status === "open" &&
+                formData.form_template_id &&
+                originalTemplateId &&
+                formData.form_template_id.toString() !==
+                  originalTemplateId.toString() && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="h-4 w-4 text-red-600 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-sm text-dark-800 font-medium">
+                          Caution: Changing Application Form Template
+                        </p>
+                        <p className="text-xs text-dark-700 mt-1">
+                          This may affect current applicants who are viewing or
+                          filling out the application form. Consider the impact
+                          on existing applications before saving.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
           </CardContent>
         </Card>
@@ -410,6 +488,52 @@ const JobPostingForm = ({
                     </svg>
                     <p className="text-sm text-dark-800 font-medium">
                       This will make the job visible to applicants.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {isChangingToDraft() && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="h-4 w-4 text-red-600 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                    <p className="text-sm text-dark-800 font-medium">
+                      Applicants will not be able to see this job post.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {isChangingToClosed() && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="h-4 w-4 text-red-600 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                    <p className="text-sm text-dark-800 font-medium">
+                      This job post will not accept any further applications.
                     </p>
                   </div>
                 </div>

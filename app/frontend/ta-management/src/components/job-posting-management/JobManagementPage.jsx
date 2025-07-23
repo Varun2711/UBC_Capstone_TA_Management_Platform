@@ -7,6 +7,7 @@ import {
   Eye,
   Info,
   AlertTriangle,
+  CheckIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -385,14 +386,22 @@ const JobManagementPage = () => {
             <div>
               <p className="text-sm text-blue-800">
                 Create and edit job postings for teaching assistant positions.
-                Each posting can have a custom application form template
-                assigned to it.
               </p>
             </div>
 
             <div className="text-sm text-blue-800">
-              <strong>Tip:</strong> Job postings with draft status are not
-              visible to students.
+              <strong>Tips:</strong>
+              <ul>
+                <li>
+                  <CheckIcon className="inline h-4 w-4 mr-1 text-blue-600" />
+                  Job postings with draft status are not visible to students.
+                </li>
+                <li>
+                  <CheckIcon className="inline h-4 w-4 mr-1 text-blue-600" />
+                  To make a job posting visible to students, change its status
+                  to "open".{" "}
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -561,9 +570,11 @@ const JobManagementPage = () => {
                               <SelectValue placeholder="Select template" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="default">
-                                Select Form
-                              </SelectItem>
+                              {posting.status !== "open" && (
+                                <SelectItem value="default">
+                                  Select Form
+                                </SelectItem>
+                              )}
                               {templates
                                 .filter((t) => t.is_active)
                                 .map((template) => (
@@ -826,8 +837,9 @@ const JobManagementPage = () => {
               Confirm Template Change
             </DialogTitle>
             <DialogDescription>
-              Changing the form template for this job posting may affect the
-              application form that applicants see. This could impact:
+              Changing the form template for an <b>open</b> job posting may
+              affect the application form that applicants see. This could
+              impact:
             </DialogDescription>
           </DialogHeader>
 
@@ -841,7 +853,7 @@ const JobManagementPage = () => {
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-sm text-dark-800">
                 <strong>Recommendation:</strong> Only change templates before
-                the job posting goes live or when no applications have been
+                the job posting is open or when no applications have been
                 submitted yet.
               </p>
             </div>
