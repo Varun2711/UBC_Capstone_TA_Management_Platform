@@ -22,6 +22,7 @@ urlpatterns = [
     path('admin/create-scheduler/', CreateSchedulerView.as_view(), name='create-scheduler'),
     path('admin/user-management/', UserManagementView.as_view(), name='user-management'),
     path('admin/dashboard/', admin_dashboard, name='admin-dashboard'),
+    path('departments/', DepartmentListView.as_view(), name='faculty-list'),
     path('users/', get_users, name='get-users'),
 
     # TA Scheduler instructor management endpoints
