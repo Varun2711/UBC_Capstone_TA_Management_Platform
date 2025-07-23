@@ -14,6 +14,62 @@ const generateTimeSlots = () => {
   return slots
 }
 
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function convertProfileAvailabilityGridToKeys(availabilityObj) {
+  const result = [];
+
+  if (!availabilityObj) return result;
+
+  // Case 1: Already in transformed array format (e.g., ["Monday-8-top"]) which is the case in ProfilePage
+  if (Array.isArray(availabilityObj)) {
+    const isAlreadyFormatted = availabilityObj.every(
+      (key) => typeof key === "string" && /^[A-Z][a-z]+-\d{1,2}-(top|bottom)$/.test(key)
+    );
+    if (isAlreadyFormatted) {
+      console.log("case 1: already formatted");
+      return availabilityObj;
+    }
+    return result;
+  }
+
+  // Case 2: Check if it's inside an object as `availability_grid`
+  const grid = availabilityObj.availability_grid;
+  if (!grid) {
+    console.log("case 2: does not have a grid");
+    return result;
+  }
+
+  const isAlreadyFormatted = Array.isArray(grid) && grid.every(
+    (key) => typeof key === "string" && /^[A-Z][a-z]+-\d{1,2}-(top|bottom)$/.test(key)
+  );
+  if (isAlreadyFormatted) return grid;
+
+  for (const day in grid) {
+    const slots = grid[day];
+    const capitalizedDay = capitalize(day); // e.g., "monday" → "Monday"
+
+    for (const time of slots) {
+      const [hourStr, minuteStrWithSuffix] = time.split(":");
+      const hour = parseInt(hourStr);
+      const minuteStr = minuteStrWithSuffix.slice(0, 2); // Remove am/pm suffix
+      const minute = parseInt(minuteStr);
+
+      let suffix = "top"; // assume :00 = top, :30 = bottom
+      if (minute === 30) suffix = "bottom";
+
+      if (!isNaN(hour) && (suffix === "top" || suffix === "bottom")) {
+        result.push(`${capitalizedDay}-${hour}-${suffix}`);
+      }
+    }
+  }
+  console.log("result from convertProfileAvailabilityGridToKeys is being returned as: ", result);
+  return result;
+}
+
+
 // Converts a string like "MTh: 08:00–10:00" into keys like "Monday-8-top", "Thursday-8-top", etc.
 function convertSlotRangeToKeys(slotString) {
   const dayMap = {
@@ -98,11 +154,6 @@ function convertTimeSlotsInfoToKeys(time_slots_info) {
   return result
 }
 
-function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
-}
-
-
 
 const WeeklyAvailabilityCalendar = ({
   mode = "profile", // New prop: "profile" or "allocation"
@@ -111,7 +162,9 @@ const WeeklyAvailabilityCalendar = ({
   setAvailability = () => {},
   highlightedSlots = [], // New optional prop for red overlay
 }) => {
-  const [selectedSlots, setSelectedSlots] = useState(new Set(availability))
+  const [selectedSlots, setSelectedSlots] = useState(
+    new Set(convertProfileAvailabilityGridToKeys(availability))
+  )
   //const highlightedSet = new Set(highlightedSlots.flatMap(convertSlotRangeToKeys));
   console.log("highlightedSlots in WeeklyAvailabilityCalendar: ", highlightedSlots);
   const highlightedSet = new Set(
@@ -139,7 +192,7 @@ const WeeklyAvailabilityCalendar = ({
   
   // Sync internal state with incoming props
   useEffect(() => {
-    setSelectedSlots(new Set(availability))
+    setSelectedSlots(new Set(convertProfileAvailabilityGridToKeys(availability)))
   }, [availability])
 
   // Function to handle slot selection in editable mode
