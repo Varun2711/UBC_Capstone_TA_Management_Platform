@@ -586,7 +586,7 @@ export default function TAAllocationPage() {
     console.log("In checkForConflicts, selected courses's formattedTimeSlotsInfoToKeys: ", formattedTimeSlotsInfoToKeys);
 
     for (const slot of formattedTimeSlotsInfoToKeys) {
-      if (!availabilitySet.has(slot)) {
+      if (availabilitySet.has(slot)) {
         return true // ❗️Conflict: TA not available at this time
       }
     }
@@ -1054,18 +1054,29 @@ export default function TAAllocationPage() {
                           
                           <div className="mt-4">
                             <p className="text-sm font-medium mb-2">Email: {selectedApplication.application.student.email}</p>
-                            <p className="text-sm font-medium mb-2">Student ID: {selectedApplication.application.student.student_number}</p>
-                            <p className="text-sm font-medium mb-2">Academic level: {selectedTA.year}</p>
+                            <p className="text-sm font-medium mb-2">Student number: {selectedApplication.application.student.student_number}</p>
+                            <p className="text-sm font-medium mb-2">Year standing: {selectedTAProfile.student_info.year_standing}</p>
                             <p className="text-sm font-medium mb-2">Major: {selectedTAProfile.student_info.program}</p>
                           </div>
-                          
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">Course Preferences</h4>
+                            {selectedTAProfile.course_preferences.map((preference, index) => (
+                              <div key={preference.id} className="text-sm font-medium mb-2">
+                                {index + 1}. {preference.course_code.toUpperCase()}
+                              </div>
+                            ))}
+                          </div>
                           <div>
                             <h4 className="text-sm font-medium mb-2">Experience</h4>
                             <div className="flex flex-wrap gap-2">
                               {selectedTAProfile.experiences.map((experience, index) => (
-                                <Badge key={index} variant="outline">
-                                  {experience.organization}
-                                </Badge>
+                                <div key={index} className="border rounded-xl p-4 mb-4 shadow-sm bg-white">
+                                  <Badge key={index} variant="outline" className="absolute top-1 left-1 text-xs">
+                                    Experience {index + 1}
+                                  </Badge>
+                                  <h3 className="text-md font-semibold">{experience.position_title}</h3>
+                                  <p className="text-sm font-medium mb-2">Professor: {experience.organization}</p>
+                                </div>
                               ))}
                             </div>
                           </div>
@@ -1269,8 +1280,8 @@ export default function TAAllocationPage() {
                                         {availableOfferings.map((offering) => {
                                           const isSelected = selectedCourseOfferings.some((s) => s.sectionId === offering.course_offering_id);
                                           const isOffered =
-                                            selectedTA && isSectionAlreadyOfferedToTA(selectedTA.studentId, offering.course_offering_id);
-
+                                            selectedTA && isSectionAlreadyOfferedToTA(selectedTAProfile.id, offering.course_offering_id);
+                                          console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
                                           return (
                                             <div
                                               key={`${course.id}-offering-${offering.course_offering_id}`}
@@ -1289,7 +1300,7 @@ export default function TAAllocationPage() {
                                                   course_name: course.course_name,
                                                   course_number: course.course_number,
                                                   sectionId: offering.course_offering_id,
-                                                  time_slots_info: section.time_slots_info,
+                                                  time_slots_info: offering.time_slots_info,
                                                 };
 
                                                 setSelectedCourseOfferings((prev) => {
@@ -1321,7 +1332,7 @@ export default function TAAllocationPage() {
                                   {availableSections.map((section) => {
                                     const isSelected = selectedSections.some((s) => s.sectionId === section.shared_session_id);
                                     const isOffered =
-                                      selectedTA && isSectionAlreadyOfferedToTA(selectedTA.studentId, section.shared_session_id);
+                                      selectedTA && isSectionAlreadyOfferedToTA(selectedTAProfile.id, section.shared_session_id);
                                     //console.log("Checking section ID:", section.id)
                                     //console.log("selectedCourses:", selectedCourses.map(s => s.sectionId))
                                     //console.log("activeOffers:", activeOffers)
@@ -1406,9 +1417,9 @@ export default function TAAllocationPage() {
                             })}
                           </ul>
                           <p className="text-sm text-muted-foreground mt-2">
-                            Total workload: {selectedTA.currentHours} →{" "}
+                            Total workload: {selectedApplication.application.workload} →{" "}
                             {
-                              selectedTA.currentHours +
+                              selectedApplication.application.workload +
                               selectedSections.reduce(
                                 (sum, c) => sum + (c.weekHours ?? c.weeklyDuration ?? 0),
                                 0
@@ -1431,7 +1442,7 @@ export default function TAAllocationPage() {
                           </Button>
                           <Button
                             onClick={() => {
-                              let totalHours = selectedTA.currentHours;
+                              let totalHours = selectedApplication.application.workload;
                               const newOffers = [];
 
                               for (const course of selectedSections) {
