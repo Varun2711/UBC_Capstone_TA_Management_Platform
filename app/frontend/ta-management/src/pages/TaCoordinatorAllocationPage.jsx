@@ -318,6 +318,65 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
+function convertProfileAvailabilityGridToKeys(availabilityObj) {
+  const result = [];
+
+  if (!availabilityObj) return result;
+
+  // Case 1: Already in transformed array format (e.g., ["Monday-8-top"]) which is the case in ProfilePage
+  if (Array.isArray(availabilityObj)) {
+    const isAlreadyFormatted = availabilityObj.every(
+      (key) => typeof key === "string" && /^[A-Z][a-z]+-\d{1,2}-(top|bottom)$/.test(key)
+    );
+    if (isAlreadyFormatted) {
+      console.log("case 1: already formatted");
+      return availabilityObj;
+    }
+    return result;
+  }
+
+  // Case 2: Check if it's inside an object as `availability_grid`
+  const grid = availabilityObj.availability_grid;
+  if (!grid) {
+    console.log("case 2: does not have a grid");
+    return result;
+  }
+
+  const isAlreadyFormatted = Array.isArray(grid) && grid.every(
+    (key) => typeof key === "string" && /^[A-Z][a-z]+-\d{1,2}-(top|bottom)$/.test(key)
+  );
+  if (isAlreadyFormatted) return grid;
+
+  for (const day in grid) {
+    const slots = grid[day];
+    const capitalizedDay = capitalize(day); // e.g., "monday" → "Monday"
+
+    for (const time of slots) {
+      const timeMatch = time.match(/^(\d+):(\d+)(am|pm)$/i);
+      if (!timeMatch) continue;
+
+      let [_, hourStr, minuteStr, period] = timeMatch;
+      let hour = parseInt(hourStr, 10);
+      const minute = parseInt(minuteStr, 10);
+
+      if (period.toLowerCase() === "pm" && hour !== 12) {
+        hour += 12;
+      } else if (period.toLowerCase() === "am" && hour === 12) {
+        hour = 0;
+      }
+
+      let suffix = "top"; // assume :00 = top, :30 = bottom
+      if (minute === 30) suffix = "bottom";
+
+      if (!isNaN(hour) && (suffix === "top" || suffix === "bottom")) {
+        result.push(`${capitalizedDay}-${hour}-${suffix}`);
+      }
+    }
+  }
+  console.log("result from convertProfileAvailabilityGridToKeys is being returned as: ", result);
+  return result;
+}
+
 
 export default function TAAllocationPage() {
   const [selectedTAId, setSelectedTAId] = useState(null)
@@ -357,7 +416,7 @@ export default function TAAllocationPage() {
   const handleAddTAtoAddedOfferTab = (selectedTA, selectedCourse) => {
     setAddedOffers((prevOffers) => {
       const existingTA = prevOffers.find(
-        (o) => o.taStudentId === selectedTA.studentId
+        (o) => o.taStudentId === selectedTA.application.student.id
       )
 
       console.log("selectedCourse.time_slots_info in handleAddTAtoAddedOfferTab: ", selectedCourse.time_slots_info);
@@ -382,7 +441,7 @@ export default function TAAllocationPage() {
         if (alreadyAdded) return prevOffers
 
         return prevOffers.map((o) =>
-          o.taStudentId === selectedTA.studentId
+          o.taStudentId === selectedTA.application.student.id
             ? { ...o, offers: [...o.offers, newOffer] }
             : o
         )
@@ -391,8 +450,8 @@ export default function TAAllocationPage() {
         return [
           ...prevOffers,
           {
-            taName: selectedTA.name,
-            taStudentId: selectedTA.studentId,
+            taName: selectedTA.application.student.name,
+            taStudentId: selectedTA.application.student.id,
             offers: [newOffer],
           },
         ]
@@ -517,10 +576,14 @@ export default function TAAllocationPage() {
   }, [])
 
   // Helper function to check for scheduling conflicts
-  const checkForConflicts = (taAvailability, courseSlots) => {
-
-    const availabilitySet = new Set(taAvailability)
+  const checkForConflicts = (availability, courseSlots) => {
+    console.log("In checkForConflicts, availability_grid: ", availability);
+    console.log("In checkForConflicts, courseSlots: ", courseSlots);
+    const availabilitySet = new Set(convertProfileAvailabilityGridToKeys(availability));
     const formattedTimeSlotsInfoToKeys = convertTimeSlotsInfoToKeys(courseSlots);
+
+    console.log("In checkForConflicts, availabilitySet: ", availabilitySet);
+    console.log("In checkForConflicts, selected courses's formattedTimeSlotsInfoToKeys: ", formattedTimeSlotsInfoToKeys);
 
     for (const slot of formattedTimeSlotsInfoToKeys) {
       if (!availabilitySet.has(slot)) {
@@ -872,6 +935,12 @@ export default function TAAllocationPage() {
 
   const selectedSections = [...selectedCourseOfferings, ...selectedSharedSessions];
 
+  //When a new applicant is selected, the selected sections become unselected
+  useEffect(() => {
+    setSelectedCourseOfferings([]); 
+    setSelectedSharedSessions([]);
+  }, [selectedTA]);
+
   const application = filteredShortlistedApplicants.find(
     (item) => item.application.student?.id === selectedTA?.id
   );
@@ -890,22 +959,22 @@ export default function TAAllocationPage() {
                     : []),
                   // Include slots from accepted assignments for this TA (persistent red highlight)
                   ...assignments
-                      .filter(a => a.taStudentId === selectedTA.studentId)
+                      .filter(a => a.taStudentId === selectedTA.application.student.id)
                       .flatMap(a => a.slots || []),
                   // Include slots from added offers for this TA (persistent red highlight)
                   ...addedOffers
-                    .filter(o => o.taStudentId === selectedTA.studentId)
+                    .filter(o => o.taStudentId === selectedTA.application.student.id)
                     .flatMap(o =>
                       o.offers?.flatMap(offer => offer.slots || []) || []
                     ),
                   ...activeOffers
-                    .filter(o => o.taStudentId === selectedTA.studentId)
+                    .filter(o => o.taStudentId === selectedTA.application.student.id)
                     .flatMap(o =>
                       o.offers?.flatMap(offer => offer.slots || []) || []
                     ),
                 ]
               : [];
-  
+  console.log("highlightedSlots just now got declared again. it is with selectedTA: ", selectedTA)
   console.log("highlightedSlots: ", highlightedSlots);
 
   return (
@@ -1016,6 +1085,7 @@ export default function TAAllocationPage() {
                             <div>
                               <h4 className="text-sm font-medium mb-2">Availability</h4>
                               {console.log("addedOffers right before WeeklyAvailabilityCalendar is called is: ", addedOffers)}
+                              {console.log("selectedTAProfile right before WeeklyAvailabilityCalendar is called is: ", selectedTAProfile)}
                               <WeeklyAvailabilityCalendar
                                 mode={"allocation"}
                                 editable={false}
@@ -1061,6 +1131,9 @@ export default function TAAllocationPage() {
                                       setSelectedTAId(currentStudentId)
                                       setSelectedApplication(item);
                                       setSelectedTAProfile(profilesOfShortlistedApplicants.find((profile) => profile.id === currentStudentId));
+                                      console.log(" On clicking the applicant, selectedTAId: ", selectedTAId);
+                                      console.log(" On clicking the applicant, selectedApplication: ", selectedApplication);
+                                      console.log(" On clicking the applicant, selectedTAProfile: ", selectedTAProfile);
                                     }}
                                   >
                                     <div className="flex items-center justify-between">
@@ -1312,13 +1385,13 @@ export default function TAAllocationPage() {
                 {selectedTA && selectedSections.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle> Send Offer </CardTitle>
+                      <CardTitle> Add Offer </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                         <div>
                           <p className="font-medium">
-                            Send offer to <span className="text-blue-600">{selectedTA.name}</span> for:
+                            Add to offer of <span className="text-blue-600">{selectedTA.application.student.name}</span>:
                           </p>
                           <ul className="list-disc list-inside text-sm text-muted-foreground mt-2">
                             {selectedSections.map((c, idx) => {
@@ -1364,7 +1437,7 @@ export default function TAAllocationPage() {
                               for (const course of selectedSections) {
                                 console.log("course in selectedSections after pressing send offer button: ", course);
                                 const hasConflict = checkForConflicts(
-                                  selectedTA.availability,
+                                  selectedTAProfile.availability,
                                   course.time_slots_info
                                 );
                                 if (hasConflict) {
@@ -1397,7 +1470,7 @@ export default function TAAllocationPage() {
                               setSelectedSharedSessions([]);
                             }}
                           >
-                            Send Offer
+                            Add Offer
                           </Button>
                         </div>
                       </div>
