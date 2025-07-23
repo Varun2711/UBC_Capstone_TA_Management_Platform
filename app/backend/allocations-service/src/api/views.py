@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404
 
     # Add this import at the top
 from .models import (
-    Offer, Assignment, Student, TAScheduler, Application, ApplicationShortList,
+    Offer, Assignment, Student, TAScheduler, Instructor, Application, ApplicationShortList,
     CourseOffering, SharedSession, Course, OfferItem, AssignmentModification 
 )
 from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer, AssignmentModificationSerializer
@@ -1034,14 +1034,66 @@ class AssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = AssignmentSerializer
     permission_classes = [IsSchedulerOrAdmin]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    # *** REMOVE: 'required_hours' from filterset_fields ***
-    filterset_fields = ['is_active', 'course_offering', 'role']  # ← Removed 'required_hours'
+    filterset_fields = ['is_active', 'course_offering', 'role']
     search_fields = ['student__name', 'course_offering__course__course_number']
     ordering_fields = ['assigned_date']
     ordering = ['-assigned_date']
     
+    def get_permissions(self):
+        """
+        - Students can view their own assignments
+        - Instructors can view assignments for their courses  
+        - Schedulers/Admins can manage all assignments
+        """
+        if self.action in ['list', 'retrieve', 'my_assignments', 'by_instructor', 'tas_by_offering']:
+            return [IsAuthenticatedUser()]  # All authenticated users can view (filtered by get_queryset)
+        elif self.action in ['create', 'update', 'partial_update', 'destroy', 'active_assignments']:
+            return [IsSchedulerOrAdmin()]  # Only schedulers/admins can modify
+        return [IsAuthenticatedUser()]
+    
     def get_queryset(self):
-        return Assignment.objects.select_related('student', 'offer', 'assigned_by').all()
+        """Filter assignments based on user role using your existing auth pattern"""
+        queryset = Assignment.objects.select_related('student', 'offer', 'assigned_by').all()
+        
+        # Use your existing auth pattern from other ViewSets
+        if not hasattr(self.request, 'auth') or not self.request.auth:
+            return queryset.none()
+        
+        user_type = self.request.auth.payload.get('user_type', None)
+        user_id = self.request.auth.payload.get('sub', None)
+        
+        if user_type == 'student' and user_id:
+            # Students see only their own assignments
+            student_model_id = self.get_student_model_id(user_id)
+            if student_model_id:
+                return queryset.filter(student_id=student_model_id)
+            return queryset.none()
+            
+        elif user_type == 'instructor' and user_id:
+            # Instructors see assignments for courses they teach
+            from .models import Instructor
+            try:
+                instructor = Instructor.objects.get(employee_number=user_id)
+                return queryset.filter(
+                    course_offering__instructor_id=instructor.id,
+                    is_active=True
+                )
+            except Instructor.DoesNotExist:
+                return queryset.none()
+        
+        elif user_type in ['scheduler', 'admin']:
+            # Schedulers and admins see all assignments
+            return queryset
+        
+        return queryset.none()
+    
+    def get_student_model_id(self, user_id):
+        """Use the same pattern as OfferViewSet"""
+        try:
+            student = Student.objects.get(student_number=user_id)
+            return student.id
+        except Student.DoesNotExist:
+            return None
     
     @action(detail=False, methods=['get'])
     def active_assignments(self, request):
@@ -1049,6 +1101,143 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         active_assignments = self.get_queryset().filter(is_active=True)
         serializer = self.get_serializer(active_assignments, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def my_assignments(self, request):
+        """Get current student's assignments with detailed information"""
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user_type = request.auth.payload.get('user_type', None)
+        user_id = request.auth.payload.get('sub', None)
+        
+        if user_type != 'student':
+            return Response({'error': 'Only students can access this endpoint'}, status=status.HTTP_403_FORBIDDEN)
+        
+        student_model_id = self.get_student_model_id(user_id)
+        if not student_model_id:
+            return Response({'error': 'Student profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get student's active assignments
+        assignments = Assignment.objects.filter(
+            student_id=student_model_id,
+            is_active=True
+        ).select_related('course', 'course_offering', 'shared_session')
+        
+        # Calculate total hours using the property method
+        total_hours = sum(assignment.weekly_hours for assignment in assignments)
+        
+        serializer = self.get_serializer(assignments, many=True)
+        
+        return Response({
+            'assignments': serializer.data,
+            'summary': {
+                'total_assignments': assignments.count(),
+                'total_weekly_hours': round(total_hours, 1),
+                'courses': list(set([assignment.course.course_number for assignment in assignments if assignment.course]))
+            }
+        })
+    
+    @action(detail=False, methods=['get'])
+    def by_instructor(self, request):
+        """Get assignments for courses taught by the current instructor"""
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user_type = request.auth.payload.get('user_type', None)
+        user_id = request.auth.payload.get('sub', None)
+        
+        if user_type != 'instructor':
+            return Response({'error': 'Only instructors can access this endpoint'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get instructor using same pattern as other services
+        from .models import Instructor
+        try:
+            instructor = Instructor.objects.get(employee_number=user_id)
+        except Instructor.DoesNotExist:
+            return Response({'error': 'Instructor profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get assignments for instructor's courses
+        assignments = Assignment.objects.filter(
+            course_offering__instructor_id=instructor.id,
+            is_active=True
+        ).select_related('student', 'course', 'course_offering')
+        
+        # Group by course offering
+        course_assignments = {}
+        for assignment in assignments:
+            course_key = f"{assignment.course.course_number} {assignment.course_offering.section_number}"
+            if course_key not in course_assignments:
+                course_assignments[course_key] = {
+                    'course_offering_id': str(assignment.course_offering.course_offering_id),
+                    'course_number': assignment.course.course_number,
+                    'course_name': assignment.course.course_name,
+                    'section_number': assignment.course_offering.section_number,
+                    'tas': []
+                }
+            
+            course_assignments[course_key]['tas'].append({
+                'assignment_id': assignment.assignment_id,
+                'student_name': assignment.student.name,
+                'student_number': assignment.student.student_number,
+                'weekly_hours': assignment.weekly_hours,
+                'assigned_date': assignment.assigned_date
+            })
+        
+        return Response({
+            'course_assignments': list(course_assignments.values()),
+            'total_courses': len(course_assignments),
+            'total_tas': assignments.count()
+        })
+
+    @action(detail=False, methods=['get'])
+    def tas_by_offering(self, request):
+        """Get TAs assigned to a specific course offering or shared session"""
+        course_offering_id = request.query_params.get('course_offering_id')
+        shared_session_id = request.query_params.get('shared_session_id')
+        
+        if not course_offering_id and not shared_session_id:
+            return Response(
+                {'error': 'Must provide either course_offering_id or shared_session_id'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if course_offering_id and shared_session_id:
+            return Response(
+                {'error': 'Provide either course_offering_id OR shared_session_id, not both'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Query assignments based on the offering type
+        if course_offering_id:
+            assignments = Assignment.objects.filter(
+                course_offering_id=course_offering_id,
+                is_active=True
+            ).select_related('student')
+        else:
+            assignments = Assignment.objects.filter(
+                shared_session_id=shared_session_id,
+                is_active=True
+            ).select_related('student')
+        
+        # Format the response with TA details
+        ta_list = []
+        for assignment in assignments:
+            ta_list.append({
+                'assignment_id': assignment.assignment_id,
+                'student_name': assignment.student.name,
+                'student_number': assignment.student.student_number,
+                'role': assignment.role,
+                'assigned_date': assignment.assigned_date,
+                'weekly_hours': assignment.weekly_hours
+            })
+        
+        return Response({
+            'offering_type': 'course_offering' if course_offering_id else 'shared_session',
+            'offering_id': course_offering_id or shared_session_id,
+            'assigned_tas': ta_list,
+            'total_tas': len(ta_list)
+        })
 
 # Root API View
 @api_view(['GET'])
@@ -1063,7 +1252,7 @@ def api_root(request):
             'shortlisted_applicants': '/api/allocations/shortlisted-applicants/',
             'available_for_allocation': '/api/allocations/shortlisted-applicants/available_for_allocation/',
             
-             # Offers Management
+            # Offers Management
             'offers': '/api/allocations/offers/',
             'create_offer': '/api/allocations/offers/create_offer/',
             'edit_offer': '/api/allocations/offers/{offer_id}/edit_offer/', 
@@ -1074,22 +1263,26 @@ def api_root(request):
             'expired_offers': '/api/allocations/offers/expired_offers/',  
             'respond_to_offer': '/api/allocations/offers/{offer_id}/respond_to_offer/',
                 
-             # Assignments Management
-             'assignments': '/api/allocations/assignments/',
-             'active_assignments': '/api/allocations/assignments/active_assignments/',
+            # Assignments Management
+            'assignments': '/api/allocations/assignments/',
+            'active_assignments': '/api/allocations/assignments/active_assignments/',
+            'my_assignments': '/api/allocations/assignments/my_assignments/',  #  For students
+            'by_instructor': '/api/allocations/assignments/by_instructor/',  # ← For instructors
+            'tas_by_offering': '/api/allocations/assignments/tas_by_offering/',
 
-             # Assignment Modifications
+            # Assignment Modifications
             'create_modification': '/api/allocations/offers/create_modification/', 
             'pending_modifications': '/api/allocations/offers/pending_modifications/', 
             'respond_to_modification': '/api/allocations/offers/{offer_id}/respond_to_modification/',
                 
-             # Service Info
+            # Service Info
             'service_info': '/api/allocations/',
-         },
+        },
         'authentication': 'Required for all endpoints except root',
         'permissions': {
             'schedulers': 'Can create offers, view all offers, manage assignments',
-            'students': 'Can view own offers, respond to offers',
+            'students': 'Can view own offers, respond to offers, view own assignments',  # ← Updated
+            'instructors': 'Can view assignments for their courses',  # ← instructors can view assignments
             'admins': 'Full access to all endpoints'
         },
         'offer_lifecycle': {
