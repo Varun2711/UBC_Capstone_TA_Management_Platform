@@ -32,145 +32,145 @@ import { getAdminDashboard } from "@/logic/admin"
 export default function AdminDashboard() {
   const [selectedView, setSelectedView] = useState("overview")
   const [searchQuery, setSearchQuery] = useState("")
-  const [systemStats, setSystemStats] = useState([])
-  const [userBreakdown, setUserBreakdown] = useState([])
-  const [recentActivity, setRecentActivity] = useState([])
-  const [systemAlerts, setSystemAlerts] = useState([])
-  const [pendingActions, setPendingActions] = useState([])
+  // const [systemStats, setSystemStats] = useState([])
+  // const [userBreakdown, setUserBreakdown] = useState([])
+  // const [recentActivity, setRecentActivity] = useState([])
+  // const [systemAlerts, setSystemAlerts] = useState([])
+  // const [pendingActions, setPendingActions] = useState([])
 
-  // // Mock data - comprehensive system overview
-  // const systemStats = [
-  //   {
-  //     title: "Total Users",
-  //     value: "1,247",
-  //     change: "+23 this week",
-  //     icon: Users,
-  //     color: "text-blue-600",
-  //     trend: "up",
-  //   },
-  //   {
-  //     title: "Active Courses",
-  //     value: "156",
-  //     change: "+8 this term",
-  //     icon: BookOpen,
-  //     color: "text-green-600",
-  //     trend: "up",
-  //   },
-  //   {
-  //     title: "TA Positions",
-  //     value: "342",
-  //     change: "89% filled",
-  //     icon: UserCheck,
-  //     color: "text-purple-600",
-  //     trend: "stable",
-  //   },
-  //   {
-  //     title: "Pending Applications",
-  //     value: "89",
-  //     change: "-12 from yesterday",
-  //     icon: FileText,
-  //     color: "text-orange-600",
-  //     trend: "down",
-  //   },
-  // ]
+  // Mock data - comprehensive system overview
+  const systemStats = [
+    {
+      title: "Total Users",
+      value: "1,247",
+      change: "+23 this week",
+      icon: Users,
+      color: "text-blue-600",
+      trend: "up",
+    },
+    {
+      title: "Active Courses",
+      value: "156",
+      change: "+8 this term",
+      icon: BookOpen,
+      color: "text-green-600",
+      trend: "up",
+    },
+    {
+      title: "TA Positions",
+      value: "342",
+      change: "89% filled",
+      icon: UserCheck,
+      color: "text-purple-600",
+      trend: "stable",
+    },
+    {
+      title: "Pending Applications",
+      value: "89",
+      change: "-12 from yesterday",
+      icon: FileText,
+      color: "text-orange-600",
+      trend: "down",
+    },
+  ]
 
-  // const userBreakdown = [
-  //   { role: "Students", count: 1089, percentage: 87.3, color: "bg-blue-500" },
-  //   { role: "Instructors", count: 124, percentage: 9.9, color: "bg-green-500" },
-  //   { role: "TA Schedulers", count: 28, percentage: 2.2, color: "bg-purple-500" },
-  //   { role: "Admins", count: 7, percentage: 0.5, color: "bg-red-500" },
-  // ]
+  const userBreakdown = [
+    { role: "Students", count: 1089, percentage: 87.3, color: "bg-blue-500" },
+    { role: "Instructors", count: 124, percentage: 9.9, color: "bg-green-500" },
+    { role: "TA Schedulers", count: 28, percentage: 2.2, color: "bg-purple-500" },
+    { role: "Admins", count: 7, percentage: 0.5, color: "bg-red-500" },
+  ]
 
-  // const recentActivity = [
-  //   {
-  //     id: 1,
-  //     action: "New user registration",
-  //     user: "Sarah Johnson",
-  //     role: "Student",
-  //     timestamp: "2 minutes ago",
-  //     status: "completed",
-  //   },
-  //   {
-  //     id: 2,
-  //     action: "Course created",
-  //     user: "Dr. Smith",
-  //     role: "Instructor",
-  //     timestamp: "15 minutes ago",
-  //     status: "completed",
-  //   },
-  //   {
-  //     id: 3,
-  //     action: "TA position posted",
-  //     user: "Admin User",
-  //     role: "TA Scheduler",
-  //     timestamp: "1 hour ago",
-  //     status: "completed",
-  //   },
-  //   {
-  //     id: 4,
-  //     action: "System backup",
-  //     user: "System",
-  //     role: "Automated",
-  //     timestamp: "2 hours ago",
-  //     status: "completed",
-  //   },
-  //   {
-  //     id: 5,
-  //     action: "Failed login attempt",
-  //     user: "Unknown",
-  //     role: "N/A",
-  //     timestamp: "3 hours ago",
-  //     status: "warning",
-  //   },
-  // ]
+  const recentActivity = [
+    {
+      id: 1,
+      action: "New user registration",
+      user: "Sarah Johnson",
+      role: "Student",
+      timestamp: "2 minutes ago",
+      status: "completed",
+    },
+    {
+      id: 2,
+      action: "Course created",
+      user: "Dr. Smith",
+      role: "Instructor",
+      timestamp: "15 minutes ago",
+      status: "completed",
+    },
+    {
+      id: 3,
+      action: "TA position posted",
+      user: "Admin User",
+      role: "TA Scheduler",
+      timestamp: "1 hour ago",
+      status: "completed",
+    },
+    {
+      id: 4,
+      action: "System backup",
+      user: "System",
+      role: "Automated",
+      timestamp: "2 hours ago",
+      status: "completed",
+    },
+    {
+      id: 5,
+      action: "Failed login attempt",
+      user: "Unknown",
+      role: "N/A",
+      timestamp: "3 hours ago",
+      status: "warning",
+    },
+  ]
 
-  // const systemAlerts = [
-  //   {
-  //     id: 1,
-  //     type: "warning",
-  //     title: "High Application Volume",
-  //     message: "TA applications are 40% higher than usual this week",
-  //     timestamp: "1 hour ago",
-  //   },
-  //   {
-  //     id: 2,
-  //     type: "info",
-  //     title: "Scheduled Maintenance",
-  //     message: "System maintenance scheduled for Sunday 2:00 AM",
-  //     timestamp: "2 hours ago",
-  //   },
-  //   {
-  //     id: 3,
-  //     type: "success",
-  //     title: "Backup Completed",
-  //     message: "Daily system backup completed successfully",
-  //     timestamp: "3 hours ago",
-  //   },
-  // ]
+  const systemAlerts = [
+    {
+      id: 1,
+      type: "warning",
+      title: "High Application Volume",
+      message: "TA applications are 40% higher than usual this week",
+      timestamp: "1 hour ago",
+    },
+    {
+      id: 2,
+      type: "info",
+      title: "Scheduled Maintenance",
+      message: "System maintenance scheduled for Sunday 2:00 AM",
+      timestamp: "2 hours ago",
+    },
+    {
+      id: 3,
+      type: "success",
+      title: "Backup Completed",
+      message: "Daily system backup completed successfully",
+      timestamp: "3 hours ago",
+    },
+  ]
 
-  // const pendingActions = [
-  //   {
-  //     id: 1,
-  //     action: "Review new instructor applications",
-  //     count: 5,
-  //     priority: "high",
-  //     dueDate: "Today",
-  //   },
-  //   {
-  //     id: 2,
-  //     action: "Approve course modifications",
-  //     count: 12,
-  //     priority: "medium",
-  //     dueDate: "This week",
-  //   },
-  //   {
-  //     id: 3,
-  //     action: "Update system configurations",
-  //     count: 3,
-  //     priority: "low",
-  //     dueDate: "Next week",
-  //   },
-  // ]
+  const pendingActions = [
+    {
+      id: 1,
+      action: "Review new instructor applications",
+      count: 5,
+      priority: "high",
+      dueDate: "Today",
+    },
+    {
+      id: 2,
+      action: "Approve course modifications",
+      count: 12,
+      priority: "medium",
+      dueDate: "This week",
+    },
+    {
+      id: 3,
+      action: "Update system configurations",
+      count: 3,
+      priority: "low",
+      dueDate: "Next week",
+    },
+  ]
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -198,22 +198,23 @@ export default function AdminDashboard() {
     }
   }
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const data = await getAdminDashboard();
-        setSystemStats(data.systemStats);
-        setUserBreakdown(data.userBreakdown);
-        setRecentActivity(data.recentActivity);
-        setSystemAlerts(data.systemAlerts);
-        setPendingActions(data.pendingActions);
-      } catch (error) {
-        console.error("Error fetching admin dashboard data:", error);
-      }
-    }
+  // To be worked on for integration with backend
+  // useEffect(() => {
+  //   const fetchDashboardData = async () => {
+  //     try {
+  //       const data = await getAdminDashboard();
+  //       setSystemStats(data.systemStats);
+  //       setUserBreakdown(data.userBreakdown);
+  //       setRecentActivity(data.recentActivity);
+  //       setSystemAlerts(data.systemAlerts);
+  //       setPendingActions(data.pendingActions);
+  //     } catch (error) {
+  //       console.error("Error fetching admin dashboard data:", error);
+  //     }
+  //   }
 
-    fetchDashboardData();
-  }, [])
+  //   fetchDashboardData();
+  // }, [])
 
   return (
     <SidebarProvider>
