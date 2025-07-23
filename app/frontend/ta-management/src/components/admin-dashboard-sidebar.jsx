@@ -45,17 +45,17 @@ const navigationItems = [
   {
     title: "Dashboard",
     icon: Home,
-    url: "#",
+    url: "/admin-dashboard",
   },
   {
     title: "User Management",
     icon: Users,
-    url: "#",
+    url: "/user-management",
   },
   {
     title: "Course Management",
     icon: BookOpen,
-    url: "#",
+    url: "/admin-course-management",
   },
   {
     title: "TA Positions",

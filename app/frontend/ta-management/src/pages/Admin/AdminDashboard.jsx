@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, use } from "react"
 import {
   Bell,
   Users,
@@ -26,11 +26,17 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/co
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AdminSidebar } from "../components/admin-dashboard-sidebar"
+import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
+import { getAdminDashboard } from "@/logic/admin"
 
 export default function AdminDashboard() {
   const [selectedView, setSelectedView] = useState("overview")
   const [searchQuery, setSearchQuery] = useState("")
+  // const [systemStats, setSystemStats] = useState([])
+  // const [userBreakdown, setUserBreakdown] = useState([])
+  // const [recentActivity, setRecentActivity] = useState([])
+  // const [systemAlerts, setSystemAlerts] = useState([])
+  // const [pendingActions, setPendingActions] = useState([])
 
   // Mock data - comprehensive system overview
   const systemStats = [
@@ -72,7 +78,7 @@ export default function AdminDashboard() {
     { role: "Students", count: 1089, percentage: 87.3, color: "bg-blue-500" },
     { role: "Instructors", count: 124, percentage: 9.9, color: "bg-green-500" },
     { role: "TA Schedulers", count: 28, percentage: 2.2, color: "bg-purple-500" },
-    { role: "Admins", count: 6, percentage: 0.5, color: "bg-red-500" },
+    { role: "Admins", count: 7, percentage: 0.5, color: "bg-red-500" },
   ]
 
   const recentActivity = [
@@ -191,6 +197,24 @@ export default function AdminDashboard() {
         return <Bell className="h-4 w-4 text-gray-400" />
     }
   }
+
+  // To be worked on for integration with backend
+  // useEffect(() => {
+  //   const fetchDashboardData = async () => {
+  //     try {
+  //       const data = await getAdminDashboard();
+  //       setSystemStats(data.systemStats);
+  //       setUserBreakdown(data.userBreakdown);
+  //       setRecentActivity(data.recentActivity);
+  //       setSystemAlerts(data.systemAlerts);
+  //       setPendingActions(data.pendingActions);
+  //     } catch (error) {
+  //       console.error("Error fetching admin dashboard data:", error);
+  //     }
+  //   }
+
+  //   fetchDashboardData();
+  // }, [])
 
   return (
     <SidebarProvider>
