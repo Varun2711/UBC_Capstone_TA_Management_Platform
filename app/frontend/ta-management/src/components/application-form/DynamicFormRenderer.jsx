@@ -58,7 +58,7 @@ const DynamicFormRenderer = ({
         };
         setLocalDynamicResponses(newDynamicResponses);
         setDynamicResponses?.(newDynamicResponses);
-        console.log("Updated dynamic resp", newDynamicResponses);
+        //   console.log("Updated dynamic resp", newDynamicResponses);
       }
     },
     [
@@ -94,7 +94,7 @@ const DynamicFormRenderer = ({
       Array.isArray(termDetails) &&
       termDetails.length > 0
     ) {
-      console.log("Using termDetails for termSelection:", termDetails);
+      //console.log("Using termDetails for termSelection:", termDetails);
       normalizedOptions = termDetails;
     } else if (Array.isArray(options)) {
       // Already in correct format

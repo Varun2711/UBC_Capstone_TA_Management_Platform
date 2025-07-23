@@ -37,7 +37,7 @@ export default function ViewJobPostings() {
           },
         });
         setJobPostings(response.data);
-        console.log(response.data);
+        //console.log(response.data);
       } catch (err) {
         setError("Failed to load job postings");
         console.error("Error fetching job postings:", err);

@@ -13,42 +13,163 @@ import ErrorMessage from "@/components/ErrorMessage";
 
 export default function ReviewSection({
   student,
-  selections,
+  selections = {},
+  dynamicResponses = {},
+  dynamicSections = [],
+  fieldMapping = {},
   confirmation,
   setConfirmation,
   documents,
   errors = {},
 }) {
-  // const {
-  //   firstName,
-  //   lastName,
-  //   email,
-  //   studentId,
-  //   major,
-  //   studyLevel,
-  //   gpa,
-  //   faculty,
-  //   degreeStart,
-  //   phone,
-  //   resume,
-  //   transcript,
-  // } = student; //destructuring student profile data
+  // Helper function to get the display value for a response
+  const getDisplayValue = (question, response) => {
+    if (!response && response !== 0) return "NA";
 
-  const {
-    citizenshipStatus,
-    residingInKelowna,
-    fullTimeEnrollment,
-    hasOtherPositions,
-    otherPositionHours,
-    positionType,
-    winterTerm,
-    workload,
-    disciplineRanking,
-  } = selections; //destructuring selections data
+    const { question_type, options = [] } = question;
 
-  const displayFile = (file) => file?.name || "Not uploaded";
-  const currentApplicationYear = 2025; // Mock current application year
-  // const [isConfirmed, setIsConfirmed] = useState(false); //Agreement statement confirmation
+    // Normalize options to array format
+    let normalizedOptions = [];
+    if (Array.isArray(options)) {
+      normalizedOptions = options;
+    } else if (typeof options === "object" && options !== null) {
+      normalizedOptions = Object.entries(options).map(([key, value]) => ({
+        value: key,
+        label: value,
+      }));
+    }
+
+    switch (question_type) {
+      case "radio":
+      case "select":
+        // Find the label for the selected option
+        const selectedOption = normalizedOptions.find(
+          (opt) => opt.value === response
+        );
+        return selectedOption ? selectedOption.label : response;
+
+      case "checkbox":
+        // Handle array of selected values
+        if (Array.isArray(response)) {
+          const selectedLabels = response
+            .map((value) => {
+              const option = normalizedOptions.find(
+                (opt) => opt.value === value
+              );
+              return option ? option.label : value;
+            })
+            .filter(Boolean);
+          return selectedLabels.length > 0
+            ? selectedLabels.join(", ")
+            : "None selected";
+        }
+        return response;
+
+      case "ranking":
+        // Handle ranking object like { rank1: "option1", rank2: "option2" }
+        if (typeof response === "object" && response !== null) {
+          const ranks = Object.entries(response)
+            .sort(([a], [b]) => {
+              const rankA = parseInt(a.replace("rank", ""));
+              const rankB = parseInt(b.replace("rank", ""));
+              return rankA - rankB;
+            })
+            .map(([rank, value]) => {
+              const rankNum = rank.replace("rank", "");
+              const option = normalizedOptions.find(
+                (opt) => opt.value === value
+              );
+              const displayValue = option ? option.label : value;
+              return `${rankNum}. ${displayValue}`;
+            });
+          return ranks.length > 0 ? ranks.join(", ") : "Not ranked";
+        }
+        return response;
+
+      case "file":
+        // Handle file object
+        if (typeof response === "object" && response.name) {
+          return `${response.name} (${(response.size / 1024 / 1024).toFixed(
+            2
+          )} MB)`;
+        }
+        return response;
+
+      case "number":
+        return response.toString();
+
+      case "text":
+      case "email":
+      case "textarea":
+      default:
+        return response;
+    }
+  };
+
+  // Helper function to get response value from appropriate source
+  const getResponseValue = (fieldName) => {
+    const shouldUseDefaultResponses = fieldMapping[fieldName] === true;
+    return shouldUseDefaultResponses
+      ? selections[fieldName]
+      : dynamicResponses[fieldName];
+  };
+
+  // Helper function to render a single question and its response
+  const renderQuestionResponse = (question) => {
+    const { field_name, question_text, is_required } = question;
+    const response = getResponseValue(field_name);
+    const displayValue = getDisplayValue(question, response);
+
+    return (
+      <li key={field_name}>
+        <span className="text-gray-700">{question_text}</span>
+        {is_required && <span className="text-red-500 ml-1">*</span>}
+        <span className="font-bold ml-2">{displayValue}</span>
+
+        {/* Special handling for conditional follow-up questions */}
+        {field_name === "citizenshipStatus" && response === "international" && (
+          <span className="text-red-500 ml-2 block mt-1">
+            Note: You must submit a valid study permit when requested.
+          </span>
+        )}
+
+        {/* {field_name === "hasOtherPositions" && response === "yes" && (
+          <div className="ml-4 mt-1 text-gray-600">
+            Hours per week for other positions:
+            <span className="font-bold ml-2">
+              {getResponseValue("otherPositionHours") || "Not specified"}
+            </span>
+          </div>
+        )} */}
+      </li>
+    );
+  };
+
+  // Helper function to render a section and its questions
+  const renderSection = (section) => {
+    const sectionQuestions = section.questions || [];
+    const questionsWithResponses = sectionQuestions.filter((question) => {
+      const response = getResponseValue(question.field_name);
+      return response !== undefined && response !== "" && response !== null;
+    });
+
+    if (questionsWithResponses.length === 0) {
+      return null;
+    }
+
+    return (
+      <section key={section.section_id} className="mb-6">
+        <Label className="text-lg font-medium text-gray-900 mb-3 block">
+          {section.name}
+        </Label>
+        <ul className="list-disc list-inside ml-4 space-y-2">
+          {questionsWithResponses
+            .sort((a, b) => a.order - b.order)
+            .map(renderQuestionResponse)}
+        </ul>
+      </section>
+    );
+  };
 
   return (
     <Card className="shadow-md p-6 col-span-full">
@@ -57,133 +178,134 @@ export default function ReviewSection({
           Review Your Application Responses
         </h2>
 
-        {/* Personal Info Review Section
-        <section>
-          <Label className="text-lg font-medium">Personal Information</Label>
-          <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-            <li>
-              Name:
-              <span className="font-bold ml-2">
-                {firstName} {lastName}
-              </span>
-            </li>
-            <li>
-              Email:
-              <span className="font-bold ml-2">{email}</span>
-            </li>
-            <li>
-              Phone:
-              <span className="font-bold ml-2">{phone}</span>
-            </li>
-            <li>
-              Student ID:
-              <span className="font-bold ml-2">{studentId}</span>
-            </li>
-            <li>
-              Degree currently in progress:
-              <span className="font-bold ml-2">{studyLevel}</span>
-            </li>
-            <li>
-              Program:
-              <span className="font-bold ml-2">{major}</span>
-            </li>
-            <li>
-              GPA:
-              <span className="font-bold ml-2">{gpa}</span>
-            </li>
-            <li>
-              Degree Start:
-              <span className="font-bold ml-2">{degreeStart}</span>
-            </li>
-            <li>
-              Faculty:
-              <span className="font-bold ml-2">{faculty}</span>
-            </li>
-          </ul>
-        </section> */}
+        {/* Dynamic Sections Review */}
+        <div className="space-y-6">
+          {dynamicSections && dynamicSections.length > 0 ? (
+            dynamicSections.sort((a, b) => a.order - b.order).map(renderSection)
+          ) : (
+            <section>
+              <Label className="text-lg font-medium text-gray-900 mb-3 block">
+                Application Responses
+              </Label>
+              <ul className="list-disc list-inside ml-4 space-y-2">
+                {/* Fallback to static questions if no dynamic sections */}
+                {selections.citizenshipStatus && (
+                  <li>
+                    Are you a Canadian citizen or permanent resident?
+                    <span className="font-bold ml-2">
+                      {getCitizenshipLabel(selections.citizenshipStatus)}
+                    </span>
+                    {selections.citizenshipStatus === "international" && (
+                      <span className="text-red-500 ml-2 block mt-1">
+                        Note: You must submit a valid study permit when
+                        requested.
+                      </span>
+                    )}
+                  </li>
+                )}
 
-        {/* Application Selections Review Section */}
-        <section>
-          <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-            <li>
-              Are you a Canadian citizen or permanent resident?
-              <span className="font-bold ml-2">
-                {getCitizenshipLabel(citizenshipStatus)}
-              </span>
-              {citizenshipStatus === "international" && (
-                <span className="text-red-500 ml-2 flex items-left">
-                  Note: You must submit a valid study permit when requested.
-                </span>
-              )}
-            </li>
-            <li>
-              Will you be residing in Kelowna during the terms in which you are
-              applying for a TA position?
-              <span className="font-bold ml-2">
-                {getYesNoLabel(residingInKelowna)}
-              </span>
-            </li>
-            <li>
-              Will you be enrolled as a full-time student in the terms you are
-              applying for?
-              <span className="font-bold ml-2">
-                {getYesNoLabel(fullTimeEnrollment)}
-              </span>
-            </li>
-            <li>
-              Have you applied, or accepted offers, for other student positions?
-              <span className="font-bold ml-2">
-                {getYesNoLabel(hasOtherPositions)}
-              </span>
-              {hasOtherPositions === "yes" && (
-                <div className="ml-4 mt-1">
-                  The number of hours per week for other positions:{" "}
-                  <span className="font-bold ml-2">{otherPositionHours}</span>
-                </div>
-              )}
-            </li>
-            <li>
-              Which position are you applying for?
-              <span className="font-bold ml-2">
-                {getPositionTypeLabel(positionType)}
-              </span>
-            </li>
-            <li>
-              For W{currentApplicationYear} applications, which of the following
-              terms are you applying to TA for?
-              <span className="font-bold ml-2">{winterTerm}</span>
-            </li>
-            <li>
-              Please indicate your preferred maximum average hourly workload:
-              <span className="font-bold ml-2">
-                {getWorkloadLabel(workload)}
-              </span>
-            </li>
-            <li>
-              Rank your top 3 preferred disciplines:
-              <ul className="list-inside list-disc ml-6 mt-1 space-y-1">
-                <li>
-                  1st Discipline:
-                  <span className="font-bold ml-2">
-                    {disciplineRanking.rank1}
-                  </span>
-                </li>
-                <li>
-                  2nd Discipline:
-                  <span className="font-bold ml-2">
-                    {disciplineRanking.rank2}
-                  </span>
-                </li>
-                <li>
-                  3rd Discipline:
-                  <span className="font-bold ml-2">
-                    {disciplineRanking.rank3}
-                  </span>
-                </li>
+                {selections.residingInKelowna && (
+                  <li>
+                    Will you be residing in Kelowna during the terms in which
+                    you are applying for a TA position?
+                    <span className="font-bold ml-2">
+                      {getYesNoLabel(selections.residingInKelowna)}
+                    </span>
+                  </li>
+                )}
+
+                {selections.fullTimeEnrollment && (
+                  <li>
+                    Will you be enrolled as a full-time student in the terms you
+                    are applying for?
+                    <span className="font-bold ml-2">
+                      {getYesNoLabel(selections.fullTimeEnrollment)}
+                    </span>
+                  </li>
+                )}
+
+                {selections.hasOtherPositions && (
+                  <li>
+                    Have you applied, or accepted offers, for other student
+                    positions?
+                    <span className="font-bold ml-2">
+                      {getYesNoLabel(selections.hasOtherPositions)}
+                    </span>
+                    {selections.hasOtherPositions === "yes" && (
+                      <div className="ml-4 mt-1">
+                        The number of hours per week for other positions:{" "}
+                        <span className="font-bold ml-2">
+                          {selections.otherPositionHours}
+                        </span>
+                      </div>
+                    )}
+                  </li>
+                )}
+
+                {selections.positionType && (
+                  <li>
+                    Which position are you applying for?
+                    <span className="font-bold ml-2">
+                      {getPositionTypeLabel(selections.positionType)}
+                    </span>
+                  </li>
+                )}
+
+                {selections.winterTerm && (
+                  <li>
+                    For W2025 applications, which of the following terms are you
+                    applying to TA for?
+                    <span className="font-bold ml-2">
+                      {selections.winterTerm}
+                    </span>
+                  </li>
+                )}
+
+                {selections.workload && (
+                  <li>
+                    Please indicate your preferred maximum average hourly
+                    workload:
+                    <span className="font-bold ml-2">
+                      {getWorkloadLabel(selections.workload)}
+                    </span>
+                  </li>
+                )}
+
+                {selections.disciplineRanking && (
+                  <li>
+                    Rank your top 3 preferred disciplines:
+                    <ul className="list-inside list-disc ml-6 mt-1 space-y-1">
+                      {selections.disciplineRanking.rank1 && (
+                        <li>
+                          1st Discipline:
+                          <span className="font-bold ml-2">
+                            {selections.disciplineRanking.rank1}
+                          </span>
+                        </li>
+                      )}
+                      {selections.disciplineRanking.rank2 && (
+                        <li>
+                          2nd Discipline:
+                          <span className="font-bold ml-2">
+                            {selections.disciplineRanking.rank2}
+                          </span>
+                        </li>
+                      )}
+                      {selections.disciplineRanking.rank3 && (
+                        <li>
+                          3rd Discipline:
+                          <span className="font-bold ml-2">
+                            {selections.disciplineRanking.rank3}
+                          </span>
+                        </li>
+                      )}
+                    </ul>
+                  </li>
+                )}
               </ul>
-            </li>
-          </ul>
-        </section>
+            </section>
+          )}
+        </div>
 
         {/* Supporting Documents */}
         <section>
