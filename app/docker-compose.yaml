@@ -248,17 +248,6 @@ services:
     networks:
       - app-networks
 
-  postfix:
-    image: mwader/postfix-relay:latest
-    environment:
-      - POSTFIX_myhostname=t2-tamanagement.com
-      - POSTFIX_mydomain=t2-tamanagement.com
-      - POSTFIX_myorigin=t2-tamanagement.com
-    ports:
-      - "25:25"
-    networks:
-      - app-networks
-
   frontend:
     build:
       context: ./frontend/ta-management

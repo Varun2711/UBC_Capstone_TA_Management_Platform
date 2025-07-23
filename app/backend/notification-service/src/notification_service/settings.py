@@ -5,6 +5,7 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = ['*']
@@ -71,13 +72,12 @@ DATABASES = {
 
 # Email Configuration for Postfix
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'postfix'
-EMAIL_PORT = 25  # Changed from 587 to 25
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = False
-EMAIL_HOST_USER = None  # No authentication required
-EMAIL_HOST_PASSWORD = None  # No authentication required
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'apikey'  # This is always 'apikey' for SendGrid
+EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY')  # Your SendGrid API key
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ubctamanagement@gmail.com')
 
 # Celery Configuration
 CELERY_BROKER_URL = 'redis://redis:6379/0'
