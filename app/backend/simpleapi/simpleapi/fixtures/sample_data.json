@@ -590,7 +590,8 @@
       "created_by": 3,
       "term": 1,
       "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
-      "status": "open"
+      "status": "open",
+      "form_template": 1
     }
   },
   {
@@ -605,7 +606,8 @@
       "created_by": 3,
       "term": 2,
       "requirements": "Must be a registered student.",
-      "status": "open"
+      "status": "open",
+      "form_template": 1
     }
   },
   {
