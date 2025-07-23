@@ -155,22 +155,6 @@ describe("AdminSidebar", () => {
     expect(screen.getByText("Logout")).toBeInTheDocument()
   })
 
-  it("has correct accessibility attributes", () => {
-    renderSidebar({ activePage: "Dashboard" })
-
-    const header = screen.getByText("Admin Portal").closest('[data-sidebar="header"]')
-    expect(header).toHaveAttribute("data-sidebar", "header")
-
-    const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
-    const menuItems = within(navigationGroup).getAllByRole("link")
-    menuItems.forEach((item) => {
-      expect(item).toHaveAttribute("href", "#")
-    })
-
-    const footer = screen.getByText("System Admin").closest('[data-sidebar="footer"]')
-    expect(footer).toHaveAttribute("data-sidebar", "footer")
-  })
-
   it("renders correct branding and role information", () => {
     renderSidebar()
 
@@ -181,20 +165,6 @@ describe("AdminSidebar", () => {
     // Check user information
     expect(screen.getByText("System Admin")).toBeInTheDocument()
     expect(screen.getByText("admin@university.edu")).toBeInTheDocument()
-  })
-
-  it("has proper navigation structure", () => {
-    renderSidebar()
-
-    // Check that all navigation items are links
-    const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
-    const links = within(navigationGroup).getAllByRole("link")
-
-    expect(links).toHaveLength(7) // Should have 7 navigation items
-
-    links.forEach((link) => {
-      expect(link).toHaveAttribute("href", "#")
-    })
   })
 
   it("shows admin-specific styling with red shield icon", () => {

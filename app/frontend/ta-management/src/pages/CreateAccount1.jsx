@@ -26,13 +26,23 @@ export default function CreateAccount1() {
     }
   }, [navigate])
 
+  // Load saved form data from sessionStorage if available
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("createAccount1")
+    if (savedData) {
+      setFormData(JSON.parse(savedData))
+    }
+  }, [])
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setError("") // Reset error on input change
-    setFormData((prev) => ({
-      ...prev,
+    const updated = {
+      ...formData,
       [name]: value,
-    }))
+    }
+    setFormData(updated)
+    sessionStorage.setItem("createAccount1", JSON.stringify(updated)) // Optional live save
   }
 
   const handleNext = (e) => {
@@ -42,6 +52,27 @@ export default function CreateAccount1() {
     const studentNumber = formData.ubcStudentNumber.trim()
     if (!/^\d{8}$/.test(studentNumber)) {
       setError("UBC student number must be exactly 8 digits")
+      return
+    }
+
+    const { firstName, lastName } = formData
+    // Validation: First Name
+    if (!firstName.trim()) {
+      setError("First name is required")
+      return
+    }
+    if (!/^[A-Za-z\s'-]+$/.test(firstName.trim())) {
+      setError("First name must only contain letters")
+      return
+    }
+
+    // Validation: Last Name
+    if (!lastName.trim()) {
+      setError("Last name is required")
+      return
+    }
+    if (!/^[A-Za-z\s'-]+$/.test(lastName.trim())) {
+      setError("Last name must only contain letters")
       return
     }
 

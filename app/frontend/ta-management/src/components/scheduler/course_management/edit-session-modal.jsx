@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, AlertCircle, FlaskConical, Users, Clock, Trash2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Edit, AlertCircle, Clock, X, FlaskConical, Users, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,24 +15,21 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent } from "@/components/ui/card"
 
-export function AddLabTutorialModal({
+export function EditSessionModal({
   isOpen,
   onClose,
-  onAddSession,
+  onEditSession,
   course,
-  offering,
-  existingSessions = { labs: [], tutorials: [], seminars: [], workshops: [] },
+  session,
   terms = [],
 }) {
-  const [selectedTab, setSelectedTab] = useState("lab")
   const [formData, setFormData] = useState({
     section: "",
     term: "",
-    year: "",
+    sessionType: "",
   })
 
   const [timeSlots, setTimeSlots] = useState([{
@@ -51,70 +48,170 @@ export function AddLabTutorialModal({
     { value: "thursday", label: "Thursday" },
     { value: "friday", label: "Friday" },
     { value: "saturday", label: "Saturday" },
-    { value: "sunday", label: "Sunday" }
+    { value: "sunday", label: "Sunday" },
   ]
 
-  const formatTermDisplay = (termCode) => {
-    const match = termCode.match(/^([A-Z])(\d{4})\s+(.+)$/);
+  // Helper function to convert 12-hour time format to 24-hour format
+  const convertTo24Hour = (time12h) => {
+    if (!time12h) return ""
     
-    if (match) {
-      const [, seasonCode, year, termPart] = match;
-      
-      const seasonMap = {
-        'W': 'Winter',
-        'S': 'Summer', 
-        'F': 'Fall',
-        'Sp': 'Spring'
-      };
-      
-      const seasonName = seasonMap[seasonCode] || seasonCode;
-      
-      if (termPart.includes('Both')) {
-        return `${seasonName} Both Terms, ${year}`;
-      } else if (termPart.includes('Term')) {
-        return `${seasonName} ${termPart}, ${year}`;
-      } else {
-        return `${seasonName} ${termPart}, ${year}`;
-      }
+    const [time, modifier] = time12h.split(' ')
+    let [hours, minutes] = time.split(':')
+    
+    if (modifier === 'PM' && hours !== '12') {
+      hours = parseInt(hours, 10) + 12
+    }
+    if (modifier === 'AM' && hours === '12') {
+      hours = '00'
     }
     
-    return termCode;
-  };
+    return `${hours.toString().padStart(2, '0')}:${minutes}`
+  }
+
+  // Helper function to parse time range string like "08:00 AM - 09:00 AM"
+  const parseTimeRange = (timeString) => {
+    if (!timeString || !timeString.includes(' - ')) return null
+    
+    const [startTime, endTime] = timeString.split(' - ')
+    return {
+      start_time: convertTo24Hour(startTime.trim()),
+      end_time: convertTo24Hour(endTime.trim())
+    }
+  }
+
+  // Update form data when session prop changes
+  useEffect(() => {
+    if (session && isOpen) {
+      console.log("=== EDIT SESSION MODAL DEBUG ===")
+      console.log("Full session object:", session)
+      console.log("Available properties:", Object.keys(session))
+      console.log("session.time:", session.time)
+      console.log("session.day:", session.day)
+      console.log("session_type:", session.session_type)
+      console.log("sessionType:", session.sessionType)
+      console.log("term:", session.term)
+      console.log("time_slots property:", session.time_slots)
+      
+      // Determine session type from multiple possible sources
+      let sessionType = ""
+      if (session.session_type) {
+        sessionType = session.session_type
+      } else if (session.sessionType) {
+        sessionType = session.sessionType
+      } else {
+        // Fallback: try to determine from section format
+        if (session.section && session.section.startsWith('L')) {
+          sessionType = "lab"
+        } else if (session.section && session.section.startsWith('T')) {
+          sessionType = "tutorial"
+        }
+      }
+      
+      console.log("Determined sessionType:", sessionType)
+      
+      setFormData({
+        section: session.section || "",
+        term: session.term || "",
+        sessionType: sessionType,
+      })
+
+      // Handle time slots - NEW LOGIC FOR SHARED SESSIONS
+      let slotsData = []
+      
+      // First, try the new format (time_slots array) - used when creating/editing
+      if (session.time_slots && Array.isArray(session.time_slots) && session.time_slots.length > 0) {
+        console.log("Processing time_slots from session:", session.time_slots)
+        
+        slotsData = session.time_slots.map(slot => {
+          console.log("Processing slot:", slot)
+          
+          // Convert time format from backend to frontend format
+          const convertTimeFormat = (timeStr) => {
+            if (!timeStr) return ""
+            // If it's already in HH:MM:SS format, just take HH:MM
+            if (timeStr.includes(":")) {
+              const parts = timeStr.split(":")
+              return `${parts[0]}:${parts[1]}`
+            }
+            return timeStr
+          }
+          
+          return {
+            day: slot.day?.toLowerCase() || "",
+            start_time: convertTimeFormat(slot.start_time),
+            end_time: convertTimeFormat(slot.end_time)
+          }
+        })
+        
+        console.log("Processed slots data from time_slots:", slotsData)
+      }
+      // Second, try the shared session format (day + time string) - from getAllCoursesFullDetails
+      else if (session.day && session.time) {
+        console.log("Processing day/time format from shared session:", { day: session.day, time: session.time })
+        
+        const parsedTime = parseTimeRange(session.time)
+        if (parsedTime) {
+          slotsData = [{
+            day: session.day.toLowerCase(),
+            start_time: parsedTime.start_time,
+            end_time: parsedTime.end_time
+          }]
+          console.log("Processed slots data from day/time:", slotsData)
+        } else {
+          console.log("Failed to parse time range:", session.time)
+          slotsData = [{ day: session.day?.toLowerCase() || "", start_time: "", end_time: "" }]
+        }
+      }
+      // Third, try time_increments format as fallback
+      else if (session.time_increments && Array.isArray(session.time_increments) && session.time_increments.length > 0) {
+        console.log("Processing time_increments from session:", session.time_increments)
+        
+        // Convert time increments to start/end times
+        const sortedTimes = session.time_increments.sort()
+        const startTime = sortedTimes[0]
+        const endTime = sortedTimes[sortedTimes.length - 1]
+        
+        // Convert to 24-hour format if needed
+        const convertTimeIncrement = (timeStr) => {
+          if (!timeStr) return ""
+          // If it's just HH:MM format, return as is
+          if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr
+          // If it's just HH:MM without colon, add colon
+          if (/^\d{4}$/.test(timeStr)) return `${timeStr.substr(0,2)}:${timeStr.substr(2,2)}`
+          return timeStr
+        }
+        
+        slotsData = [{
+          day: session.day?.toLowerCase() || "",
+          start_time: convertTimeIncrement(startTime),
+          end_time: convertTimeIncrement(endTime)
+        }]
+        
+        console.log("Processed slots from time_increments:", slotsData)
+      }
+      else {
+        console.log("No time data found, using default empty slot")
+        slotsData = [{ day: "", start_time: "", end_time: "" }]
+      }
+
+      setTimeSlots(slotsData)
+      setErrors({})
+      console.log("=== END DEBUG ===")
+    }
+  }, [session, isOpen])
 
   const validateField = (name, value) => {
     switch (name) {
       case "section":
         if (!value.trim()) return "Section is required"
-
-        const sectionPattern = selectedTab === "lab" ? /^L\d{2}$/ : /^T\d{2}$/
-        const sectionFormat = selectedTab === "lab" ? "L01, L02, etc." : "T01, T02, etc."
-
-        if (!sectionPattern.test(value.trim())) {
-          return `Section must be in format: ${sectionFormat}`
-        }
-
-        // Check for duplicate sections
-        const sessionType = selectedTab === "lab" ? "labs" : "tutorials"
-        const termKey = formData.term && formData.year ? `${formData.term}` : ""
-
-        if (termKey && existingSessions[sessionType]) {
-          const existingInTerm = existingSessions[sessionType].filter(
-            (session) => session.term === formData.term && session.year === formData.year,
-          )
-
-          if (existingInTerm.some((session) => session.section === value.trim())) {
-            return `A ${selectedTab} section with this number already exists for the selected term`
-          }
-        }
-
         return ""
 
       case "term":
         if (!value) return "Term is required"
         return ""
 
-      case "year":
-        if (!value) return "Year is required"
+      case "sessionType":
+        if (!value) return "Session type is required"
         return ""
 
       default:
@@ -149,24 +246,11 @@ export function AddLabTutorialModal({
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }))
     }
-
-    // Re-validate section when term/year changes (for duplicate check)
-    if ((name === "term" || name === "year") && formData.section) {
-      const sectionError = validateField("section", formData.section)
-      setErrors((prev) => ({ ...prev, section: sectionError }))
-    }
   }
 
   const handleBlur = (name, value) => {
     const error = validateField(name, value)
     setErrors((prev) => ({ ...prev, [name]: error }))
-  }
-
-  const handleTabChange = (tab) => {
-    setSelectedTab(tab)
-    // Reset section when switching tabs
-    setFormData((prev) => ({ ...prev, section: "" }))
-    setErrors((prev) => ({ ...prev, section: "" }))
   }
 
   const handleTimeSlotChange = (index, field, value) => {
@@ -196,10 +280,9 @@ export function AddLabTutorialModal({
   const validateForm = () => {
     const newErrors = {}
 
-    // Validate basic form fields
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key])
-      if (error) newErrors[key] = error
+      newErrors[key] = error
     })
 
     // Validate time slots
@@ -207,25 +290,58 @@ export function AddLabTutorialModal({
     const hasTimeSlotErrors = timeSlotErrors.some(slotErrors => 
       Object.keys(slotErrors).length > 0
     )
-    
+
     if (hasTimeSlotErrors) {
       newErrors.timeSlots = timeSlotErrors
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return !Object.keys(newErrors).some((key) => newErrors[key]) && !hasTimeSlotErrors
   }
 
   const resetForm = () => {
-    setFormData({
-      section: "",
-      term: "",
-      year: "",
-    })
-    setTimeSlots([{ day: "", start_time: "", end_time: "" }])
+    if (session) {
+      // Reset with proper session type detection
+      let sessionType = ""
+      if (session.session_type) {
+        sessionType = session.session_type
+      } else if (session.sessionType) {
+        sessionType = session.sessionType
+      } else if (session.section) {
+        sessionType = session.section.startsWith('L') ? "lab" : "tutorial"
+      }
+      
+      setFormData({
+        section: session.section || "",
+        term: session.term || "",
+        sessionType: sessionType,
+      })
+      
+      // Reset time slots based on session data
+      if (session.day && session.time) {
+        const parsedTime = parseTimeRange(session.time)
+        if (parsedTime) {
+          setTimeSlots([{
+            day: session.day.toLowerCase(),
+            start_time: parsedTime.start_time,
+            end_time: parsedTime.end_time
+          }])
+        } else {
+          setTimeSlots([{ day: "", start_time: "", end_time: "" }])
+        }
+      } else if (session.time_slots && session.time_slots.length > 0) {
+        const slotsData = session.time_slots.map(slot => ({
+          day: slot.day?.toLowerCase() || "",
+          start_time: slot.start_time?.substring(0, 5) || "",
+          end_time: slot.end_time?.substring(0, 5) || ""
+        }))
+        setTimeSlots(slotsData)
+      } else {
+        setTimeSlots([{ day: "", start_time: "", end_time: "" }])
+      }
+    }
     setErrors({})
     setIsSubmitting(false)
-    setSelectedTab("lab")
   }
 
   const handleSubmit = async (e) => {
@@ -241,16 +357,21 @@ export function AddLabTutorialModal({
       // Find the selected term to get its ID
       const selectedTerm = terms.find(term => term.value === formData.term)
       
-      await onAddSession(course.id, formData.term, formData.year, selectedTab, {
-        section: formData.section.trim().toUpperCase(),
+      await onEditSession(session.id, {
+        sessionType: formData.sessionType,
+        courseId: course.id,
+        section: formData.section.trim(),
         termId: selectedTerm?.id,
-        timeSlots: timeSlots.filter(slot => slot.day && slot.start_time && slot.end_time)
+        timeSlots: timeSlots.filter(slot => slot.day && slot.start_time && slot.end_time).map(slot => ({
+          day: slot.day,
+          start_time: `${slot.start_time}:00`, // Add seconds for backend
+          end_time: `${slot.end_time}:00`
+        }))
       })
 
-      resetForm()
       onClose()
     } catch (error) {
-      console.error("Error adding session:", error)
+      console.error("Error updating session:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -263,117 +384,70 @@ export function AddLabTutorialModal({
     }
   }
 
-  if (!course) return null
+  if (!course || !session) return null
 
-  // Get unique years from terms
-  const availableYears = [...new Set(terms.map((term) => term.year))].sort()
+  // Get available years from terms
+  const availableYears = [...new Set(terms.map(term => term.year))].sort((a, b) => b - a)
+  
+  // Get available terms for selected year
+  const availableTerms = terms
 
-  // Filter terms by selected year
-  const availableTerms = formData.year ? terms.filter((term) => term.year.toString() === formData.year) : []
-
-  const getExistingSessions = (sessionType, termValue, yearValue) => {
-    if (!termValue || !yearValue || !existingSessions) return []
-
-    const sessionKey = sessionType === "lab" ? "labs" : "tutorials"
-    let allSessions = []
-
-    // Find the term key that matches the selected term
-    const selectedTermFromDropdown = terms.find(t => t.value === termValue && t.year.toString() === yearValue)
-    
-    if (selectedTermFromDropdown) {
-      // Look for sessions under the exact term label
-      if (existingSessions[selectedTermFromDropdown.label]) {
-        allSessions = existingSessions[selectedTermFromDropdown.label][sessionKey] || []
-      }
-    }
-
-    return allSessions
-  }
-
-  const existingSessionsForTerm = getExistingSessions(selectedTab, formData.term, formData.year)
+  const sessionTypeIcon = formData.sessionType === "lab" ? <FlaskConical className="h-4 w-4" /> : <Users className="h-4 w-4" />
+  const sessionTypeLabel = formData.sessionType === "lab" ? "Laboratory" : "Tutorial"
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Add Lab/Tutorial Session
+            <Edit className="h-5 w-5" />
+            Edit {sessionTypeLabel} Session
           </DialogTitle>
           <DialogDescription>
-            Add a new lab or tutorial session for <strong>{course.code} - {course.title}</strong>
+            Edit {sessionTypeLabel.toLowerCase()} session for <strong>{course.code} - {course.title}</strong>
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="lab" className="flex items-center gap-2">
-              <FlaskConical className="h-4 w-4" />
-              Lab
-            </TabsTrigger>
-            <TabsTrigger value="tutorial" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Tutorial
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="lab" className="space-y-4 mt-6">
-            <div className="text-sm text-muted-foreground">
-              Create a new lab session. Lab sections typically use format L01, L02, etc.
-            </div>
-          </TabsContent>
-
-          <TabsContent value="tutorial" className="space-y-4 mt-6">
-            <div className="text-sm text-muted-foreground">
-              Create a new tutorial session. Tutorial sections typically use format T01, T02, etc.
-            </div>
-          </TabsContent>
-        </Tabs>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Session Details</h3>
+            <h3 className="text-lg font-medium flex items-center gap-2">
+              {sessionTypeIcon}
+              Session Details
+            </h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="year">Academic Year *</Label>
-                <Select
-                  value={formData.year}
-                  onValueChange={(value) => handleInputChange("year", value)}
-                >
-                  <SelectTrigger className={errors.year ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableYears.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.year && (
+                <Label htmlFor="edit-section">Section *</Label>
+                <Input
+                  id="edit-section"
+                  placeholder={formData.sessionType === "lab" ? "e.g., L01" : "e.g., T01"}
+                  value={formData.section}
+                  onChange={(e) => handleInputChange("section", e.target.value)}
+                  onBlur={(e) => handleBlur("section", e.target.value)}
+                  className={errors.section ? "border-red-500" : ""}
+                  maxLength={3}
+                />
+                {errors.section && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" />
-                    {errors.year}
+                    {errors.section}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="term">Term *</Label>
-                <Select
-                  value={formData.term}
+                <Label htmlFor="edit-term">Term *</Label>
+                <Select 
+                  value={formData.term} 
                   onValueChange={(value) => handleInputChange("term", value)}
-                  disabled={!formData.year}
                 >
                   <SelectTrigger className={errors.term ? "border-red-500" : ""}>
-                    <SelectValue placeholder={formData.year ? "Select term" : "Select year first"} />
+                    <SelectValue placeholder="Select term" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableTerms.map((term) => (
                       <SelectItem key={term.value} value={term.value}>
-                        {formatTermDisplay(term.label)}
+                        {term.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -387,31 +461,12 @@ export function AddLabTutorialModal({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="section">Section *</Label>
-              <Input
-                id="section"
-                placeholder={selectedTab === "lab" ? "e.g., L01" : "e.g., T01"}
-                value={formData.section}
-                onChange={(e) => handleInputChange("section", e.target.value.toUpperCase())}
-                onBlur={(e) => handleBlur("section", e.target.value)}
-                className={errors.section ? "border-red-500" : ""}
-                maxLength={3}
-              />
-              {errors.section && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.section}
-                </p>
-              )}
-            </div>
-
             {/* Time Slots Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-md font-medium flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Time Slots *
+                  Session Schedule *
                 </h4>
                 <Button
                   type="button"
@@ -483,9 +538,8 @@ export function AddLabTutorialModal({
                             variant="outline"
                             size="sm"
                             onClick={() => removeTimeSlot(index)}
-                            className="text-red-600 hover:text-red-700"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <X className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -494,25 +548,6 @@ export function AddLabTutorialModal({
                 </Card>
               ))}
             </div>
-
-            {/* Show existing sessions for reference */}
-            {existingSessionsForTerm.length > 0 && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-md">
-                <p className="text-sm font-medium text-gray-700 mb-2">
-                  Existing {selectedTab} sessions for {formatTermDisplay(formData.term)} {formData.year}:
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {existingSessionsForTerm.map((session) => (
-                    <div
-                      key={session.id}
-                      className="text-sm text-gray-600 bg-white px-2 py-1 rounded border"
-                    >
-                      {session.section}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {(Object.keys(errors).some((key) => key !== 'timeSlots' && errors[key]) || errors.timeSlots) && (
@@ -528,7 +563,7 @@ export function AddLabTutorialModal({
             Cancel
           </Button>
           <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? `Adding ${selectedTab}...` : `Add ${selectedTab}`}
+            {isSubmitting ? "Updating Session..." : "Update Session"}
           </Button>
         </DialogFooter>
       </DialogContent>

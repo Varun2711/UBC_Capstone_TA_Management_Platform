@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { SessionItem } from "./session-item"
 
-export function SessionList({ type, termKey, sessions, expandedLabSections, onToggleLabSection }) {
+export function SessionList({ type, termKey, sessions, expandedLabSections, onToggleLabSection, onEditSession, onDeleteSession }) {
   const sectionKey = `${type}-${termKey}`
   const isExpanded = expandedLabSections.has(sectionKey)
   const title = type === "labs" ? "Laboratory Sessions" : "Tutorial Sessions"
@@ -29,7 +29,14 @@ export function SessionList({ type, termKey, sessions, expandedLabSections, onTo
       <CollapsibleContent>
         <div className="space-y-2 ml-6">
           {sessions.map((session) => (
-            <SessionItem key={session.id} session={session} type={type} />
+            <SessionItem 
+              key={session.id} 
+              session={session} 
+              type={type}
+              termKey={termKey}
+              onEdit={onEditSession}
+              onDelete={onDeleteSession}
+            />
           ))}
         </div>
       </CollapsibleContent>
