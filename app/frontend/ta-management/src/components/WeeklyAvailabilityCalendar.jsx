@@ -170,6 +170,10 @@ const WeeklyAvailabilityCalendar = ({
   setAvailability = () => {},
   highlightedSlots = [], // New optional prop for red overlay
 }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState(null);
+  const [dragAction, setDragAction] = useState(null); // "select" or "unselect"
+
   const [selectedSlots, setSelectedSlots] = useState(
     new Set(convertProfileAvailabilityGridToKeys(availability))
   )
@@ -197,7 +201,7 @@ const WeeklyAvailabilityCalendar = ({
     })
   );
   console.log("higlightedSet in WeeklyAvailabilityCalendar is: ", highlightedSet);
-  
+
   // Sync internal state with incoming props
   useEffect(() => {
     setSelectedSlots(new Set(convertProfileAvailabilityGridToKeys(availability)))
@@ -205,16 +209,66 @@ const WeeklyAvailabilityCalendar = ({
 
   // Function to handle slot selection in editable mode
   const toggleSlot = (day, hour, half) => {
-    const key = `${day}-${hour}-${half}`
-    const updated = new Set(selectedSlots)
-    if (updated.has(key)) {
-      updated.delete(key)
-    } else {
-      updated.add(key)
-    }
-    setSelectedSlots(updated)
-    setAvailability(Array.from(updated)) // Sync to parent
-  }
+    const key = `${day}-${hour}-${half}`;
+    setSelectedSlots(prev => {
+      const updated = new Set(prev);
+      if (updated.has(key)) {
+        updated.delete(key);
+      } else {
+        updated.add(key);
+      }
+      setAvailability(Array.from(updated));
+      return updated;
+    });
+  };
+
+  const handleDragStart = (e, day, hour, half) => {
+    e.preventDefault();
+    const key = `${day}-${hour}-${half}`;
+    const isAlreadySelected = selectedSlots.has(key);
+
+    setIsDragging(true);
+    setDragStart(key);
+    setDragAction(isAlreadySelected ? "unselect" : "select");
+
+    setSelectedSlots((prev) => {
+      const updated = new Set(prev);
+      if (isAlreadySelected) {
+        updated.delete(key);
+      } else {
+        updated.add(key);
+      }
+      setAvailability(Array.from(updated));
+      return updated;
+    });
+  };
+
+
+  const handleDragEnter = (e, day, hour, half) => {
+    e.preventDefault();
+    if (!isDragging || !dragAction) return;
+    const key = `${day}-${hour}-${half}`;
+
+    setSelectedSlots((prev) => {
+      const updated = new Set(prev);
+      if (dragAction === "select") {
+        updated.add(key);
+      } else if (dragAction === "unselect") {
+        updated.delete(key);
+      }
+      setAvailability(Array.from(updated));
+      return updated;
+    });
+  };
+
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setDragStart(null);
+    setDragAction(null);
+  };
+
+
 
   const isSelected = (day, hour, half) => selectedSlots.has(`${day}-${hour}-${half}`)
   const isHighlighted = (day, hour, half) => highlightedSet.has(`${day}-${hour}-${half}`)
@@ -223,7 +277,10 @@ const WeeklyAvailabilityCalendar = ({
 
   return (
     <div className="overflow-x-auto">
-      <table className="border-collapse w-full text-center text-sm">
+      <table 
+      className="border-collapse w-full text-center text-sm"
+      onMouseUp={() => editable && handleDragEnd()}
+      >
         <thead>
           <tr>
             <th className="border p-2 w-20 text-center align-middle">Time</th>
@@ -244,7 +301,9 @@ const WeeklyAvailabilityCalendar = ({
                       {/* --- Top Half-Hour Slot --- */}
                       <div
                         className="relative h-5 border-b"
-                        onClick={() => editable && toggleSlot(day, hourNum, "top")}
+                        onMouseDown={(e) => editable && handleDragStart(e, day, hourNum, "top")}
+                        onMouseEnter={(e) => editable && handleDragEnter(e, day, hourNum, "top")}
+                        onMouseUp={() => editable && handleDragEnd()}
                       >
                         {/* Layer 1: Blue background for TA availability */}
                         {isSelected(day, hourNum, "top") && (
@@ -262,8 +321,10 @@ const WeeklyAvailabilityCalendar = ({
 
                       {/* --- Bottom Half-Hour Slot --- */}
                       <div
-                        className="relative h-5"
-                        onClick={() => editable && toggleSlot(day, hourNum, "bottom")}
+                        className="relative h-5"   
+                        onMouseDown={(e) => editable && handleDragStart(e, day, hourNum, "bottom")}
+                        onMouseEnter={(e) => editable && handleDragEnter(e, day, hourNum, "bottom")}
+                        onMouseUp={() => editable && handleDragEnd()}
                       >
                         {/* Layer 1: Blue background for TA availability */}
                         {isSelected(day, hourNum, "bottom") && (
