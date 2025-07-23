@@ -52,10 +52,18 @@ function convertProfileAvailabilityGridToKeys(availabilityObj) {
     const capitalizedDay = capitalize(day); // e.g., "monday" → "Monday"
 
     for (const time of slots) {
-      const [hourStr, minuteStrWithSuffix] = time.split(":");
-      const hour = parseInt(hourStr);
-      const minuteStr = minuteStrWithSuffix.slice(0, 2); // Remove am/pm suffix
-      const minute = parseInt(minuteStr);
+      const timeMatch = time.match(/^(\d+):(\d+)(am|pm)$/i);
+      if (!timeMatch) continue;
+
+      let [_, hourStr, minuteStr, period] = timeMatch;
+      let hour = parseInt(hourStr, 10);
+      const minute = parseInt(minuteStr, 10);
+
+      if (period.toLowerCase() === "pm" && hour !== 12) {
+        hour += 12;
+      } else if (period.toLowerCase() === "am" && hour === 12) {
+        hour = 0;
+      }
 
       let suffix = "top"; // assume :00 = top, :30 = bottom
       if (minute === 30) suffix = "bottom";
