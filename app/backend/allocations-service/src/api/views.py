@@ -253,13 +253,14 @@ class OfferViewSet(viewsets.ModelViewSet):
     # Update the create_offer method in OfferViewSet
     @action(detail=False, methods=['post'])
     def create_offer(self, request):
-        """Create a new multi-item offer for a shortlisted student"""
-        from datetime import datetime
+        """
+        Create a new DRAFT multi-item offer for a shortlisted student.
+        This does NOT accept a deadline and does NOT send a notification.
+        """
         from django.utils import timezone
         
         application_id = request.data.get('application_id')
         offer_items = request.data.get('offer_items', [])
-        response_deadline_str = request.data.get('response_deadline')
         notes = request.data.get('notes', '')
         
         # Backward compatibility: single item offer
@@ -291,21 +292,6 @@ class OfferViewSet(viewsets.ModelViewSet):
                 {'error': 'offer_items must be a non-empty list'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Parse response_deadline
-        response_deadline = None
-        if response_deadline_str:
-            try:
-                if response_deadline_str.endswith('Z'):
-                    response_deadline_str = response_deadline_str[:-1] + '+00:00'
-                response_deadline = datetime.fromisoformat(response_deadline_str)
-                if response_deadline.tzinfo is None:
-                    response_deadline = timezone.make_aware(response_deadline)
-            except ValueError as e:
-                return Response(
-                    {'error': f'Invalid response_deadline format: {str(e)}'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
         
         # Check authentication
         if not hasattr(request, 'auth') or not request.auth:
@@ -438,56 +424,56 @@ class OfferViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Create multi-item offer
+            # Create multi-item offer with 'draft' status
             with transaction.atomic():
-                # Create the main offer first
-                offer = Offer.objects.create(
-                    application=application,
+                offer, created = Offer.objects.get_or_create(
                     student=student,
-                    response_deadline=response_deadline,
-                    created_by=scheduler,
-                    notes=notes
+                    status='draft',
+                    defaults={
+                        'application': application,  # The application that starts the draft
+                        'created_by': scheduler,
+                        'notes': notes,
+                        'role': 'ta' # Assuming default role
+                    }
                 )
                 
-                # Create and add offer items
-                created_offer_items = []
+                if created:
+                    message = 'New draft offer created successfully.'
+                    response_status = status.HTTP_201_CREATED
+                else:
+                    # If the draft already existed, append notes if new notes are provided
+                    if notes:
+                        offer.notes = f"{offer.notes}\n---\n{notes}" if offer.notes else notes
+                        offer.save(update_fields=['notes'])
+                    message = 'Items added to existing draft offer.'
+                    response_status = status.HTTP_200_OK
+
+                # Create and add new offer items to the (possibly existing) offer
                 for item_data in validated_items:
+                    # Prevent adding duplicate items to the same offer
                     if item_data['type'] == 'course_offering':
+                        if offer.offer_items.filter(course_offering=item_data['object']).exists():
+                            continue  # Skip if this item is already in the offer
                         offer_item = OfferItem.objects.create(
                             item_type='course_offering',
                             course_offering=item_data['object']
                         )
                     else:  # shared_session
+                        if offer.offer_items.filter(shared_session=item_data['object']).exists():
+                            continue  # Skip if this item is already in the offer
                         offer_item = OfferItem.objects.create(
                             item_type='shared_session',
                             shared_session=item_data['object']
                         )
-                    
                     offer.offer_items.add(offer_item)
-                    created_offer_items.append(offer_item)
-                
-            # Send notifications
-            self._send_offer_notification(offer)
             
             # Return response with all data
             serializer = self.get_serializer(offer)
-            # In your create_offer method, update the return statement:
             return Response({
                 'success': True,
-                'message': 'Multi-item offer created successfully',
-                'offer': serializer.data,  # ← Simplified: just 'offer' instead of 'offer_data'
-                'summary': {
-                    'offer_id': offer.offer_id,
-                    'student_id': student.id,
-                    'student_number': student.student_number,
-                    'application_id': application.application_id,  # ← Keep reference for fetching details separately
-                    'total_weekly_hours': round(total_hours, 1),
-                    'item_count': len(validated_items),
-                    'courses': [course.course_number for course in offer_courses],
-                    'terms': [term.code for term in offer_terms]
-                    # *** REMOVED: detailed items array
-                }
-            }, status=status.HTTP_201_CREATED)
+                'message': message,
+                'offer': serializer.data
+            }, status=response_status)
             
         except ApplicationShortList.DoesNotExist:
             return Response(
@@ -495,6 +481,7 @@ class OfferViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
+            logger.error(f"Error in create_offer: {str(e)}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
@@ -742,18 +729,18 @@ class OfferViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['put', 'patch'])
     def edit_offer(self, request, pk=None):
-        """Edit a pending offer (only schedulers/admins)"""
+        """Edit a draft or pending offer (only schedulers/admins)"""
         offer = self.get_object()
         
-        # Check if offer can be edited
-        if offer.status != 'pending':
+        # Check if offer can be edited (drafts or pending offers)
+        if offer.status not in ['draft', 'pending']:
             return Response(
-                {'error': f'Cannot edit offer with status "{offer.status}". Only pending offers can be edited.'},
+                {'error': f'Cannot edit offer with status "{offer.status}". Only draft or pending offers can be edited.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if offer has expired
-        if offer.is_expired():
+        # Check if offer has expired (only relevant for pending offers)
+        if offer.status == 'pending' and offer.is_expired():
             return Response(
                 {'error': 'Cannot edit expired offer'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -950,15 +937,68 @@ class OfferViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'], url_path='send-offer')
+    def send_offer(self, request, pk=None):
+        """
+        Finalizes a draft offer, sets its deadline, changes status to 'pending',
+        and sends the notification to the student.
+        """
+        offer = self.get_object()
+
+        # 1. Validate the offer can be sent
+        if offer.status != 'draft':
+            return Response(
+                {'error': f'Only draft offers can be sent. This offer has status "{offer.status}".'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2. Get the response deadline from the request body
+        response_deadline_str = request.data.get('response_deadline')
+        if not response_deadline_str:
+            return Response(
+                {'error': 'response_deadline is required to send an offer.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from datetime import datetime
+            if response_deadline_str.endswith('Z'):
+                response_deadline_str = response_deadline_str[:-1] + '+00:00'
+            response_deadline = datetime.fromisoformat(response_deadline_str)
+            if response_deadline.tzinfo is None:
+                response_deadline = timezone.make_aware(response_deadline)
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid response_deadline format: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 3. Update the offer
+        with transaction.atomic():
+            offer.status = 'pending'
+            offer.offer_date = timezone.now()
+            offer.response_deadline = response_deadline
+            offer.save()
+
+        # 4. Send the notification
+        self._send_offer_notification(offer)
+
+        serializer = self.get_serializer(offer)
+        return Response({
+            'success': True,
+            'message': 'Offer has been sent to the student successfully.',
+            'offer': serializer.data
+        }, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['delete'])
     def cancel_offer(self, request, pk=None):
-        """Cancel a pending offer (only schedulers/admins)"""
+        """Cancel a draft or pending offer (only schedulers/admins)"""
         offer = self.get_object()
         
-        # Check if offer can be cancelled
-        if offer.status != 'pending':
+        # Check if offer can be cancelled using the model method
+        if not offer.can_be_cancelled():
             return Response(
-                {'error': f'Cannot cancel offer with status "{offer.status}". Only pending offers can be cancelled.'},
+                {'error': f'Cannot cancel offer with status "{offer.status}". Only draft or pending offers can be cancelled.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
