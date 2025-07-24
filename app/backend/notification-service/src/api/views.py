@@ -86,7 +86,6 @@ class EmailNotificationViewSet(viewsets.ModelViewSet):
             student_name = request.data.get('student_name')
             course_code = request.data.get('course_code')
             course_name = request.data.get('course_name')
-            hours = request.data.get('hours')
             deadline = request.data.get('deadline')
             offer_id = request.data.get('offer_id')
             
@@ -103,7 +102,6 @@ You have received a TA offer for {course_code} - {course_name}.
 
 Offer Details:
 - Course: {course_code} - {course_name}
-- Hours: {hours} hours
 - Response Deadline: {deadline}
 
 Please log into the TA Management System to accept or reject this offer.
@@ -123,7 +121,6 @@ TA Management System
                 context_data={
                     'course_code': course_code,
                     'course_name': course_name,
-                    'hours': hours,
                     'deadline': deadline,
                     'offer_id': offer_id
                 }
@@ -366,6 +363,47 @@ TA Management System
             return Response({
                 'error': f'Failed to resend notification: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    @action(detail=False, methods=['get'])
+    def verify_reset_token(self, request):
+        """Verify if a reset token is valid"""
+        try:
+            token = request.query_params.get('token')
+            if not token:
+                return Response({'error': 'Token required'}, status=400)
+            
+            reset_token = PasswordResetToken.objects.get(token=token)
+            
+            if reset_token.is_used:
+                return Response({'error': 'Token already used'}, status=400)
+            
+            if reset_token.is_expired():
+                return Response({'error': 'Token expired'}, status=400)
+            
+            return Response({
+                'valid': True,
+                'email': reset_token.email,
+                'user_type': reset_token.user_type,
+                'user_id': reset_token.user_id,
+                'expires_at': reset_token.expires_at
+            })
+            
+        except PasswordResetToken.DoesNotExist:
+            return Response({'error': 'Invalid token'}, status=404)
+
+    @action(detail=False, methods=['post'])
+    def mark_token_used(self, request):
+        """Mark a reset token as used"""
+        try:
+            token = request.data.get('token')
+            reset_token = PasswordResetToken.objects.get(token=token)
+            reset_token.is_used = True
+            reset_token.save()
+            
+            return Response({'message': 'Token marked as used'})
+            
+        except PasswordResetToken.DoesNotExist:
+            return Response({'error': 'Token not found'}, status=404)
 
     @action(detail=False, methods=['post'])
     def send_password_reset(self, request):
@@ -398,12 +436,12 @@ TA Management System
             )
             
             # Create reset link
-            reset_link = f"http://localhost:5173/reset-password?token={token}"
+            reset_link = f"http://localhost:8080/reset-password?token={token}"
             
             # Send notification
             subject = "Password Reset Request - TA Management System"
             message_body = f"""
-Hello {user_name},
+Hello,
 
 You have requested a password reset for your TA Management System account.
 
@@ -443,6 +481,183 @@ TA Management System
             return Response({
                 'error': f'Failed to send password reset: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    @action(detail=False, methods=['post'])
+    def send_offer_accepted(self, request):
+        """Send notification when student accepts TA offer"""
+        try:
+            # Extract data
+            student_email = request.data.get('student_email')
+            student_name = request.data.get('student_name')
+            course_code = request.data.get('course_code')
+            course_name = request.data.get('course_name')
+            instructor_email = request.data.get('instructor_email')
+            coordinator_email = request.data.get('coordinator_email')
+            
+            # Send to student
+            student_subject = f"TA Offer Accepted - {course_code}"
+            student_message = f"""
+            <html><body style="font-family: Arial, sans-serif;">
+                <h2>TA Offer Accepted</h2>
+                <p>Dear {student_name},</p>
+                <p>Thank you for accepting the TA position.</p>
+                <p>You will receive further instructions from your course instructor soon.</p>
+                <p>Best regards,<br>TA Management System</p>
+            </body></html>
+            """
+            
+            student_notification = EmailNotification.objects.create(
+                recipient_email=student_email,
+                recipient_name=student_name,
+                subject=student_subject,
+                message_body=student_message,
+                notification_type='offer_accepted',
+                context_data=request.data
+            )
+            send_email_task.delay(str(student_notification.id))
+            
+            # Send to coordinator
+            if coordinator_email:
+                coord_subject = f"TA Offer Accepted - {course_code} - {student_name}"
+                coord_message = f"""
+                <html><body style="font-family: Arial, sans-serif;">
+                    <h2>TA Offer Update</h2>
+                    <p>Dear Coordinator,</p>
+                    <p><strong>{student_name}</strong> has <span style="color: green;">ACCEPTED</span> the TA offer for:</p>
+                    <ul>
+                        <li>Course: {course_code} - {course_name}</li>
+                        <li>Student: {student_name} ({student_email})</li>
+                    </ul>
+                    <p>You can now proceed with the final allocation process.</p>
+                </body></html>
+                """
+                
+                coord_notification = EmailNotification.objects.create(
+                    recipient_email=coordinator_email,
+                    subject=coord_subject,
+                    message_body=coord_message,
+                    notification_type='offer_accepted',
+                    context_data=request.data
+                )
+                send_email_task.delay(str(coord_notification.id))
+            
+            return Response({'message': 'Offer acceptance notifications sent'})
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+    @action(detail=False, methods=['post'])
+    def send_offer_rejected(self, request):
+        """Send notification when student rejects TA offer"""
+        try:
+            student_email = request.data.get('student_email')
+            student_name = request.data.get('student_name')
+            course_code = request.data.get('course_code')
+            coordinator_email = request.data.get('coordinator_email')
+            
+            # Send to coordinator
+            if coordinator_email:
+                coord_subject = f"TA Offer Declined - {course_code} - {student_name}"
+                coord_message = f"""
+                <html><body style="font-family: Arial, sans-serif;">
+                    <h2>TA Offer Update</h2>
+                    <p>Dear Coordinator,</p>
+                    <p><strong>{student_name}</strong> has <span style="color: red;">DECLINED</span> the TA offer for {course_code}.</p>
+                    <p>You may need to extend an offer to another candidate.</p>
+                </body></html>
+                """
+                
+                coord_notification = EmailNotification.objects.create(
+                    recipient_email=coordinator_email,
+                    subject=coord_subject,
+                    message_body=coord_message,
+                    notification_type='offer_rejected',
+                    context_data=request.data
+                )
+                send_email_task.delay(str(coord_notification.id))
+            
+            return Response({'message': 'Offer rejection notifications sent'})
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+    @action(detail=False, methods=['post'])
+    def send_deadline_approaching(self, request):
+        """Send deadline approaching notifications (24-48 hours before)"""
+        try:
+            recipients = request.data.get('recipients', [])
+            deadline_type = request.data.get('deadline_type')  # 'offer_response', 'application_deadline'
+            deadline_date = request.data.get('deadline_date')
+            hours_remaining = request.data.get('hours_remaining', 24)
+            course_code = request.data.get('course_code')
+            
+            notifications_sent = []
+            
+            for recipient in recipients:
+                if deadline_type == 'offer_response':
+                    subject = f"URGENT: TA Offer Response Due in {hours_remaining} Hours - {course_code}"
+                    message_body = f"""
+                    <html><body style="font-family: Arial, sans-serif;">
+                        <div style="border-left: 4px solid #e74c3c; padding: 20px; background-color: #fdf2f2;">
+                            <h2 style="color: #e74c3c;">Urgent: Deadline Approaching</h2>
+                            <p>Dear {recipient.get('name')},</p>
+                            
+                            <p><strong>Your TA offer response is due in {hours_remaining} hours!</strong></p>
+                            
+                            <div style="background-color: white; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                                <p><strong>Course:</strong> {course_code}</p>
+                                <p><strong>Deadline:</strong> {deadline_date}</p>
+                                <p><strong>Time Remaining:</strong> {hours_remaining} hours</p>
+                            </div>
+                            
+                            <p style="color: #e74c3c;">Please log into the TA Management System immediately to respond to your offer.</p>
+                            
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="http://localhost:5173/student/offers" 
+                                style="background-color: #e74c3c; color: white; padding: 15px 30px; 
+                                        text-decoration: none; border-radius: 5px; display: inline-block;">
+                                    Respond to Offer Now
+                                </a>
+                            </div>
+                        </div>
+                    </body></html>
+                    """
+                else:
+                    subject = f"Deadline Reminder: {course_code} Application Due Soon"
+                    message_body = f"""
+                    <html><body style="font-family: Arial, sans-serif;">
+                        <h2>Application Deadline Approaching</h2>
+                        <p>Dear {recipient.get('name')},</p>
+                        <p>This is a reminder that applications for {course_code} are due in {hours_remaining} hours.</p>
+                        <p><strong>Deadline:</strong> {deadline_date}</p>
+                        <p>Please submit your application if you haven't already.</p>
+                    </body></html>
+                    """
+                
+                notification = EmailNotification.objects.create(
+                    recipient_email=recipient.get('email'),
+                    recipient_name=recipient.get('name'),
+                    subject=subject,
+                    message_body=message_body,
+                    notification_type='deadline_approaching',
+                    context_data={
+                        'deadline_type': deadline_type,
+                        'hours_remaining': hours_remaining,
+                        'deadline_date': deadline_date,
+                        'course_code': course_code
+                    }
+                )
+                
+                send_email_task.delay(str(notification.id))
+                notifications_sent.append(str(notification.id))
+            
+            return Response({
+                'message': f'Deadline approaching notifications sent to {len(notifications_sent)} recipients',
+                'notification_ids': notifications_sent
+            })
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
 
 class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = NotificationLog.objects.all()
@@ -490,9 +705,12 @@ def api_root(request):
             'notifications': '/api/notifications/',
             'send_notification': '/api/notifications/send_notification/',
             'send_offer_notification': '/api/notifications/send_offer_notification/',
+            'send_offer_accepted': '/api/notifications/send_offer_accepted/',          # NEW
+            'send_offer_rejected': '/api/notifications/send_offer_rejected/',          # NEW
             'send_final_allocation_notice': '/api/notifications/send_final_allocation_notice/', #for instructor
             'send_application_received': '/api/notifications/send_application_received/',
             'send_deadline_reminder': '/api/notifications/send_deadline_reminder/',
+            'send_deadline_approaching': '/api/notifications/send_deadline_approaching/', # NEW
             'send_password_reset': '/api/notifications/send_password_reset/',
             'notification_stats': '/api/stats/',
             'notification_logs': '/api/logs/',

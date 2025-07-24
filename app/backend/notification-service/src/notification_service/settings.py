@@ -77,7 +77,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'apikey'  # This is always 'apikey' for SendGrid
 EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY')  # Your SendGrid API key
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ubctamanagement@gmail.com')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
 # Celery Configuration
 CELERY_BROKER_URL = 'redis://redis:6379/0'

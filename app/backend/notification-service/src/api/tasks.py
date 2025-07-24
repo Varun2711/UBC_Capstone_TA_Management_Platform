@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 from .models import EmailNotification, NotificationLog
 import logging
+from django.core.mail import EmailMultiAlternatives
 
 
 logger = logging.getLogger(__name__)
@@ -22,13 +23,19 @@ def send_email_task(self, notification_id):
             details=f'Attempt #{notification.attempts}'
         )
         
-        send_mail(
+        # Use EmailMultiAlternatives for HTML support
+        msg = EmailMultiAlternatives(
             subject=notification.subject,
-            message=notification.message_body,
+            body=notification.message_body,  # Plain text fallback
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[notification.recipient_email],
-            fail_silently=False,
+            to=[notification.recipient_email]
         )
+        
+        # Attach HTML version if the message contains HTML
+        if '<html>' in notification.message_body:
+            msg.attach_alternative(notification.message_body, "text/html")
+        
+        msg.send()
         
         notification.status = 'sent'
         notification.sent_at = timezone.now()
@@ -38,7 +45,7 @@ def send_email_task(self, notification_id):
         NotificationLog.objects.create(
             notification=notification,
             action='SENT_SUCCESS',
-            details='Email sent successfully'
+            details='Email sent successfully via SendGrid'
         )
         
         logger.info(f"Email sent successfully to {notification.recipient_email}")

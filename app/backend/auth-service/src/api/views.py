@@ -8,6 +8,8 @@ from django.contrib.auth import get_user_model
 import jwt
 from django.conf import settings
 from django.http import JsonResponse
+import requests
+from django.contrib.auth.hashers import make_password
 
 from .models import Student, Instructor, TAScheduler, Admin
 from .serializers import LoginSerializer, TokenSerializer, StudentRegistrationSerializer
@@ -210,6 +212,92 @@ def validate_token_view(request):
     except Exception as e:
         return Response({"error": f"Token validation failed: {str(e)}", "valid": False}, status=500)
     
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password_complete(request):
+    """Complete password reset using token"""
+    try:
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+        
+        if not token or not new_password:
+            return Response({
+                'error': 'Token and new password are required'
+            }, status=400)
+        
+        # Verify token with notification service
+        notification_response = requests.get(
+            f'http://notification-service:8006/api/notifications/verify_reset_token/',
+            params={'token': token}
+        )
+        
+        if notification_response.status_code != 200:
+            return Response({
+                'error': 'Invalid or expired token'
+            }, status=400)
+        
+        token_data = notification_response.json()
+        email = token_data['email']
+        user_type = token_data['user_type']
+        user_id = token_data['user_id']
+        
+        # Hash the new password
+        hashed_password = make_password(new_password)
+        
+        # Update password based on user type
+        if user_type == 'student':
+            try:
+                student = Student.objects.get(student_number=user_id)
+                student.password = hashed_password
+                student.save()
+                django_user = User.objects.get(username=email)
+                django_user.set_password(new_password)  # Use set_password for proper hashing
+                django_user.save()
+            except Student.DoesNotExist:
+                return Response({'error': 'Student not found'}, status=404)
+                
+        elif user_type == 'instructor':
+            try:
+                instructor = Instructor.objects.get(employee_number=user_id)
+                instructor.password = hashed_password
+                instructor.save()
+            except Instructor.DoesNotExist:
+                return Response({'error': 'Instructor not found'}, status=404)
+                
+        elif user_type == 'scheduler':
+            try:
+                scheduler = TAScheduler.objects.get(employee_number=user_id)
+                scheduler.password = hashed_password
+                scheduler.save()
+            except TAScheduler.DoesNotExist:
+                return Response({'error': 'Scheduler not found'}, status=404)
+                
+        elif user_type == 'admin':
+            try:
+                admin = Admin.objects.get(employee_number=user_id)
+                admin.password = hashed_password
+                admin.save()
+            except Admin.DoesNotExist:
+                return Response({'error': 'Admin not found'}, status=404)
+        
+        # Mark token as used
+        requests.post(
+            f'http://notification-service:8006/api/notifications/mark_token_used/',
+            json={'token': token}
+        )
+        
+        return Response({
+            'message': 'Password reset successfully',
+            'user_type': user_type,
+            'email': email
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': f'Password reset failed: {str(e)}'
+        }, status=500)
+    
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def api_root(request):
@@ -222,5 +310,6 @@ def api_root(request):
             'validate': '/api/auth/validate/',
             'token_refresh': '/api/auth/token/refresh/',
             'logout': '/api/auth/logout/',
+            'reset_password_complete': '/api/auth/reset-password-complete/',
         }
     })
