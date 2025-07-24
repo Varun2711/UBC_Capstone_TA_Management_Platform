@@ -1,3 +1,9 @@
+/**
+ * Password Reset Step 4: after clicking the link that was emailed to them,
+ * user is navigated here, where they input a new password and then confirm
+ * that new password by entering it again. Their password is then updated
+ * in the database accordingly
+ */
 "use client"
 
 import { useState } from "react"
@@ -12,7 +18,7 @@ export default function NewPasswordStep({ onNext, requestPasswordReset }) {
   const [password, setPassword] = useState(""); // new password
   const [confirm, setConfirm] = useState(""); // confirm new password
   const [errors, setErrors] = useState({});
-    
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 

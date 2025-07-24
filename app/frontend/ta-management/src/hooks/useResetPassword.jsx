@@ -83,6 +83,40 @@ export function useResetPassword() {
         console.log("request password reset")
         return true;
     }
+
+    /*
+    * Request notification service to email user a link to reset their password
+    */
+    const requestSendResetLink = async() => {
+        try {             
+            // const response = await axios.post(API_URL + '/notifications/send_password_reset/', 
+            //     { 
+            //         email: userData.email,
+            //         user_type: userData.user_type,
+            //         user_id: userData.id_number
+            //     }
+            // );
+
+            // mocked for now, since waiting on actual notification service to be finalized
+            const response = 
+            {
+                message: "Password reset email sent",
+                notification_id: "134546t3t9refdshg293121245t6rfds"
+            }
+
+            return {
+                success: true,
+                data: response.message
+            }
+        } catch (error) {
+            if (error.response?.status === 500) {
+                return { 
+                    success: false, 
+                    data: "There was an error sending your password reset link. Please try again, or if the issue persists, contact the system administrator."
+                }
+            }
+        }
+    }
     
-    return { requestAccountLookup, verifyId, requestPasswordReset }
+    return { requestAccountLookup, verifyId, requestPasswordReset, requestSendResetLink }
 }

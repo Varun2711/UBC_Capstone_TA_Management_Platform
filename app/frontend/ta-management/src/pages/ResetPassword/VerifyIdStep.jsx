@@ -1,3 +1,9 @@
+/*
+* Reset Password Step 2: user is prompted to enter their student or employee id
+to verify their identity prior to sending them a password reset email. This exists
+as an quick additional security measure to verify that they are the owner of the 
+account.
+*/
 "use client"
 
 import { useState } from "react"
@@ -8,7 +14,7 @@ import { Label } from "../../components/ui/label"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 import { toast } from "sonner"
 
-export default function VerifyIdStep({ onNext, verifyId }) {
+export default function VerifyIdStep({ onNext, verifyId, requestSendResetLink }) {
   // state
   const [id, setId] = useState("")
   const [error, setError] = useState("")
@@ -18,11 +24,19 @@ export default function VerifyIdStep({ onNext, verifyId }) {
 
     if(validInput()) {
       // check inputted student/employee id with value in database
-      const response = await verifyId(id)
+      let response = await verifyId(id)
 
       if(response.success) {
         toast.success(response.data)
-        onNext(id);
+
+        // attempt to send password reset email
+        response = await requestSendResetLink();
+        if(response.success) {
+          toast.success(response.message)
+          onNext(id);
+        } else {
+          toast.error(response.data)
+        }
       } else {
         toast.error(response.data)
       }

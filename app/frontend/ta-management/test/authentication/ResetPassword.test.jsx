@@ -11,12 +11,24 @@ vi.mock('@/hooks/useResetPassword', () => {
         data: {
           email: 'johncena@wwe.com',
           user_type: 'student',
-          id_number: 63847593,
+          id_number: 12345678,
         },
       }),
 
+      verifyId: vi.fn().mockResolvedValue({
+        success: true,
+        data: "Your identity has been verified"
+      }),
+
+      requestSendResetLink: vi.fn().mockResolvedValue({
+        success: true,
+        data: {
+          message: "Password reset email sent",
+          notification_id: "134546t3t9refdshg293121245t6rfds"
+        }
+      }),
+      
       // todo, works for now, will adjust as i write the actual backend logic
-      verifyId: vi.fn().mockResolvedValue(true),
       requestPasswordReset: vi.fn().mockResolvedValue(true),
     }),
   };
@@ -25,20 +37,22 @@ vi.mock('@/hooks/useResetPassword', () => {
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import EmailStep from "@/pages/ResetPassword/EmailStep"
 import userEvent from "@testing-library/user-event"
-import { getAllByRole, render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import VerifyIdStep from "@/pages/ResetPassword/VerifyIdStep"
 import NewPasswordStep from "@/pages/ResetPassword/NewPasswordStep"
 import SuccessStep from "@/pages/ResetPassword/SuccessStep"
-import ResetPasswordController from "@/pages/ResetPassword/ResetPasswordController"
+import ResetPasswordController, { RESET_PASSWORD_STEPS } from "@/pages/ResetPassword/ResetPasswordController"
+import LinkSentStep from "@/pages/ResetPassword/LinkSentStep";
 
 // helper functions to render pages wrapped in memoryrouter
 
 // master page that /forgot-password routes to in the actual application
-const renderResetPassword = () => {
+// added initialStep prop so you can specify which step of the process you wish to start on
+const renderResetPassword = (initialStep=RESET_PASSWORD_STEPS.enter_email) => {
   return render(
     <MemoryRouter initialEntries={["/forgot-password"]}>
-      <ResetPasswordController />
+      <ResetPasswordController initialStep={initialStep} />
     </MemoryRouter>
   )
 }
@@ -63,12 +77,20 @@ const renderStep2 = () => {
 const renderStep3 = () => {
   return render(
     <MemoryRouter initialEntries={["/forgot-password"]}>
-      <NewPasswordStep />
+      <LinkSentStep />
     </MemoryRouter>
   )
 }
 
 const renderStep4 = () => {
+  return render(
+    <MemoryRouter initialEntries={["/forgot-password"]}>
+      <NewPasswordStep />
+    </MemoryRouter>
+  )
+}
+
+const renderStep5 = () => {
   return render(
     <MemoryRouter initialEntries={["/forgot-password"]}>
       <SuccessStep />
@@ -137,8 +159,26 @@ describe('Reset Password', () => {
     expect(screen.getByText(/back to login/i)).toBeInTheDocument()
   })
 
-  it('renders step 3 - set new password correclty', () => {
+  it('renders step 3 - link sent correctly', () => {
     renderStep3();
+
+    // breadcrumb
+    const homeLink = screen.getByRole("link", { name: "Home" })
+    expect(homeLink).toHaveAttribute("href", "/")
+
+    const loginLink = screen.getByRole("link", { name: "Login" })
+    expect(loginLink).toHaveAttribute("href", "/login")
+
+    expect(screen.getByRole("link", {name: "Forgot Password"})).toBeInTheDocument()
+
+    // heading and page description
+    expect(screen.getByRole("heading"), { name: /email sent!/i }).toBeInTheDocument();
+    expect(screen.getByText(/please check your email for a link to reset your password/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", {name: "Return to landing page"})).toBeInTheDocument()
+  })
+
+  it('renders step 4 - set new password correctly', () => {
+    renderStep4();
 
     // breadcrumb
     const homeLink = screen.getByRole("link", { name: "Home" })
@@ -170,8 +210,8 @@ describe('Reset Password', () => {
     expect(screen.getByText(/back to login/i)).toBeInTheDocument()
   })
 
-  it('renders step 4 - success correctly', () => {
-    renderStep4();
+  it('renders step 5 - success correctly', () => {
+    renderStep5();
 
     // breadcrumb
     const homeLink = screen.getByRole("link", { name: "Home" })
@@ -190,7 +230,7 @@ describe('Reset Password', () => {
 
   // test program flow/behavior with good input --------------------------------------
 
-  it('executes each step of reset password flow in sequence when valid user input provided', async () => {
+  it('sends user a link to reset their password when valid email/id combination provided', async () => {
       // Set up
       renderResetPassword();
       const user = userEvent.setup()
@@ -220,26 +260,34 @@ describe('Reset Password', () => {
 
       // Ensure that step 3 renders
       await waitFor(() => {
-        expect(screen.getByRole("heading"), { name: /set new password/i }).toBeInTheDocument();
+        expect(screen.getByRole("heading"), { name: /email sent!/i }).toBeInTheDocument();
       })
 
-      // STEP 3:
-      // Type new password and confirm password into input fields
-      const passInput = screen.getByLabelText(/new password/i);
-      const confirmPassInput = screen.getByLabelText(/confirm password/i);
+      // At this point, user would check their email for the password reset link and click on it
+  })
 
-      // password must be at least 8 characters
-      await user.type(passInput, "Banana#1");
-      await user.type(confirmPassInput, "Banana#1");
+  it('allows user to set a new password when inputted valid and matching password/confirm password', async() => {
+    // Set up
+    renderResetPassword(RESET_PASSWORD_STEPS.set_new_password);
+    const user = userEvent.setup()
+    
+    // STEP 4:
+    // Type new password and confirm password into input fields
+    const passInput = screen.getByLabelText(/new password/i);
+    const confirmPassInput = screen.getByLabelText(/confirm password/i);
 
-      // Click "next" button
-      const resetPassButton = screen.getByRole("button", { name: /reset password/i });
-      await userEvent.click(resetPassButton);
+    // password must be at least 8 characters
+    await user.type(passInput, "Banana#1");
+    await user.type(confirmPassInput, "Banana#1");
 
-      // Ensure that step 4 (success) renders
-      await waitFor(() => {
-        expect(screen.getByRole("heading"), { name: /success!/i }).toBeInTheDocument();
-      })
+    // Click "next" button
+    const resetPassButton = screen.getByRole("button", { name: /reset password/i });
+    await userEvent.click(resetPassButton);
+
+    // Ensure that step 5 (success) renders
+    await waitFor(() => {
+      expect(screen.getByRole("heading"), { name: /success!/i }).toBeInTheDocument();
+    })
   })
 
   // test input validation error handling
@@ -302,7 +350,7 @@ describe('Reset Password', () => {
   })
 
   it('displays error messages when password/confirm password not provided', async () => {
-    renderStep3();
+    renderStep4();
 
     // Click "reset passsword" button without inputting anything
     let nextButton = screen.getByRole("button", {name: /reset password/i });
@@ -318,7 +366,7 @@ describe('Reset Password', () => {
 
   it('displays error message when password does not satisfy minimum requirements', async () => {
     // for now, this is just length >= 8
-    renderStep3();
+    renderStep4();
     const user = userEvent.setup()
 
     // Type new password and confirm password that do not meet password requirements (too short) into input fields
@@ -336,7 +384,7 @@ describe('Reset Password', () => {
   })
 
   it('displays error message when inputted passwords do not match', async () => {
-    renderStep3();
+    renderStep4();
     const user = userEvent.setup()
 
     // Type non-matching password and confirm password into input fields

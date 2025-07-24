@@ -1,16 +1,26 @@
 /*
-Component to handle flow of password reset operation, store data,
-keep track of which step user is on, and display correct page
+* Summary *
+Component to handle flow of password reset operation, store data, keep track of 
+which step user is on, and display correct page
 
-Our password reset has 4 steps as follows:
+* Params *
+- initialStep: specify what step of the password reset process you want rendered
+(defaults to step 0 (enter email) if none provided)
+
+* Detailed Description *
+Our password reset has 5 steps as follows:
 1. Enter email: user enters email associated with their account and we look it up
 in the db
 2. Verify id: if that email is tied to an account, we ask the user to enter their
 student/employee number and then verify that with what's in the db to confirm
 their identity as the account owner
-3. Set new password: if their id matches up, user is prompted to set a new password
-and then confirm that new password (enter it a second time, passwords must match)
-4. Success: new password is hashed and stored in the database, user is informed
+3. Send reset password link: if their id matches up, user is emailed a link to 
+reset their password
+4. Set new password: when user clicks link sent to their email address, they are
+navigated to the frontend page to set a new password. we prompt them to set a new 
+password and then confirm that new password (enter it a second time, passwords 
+must match)
+5. Success: new password is hashed and stored in the database, user is informed
 that password reset was successful, and user is prompted to login
 */
 
@@ -20,18 +30,20 @@ import VerifyIdStep from "./VerifyIdStep";
 import NewPasswordStep from "./NewPasswordStep";
 import SuccessStep from "./SuccessStep";
 import { useResetPassword } from "@/hooks/useResetPassword";
+import LinkSentStep from "./LinkSentStep";
 
-export default function ResetPasswordController() {
-    // enum to make state information more readable
-    const STEPS = {
-        enter_email: 0,
-        verify_id: 1,
-        set_new_password: 2,
-        success: 3
-    }
-    
+// enum to make what step we're on more readable 
+export const RESET_PASSWORD_STEPS = {
+    enter_email: 0,
+    verify_id: 1,
+    link_sent: 2,
+    set_new_password: 3,
+    success: 4
+}
+
+export default function ResetPasswordController({ initialStep }) {
     // state information
-    const [step, setStep] = useState(STEPS.enter_email);
+    const [step, setStep] = useState(initialStep ?? RESET_PASSWORD_STEPS.enter_email);
     const [email, setEmail] = useState("")
     const [id, setId] = useState("") // student id or employee id, depending on user_type
 
@@ -43,26 +55,27 @@ export default function ResetPasswordController() {
     // the logic that occurs when you press "Next" on the EmailStep page
     const handleEmailNext = (emailInput) => {
         setEmail(emailInput);
-        setStep(STEPS.verify_id);
+        setStep(RESET_PASSWORD_STEPS.verify_id);
     }
 
     const handleVerifyNext = (idInput) => {
         setId(idInput);
-        setStep(STEPS.set_new_password);
+        setStep(RESET_PASSWORD_STEPS.link_sent);
     }
 
     const handleNewPasswordNext = () => {
-        setStep(STEPS.success)
+        setStep(RESET_PASSWORD_STEPS.success)
     }
     
     // Conditionally render the appropriate page based on which step of the password 
     // reset process the user is on, along with function parameters
     return (
         <>
-            { step === STEPS.enter_email && <EmailStep onNext={handleEmailNext} requestAccountLookup={resetPassword.requestAccountLookup} /> }
-            { step === STEPS.verify_id && <VerifyIdStep email={email} onNext={handleVerifyNext} verifyId={resetPassword.verifyId} /> }
-            { step === STEPS.set_new_password && <NewPasswordStep email={email} id={id} onNext={handleNewPasswordNext} requestPasswordReset={resetPassword.requestPasswordReset} /> }
-            { step === STEPS.success && <SuccessStep />}
+            { step === RESET_PASSWORD_STEPS.enter_email && <EmailStep onNext={handleEmailNext} requestAccountLookup={resetPassword.requestAccountLookup} /> }
+            { step === RESET_PASSWORD_STEPS.verify_id && <VerifyIdStep email={email} onNext={handleVerifyNext} verifyId={resetPassword.verifyId} requestSendResetLink={resetPassword.requestSendResetLink}/> }
+            { step === RESET_PASSWORD_STEPS.link_sent && <LinkSentStep />}
+            { step === RESET_PASSWORD_STEPS.set_new_password && <NewPasswordStep email={email} id={id} onNext={handleNewPasswordNext} requestPasswordReset={resetPassword.requestPasswordReset} /> }
+            { step === RESET_PASSWORD_STEPS.success && <SuccessStep />}
         </>
     )
 }

@@ -1,3 +1,8 @@
+/*
+ * Password Reset Step 1: User enters their email address and we look it up
+in the database to see their account exists. This is also where we grab their
+student/employee id in order to verify it in step 2.
+ */
 "use client"
 
 import { useState } from "react"
