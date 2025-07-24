@@ -5,17 +5,14 @@ import { Link } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
-import { useResetPassword } from "@/hooks/useResetPassword"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 
-export default function NewPasswordStep({ onNext }) {
+export default function NewPasswordStep({ onNext, requestPasswordReset }) {
   // state
   const [password, setPassword] = useState(""); // new password
   const [confirm, setConfirm] = useState(""); // confirm new password
   const [errors, setErrors] = useState({});
-
-  const { requestPasswordReset } = useResetPassword();
-
+    
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -23,7 +20,7 @@ export default function NewPasswordStep({ onNext }) {
       // attempt password reset (todo)
       const success = await requestPasswordReset(password, confirm);
       if(success) {
-        console.log("password has been reset!")
+        //console.log("password has been reset!")
         onNext();
       }
     }

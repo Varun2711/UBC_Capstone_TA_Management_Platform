@@ -5,25 +5,26 @@ import { Link } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
-import { useResetPassword } from "@/hooks/useResetPassword"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
+import { toast } from "sonner"
 
-export default function VerifyIdStep({ onNext }) {
+export default function VerifyIdStep({ onNext, verifyId }) {
   // state
   const [id, setId] = useState("")
   const [error, setError] = useState("")
-
-  const { verifyId } = useResetPassword();
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     if(validInput()) {
-      // check inputted student/employee id with value in database (todo)
-      const success = await verifyId(id);
-      if(success) {
-        console.log("valid id")
+      // check inputted student/employee id with value in database
+      const response = await verifyId(id)
+
+      if(response.success) {
+        toast.success(response.data)
         onNext(id);
+      } else {
+        toast.error(response.data)
       }
     }
   }
@@ -60,7 +61,6 @@ export default function VerifyIdStep({ onNext }) {
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Confirm Your Identity</h1>
             <p className="text-gray-600 mb-8">
-              { /* TODO: what if an account does not exist for that email address? */}
               Verify your identity by entering the student or employee number associated with your account.
             </p>
           </div>

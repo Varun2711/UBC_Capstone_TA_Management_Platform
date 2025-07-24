@@ -2,9 +2,11 @@
 Custom hook to look after api requests related to password reset operation
 */
 import axios from "axios"
+import { useState } from "react";
 
 export function useResetPassword() {
     const API_URL = 'http://localhost:8080/api';
+    const [accountInfo, setAccountInfo] = useState("");
 
     /*
     Check if provided email address belongs to a user account
@@ -23,9 +25,12 @@ export function useResetPassword() {
                 }
             );
 
+            const userData = response.data;
+            setAccountInfo(userData);
+
             return { 
                 success: true, 
-                data: response.data 
+                data: userData
             };
 
         } catch (error) {
@@ -43,10 +48,33 @@ export function useResetPassword() {
         }
     }
 
+    /*
+    * Compare inputted id (student id or employee id, depending on user_type) to one that we have on file
+    Returns object in following format:
+    {
+        success: true/false,
+        data: message to be displayed to user based on result of comparison
+    }
+    */
     const verifyId = async (id) => {
-        // todo: check that id inputted matches what is stored in their account
-        console.log("verify id")
-        return true;
+        // handle edge case where we don't have their account info for some reason
+        if(Object.keys(accountInfo).length === 0) {
+            return {
+                success: false,
+                data: "Account information missing. Please restart the password reset process."
+            }
+        }
+
+        // boolean: does provided id match what is set in their account?
+        const inputtedIDMatchesStoredValue = accountInfo.id_number == parseInt(id);
+
+        // todo: implement set # of attempts to verify identity (security)
+        return {
+            success: inputtedIDMatchesStoredValue,
+            data: inputtedIDMatchesStoredValue
+                ? "Your identity has been verified"
+                : "The ID number you entered does not match our records. X attempts remain."
+        }
     }
 
     const requestPasswordReset = async (password, confirm) => {

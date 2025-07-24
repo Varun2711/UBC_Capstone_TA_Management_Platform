@@ -19,6 +19,7 @@ import EmailStep from "./EmailStep";
 import VerifyIdStep from "./VerifyIdStep";
 import NewPasswordStep from "./NewPasswordStep";
 import SuccessStep from "./SuccessStep";
+import { useResetPassword } from "@/hooks/useResetPassword";
 
 export default function ResetPasswordController() {
     // enum to make state information more readable
@@ -29,9 +30,12 @@ export default function ResetPasswordController() {
         success: 3
     }
     
+    // state information
     const [step, setStep] = useState(STEPS.enter_email);
     const [email, setEmail] = useState("")
-    const [id, setId] = useState("") // student id or employee id, depending on user type
+    const [id, setId] = useState("") // student id or employee id, depending on user_type
+
+    const resetPassword = useResetPassword();
 
     // Each of these handlers are passed as a component prop to handle what happens when 
     // you click the "Next" button on a particular step of the password reset process.
@@ -52,12 +56,12 @@ export default function ResetPasswordController() {
     }
     
     // Conditionally render the appropriate page based on which step of the password 
-    // reset process the user is on
+    // reset process the user is on, along with function parameters
     return (
         <>
-            { step === STEPS.enter_email && <EmailStep onNext={handleEmailNext} /> }
-            { step === STEPS.verify_id && <VerifyIdStep email={email} onNext={handleVerifyNext} /> }
-            { step === STEPS.set_new_password && <NewPasswordStep email={email} id={id} onNext={handleNewPasswordNext} /> }
+            { step === STEPS.enter_email && <EmailStep onNext={handleEmailNext} requestAccountLookup={resetPassword.requestAccountLookup} /> }
+            { step === STEPS.verify_id && <VerifyIdStep email={email} onNext={handleVerifyNext} verifyId={resetPassword.verifyId} /> }
+            { step === STEPS.set_new_password && <NewPasswordStep email={email} id={id} onNext={handleNewPasswordNext} requestPasswordReset={resetPassword.requestPasswordReset} /> }
             { step === STEPS.success && <SuccessStep />}
         </>
     )

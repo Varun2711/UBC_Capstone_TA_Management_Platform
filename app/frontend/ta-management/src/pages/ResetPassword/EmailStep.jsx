@@ -5,22 +5,19 @@ import { data, Link } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
-import { useResetPassword } from "@/hooks/useResetPassword"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 import { toast } from "sonner"
 
-export default function EmailStep({ onNext }) {
+export default function EmailStep({ onNext, requestAccountLookup }) {
   // state
   const [email, setEmail] = useState("")
   const [error, setError] = useState("")
   
-  const { requestAccountLookup } = useResetPassword();
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     if(validInput()) {
-      // lookup email address in db to check that is associated with an account
+      // lookup email address in database to check that is associated with an account
       const response = await requestAccountLookup(email);
 
       // if email found, proceed to next step of password reset
