@@ -1789,16 +1789,10 @@ export default function ProfilePage() {
                       </>
                     ) : (
                       <Button
-                        onClick={() => {
-                          // FIX 
-                          if (Array.isArray(availabilityData) && availabilityData.length === 50) {
-                            // Use existing valid data
-                            setIsEditingAvailability(true);
-                          } else {
-                            // Create new valid data if current data is invalid
-                            setAvailabilityData(Array(50).fill(false));
-                            setIsEditingAvailability(true);
-                          }
+                        onClick={() => { 
+                          // Initialize editing state with fresh copy of saved availability
+                          setAvailabilityData(userData.availability ? [...userData.availability] : Array(50).fill(false));
+                          setIsEditingAvailability(true);
                         }}
                         className="gap-2"
                       >

@@ -51,7 +51,7 @@ const AddedOffersTab = ({ addedOffers, setAddedOffers, activeOffers, setActiveOf
                             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                                 {taOffer.offers.map((offer, idx) => (
                                 <li key={idx}>
-                                    {offer.course_number} - {offer.course_name} ({offer.type} Section {offer.section})
+                                    {offer.course_number} - {offer.course_name} (Section {offer.section_number})
                                 </li>
                                 ))}
                             </ul>

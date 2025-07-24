@@ -419,16 +419,40 @@ export default function TAAllocationPage() {
         (o) => o.taStudentId === selectedTA.application.student.id
       )
 
+      console.log("existingTA at beginning of in handleAddTAtoAddedOfferTab: ", existingTA);
       console.log("selectedCourse.time_slots_info in handleAddTAtoAddedOfferTab: ", selectedCourse.time_slots_info);
-      const newOffer = {
-        course_number: selectedCourse.course_number,
-        course_name: selectedCourse.course_name,
-        section: selectedCourse.section,
-        sectionId: selectedCourse.sectionId, // ✅ Correct
-        instructor: selectedCourse.instructor,
-        semester: selectedCourse.semester,
-        type: selectedCourse.type,
-        slots: convertTimeSlotsInfoToKeys(selectedCourse.time_slots_info),
+      const needsConversion = selectedCourse.time_slots_info.some(slot => slot.includes(":"));
+      console.log("In handleAddTAtoAddedOfferTab, needsConversion: ", needsConversion);
+      
+      let newOffer;
+
+      console.log("In handleAddTAtoAddedOfferTab, selectedCourse: ", selectedCourse);
+      console.log("In handleAddTAtoAddedOfferTab, course_number: ", selectedCourse.course_number);
+      console.log("In handleAddTAtoAddedOfferTab, course_name: ", selectedCourse.course_name);
+      console.log("In handleAddTAtoAddedOfferTab, section: ", selectedCourse.section);
+      console.log("In handleAddTAtoAddedOfferTab, sectionId: ", selectedCourse.sectionId);
+      console.log("In handleAddTAtoAddedOfferTab, instructor: ", selectedCourse.section_number);
+      console.log("In handleAddTAtoAddedOfferTab, semester: ", selectedCourse.semester);
+      console.log("In handleAddTAtoAddedOfferTab, type: ", selectedCourse.type);
+      console.log("In handleAddTAtoAddedOfferTab, time_slots_info: ", selectedCourse.time_slots_info);
+
+      if (needsConversion) {
+        newOffer = {
+          course_number: selectedCourse.course_number,
+          course_name: selectedCourse.course_name,
+          sectionId: selectedCourse.sectionId, // ✅ Correct
+          section_number: selectedCourse.section_number,
+          slots: convertTimeSlotsInfoToKeys(selectedCourse.time_slots_info),
+        }
+      }
+      else {
+        newOffer = {
+          course_number: selectedCourse.course_number,
+          course_name: selectedCourse.course_name,
+          sectionId: selectedCourse.sectionId, // ✅ Correct
+          section_number: selectedCourse.section_number,
+          slots: selectedCourse.time_slots_info,
+        }
       }
 
       if (existingTA) {
@@ -436,7 +460,7 @@ export default function TAAllocationPage() {
         const alreadyAdded = existingTA.offers.some(
           (offer) =>
             offer.course_number === newOffer.course_number &&
-            offer.section === newOffer.section
+            offer.sectionId === newOffer.sectionId
         )
         if (alreadyAdded) return prevOffers
 
@@ -580,7 +604,14 @@ export default function TAAllocationPage() {
     console.log("In checkForConflicts, availability_grid: ", availability);
     console.log("In checkForConflicts, courseSlots: ", courseSlots);
     const availabilitySet = new Set(convertProfileAvailabilityGridToKeys(availability));
-    const formattedTimeSlotsInfoToKeys = convertTimeSlotsInfoToKeys(courseSlots);
+
+    // Check if courseSlots are already in key format
+    const needsConversion = courseSlots.some(slot => slot.includes(":"));
+    console.log("In checkForConflicts, needsConversion: ", needsConversion);
+    
+    const formattedTimeSlotsInfoToKeys = needsConversion
+      ? convertTimeSlotsInfoToKeys(courseSlots)
+      : courseSlots;
 
     console.log("In checkForConflicts, availabilitySet: ", availabilitySet);
     console.log("In checkForConflicts, selected courses's formattedTimeSlotsInfoToKeys: ", formattedTimeSlotsInfoToKeys);
@@ -934,7 +965,7 @@ export default function TAAllocationPage() {
   }, []);
 
   const selectedSections = [...selectedCourseOfferings, ...selectedSharedSessions];
-
+  console.log("selectedSections got updated to: ", selectedSections);
   //When a new applicant is selected, the selected sections become unselected
   useEffect(() => {
     setSelectedCourseOfferings([]); 
@@ -951,7 +982,7 @@ export default function TAAllocationPage() {
 
   console.log("selectedApplication in CardContent: ", selectedApplication);
   console.log("selectedTAProfile in CardContent: ", selectedTAProfile);
-
+  console.log("selectedSections before highlightedSlots is updated: ", selectedSections);
   const highlightedSlots = selectedTA ? [
                   // Include slots from the currently selected course section (red highlight for potential offer)
                   ...(selectedSections.length > 0
@@ -1357,7 +1388,7 @@ export default function TAAllocationPage() {
                                             sectionId: section.shared_session_id,
                                             section_type_display: section.session_type_display,
                                             section_number: section.section_number,
-                                            time_slots_info: section.time_slots_info,
+                                            time_slots_info: convertTimeSlotsInfoToKeys(section.time_slots_info),
                                             weeklyDuration: getTotalHoursFromSlotString(formatSlotsFromTimeInfo(section.time_slots_info)),
                                           };
                                           console.log("selected is having the following after clicking a lab/tutorial: ", selected);
@@ -1460,19 +1491,9 @@ export default function TAAllocationPage() {
                                 newOffers.push(course);
                               }
 
-                              const newStatus = totalHours >= selectedTA.maxHours ? "Fully Allocated" : "Partially Allocated";
-                              const updatedTA = {
-                                ...selectedTA,
-                                currentHours: totalHours,
-                                status: newStatus,
-                              };
-
-                              setTaList((prevTAs) =>
-                                prevTAs.map((t) => (t.id === updatedTA.id ? updatedTA : t))
-                              );
 
                               newOffers.forEach((course) => {
-                                handleAddTAtoAddedOfferTab(updatedTA, course);
+                                handleAddTAtoAddedOfferTab(selectedTA, course);
                               });
 
                               // Reset selections
