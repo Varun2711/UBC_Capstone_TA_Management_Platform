@@ -503,6 +503,7 @@ class OfferItem(models.Model):
 class Offer(models.Model):
     """Enhanced offer model supporting multiple items"""
     STATUS_CHOICES = [
+        ('draft', 'Draft'),
         ('pending', 'Pending Response'),
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
@@ -520,9 +521,9 @@ class Offer(models.Model):
     role = models.CharField(max_length=3, choices=[('ta', 'Teaching Assistant')], default='ta')
     
     # Offer lifecycle
-    offer_date = models.DateTimeField(default=timezone.now)
-    response_deadline = models.DateTimeField(help_text="Deadline for student to respond")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    offer_date = models.DateTimeField(null=True, blank=True) # <-- Make nullable, set when sent
+    response_deadline = models.DateTimeField(null=True, blank=True, help_text="Deadline for student to respond") # <-- Make nullable
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft') # <-- CHANGE DEFAULT
     
     # Response tracking
     responded_at = models.DateTimeField(null=True, blank=True)
@@ -591,8 +592,16 @@ class Offer(models.Model):
             return '12'
     
     def is_expired(self):
-        """Check if offer has expired"""
+        """Check if offer has expired safely."""
+        # --- FIX STARTS HERE ---
+        # First, check if a deadline even exists. If not, it can't be expired.
+        if not self.response_deadline:
+            return False
+        
+        # Now, it's safe to compare the datetime objects.
         expired = self.response_deadline < timezone.now() and self.status == 'pending'
+        # --- FIX ENDS HERE ---
+        
         if expired and self.status == 'pending':
             # Auto-update status when checked
             self.status = 'expired'
@@ -606,11 +615,11 @@ class Offer(models.Model):
 
     def can_be_edited(self):
         """Check if offer can be edited"""
-        return self.status == 'pending' and not self.is_expired()
+        return self.status == 'draft' # <-- Only drafts can be edited
     
     def can_be_cancelled(self):
         """Check if offer can be cancelled"""
-        return self.status == 'pending'
+        return self.status in ['draft', 'pending'] # <-- Drafts and pending offers can be cancelled
     
     def __str__(self):
         items = self.offer_items.all()
