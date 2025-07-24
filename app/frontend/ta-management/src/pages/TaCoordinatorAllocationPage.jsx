@@ -1051,9 +1051,9 @@ export default function TAAllocationPage() {
 
               {/* Allocate Tab */}
               <TabsContent value="allocate" className="space-y-4">
-                <div className="grid gap-6 lg:grid-cols-2">
+                <div className="flex gap-4 h-[700px]">
                   {/* TA Selection */}
-                  <Card>
+                  <Card className="flex flex-col flex-1">
                     <CardHeader>
                       <CardTitle>Select TA</CardTitle>
                       <CardDescription>
@@ -1061,181 +1061,224 @@ export default function TAAllocationPage() {
                       </CardDescription>
                     </CardHeader>
 
-                    <CardContent>
-                      {selectedTA && selectedApplication && selectedTAProfile ? (
-                        // ✅ TA DETAIL VIEW
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src={"/placeholder.svg"} alt={selectedApplication.application.student.name} />
-                              <AvatarFallback>
-                                {selectedApplication.application.student.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-lg font-semibold">{selectedApplication.application.student.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {selectedApplication.application.workload} hours • {selectedApplication.application.student.study_level}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-4">
-                            <p className="text-sm font-medium mb-2">Email: {selectedApplication.application.student.email}</p>
-                            <p className="text-sm font-medium mb-2">Student number: {selectedApplication.application.student.student_number}</p>
-                            <p className="text-sm font-medium mb-2">Year standing: {selectedTAProfile.student_info.year_standing}</p>
-                            <p className="text-sm font-medium mb-2">Major: {selectedTAProfile.student_info.program}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">Course Preferences</h4>
-                            {selectedTAProfile.course_preferences.map((preference, index) => (
-                              <div key={preference.id} className="text-sm font-medium mb-2">
-                                {index + 1}. {preference.course_code.toUpperCase()}
+                    <CardContent className="flex flex-col flex-1 overflow-hidden">
+                      <div className="flex-grow overflow-y-auto pr-2">
+                        {selectedTA && selectedApplication && selectedTAProfile ? (
+                          // ✅ TA DETAIL VIEW
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-4">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={"/placeholder.svg"} alt={selectedApplication.application.student.name} />
+                                <AvatarFallback>
+                                  {selectedApplication.application.student.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-lg font-semibold">{selectedApplication.application.student.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {selectedApplication.application.workload} hours • {selectedApplication.application.student.study_level}
+                                </p>
                               </div>
-                            ))}
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">Experience</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedTAProfile.experiences.map((experience, index) => (
-                                <div key={index} className="border rounded-xl p-4 mb-4 shadow-sm bg-white">
-                                  <Badge key={index} variant="outline" className="absolute top-1 left-1 text-xs">
-                                    Experience {index + 1}
-                                  </Badge>
-                                  <h3 className="text-md font-semibold">{experience.position_title}</h3>
-                                  <p className="text-sm font-medium mb-2">Professor: {experience.organization}</p>
+                            </div>
+                            
+                            <div className="mt-4 flex justify-between">
+                              {/* Left Column */}
+                              <div className="flex flex-col">
+                                <p className="text-sm font-medium mb-2">
+                                  Email: {selectedApplication.application.student.email}
+                                </p>
+                                <p className="text-sm font-medium mb-2">
+                                  Student number: {selectedApplication.application.student.student_number}
+                                </p>
+                              </div>
+
+                              {/* Right Column */}
+                              <div className="flex flex-col">
+                                <p className="text-sm font-medium mb-2">
+                                  Year standing: {selectedTAProfile.student_info.year_standing}
+                                </p>
+                                <p className="text-sm font-medium mb-2">
+                                  Major: {selectedTAProfile.student_info.program}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between w-full">
+                              <div className="mr-4">
+                                <h4 className="text-sm font-medium mb-2">Skills</h4>
+
+                                {/* Technical Skills */}
+                                <div className="mb-2">
+                                  <p className="text-xs font-semibold mb-1">Technical Skills</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {selectedTAProfile.skills
+                                      .filter((skill) => skill.skill_type === "technical")
+                                      .map((skill, index) => (
+                                        <Badge key={`technical-${index}`} variant="outline">
+                                          {skill.name}
+                                        </Badge>
+                                      ))}
+                                  </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
 
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">Skills</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedTAProfile.skills.map((skill, index) => (
-                                <Badge key={index} variant="outline">
-                                  {skill.name}
-                                </Badge>
-                              ))}
+                                {/* Soft Skills */}
+                                <div>
+                                  <p className="text-xs font-semibold mb-1">Soft Skills</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {selectedTAProfile.skills
+                                      .filter((skill) => skill.skill_type === "soft")
+                                      .map((skill, index) => (
+                                        <Badge key={`soft-${index}`} variant="outline">
+                                          {skill.name}
+                                        </Badge>
+                                      ))}
+                                  </div>
+                                </div>
+                              </div>
+
+
+                              <div>
+                                <h4 className="text-sm font-medium mb-2">Course Preferences</h4>
+                                {selectedTAProfile.course_preferences.map((preference, index) => (
+                                  <div key={preference.id} className="text-sm font-medium mb-2">
+                                    {index + 1}. {preference.course_code.toUpperCase()}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                          
-                          <div>
+
                             <div>
-                              <h4 className="text-sm font-medium mb-2">Availability</h4>
-                              {console.log("addedOffers right before WeeklyAvailabilityCalendar is called is: ", addedOffers)}
-                              {console.log("selectedTAProfile right before WeeklyAvailabilityCalendar is called is: ", selectedTAProfile)}
-                              <WeeklyAvailabilityCalendar
-                                mode={"allocation"}
-                                editable={false}
-                                availability={selectedTAProfile.availability}
-                                // Calculate highlightedSlots from assigned courses for the selected TA
-                                highlightedSlots={highlightedSlots}
-                              />
+                              <h4 className="text-sm font-medium mb-2">Experience</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {selectedTAProfile.experiences.map((experience, index) => (
+                                  <div key={index} className="border rounded-xl p-4 mb-4 shadow-sm bg-white">
+                                    <Badge key={index} variant="outline" className="absolute top-1 left-1 text-xs">
+                                      Experience {index + 1}
+                                    </Badge>
+                                    <h3 className="text-md font-semibold">{experience.position_title}</h3>
+                                    <p className="text-sm font-medium mb-2">Professor: {experience.organization}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div>
+                                <h4 className="text-sm font-medium mb-2">Availability</h4>
+                                {console.log("addedOffers right before WeeklyAvailabilityCalendar is called is: ", addedOffers)}
+                                {console.log("selectedTAProfile right before WeeklyAvailabilityCalendar is called is: ", selectedTAProfile)}
+                                <WeeklyAvailabilityCalendar
+                                  mode={"allocation"}
+                                  editable={false}
+                                  availability={selectedTAProfile.availability}
+                                  // Calculate highlightedSlots from assigned courses for the selected TA
+                                  highlightedSlots={highlightedSlots}
+                                />
+                              </div>
+
                             </div>
 
+                            {/* ✅ Go Back Button */}
+                            <Button variant="outline" onClick={() => setSelectedTAId(null)}>
+                              ← Go Back
+                            </Button>
                           </div>
-
-                          {/* ✅ Go Back Button */}
-                          <Button variant="outline" onClick={() => setSelectedTAId(null)}>
-                            ← Go Back
-                          </Button>
-                        </div>
-                      ) : (
-                        // ✅ TA LIST VIEW
-                        <>
-                          {/* ✅ Search Bar */}
-                          <input
-                            type="text"
-                            placeholder="Search TAs by name, email, ID, major, and other details..."
-                            className="w-full mb-4 p-2 border border-gray-300 rounded-md"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                          />
-                          
-                          <div className="space-y-3">
-                            {filteredShortlistedApplicants
-                              .map((item) => {
-                                const currentStudent = item.application.student;
-                                const currentStudentApplicationId = item.application.application_id;
-                                const currentStudentId = item.application.student.id;
-                                
-                                return(
-                                  <div
-                                    key={currentStudentApplicationId}
-                                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                                      selectedTA?.id === currentStudentId ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
-                                    }`}
-                                    onClick={() => {
-                                      setSelectedTAId(currentStudentId)
-                                      setSelectedApplication(item);
-                                      setSelectedTAProfile(profilesOfShortlistedApplicants.find((profile) => profile.id === currentStudentId));
-                                      console.log(" On clicking the applicant, selectedTAId: ", selectedTAId);
-                                      console.log(" On clicking the applicant, selectedApplication: ", selectedApplication);
-                                      console.log(" On clicking the applicant, selectedTAProfile: ", selectedTAProfile);
-                                    }}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
-                                          <AvatarImage src={"/placeholder.svg"} alt={currentStudent.name} />
-                                          <AvatarFallback>
-                                            {currentStudent.name
-                                              .split(" ")
-                                              .map((n) => n[0])
-                                              .join("")}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                          <p className="font-medium">{currentStudent.name}</p>
-                                          <p className="text-sm text-muted-foreground">
-                                            {item.application.workload} hours • {currentStudent.study_level}
-                                          </p>
+                        ) : (
+                          // ✅ TA LIST VIEW
+                          <>
+                            {/* ✅ Search Bar */}
+                            <input
+                              type="text"
+                              placeholder="Search TAs by name, email, ID, major, and other details..."
+                              className="w-full mb-4 p-2 border border-gray-300 rounded-md"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            
+                            <div className="space-y-3">
+                              {filteredShortlistedApplicants
+                                .map((item) => {
+                                  const currentStudent = item.application.student;
+                                  const currentStudentApplicationId = item.application.application_id;
+                                  const currentStudentId = item.application.student.id;
+                                  
+                                  return(
+                                    <div
+                                      key={currentStudentApplicationId}
+                                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                        selectedTA?.id === currentStudentId ? "border-blue-500 bg-blue-50" : "hover:bg-muted/50"
+                                      }`}
+                                      onClick={() => {
+                                        setSelectedTAId(currentStudentId)
+                                        setSelectedApplication(item);
+                                        setSelectedTAProfile(profilesOfShortlistedApplicants.find((profile) => profile.id === currentStudentId));
+                                        console.log(" On clicking the applicant, selectedTAId: ", selectedTAId);
+                                        console.log(" On clicking the applicant, selectedApplication: ", selectedApplication);
+                                        console.log(" On clicking the applicant, selectedTAProfile: ", selectedTAProfile);
+                                      }}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                          <Avatar className="h-8 w-8">
+                                            <AvatarImage src={"/placeholder.svg"} alt={currentStudent.name} />
+                                            <AvatarFallback>
+                                              {currentStudent.name
+                                                .split(" ")
+                                                .map((n) => n[0])
+                                                .join("")}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <div>
+                                            <p className="font-medium">{currentStudent.name}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                              {item.application.workload} hours • {currentStudent.study_level}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center justify-between">
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                          {/* Example: Use discipline rankings as tags */}
+                                          {Object.values(item.application.disciplineRankings)
+                                            .slice(0, 3)
+                                            .map((rank, index) => (
+                                              <Badge key={index} variant="outline" className="text-xs">
+                                                {rank}
+                                              </Badge>
+                                            ))}
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                          <button
+                                            className="inline-flex items-center text-blue-600 hover:text-blue-900 p-1 rounded"
+                                          >
+                                            Select Applicant <Eye className="h-4 w-4 ml-1" />
+                                          </button>
                                         </div>
                                       </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                      <div className="mt-2 flex flex-wrap gap-1">
-                                        {/* Example: Use discipline rankings as tags */}
-                                        {Object.values(item.application.disciplineRankings)
-                                          .slice(0, 3)
-                                          .map((rank, index) => (
-                                            <Badge key={index} variant="outline" className="text-xs">
-                                              {rank}
-                                            </Badge>
-                                          ))}
-                                      </div>
-                                      <div className="mt-2 flex flex-wrap gap-1">
-                                        <button
-                                          className="inline-flex items-center text-blue-600 hover:text-blue-900 p-1 rounded"
-                                        >
-                                          Select Applicant <Eye className="h-4 w-4 ml-1" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })
-                            }
-                            {filteredShortlistedApplicants.length === 0 && (
-                              <p className="text-sm text-muted-foreground text-center">No TAs match your search.</p>
-                            )}
-                          </div>
-                        </>
-                      )}
+                                  );
+                                })
+                              }
+                              {filteredShortlistedApplicants.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center">No TAs match your search.</p>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
 
                   {/* Course Section Selection */}
-                  <Card>
+                  <Card className="flex flex-col flex-1">
                     <CardHeader>
                       <CardTitle>Select Course Section</CardTitle>
                       <CardDescription>Choose a course section that needs a TA</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex flex-col flex-1 overflow-hidden">
 
                       {/* ✅ Search Bar */}
                       <input
@@ -1289,7 +1332,7 @@ export default function TAAllocationPage() {
                       </div>
 
                       {/* Courses and their Sections displayed below */}
-                      <div className="h-[500px] overflow-y-auto pr-2">
+                      <div className="flex-grow overflow-y-auto pr-2">
                         <div className="space-y-4">
                           {filteredCourses.map((course) => {
                             const availableOfferings = fetchedOfferings[course.id] || []
