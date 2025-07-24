@@ -34,14 +34,21 @@ export default function NewPasswordStep({ onNext, requestPasswordReset }) {
 
   /* 
   Perform input validation and return true if valid, false if invalid
+  Password requirements:
+  - 8 characters in length
+  - Contains at least: 1 uppercase, 1 lowercase, 1 number, 1 symbol
   */
   function validInput() {
     let validationErrors = {};
+    // regular expression to check if has at least 1 upper/lower/number/symbol
+    const passwordRequirementsRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
 
     if(!password.trim()) { // password field was left empty
       validationErrors.password = "Password is required"
     } else if(password.length < 8) { // TODO: decide on password requirements, for now must be >= 8 characters, easy to add more
       validationErrors.password = "Password must be at least 8 characters in length"
+    } else if(!passwordRequirementsRegex.test(password)){
+      validationErrors.password = "Password must include at least one of each: uppercase letter, lowercase letter, number, and symbol"
     }
 
     if(!confirm.trim()) { // confirm password field was left empty
@@ -80,8 +87,17 @@ export default function NewPasswordStep({ onNext, requestPasswordReset }) {
               Enter a new password to be used for your account.
             </p>
             <p className="text-gray-600">
-              <b>Password requirements: </b> &ge; 8 characters in length
+              <b>Password requirements: </b> 
             </p>
+            <div className="mx-auto w-min">
+              <ul className="list-disc pl-5 text-nowrap text-left">
+                <li>&ge; 8 characters in length </li>
+                <li> At least one uppercase letter </li>
+                <li> At least one lowercase letter </li>
+                <li> At least one number </li>
+                <li> At least one symbol</li>
+              </ul>
+            </div>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit} role="form" noValidate>

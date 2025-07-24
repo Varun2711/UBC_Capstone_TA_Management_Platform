@@ -364,8 +364,7 @@ describe('Reset Password', () => {
     expect(screen.getByText("Confirm password is required")).toBeInTheDocument()
   })
 
-  it('displays error message when password does not satisfy minimum requirements', async () => {
-    // for now, this is just length >= 8
+  it('displays error message when password is not long enough', async () => {
     renderStep4();
     const user = userEvent.setup()
 
@@ -381,6 +380,24 @@ describe('Reset Password', () => {
     await userEvent.click(nextButton);
 
     expect(screen.getByRole("alert"), {name: /password must be at least 8 characters in length/i}).toBeInTheDocument();
+  })
+
+  it('displays error message when password does not satisfy requirements', async () => {
+    renderStep4();
+    const user = userEvent.setup()
+
+    // Type new password and confirm password that do not meet password requirements (missing symbol) into input fields
+    const passInput = screen.getByLabelText(/new password/i);
+    const confirmPassInput = screen.getByLabelText(/confirm password/i);
+
+    await user.type(passInput, "Spaghetti1");
+    await user.type(confirmPassInput, "Spaghetti1");
+
+    // Click "reset passsword" button
+    let nextButton = screen.getByRole("button", {name: /reset password/i });
+    await userEvent.click(nextButton);
+
+    expect(screen.getByRole("alert"), {name: /password must include at least one of each: uppercase letter, lowercase letter, number, and symbol/i}).toBeInTheDocument();
   })
 
   it('displays error message when inputted passwords do not match', async () => {
