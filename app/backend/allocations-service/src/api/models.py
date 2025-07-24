@@ -4,6 +4,9 @@ import uuid
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from django.core.exceptions import ValidationError
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Import shared models (these should be consistent across services)
 class Department(models.Model):
@@ -397,21 +400,64 @@ class OfferItem(models.Model):
     
     @property
     def weekly_hours(self):
-        """Calculate weekly hours from time slots"""
-        total_hours = 0
-        time_slots = self.time_slots  # Use the property
+        """Calculate weekly hours from time slots - handles duration calculation internally"""
+        total_hours = 0.0
         
-        for slot in time_slots:
-            try:
-                if hasattr(slot, 'duration') and slot.duration:
-                    # Convert timedelta to hours
-                    hours = slot.duration.total_seconds() / 3600
-                    total_hours += hours
-            except AttributeError:
-                # Fallback: assume 1 hour if duration not available
-                total_hours += 1.0
+        try:
+            if self.item_type == 'course_offering' and self.course_offering:
+                time_slots = self.course_offering.time_slots.all()
+            elif self.item_type == 'shared_session' and self.shared_session:
+                time_slots = self.shared_session.time_slots.all()
+            else:
+                return 0.0
+            
+            for slot in time_slots:
+                # Calculate duration directly from start_time and end_time
+                # No dependency on course service having duration_hours property
+                if hasattr(slot, 'start_time') and hasattr(slot, 'end_time') and slot.start_time and slot.end_time:
+                    try:
+                        from datetime import datetime, timedelta
+                        
+                        # Create datetime objects for calculation
+                        today = datetime.today().date()
+                        start_datetime = datetime.combine(today, slot.start_time)
+                        end_datetime = datetime.combine(today, slot.end_time)
+                        
+                        # Calculate duration in hours
+                        duration = end_datetime - start_datetime
+                        slot_hours = duration.total_seconds() / 3600  # Convert to hours
+                        total_hours += slot_hours
+                        
+                    except Exception as e:
+                        logger.error(f"Error calculating slot duration for {slot}: {e}")
+                        # Fallback based on item type
+                        if self.item_type == 'course_offering':
+                            total_hours += 3.0  # Standard lecture hours
+                        else:  # shared_session
+                            total_hours += 1.5  # Standard lab/tutorial hours
+                else:
+                    # Fallback when time slot data is missing/invalid
+                    logger.warning(f"Missing or invalid time data for slot {slot}")
+                    if self.item_type == 'course_offering':
+                        total_hours += 3.0  # Standard lecture hours
+                    else:  # shared_session
+                        total_hours += 1.5  # Standard lab/tutorial hours
                 
-        return round(total_hours, 1) if total_hours > 0 else 0.0
+            return round(total_hours, 1) if total_hours > 0 else 0.0
+            
+        except Exception as e:
+            logger.error(f"Error calculating weekly hours for {self}: {e}")
+            # Final fallback
+            return 3.0 if self.item_type == 'course_offering' else 1.5
+    
+    @property
+    def course(self):
+        """Get the course associated with this offer item"""
+        if self.item_type == 'course_offering' and self.course_offering:
+            return self.course_offering.course
+        elif self.item_type == 'shared_session' and self.shared_session:
+            return self.shared_session.course
+        return None
     
     @property
     def required_hours_category(self):

@@ -11,6 +11,9 @@ from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+import requests
+import logging
+logger = logging.getLogger(__name__)
 
     # Add this import at the top
 from .models import (
@@ -22,6 +25,8 @@ from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedAppli
 # Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
 from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsAuthenticatedUser, IsStudentUser
+
+
 
 # Combined permissions
 IsSchedulerOrAdmin = IsSchedulerUser | IsAdminUser
@@ -217,6 +222,33 @@ class OfferViewSet(viewsets.ModelViewSet):
                 return student.id
             except (User.DoesNotExist, Student.DoesNotExist):
                 return None
+
+
+    def _get_coordinator_email_for_offer(self, offer):
+        """Get coordinator email for an offer"""
+        try:
+            # Option 1: Use the scheduler who created the offer
+            if offer.created_by and hasattr(offer.created_by, 'email') and offer.created_by.email:
+                return offer.created_by.email
+            
+            # Option 2: Try to get instructor from first course offering
+            first_offer_item = offer.offer_items.first()
+            if first_offer_item and first_offer_item.item_type == 'course_offering':
+                course_offering = first_offer_item.course_offering
+                if course_offering and hasattr(course_offering, 'instructor') and course_offering.instructor and hasattr(course_offering.instructor, 'email'):
+                    return course_offering.instructor.email
+            
+            # Option 3: Use scheduler's email as fallback
+            if offer.created_by and hasattr(offer.created_by, 'name'):
+                scheduler_name = offer.created_by.name.lower().replace(' ', '.')
+                return f"{scheduler_name}@ubc.ca"
+            
+            # Final fallback
+            return 'ta-coordinator@ubc.ca'
+            
+        except Exception as e:
+            logger.error(f"Error getting coordinator email for offer {offer.offer_id}: {str(e)}")
+            return 'ta-coordinator@ubc.ca'        
         
     # Update the create_offer method in OfferViewSet
     @action(detail=False, methods=['post'])
@@ -433,6 +465,9 @@ class OfferViewSet(viewsets.ModelViewSet):
                     
                     offer.offer_items.add(offer_item)
                     created_offer_items.append(offer_item)
+                
+            # Send notifications
+            self._send_offer_notification(offer)
             
             # Return response with all data
             serializer = self.get_serializer(offer)
@@ -1026,9 +1061,127 @@ class OfferViewSet(viewsets.ModelViewSet):
                         assigned_by=offer.created_by,
                         notes=f"Auto-assigned from accepted offer {offer.offer_id} - {offer_item.item_type} ({offer_item.weekly_hours}h/week)"
                     )
+            if response_status == 'accepted':
+                self._send_offer_accepted_notification(offer)
+            elif response_status == 'rejected':
+                self._send_offer_rejected_notification(offer)
+    
     
         serializer = self.get_serializer(offer)
         return Response(serializer.data)
+    
+    def _send_offer_notification(self, offer):
+        """Send offer notification via notification service"""
+        
+        try:
+            # Get the first offer item to determine primary course
+            first_offer_item = offer.offer_items.first()
+            
+            if not first_offer_item:
+                logger.error(f"No offer items found for offer {offer.offer_id}")
+                return
+            
+            # Determine course info based on offer items
+            if offer.offer_items.count() == 1:
+                # Single item offer
+                course_code = first_offer_item.course.course_number
+                course_name = first_offer_item.course.course_name
+            else:
+                # Multi-item offer
+                course_code = "Multiple Courses"
+                course_name = f"Multi-course offer ({offer.offer_items.count()} courses)"
+            
+            # Prepare notification data
+            notification_data = {
+                'student_email': offer.student.email,
+                'student_name': offer.student.name,
+                'course_code': course_code,
+                'course_name': course_name,
+                'deadline': offer.response_deadline.strftime('%Y-%m-%d %H:%M:%S'),
+                'offer_id': str(offer.offer_id),
+                'total_hours': offer.total_weekly_hours  # This uses the property that sums all offer items
+            }
+            
+            # Call notification service
+            response = requests.post(
+                'http://notification-service:8006/api/notifications/send_offer_notification/',
+                json=notification_data,
+                timeout=10
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to send offer notification: {response.text}")
+            else:
+                logger.info(f"Offer notification sent successfully for offer {offer.offer_id}")
+                
+        except Exception as e:
+            logger.error(f"Error sending offer notification: {str(e)}")
+            # Don't fail the offer creation if notification fails
+
+    def _send_offer_accepted_notification(self, offer):
+        """Send offer accepted notification to coordinator"""
+        import requests
+        
+        try:
+            # Get coordinator email
+            coordinator_email = self._get_coordinator_email_for_offer(offer)
+            
+            # Get course info from offer items
+            first_offer_item = offer.offer_items.first()
+            if offer.offer_items.count() == 1:
+                course_code = first_offer_item.course.course_number
+                course_name = first_offer_item.course.course_name
+            else:
+                course_code = "Multiple Courses"
+                course_name = f"Multi-course offer ({offer.offer_items.count()} courses)"
+            
+            notification_data = {
+                'student_email': offer.student.email,
+                'student_name': offer.student.name,
+                'course_code': course_code,
+                'course_name': course_name,
+                'coordinator_email': coordinator_email,
+                'total_hours': offer.total_weekly_hours
+            }
+            
+            requests.post(
+                'http://notification-service:8006/api/notifications/send_offer_accepted/',
+                json=notification_data,
+                timeout=10
+            )
+            
+        except Exception as e:
+            logger.error(f"Error sending accepted notification: {str(e)}")
+
+    def _send_offer_rejected_notification(self, offer):
+        """Send offer rejected notification to coordinator"""
+        import requests
+        
+        try:
+            coordinator_email = self._get_coordinator_email_for_offer(offer)
+            
+            # Get course info from offer items
+            first_offer_item = offer.offer_items.first()
+            if offer.offer_items.count() == 1:
+                course_code = first_offer_item.course.course_number
+            else:
+                course_code = f"Multiple Courses ({offer.offer_items.count()})"
+            
+            notification_data = {
+                'student_email': offer.student.email,
+                'student_name': offer.student.name,
+                'course_code': course_code,
+                'coordinator_email': coordinator_email
+            }
+            
+            requests.post(
+                'http://notification-service:8006/api/notifications/send_offer_rejected/',
+                json=notification_data,
+                timeout=10
+            )
+            
+        except Exception as e:
+            logger.error(f"Error sending rejected notification: {str(e)}")
 
 class AssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = AssignmentSerializer
