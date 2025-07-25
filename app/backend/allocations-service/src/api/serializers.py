@@ -79,12 +79,13 @@ class OfferItemSerializer(serializers.ModelSerializer):
     course_number = serializers.SerializerMethodField()
     section_number = serializers.SerializerMethodField()
     weekly_hours = serializers.SerializerMethodField()
+    time_slot = serializers.SerializerMethodField()
     
     class Meta:
         model = OfferItem
         fields = [
             'offer_item_id', 'item_type', 
-            'course_number', 'section_number', 'weekly_hours'
+            'course_number', 'section_number', 'weekly_hours','time_slot'
             # *** REMOVED: course_offering, shared_session, course, term, time_slot_details, required_hours_category
         ]
     
@@ -97,6 +98,14 @@ class OfferItemSerializer(serializers.ModelSerializer):
     def get_weekly_hours(self, obj):
         """Get calculated weekly hours from time slots"""
         return obj.weekly_hours
+    
+    def get_time_slot(self, obj):
+        """Get the specific time slot details for this item."""
+        details = obj.time_slot_details
+        # The property returns a list, we want the first (and only) item
+        if details:
+            return details[0]
+        return None
 
 class OfferSerializer(serializers.ModelSerializer):
     """Simplified serializer for multi-item offers"""
