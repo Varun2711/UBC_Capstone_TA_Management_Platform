@@ -160,7 +160,7 @@ class JobPostingSerializer(serializers.ModelSerializer):
 
     term_id = serializers.PrimaryKeyRelatedField(
         queryset=Term.objects.all(),
-        source='term'     
+        source='term'       
     )
 
     created_by_id = serializers.PrimaryKeyRelatedField(
@@ -252,7 +252,9 @@ class ApplicationSerializer(serializers.ModelSerializer):
     termSelection_id = serializers.PrimaryKeyRelatedField(
         queryset = Term.objects.all(),
         source = 'termSelection',
-        write_only = True
+        write_only = True,
+        required=False,
+        allow_null=True    
     )
 
     responses = ApplicationResponseSerializer(many=True, read_only=True)
