@@ -32,11 +32,11 @@ import { getAdminDashboard } from "@/logic/admin"
 export default function AdminDashboard() {
   const [selectedView, setSelectedView] = useState("overview")
   const [searchQuery, setSearchQuery] = useState("")
-  // const [systemStats, setSystemStats] = useState([])
-  // const [userBreakdown, setUserBreakdown] = useState([])
-  // const [recentActivity, setRecentActivity] = useState([])
-  // const [systemAlerts, setSystemAlerts] = useState([])
-  // const [pendingActions, setPendingActions] = useState([])
+  const [systemStats, setSystemStats] = useState([])
+  const [userBreakdown, setUserBreakdown] = useState([])
+  const [recentActivity, setRecentActivity] = useState([])
+  const [systemAlerts, setSystemAlerts] = useState([])
+  const [pendingActions, setPendingActions] = useState([])
 
   const getStatusIcon = (status) => {
     switch (status) {
