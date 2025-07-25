@@ -13,16 +13,57 @@ import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 
+/* 
+  Helper fn: performs input validation on inputted passwords and 
+  returns an object containing errors for password/confirm password,
+  or empty if no errors found.
+  Password requirements:
+  - 8 characters in length
+  - Contains at least: 1 uppercase, 1 lowercase, 1 number, 1 symbol
+*/
+export function getPasswordValidationErrors(pass, confirmPass) {
+    let validationErrors = {};
+    // regular expression to check if has at least 1 upper/lower/number/symbol
+    const passwordRequirementsRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
+
+    if(!pass.trim()) { // password field was left empty
+      validationErrors.password = "Password is required"
+    } else if(pass.length < 8) { // TODO: decide on password requirements, for now must be >= 8 characters, easy to add more
+      validationErrors.password = "Password must be at least 8 characters in length"
+    } else if(!passwordRequirementsRegex.test(pass)){
+      validationErrors.password = "Password must include at least one of each: uppercase letter, lowercase letter, number, and symbol"
+    }
+
+    if(!confirmPass.trim()) { // confirm password field was left empty
+      validationErrors.confirm = "Confirm password is required"
+    } else if(confirmPass !== pass) { // password and confirm password don't match
+      validationErrors.confirm = "Passwords must match"
+    }
+
+    return validationErrors;
+}
+
+/*
+Main component
+*/
 export default function NewPasswordStep({ onNext, requestPasswordReset }) {
   // state
   const [password, setPassword] = useState(""); // new password
   const [confirm, setConfirm] = useState(""); // confirm new password
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if(validInput()) {
+    // have to store errors in another variable to use it immediately, because 
+    // react state does not update ASAP, is asynchronous
+    const validationErrors = getPasswordValidationErrors(password, confirm);
+    setErrors(validationErrors)
+
+    // check if there's at least one error (means invalid input)
+    const noErrors = Object.keys(validationErrors).length === 0
+
+    if(noErrors) {
       // attempt password reset (todo)
       const success = await requestPasswordReset(password, confirm);
       if(success) {
@@ -30,37 +71,6 @@ export default function NewPasswordStep({ onNext, requestPasswordReset }) {
         onNext();
       }
     }
-  }
-
-  /* 
-  Perform input validation and return true if valid, false if invalid
-  Password requirements:
-  - 8 characters in length
-  - Contains at least: 1 uppercase, 1 lowercase, 1 number, 1 symbol
-  */
-  function validInput() {
-    let validationErrors = {};
-    // regular expression to check if has at least 1 upper/lower/number/symbol
-    const passwordRequirementsRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
-
-    if(!password.trim()) { // password field was left empty
-      validationErrors.password = "Password is required"
-    } else if(password.length < 8) { // TODO: decide on password requirements, for now must be >= 8 characters, easy to add more
-      validationErrors.password = "Password must be at least 8 characters in length"
-    } else if(!passwordRequirementsRegex.test(password)){
-      validationErrors.password = "Password must include at least one of each: uppercase letter, lowercase letter, number, and symbol"
-    }
-
-    if(!confirm.trim()) { // confirm password field was left empty
-      validationErrors.confirm = "Confirm password is required"
-    } else if(confirm !== password) { // password and confirm password don't match
-      validationErrors.confirm = "Passwords must match"
-    }
-
-    setErrors(validationErrors)
-
-    // check if there's at least one error (means invalid input)
-    return Object.keys(validationErrors).length === 0
   }
 
   const handlePasswordChange = (e) => {

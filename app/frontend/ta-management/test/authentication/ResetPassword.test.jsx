@@ -29,7 +29,7 @@ vi.mock('@/hooks/useResetPassword', () => {
       }),
       
       // todo, works for now, will adjust as i write the actual backend logic
-      requestPasswordReset: vi.fn().mockResolvedValue(true),
+      requestPasswordReset: vi.fn().mockResolvedValue(true)
     }),
   };
 });
@@ -417,5 +417,4 @@ describe('Reset Password', () => {
 
     expect(screen.getByRole("alert"), {name: /passwords must match/i}).toBeInTheDocument();
   })
-
 })
