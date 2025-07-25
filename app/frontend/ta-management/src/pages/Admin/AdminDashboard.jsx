@@ -17,6 +17,7 @@ import {
   Filter,
   Download,
   Settings,
+  GraduationCap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,25 +36,37 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const result = await getAdminDashboard();
-        const statistics = result?.statistics;
-        if (!statistics) {
-          throw new Error("Invalid data format from API.");
-        }
-        setStats(statistics);
-      } catch (err) {
-        console.error("Error fetching admin dashboard:", err);
-        setError("Failed to load dashboard data.");
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  const fetchDashboardData = async () => {
+    try {
+      const result = await getAdminDashboard();
+      
+      // DEBUG: Log the entire response to see its structure
+      console.log("Full API response:", result);
+      console.log("Type of result:", typeof result);
+      console.log("Keys in result:", Object.keys(result || {}));
+      
+      // Check if the response has a 'data' property (common in success_response wrappers)
+      if (result?.data?.statistics) {
+        console.log("Found statistics in result.data:", result.data.statistics);
+        setStats(result.data.statistics);
+      } else if (result?.statistics) {
+        console.log("Found statistics in result:", result.statistics);
+        setStats(result.statistics);
+      } else {
+        console.error("No statistics found. Full response structure:", JSON.stringify(result, null, 2));
+        throw new Error("Invalid data format from API.");
       }
-    };
+    } catch (err) {
+      console.error("Error fetching admin dashboard:", err);
+      setError("Failed to load dashboard data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchDashboardData();
-  }, []);
+  fetchDashboardData();
+}, []);
 
   const statItems = stats
     ? [
