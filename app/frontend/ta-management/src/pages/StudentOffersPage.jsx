@@ -52,15 +52,70 @@ const studentProfile = {
   avatar: "/placeholder.svg?height=40&width=40",
 }
 
-// Mock data for current offers
+// Updated mock data for current offers
 const currentOffers = [
   {
     id: 1,
-    course: "CS 102 - Programming Fundamentals",
-    courseCode: "CS 102",
-    instructor: "Dr. Wilson",
-    section: "Lab L01",
-    sectionTime: "Monday 2:00-4:00 PM",
+    courses: [
+      {
+        course: "CS 102 - Programming Fundamentals",
+        courseCode: "CS 102",
+        instructor: "Dr. Wilson",
+        courseOfferings: [
+          {
+            type: "Lecture",
+            section: "LEC 001",
+            time: "Mon/Wed 10:00-11:30 AM",
+          },
+          {
+            type: "Lecture",
+            section: "LEC 002",
+            time: "Tue/Thurs 10:00-11:30 AM",
+          },
+        ],
+        sharedSessions: [
+          {
+            type: "Lab",
+            section: "LAB L01",
+            time: "Monday 2:00-4:00 PM",
+          },
+          {
+            type: "Tutorial",
+            section: "TUT T01",
+            time: "Friday 1:00-2:00 PM",
+          },
+        ],
+      },
+      {
+        course: "CS 103 - Data Structures",
+        courseCode: "CS 103",
+        instructor: "Dr. Smith",
+        courseOfferings: [
+          {
+            type: "Lecture",
+            section: "LEC 002",
+            time: "Tue/Thu 9:00-10:30 AM",
+          },
+          {
+            type: "Lecture",
+            section: "LEC 002",
+            time: "Mon/Wed/Fri 10:00-11:00 AM",
+          },
+        ],
+        sharedSessions: [
+          {
+            type: "Lab",
+            section: "LAB L02",
+            time: "Wednesday 3:00-5:00 PM",
+          },
+          {
+            type: "Tutorial",
+            section: "TUT T02",
+            time: "Friday 3:00-4:00 PM",
+          },
+        ],
+      },
+    ],
     hoursPerWeek: 10,
     hourlyRate: 15.5,
     totalWeeks: 16,
@@ -72,8 +127,8 @@ const currentOffers = [
     daysLeft: 5,
     requirements: "Previous programming experience preferred. Must be available for office hours.",
     responsibilities: [
-      "Assist students during lab sessions",
-      "Grade lab assignments and provide feedback",
+      "Assist students during lab and tutorial sessions",
+      "Grade assignments and provide feedback",
       "Hold 2 hours of office hours per week",
       "Attend weekly TA meetings",
     ],
@@ -82,11 +137,52 @@ const currentOffers = [
   },
   {
     id: 2,
-    course: "CS 250 - Computer Organization",
-    courseCode: "CS 250",
-    instructor: "Dr. Davis",
-    section: "Lecture 001 & Lab L02",
-    sectionTime: "TTh 11:00-12:30, Lab: Wed 3:00-5:00 PM",
+    courses: [
+      {
+        course: "CS 250 - Computer Organization",
+        courseCode: "CS 250",
+        instructor: "Dr. Davis",
+        courseOffering: {
+          type: "Lecture",
+          section: "LEC 001",
+          time: "Tue/Thu 11:00-12:30 PM",
+        },
+        sharedSessions: [
+          {
+            type: "Lab",
+            section: "LAB L02",
+            time: "Wednesday 3:00-5:00 PM",
+          },
+          {
+            type: "Tutorial",
+            section: "TUT T01",
+            time: "Friday 10:00-11:00 AM",
+          },
+        ],
+      },
+      {
+        course: "CS 260 - Digital Systems",
+        courseCode: "CS 260",
+        instructor: "Dr. Lee",
+        courseOffering: {
+          type: "Lecture",
+          section: "LEC 002",
+          time: "Mon/Wed 1:00-2:30 PM",
+        },
+        sharedSessions: [
+          {
+            type: "Lab",
+            section: "LAB L01",
+            time: "Thursday 3:00-5:00 PM",
+          },
+          {
+            type: "Tutorial",
+            section: "TUT T03",
+            time: "Friday 2:00-3:00 PM",
+          },
+        ],
+      },
+    ],
     hoursPerWeek: 15,
     hourlyRate: 16.0,
     totalWeeks: 16,
@@ -100,13 +196,14 @@ const currentOffers = [
     responsibilities: [
       "Assist with lecture demonstrations",
       "Grade exams and assignments",
-      "Lead lab sessions",
+      "Lead lab and tutorial sessions",
       "Provide tutoring support",
     ],
     status: "Pending",
     priority: "Medium",
   },
-]
+];
+
 
 // Mock data for past offers
 const pastOffers = [
@@ -285,22 +382,6 @@ export default function OffersPage() {
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      $
-                      {pastOffers
-                        .filter((offer) => offer.status === "Accepted")
-                        .reduce((sum, offer) => sum + offer.totalPay, 0)
-                        .toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">From accepted offers</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Response Needed</CardTitle>
                     <AlertCircle className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
@@ -363,18 +444,6 @@ export default function OffersPage() {
                                 <p className="text-sm font-medium">Hours/Week</p>
                                 <p className="text-lg font-bold">{offer.hoursPerWeek}</p>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium">Hourly Rate</p>
-                                <p className="text-lg font-bold">${offer.hourlyRate}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Duration</p>
-                                <p className="text-lg font-bold">{offer.totalWeeks} weeks</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Total Pay</p>
-                                <p className="text-lg font-bold text-green-600">${offer.totalPay.toLocaleString()}</p>
-                              </div>
                             </div>
 
                             {/* Timeline */}
@@ -391,31 +460,6 @@ export default function OffersPage() {
                                   {offer.responseDeadline}
                                 </p>
                               </div>
-                              <div>
-                                <p className="font-medium">Position Duration</p>
-                                <p className="text-muted-foreground">
-                                  {offer.startDate} - {offer.endDate}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Requirements */}
-                            <div>
-                              <p className="font-medium mb-2">Requirements</p>
-                              <p className="text-sm text-muted-foreground">{offer.requirements}</p>
-                            </div>
-
-                            {/* Responsibilities */}
-                            <div>
-                              <p className="font-medium mb-2">Responsibilities</p>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                {offer.responsibilities.map((responsibility, index) => (
-                                  <li key={index} className="flex items-start gap-2">
-                                    <span className="text-blue-500 mt-1">•</span>
-                                    {responsibility}
-                                  </li>
-                                ))}
-                              </ul>
                             </div>
 
                             {/* Action Buttons */}
@@ -427,9 +471,6 @@ export default function OffersPage() {
                               <Button variant="outline" onClick={() => handleRejectOffer(offer.id)} className="flex-1">
                                 <X className="h-4 w-4 mr-2" />
                                 Decline Offer
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                Contact Instructor
                               </Button>
                             </div>
                           </CardContent>
