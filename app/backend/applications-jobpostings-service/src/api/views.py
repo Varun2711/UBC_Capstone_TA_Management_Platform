@@ -298,19 +298,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                         {"error": "Only students can submit applications"}, 
                         status=status.HTTP_403_FORBIDDEN
                 )            
-            # Get the student model ID
-                # student_model_id = self.get_student_model_id(user_id)
-                # if not student_model_id:
-                #     return Response(
-                #     {"error": "Could not find matching student record"}, 
-                #     status=status.HTTP_404_NOT_FOUND
-                # )
-            
-                # # Override the student_id in application_data with the authenticated user's student ID
-                # application_data['student_id'] = student_model_id
-
-                # Create the application
-                #application_serializer = ApplicationSerializer(data=application_data)
+         
                 application_serializer = ApplicationSerializer(data=raw_application)
 
                 if not application_serializer.is_valid():
@@ -375,6 +363,47 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         applications = Application.objects.filter(student_id=student_id)
         serializer = self.get_serializer(applications, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsStudentUser])
+    def myapplications(self, request):
+        """Get the current student's own applications, ordered by most recent first"""
+        user_type, user_id = self.get_user_info(request)
+
+        if user_type != 'student':            
+            return Response(
+                {"detail": "Only students can access this endpoint."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get the student model ID from the authenticated user
+        student_model_id = self.get_student_model_id(user_id)
+
+        if not student_model_id:
+            return Response(
+                {"detail": "Could not find student record for authenticated user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Filter applications for this student, ordered by most recent first
+        applications = Application.objects.filter(
+            student_id=student_model_id
+        ).order_by('-applied_at', '-application_id')
+
+        # Apply any query filters if provided
+        filterset = self.filterset_class(request.GET, queryset=applications)
+        if filterset.is_valid():
+            applications = filterset.qs
+
+        # Paginate if needed
+        page = self.paginate_queryset(applications)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(applications, many=True)
+        return Response(serializer.data)
+
+
     
     @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
     def by_posting(self, request, posting_id=None):
@@ -590,40 +619,98 @@ class ApplicationShortListViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id']
     ordering = ['-id']  # Most recent shortlists first
     
-    def perform_create(self, serializer):
-        """Set created_by to current user if not provided"""
-        if hasattr(self.request.user, 'tascheduler') and not serializer.validated_data.get('created_by'):
-            serializer.save(created_by=self.request.user.tascheduler)
-        else:
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        Only TA Schedulers can access shortlist functionality.
+        """
+        # All actions require scheduler permissions
+        return [IsSchedulerUser()]
+    
+    def get_queryset(self):
+        """
+        Filter shortlists based on user role and permissions.
+        TA Schedulers can see all shortlists.
+        """
+        user_type, user_id = self.get_user_info(self.request)
+        
+        if user_type == 'scheduler':
+            # TA Schedulers can see all shortlists
+            return ApplicationShortList.objects.all()
+        
+        # If somehow a non-scheduler gets through, return empty queryset
+        return ApplicationShortList.objects.none()
+    
+    def get_user_info(self, request):
+        """Get user type and ID from request"""
+        user_type = getattr(request, 'user_type', None)
+        user_id = getattr(request, 'user_id', None)
+        return user_type, user_id
+    
+    def get_scheduler_model_id(self, user_id):
+        """Get the TAScheduler model ID from the authenticated user ID"""
+        try:
+            user = User.objects.get(id=user_id)
+            scheduler = TAScheduler.objects.get(email=user.email)
+            return scheduler.id
+        except (User.DoesNotExist, TAScheduler.DoesNotExist):
+            return None
+    
+    def perform_create(self, serializer):       
+        user_type, user_id = self.get_user_info(self.request)
+        
+        if user_type == 'scheduler' and user_id:
+            scheduler_model_id = self.get_scheduler_model_id(user_id)            
+            if scheduler_model_id:
+                serializer.save(created_by_id=scheduler_model_id)           
+        elif user_type =='scheduler':
+            # Just save it without the scheduler ID
             serializer.save()
     
-    @action(detail=False, methods=['get'], url_path=r'by-scheduler/(?P<scheduler_id>\d+)')
+    @action(detail=False, methods=['get'], url_path=r'by-scheduler/(?P<scheduler_id>\d+)', permission_classes=[IsSchedulerUser])
     def by_scheduler(self, request, scheduler_id=None):
         """Get all shortlisted applications by a specific TA scheduler"""
-        shortlists = self.queryset.filter(created_by_id=scheduler_id)
+        # Ensure only schedulers can access this
+        user_type, user_id = self.get_user_info(request)
+        
+        if user_type != 'scheduler':
+            return Response(
+                {"detail": "Only TA Schedulers can access shortlist data."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        shortlists = self.get_queryset().filter(created_by_id=scheduler_id)
         serializer = self.get_serializer(shortlists, many=True)
         return Response(serializer.data)
     
-    # @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
-    # def by_posting(self, request, posting_id=None):
-    #     """Get all shortlisted applications for a specific job posting"""
-    #     shortlists = self.queryset.filter(application__posting__posting_id=posting_id)
-    #     serializer = self.get_serializer(shortlists, many=True)
-    #     return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)')
+    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)', permission_classes=[IsSchedulerUser])
     def by_application(self, request, application_id=None):
         """Get shortlisted application data by application id"""
-        shortlists = self.queryset.filter(application_id=application_id)
-        serializer = self.get_serializer(shortlists, many=True)  # Fixed: many=True
+        user_type, user_id = self.get_user_info(request)
+        
+        if user_type != 'scheduler':
+            return Response(
+                {"detail": "Only TA Schedulers can access shortlist data."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        shortlists = self.get_queryset().filter(application_id=application_id)
+        serializer = self.get_serializer(shortlists, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)/exists')
+    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)/exists', permission_classes=[IsSchedulerUser])
     def application_shortlisted(self, request, application_id=None):
         """Check if application is shortlisted"""
-        exists = self.queryset.filter(application_id=application_id).exists()
+        user_type, user_id = self.get_user_info(request)
+        
+        if user_type != 'scheduler':
+            return Response(
+                {"detail": "Only TA Schedulers can access shortlist data."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        exists = self.get_queryset().filter(application_id=application_id).exists()
         return Response({'shortlisted': exists})
-
 
         
 @api_view(['GET'])
@@ -633,16 +720,72 @@ def api_root(request):
     return JsonResponse({
         'status': 'Applications & Job Postings Service is running',
         'service_scope': 'Job postings and application management',
+        'version': '1.0',
+        
         'public_endpoints': {
+            'api_root': '/api/ajp/',
+            
+            # Job Postings - Public endpoints
             'job_postings': '/api/ajp/jobpostings/',
             'open_jobs': '/api/ajp/jobpostings/open/',
             'active_jobs': '/api/ajp/jobpostings/active/',
             'jobs_by_term': '/api/ajp/jobpostings/by-term/{term_id}/',
         },
-        'authenticated_endpoints': {
-            'applications': '/api/ajp/applications/',
-            'apps_by_student': '/api/ajp/applications/by-student/{student_id}/',
-            'apps_by_posting': '/api/ajp/applications/by-posting/{posting_id}/',
-            'app_by_id': '/api/ajp/applications/by-id/{application_id}/',
+        
+        'student_endpoints': {
+            'description': 'Endpoints available to authenticated students',
+            
+            # Application endpoints for students
+            'my_applications': '/api/ajp/applications/myapplications/',
+            'submit_application': '/api/ajp/applications/',
+            'submit_with_responses': '/api/ajp/applications/submit_with_responses/',
+            'update_application_status': '/api/ajp/applications/{id}/',  # PATCH only
+            'my_applications_by_id': '/api/ajp/applications/by-student/{student_id}/',
+        },
+        
+        'scheduler_endpoints': {
+            'description': 'Endpoints available to TA Schedulers',
+            
+            # Job Posting Management
+            'create_job_posting': '/api/ajp/jobpostings/',
+            'update_job_posting': '/api/ajp/jobpostings/{id}/',
+            'archive_job_posting': '/api/ajp/jobpostings/{id}/',  # DELETE (archives)
+            
+            # Application Management
+            'all_applications': '/api/ajp/applications/',
+            'applications_by_posting': '/api/ajp/applications/by-posting/{posting_id}/',
+            'application_by_id': '/api/ajp/applications/by-id/{application_id}/',
+            
+            # Form Template Management
+            'form_templates': '/api/ajp/form-templates/',
+            'create_form_template': '/api/ajp/form-templates/',
+            'duplicate_template': '/api/ajp/form-templates/{id}/duplicate/',
+            'disable_template': '/api/ajp/form-templates/{id}/',  # DELETE (disables)
+            
+            # Form Section Management
+            'form_sections': '/api/ajp/form-sections/',
+            'create_form_section': '/api/ajp/form-sections/',
+            
+            # Form Question Management
+            'form_questions': '/api/ajp/form-questions/',
+            'bulk_create_questions': '/api/ajp/form-questions/bulk_create/',
+            'reorder_questions': '/api/ajp/form-questions/reorder/',
+            
+            # Application Response Management
+            'application_responses': '/api/ajp/application-responses/',
+            
+            # Shortlist Management - NEW SECTION
+            'application_shortlists': '/api/ajp/application-shortlists/',
+            'create_shortlist': '/api/ajp/application-shortlists/',
+            'shortlists_by_scheduler': '/api/ajp/application-shortlists/by-scheduler/{scheduler_id}/',
+            'shortlists_by_application': '/api/ajp/application-shortlists/by-application/{application_id}/',
+            'check_if_shortlisted': '/api/ajp/application-shortlists/by-application/{application_id}/exists/',
+        },        
+       
+        'authentication_notes': {
+            'public': 'No authentication required',
+            'student': 'Requires student authentication token',
+            'scheduler': 'Requires TA Scheduler authentication token',
+            'admin': 'Requires admin authentication token'
         }
     })
