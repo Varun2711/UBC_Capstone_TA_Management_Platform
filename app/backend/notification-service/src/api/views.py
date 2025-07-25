@@ -225,7 +225,7 @@ TA Management System
             message_body = f"""
 Dear {student_name},
 
-Your TA application for {course_code} - {course_name} has been successfully received and is under review.
+Your TA application for {course_code} has been successfully received and is under review.
 
 Application Details:
 - Course: {course_code} - {course_name}
