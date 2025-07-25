@@ -408,6 +408,8 @@ export default function TAAllocationPage() {
 
   const [selectedApplication, setSelectedApplication] = useState([]);
   const [selectedTAProfile, setSelectedTAProfile ] = useState([]);
+  const [studentCurrentHours, setStudentCurrentHours] = useState({});
+
 
   const selectedTA = shortlistedApplicants.find((item) => item.application.student.id === selectedTAId)
   console.log("selectedTA main variable is: ", selectedTA);
@@ -1079,7 +1081,7 @@ export default function TAAllocationPage() {
                               <div>
                                 <p className="text-lg font-semibold">{selectedApplication.application.student.name}</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {selectedApplication.application.workload} hours • {selectedApplication.application.student.study_level}
+                                  {studentCurrentHours[selectedTA.application.student.id]}{" "}/{" "}{selectedApplication.application.workload} hours • {selectedApplication.application.student.study_level}
                                 </p>
                               </div>
                             </div>
@@ -1354,7 +1356,7 @@ export default function TAAllocationPage() {
                                         {availableOfferings.map((offering) => {
                                           const isSelected = selectedCourseOfferings.some((s) => s.sectionId === offering.course_offering_id);
                                           const isOffered =
-                                            selectedTA && isSectionAlreadyOfferedToTA(selectedTAProfile.id, offering.course_offering_id);
+                                            selectedTA && isSectionAlreadyOfferedToTA(selectedTA.id, offering.course_offering_id);
                                           console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
                                           return (
                                             <div
@@ -1466,7 +1468,7 @@ export default function TAAllocationPage() {
                   </Card>
                 </div>
 
-                {/* Send Offer Action */}
+                {/* Add Offer Action */}
                 {selectedTA && selectedSections.length > 0 && (
                   <Card>
                     <CardHeader>
@@ -1491,15 +1493,20 @@ export default function TAAllocationPage() {
                             })}
                           </ul>
                           <p className="text-sm text-muted-foreground mt-2">
-                            Total workload: {selectedApplication.application.workload} →{" "}
-                            {
-                              selectedApplication.application.workload +
-                              selectedSections.reduce(
-                                (sum, c) => sum + (c.weekHours ?? c.weeklyDuration ?? 0),
-                                0
-                              )
-                            }{" "}
-                            hours
+                            New workload:{" "}
+                            <span className="font-medium">
+                              {studentCurrentHours[selectedTA.application.student.id] || 0} / {selectedApplication.application.workload} hours
+                            </span>{" "}
+                            →{" "}
+                            <span className="font-medium">
+                              {
+                                (studentCurrentHours[selectedTA.application.student.id] || 0) +
+                                selectedSections.reduce(
+                                  (sum, c) => sum + (c.weekHours ?? c.weeklyDuration ?? 0),
+                                  0
+                                )
+                              }{" "}/{" "}{selectedApplication.application.workload}{" "}hours
+                            </span>
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -1516,6 +1523,27 @@ export default function TAAllocationPage() {
                           </Button>
                           <Button
                             onClick={() => {
+                              const studentId = selectedTA.application.student.id;
+                              const maxWorkload = selectedApplication.application.workload;
+                              const existingHours = studentCurrentHours[studentId] || 0;
+
+                              // Calculate total hours of selected sections
+                              const addedHours = selectedSections.reduce(
+                                (sum, c) => sum + (c.weekHours ?? c.weeklyDuration ?? 0),
+                                0
+                              );
+
+                              if (existingHours >= maxWorkload) {
+                                alert("Cannot add offer. Student has already reached their maximum workload.");
+                                return;
+                              }
+
+                              if (existingHours + addedHours > maxWorkload) {
+                                alert(
+                                  `Cannot add offer. Adding these sections would exceed the student's workload limit of ${maxWorkload} hours.`
+                                );
+                                return;
+                              }
                               let totalHours = selectedApplication.application.workload;
                               const newOffers = [];
 
@@ -1539,6 +1567,11 @@ export default function TAAllocationPage() {
                                 handleAddTAtoAddedOfferTab(selectedTA, course);
                               });
 
+                              setStudentCurrentHours((prev) => ({
+                                ...prev,
+                                [studentId]: existingHours + addedHours,
+                              }));
+
                               // Reset selections
                               setSelectedTAId(null);
                               setSelectedCourseOfferings([]);
@@ -1561,6 +1594,8 @@ export default function TAAllocationPage() {
                   setAddedOffers={setAddedOffers}
                   activeOffers={activeOffers}
                   setActiveOffers={setActiveOffers}
+                  studentCurrentHours={studentCurrentHours}
+                  setStudentCurrentHours={setStudentCurrentHours}
                 />
               </TabsContent>
 
