@@ -28,6 +28,7 @@ export default function EmailStep({ onNext, requestAccountLookup }) {
       // if email found, proceed to next step of password reset
       if(response.success) {
         onNext(email);
+        toast.success("Account found!")
       // if email not found, display error toast
       } else {
         toast.error(response.data)

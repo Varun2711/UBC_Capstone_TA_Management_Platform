@@ -27,12 +27,10 @@ export default function VerifyIdStep({ onNext, verifyId, requestSendResetLink })
       let response = await verifyId(id)
 
       if(response.success) {
-        toast.success(response.data)
-
         // attempt to send password reset email
         response = await requestSendResetLink();
         if(response.success) {
-          toast.success(response.message)
+          toast.success("Identity verified, password reset link sent!")
           onNext(id);
         } else {
           toast.error(response.data)
