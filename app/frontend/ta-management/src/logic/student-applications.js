@@ -65,7 +65,7 @@ export const fetchAppBarProfile = async () => {
     const headers = getAuthHeaders();
     const response = await instance.get("/profile/me/", { headers });
 
-    console.log("App bar profile response:", response.data);
+    //  console.log("App bar profile response:", response.data);
 
     let student = {};
     student.name = `${response.data.first_name || ""} ${
@@ -1020,6 +1020,113 @@ export const handlePreviousStep = (currentStep, setStep, clearErrors) => {
   setStep(currentStep - 1);
 };
 
+// ===========================
+// ACCESS PROTECTION FUNCTIONS
+// ===========================
+
+/**
+ * Check if the user has already applied to this job posting
+ * @param {string|number} postingId - Job posting ID
+ * @returns {Promise<Object|null>} Existing application or null
+ */
+export const checkExistingApplication = async (postingId) => {
+  try {
+    const headers = getAuthHeaders();
+
+    if (!headers.Authorization) {
+      throw new Error("No authentication token available");
+    }
+
+    // Use the short endpoint to check existing applications
+    const response = await instance.get(
+      "/ajp/applications/myapplications-short/",
+      {
+        headers,
+      }
+    );
+
+    // Find if there's already an application for this posting
+    const existingApplication = response.data.find(
+      (app) => String(app.posting_id) === String(postingId)
+    );
+
+    return existingApplication || null;
+  } catch (error) {
+    console.error("Error checking existing application:", error);
+    throw error;
+  }
+};
+
+/**
+ * Validates if the user can access the application form for a given posting
+ * @param {string|number} postingId - Job posting ID
+ * @returns {Promise<Object>} Validation result with status and redirect info
+ */
+export const validateApplicationFormAccess = async (postingId) => {
+  try {
+    // Check if posting exists and is open
+    const jobPosting = await fetchJobPostingDetails(postingId);
+
+    if (!jobPosting) {
+      return {
+        canAccess: false,
+        reason: "Job posting not found",
+        redirectTo: "/student-dashboard",
+        message: "The job posting you're trying to access does not exist.",
+      };
+    }
+
+    if (jobPosting.status !== "open") {
+      return {
+        canAccess: false,
+        reason: "Job posting is not open",
+        redirectTo: "/view-job-postings",
+        message: "This job posting is no longer accepting applications.",
+      };
+    }
+
+    // Check if application deadline has passed
+    const currentDate = new Date();
+    const deadlineDate = new Date(jobPosting.deadline_date);
+
+    if (currentDate > deadlineDate) {
+      return {
+        canAccess: false,
+        reason: "Application deadline has passed",
+        redirectTo: "/view-job-postings",
+        message: "The application deadline for this position has passed.",
+      };
+    }
+
+    // Check if user has already applied
+    const existingApplication = await checkExistingApplication(postingId);
+
+    if (existingApplication) {
+      return {
+        canAccess: false,
+        reason: "Already applied",
+        redirectTo: `/my-applications/detail/${existingApplication.application_id}`,
+        message: "You have already submitted an application for this position.",
+        existingApplication,
+      };
+    }
+
+    // All checks passed
+    return {
+      canAccess: true,
+      jobPosting,
+    };
+  } catch (error) {
+    console.error("Error validating application form access:", error);
+    return {
+      canAccess: false,
+      reason: "Validation error",
+      redirectTo: "/student-dashboard",
+      message: "There was an error validating your access. Please try again.",
+    };
+  }
+};
+
 export default {
   fetchStudentProfile,
   updateStudentProfile,
@@ -1040,4 +1147,6 @@ export default {
   formatDynamicResponsesForSubmission,
   fetchTermDetails,
   fetchAppBarProfile,
+  checkExistingApplication, // NEW
+  validateApplicationFormAccess, // NEW
 };

@@ -189,7 +189,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         - Students can create/view/update their own applications.
         - Schedulers/Admins can view any application.
         """
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student', 'submit_with_responses', 'myapplications']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student', 'submit_with_responses', 'myapplications', 'myapplications_short']:
             return [IsStudentUser()]
         elif self.action == 'by_id':
             return [IsSchedulerOrStudent()]
@@ -428,6 +428,39 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 {"detail": "Application not found or you do not have permission to view it."}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+
+    @action(detail=False, methods=['get'], url_path='myapplications-short', permission_classes=[IsStudentUser])
+    def myapplications_short(self, request):      
+
+        user_type, user_id = self.get_user_info(request)
+
+        if user_type != 'student':            
+            return Response(
+                {"detail": "Only students can access this endpoint."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get the student model ID from the authenticated user
+        student_model_id = self.get_student_model_id(user_id)
+
+        if not student_model_id:
+            return Response(
+                {"detail": "Could not find student record for authenticated user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Filter applications for this student, ordered by most recent first
+        # Use select_related to optimize database queries
+        applications = Application.objects.select_related(
+            'posting', 'posting__department', 'posting__term'
+        ).filter(
+            student_id=student_model_id
+        ).order_by('-applied_at', '-application_id') 
+
+        # Use the short serializer instead of the full one
+        serializer = ApplicationShortSerializer(applications, many=True)
+        return Response(serializer.data)
 
 
 
@@ -745,6 +778,7 @@ def api_root(request):
             'submit_with_responses': '/api/ajp/applications/submit_with_responses/',
             'update_application_status': '/api/ajp/applications/{id}/',  # PATCH only
             'my_applications_by_id': '/api/ajp/applications/by-student/{student_id}/',
+            'my_applications_short': '/api/ajp/applications/myapplications-short/',  
         },
         
         'scheduler_endpoints': {

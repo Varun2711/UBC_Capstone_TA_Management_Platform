@@ -5,6 +5,7 @@ import {
   ChevronRight,
   CheckCircle,
   XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -31,6 +32,7 @@ import {
   getAllResponses,
   handleFormSubmission,
   fetchTermDetails,
+  validateApplicationFormAccess,
 } from "@/logic/student-applications";
 
 // Initial application defaultResponses
@@ -75,78 +77,69 @@ export default function ApplicationForm() {
   const [stepLabels, setStepLabels] = useState({});
   const [templateId, setTemplateId] = useState(null);
   const [termDetails, setTermDetails] = useState([]);
+  // Access validation states
+  const [accessValidation, setAccessValidation] = useState(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
-  // Fetch data and initialize form on mount
-  useEffect(() => {
-    const initializeData = async () => {
-      setLoading(true);
-      try {
-        // Fetch student profile
-        const studentData = await fetchStudentProfile();
-        setStudent(studentData);
+  const initializeData = async () => {
+    setLoading(true);
+    try {
+      // Fetch student profile
+      const studentData = await fetchStudentProfile();
+      setStudent(studentData);
 
-        // Fetch job posting details
-        if (postingId) {
-          const jobData = await fetchJobPostingDetails(postingId);
-          setJobPosting(jobData);
+      // Fetch job posting details
+      if (postingId) {
+        const jobData = await fetchJobPostingDetails(postingId);
+        setJobPosting(jobData);
 
-          console.log("Job posting template id:", jobData.form_template_id);
+        console.log("Job posting template id:", jobData.form_template_id);
 
-          // Fetch template details if available
-          if (jobData.form_template_id) {
-            // IMPORTANT: Store the template ID for submission
-            setTemplateId(jobData.form_template_id);
-            try {
-              const templateData = await fetchTemplateDetails(
-                jobData.form_template_id
+        // Fetch template details if available
+        if (jobData.form_template_id) {
+          // IMPORTANT: Store the template ID for submission
+          setTemplateId(jobData.form_template_id);
+          try {
+            const templateData = await fetchTemplateDetails(
+              jobData.form_template_id
+            );
+            setTemplateDetails(templateData);
+            //   console.log("Template details:", templateData);
+
+            if (templateData && templateData.sections) {
+              // Sort sections by order
+              const sortedSections = templateData.sections.sort(
+                (a, b) => a.order - b.order
               );
-              setTemplateDetails(templateData);
-              //   console.log("Template details:", templateData);
+              setDynamicSections(sortedSections);
 
-              if (templateData && templateData.sections) {
-                // Sort sections by order
-                const sortedSections = templateData.sections.sort(
-                  (a, b) => a.order - b.order
-                );
-                setDynamicSections(sortedSections);
+              // Check field mapping
+              const mapping = checkApplicationFields(sortedSections);
+              setFieldMapping(mapping);
+              // console.log("Field mapping:", mapping);
 
-                // Check field mapping
-                const mapping = checkApplicationFields(sortedSections);
-                setFieldMapping(mapping);
-                // console.log("Field mapping:", mapping);
+              // Calculate total steps: dynamic sections + static sections (Personal Details + Supporting Docs + Review)
+              const dynamicStepCount = sortedSections.length;
+              const staticStepCount = 3; // Personal Details, Supporting Documents, Review
+              const totalStepCount = dynamicStepCount + staticStepCount;
+              setTotalSteps(totalStepCount);
 
-                // Calculate total steps: dynamic sections + static sections (Personal Details + Supporting Docs + Review)
-                const dynamicStepCount = sortedSections.length;
-                const staticStepCount = 3; // Personal Details, Supporting Documents, Review
-                const totalStepCount = dynamicStepCount + staticStepCount;
-                setTotalSteps(totalStepCount);
-
-                // Create step labels
-                const labels = {};
-                sortedSections.forEach((section, index) => {
-                  labels[index + 1] = section.name;
-                });
-                labels[dynamicStepCount + 1] = "Personal Details";
-                labels[dynamicStepCount + 2] = "Supporting Documents";
-                labels[dynamicStepCount + 3] = "Review";
-                setStepLabels(labels);
-              }
-            } catch (templateError) {
-              console.warn(
-                "Could not fetch template details:",
-                templateError.message
-              );
-              // Fall back to default static form structure
-              setStepLabels({
-                1: "Eligibility",
-                2: "Selections",
-                3: "Personal Details",
-                4: "Supporting Documents",
-                5: "Review",
+              // Create step labels
+              const labels = {};
+              sortedSections.forEach((section, index) => {
+                labels[index + 1] = section.name;
               });
+              labels[dynamicStepCount + 1] = "Personal Details";
+              labels[dynamicStepCount + 2] = "Supporting Documents";
+              labels[dynamicStepCount + 3] = "Review";
+              setStepLabels(labels);
             }
-          } else {
-            // No template, use default static form
+          } catch (templateError) {
+            console.warn(
+              "Could not fetch template details:",
+              templateError.message
+            );
+            // Fall back to default static form structure
             setStepLabels({
               1: "Eligibility",
               2: "Selections",
@@ -155,29 +148,80 @@ export default function ApplicationForm() {
               5: "Review",
             });
           }
-
-          if (jobData.term_id) {
-            const termOptions = await fetchTermDetails(jobData.term_id);
-            setTermDetails(termOptions);
-          }
+        } else {
+          // No template, use default static form
+          setStepLabels({
+            1: "Eligibility",
+            2: "Selections",
+            3: "Personal Details",
+            4: "Supporting Documents",
+            5: "Review",
+          });
         }
+
+        if (jobData.term_id) {
+          const termOptions = await fetchTermDetails(jobData.term_id);
+          setTermDetails(termOptions);
+        }
+      }
+    } catch (error) {
+      console.error("Error initializing application form:", error);
+      // Set default step labels as fallback
+      // setStepLabels({
+      //   1: "Eligibility",
+      //   2: "Selections",
+      //   3: "Personal Details",
+      //   4: "Supporting Documents",
+      //   5: "Review",
+      // });
+      //show message to contact administrator
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data and initialize form on mount
+  useEffect(() => {
+    const validateAccess = async () => {
+      if (!postingId) {
+        navigate("/student-dashboard");
+        return;
+      }
+
+      try {
+        const validation = await validateApplicationFormAccess(postingId);
+        setAccessValidation(validation);
+
+        if (!validation.canAccess) {
+          setAccessDenied(true);
+          setLoading(false);
+
+          // Auto-redirect after showing the message for a few seconds
+          // setTimeout(() => {
+          //   navigate(validation.redirectTo, {
+          //     state: {
+          //       message: validation.message,
+          //       type: "warning",
+          //     },
+          //   });
+          // }, 3000);
+
+          return;
+        }
+        initializeData();
       } catch (error) {
-        console.error("Error initializing application form:", error);
-        // Set default step labels as fallback
-        // setStepLabels({
-        //   1: "Eligibility",
-        //   2: "Selections",
-        //   3: "Personal Details",
-        //   4: "Supporting Documents",
-        //   5: "Review",
-        // });
-        //show message to contact administrator
-      } finally {
+        console.error("Error validating access:", error);
+        setAccessDenied(true);
+        setAccessValidation({
+          canAccess: false,
+          message: "You cannot access this page. Please try again.",
+          redirectTo: "/student-dashboard",
+        });
         setLoading(false);
       }
     };
 
-    initializeData();
+    validateAccess();
   }, [postingId]);
 
   // Navigation handlers
@@ -244,6 +288,40 @@ export default function ApplicationForm() {
     }
     return null;
   };
+
+  /* Render if access is denied */
+  if (accessDenied && accessValidation) {
+    return (
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full">
+          <AppSidebar name="Student" email="" avatar="" />
+          <div className="flex-1">
+            <header className="flex h-16 items-center justify-between border-b bg-background px-6">
+              <SidebarTrigger />
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon">
+                  <Bell className="h-4 w-4" />
+                </Button>
+              </div>
+            </header>
+            <main className="flex-1 space-y-6 p-6">
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center max-w-md mx-4">
+                  <AlertTriangle className="h-16 w-16 text-yellow-600 mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-yellow-800 mb-4">
+                    Access Denied
+                  </h2>
+                  <p className="text-yellow-700 mb-6">
+                    {accessValidation.message}
+                  </p>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   // Loading state
   if (loading) {

@@ -99,16 +99,16 @@ const ApplicationCard = ({ application, onClick }) => {
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {application.posting?.title || "Untitled Position"}
+            {application.title || "Untitled Position"}
           </h3>
           <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
             <div className="flex items-center gap-1">
               <Building className="h-4 w-4" />
-              {application.posting?.department?.name || "Unknown Department"}
+              {application.department || "Unknown Department"}
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              {application.termSelection?.description || "No term selected"}
+              {application.termSelection || "No term selected"}
             </div>
           </div>
         </div>

@@ -402,9 +402,12 @@ export const fetchStudentApplications = async () => {
 
     console.log("Fetching applications with headers:", headers);
 
-    const response = await instance.get("/ajp/applications/myapplications/", {
-      headers,
-    });
+    const response = await instance.get(
+      "/ajp/applications/myapplications-short/",
+      {
+        headers,
+      }
+    );
 
     console.log("Student applications response:", response.data);
     return response.data;

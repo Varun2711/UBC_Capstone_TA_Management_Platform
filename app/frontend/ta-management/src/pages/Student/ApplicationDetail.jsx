@@ -126,13 +126,8 @@ const ApplicationHeader = ({ application }) => {
             {formatDate(application.applied_at)}
           </div>
         </div>
-        <div>
-          <div className="text-sm text-gray-600">Last Updated</div>
-          <div className="font-medium">
-            {formatDate(application.updated_at)}
-          </div>
-        </div>
-        <div>
+
+        {/* <div>
           <div className="text-sm text-gray-600">Deadline</div>
           <div className="font-medium">
             {application.posting?.deadline_date
@@ -146,7 +141,7 @@ const ApplicationHeader = ({ application }) => {
                 )
               : "N/A"}
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
