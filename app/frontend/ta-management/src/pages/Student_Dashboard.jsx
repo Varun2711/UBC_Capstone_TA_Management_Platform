@@ -1,9 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Bell, BookOpen, Calendar, Clock, FileText, GraduationCap, Home, Mail, Phone, Plus, Search,
-  Settings, User, Users
+  Bell,
+  BookOpen,
+  Calendar,
+  Clock,
+  Eye,
+  FileText,
+  GraduationCap,
+  Home,
+  Mail,
+  Phone,
+  Plus,
+  Search,
+  Settings,
+  User,
+  Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,12 +42,20 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { AppSidebar } from "../components/student-dashboard-sidebar"
+} from "@/components/ui/sidebar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AppSidebar } from "../components/student-dashboard-sidebar";
 import axios from "axios";
 import { getProfile } from "@/logic/student-profile";
+import { fetchStudentApplications } from "@/logic/student-applications";
 
 // Mock data
 const studentProfile = {
@@ -123,29 +145,11 @@ function getStatusBadge(status) {
   }
 }
 
-//base url for the api calls
-const instance = axios.create({
-  baseURL: "http://localhost:8080/api",
-});
-
-// Add an interceptor to automatically include auth headers
-instance.interceptors.request.use(
-  (config) => {
-    const accessToken = sessionStorage.getItem("accessToken");
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 export default function StudentDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [submittedApplications, setSubmittedApplications] = useState([]);
   const [error, setError] = useState([]);
+  const navigate = useNavigate();
 
   // State for loading and error handling
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -158,16 +162,16 @@ export default function StudentDashboard() {
   // Helper functions for data transformation
   const transformBackendDataToFrontend = (data) => {
     return {
-      id: data.id || '',
-      firstName: data.first_name || '',
-      lastName: data.last_name || '',
-      email: data.email || '',
-      studentId: data.student_info?.studentId || '',
-      phone: data.student_info?.phone || '',
-      major: data.student_info?.program || '',
-      year: data.student_info?.study_level || '',
-      gpa: data.student_profile?.gpa || '',
-      minor: data.student_profile?.minor || '',
+      id: data.id || "",
+      firstName: data.first_name || "",
+      lastName: data.last_name || "",
+      email: data.email || "",
+      studentId: data.student_info?.studentId || "",
+      phone: data.student_info?.phone || "",
+      major: data.student_info?.program || "",
+      year: data.student_info?.study_level || "",
+      gpa: data.student_profile?.gpa || "",
+      minor: data.student_profile?.minor || "",
       avatar: data.avatar || "/placeholder.svg?height=120&width=120",
     };
   };
@@ -197,32 +201,18 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     const fetchApplications = async () => {
-
-      setIsLoadingApplications(true);
-
-      console.log("In useEffect: fetchApplications has started");
-      console.log("Current userData:", userData);
-      console.log("Current userData's id:", userData?.id);
-      if (!userData || !userData.id) return;
-
-      console.log("User data is available with following details:", userData);
-      console.log("userData's studentId:", userData.studentId);
-
-      const accessToken = sessionStorage.getItem("accessToken");
-      if (!accessToken) {
-        console.log("No access token found in localStorage, using mock student data");
-        setSubmittedApplications(mockSubmittedApplications);
-        return;
-      }
-
       try {
-        const applicationResponse = await instance.get(
-          `/ajp/applications/by-student/${userData.id}/`
-        );
+        setIsLoadingApplications(true);
 
-        console.log("Application response data:", applicationResponse.data);
+        if (!userData) {
+          console.error("User data is not available yet.");
+          setIsLoadingApplications(false);
+          return;
+        }
 
-        const transformedApplications = applicationResponse.data.map((app) => ({
+        const applications = await fetchStudentApplications();
+
+        const transformedApplications = applications.map((app) => ({
           application_id: app.application_id,
           termSelection: {
             code: app.termSelection?.code || app.posting?.term?.code || "N/A",
@@ -238,21 +228,15 @@ export default function StudentDashboard() {
         }));
 
         setSubmittedApplications(transformedApplications);
-
       } catch (err) {
-        console.log("Error fetching applications using student id. error is:", err);
-        console.log("Using mock data for submitted applications");
-        setSubmittedApplications([]);
-      }
-      finally {
+        console.log("Error fetching student applications:", err);
+      } finally {
         setIsLoadingApplications(false);
       }
     };
 
     fetchApplications();
   }, [userData]); // ✅ Runs only when userData is updated
-
-  console.log("submitted applications state contains:", submittedApplications);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -262,14 +246,26 @@ export default function StudentDashboard() {
     });
   };
 
+  const handleApplicationClick = (applicationId) => {
+    navigate(`/my-applications/detail/${applicationId}`);
+  };
+
   if (isLoadingProfile || isLoadingApplications || !userData) {
-    return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading dashboard...
+      </div>
+    );
   }
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar name={userData.firstName} email={userData.email} avatar={userData.avatar} />
+        <AppSidebar
+          name={userData.firstName}
+          email={userData.email}
+          avatar={userData.avatar}
+        />
         <div className="flex-1">
           {/* Header */}
           <header className="flex h-16 items-center justify-between border-b bg-background px-6">
@@ -308,12 +304,18 @@ export default function StudentDashboard() {
                         src={userData.avatar || "/placeholder.svg"}
                         alt={userData.firstName}
                       />
-                      <AvatarFallback>{userData.firstName.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {userData.firstName.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <h3 className="font-semibold">{userData.firstName}</h3>
-                      <p className="text-sm text-muted-foreground">{userData.major}</p>
-                      <p className="text-sm text-muted-foreground">{userData.year}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {userData.major}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {userData.year}
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -385,11 +387,15 @@ export default function StudentDashboard() {
                       <TableHead>Academic Period</TableHead>
                       <TableHead>Applied Date</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {submittedApplications.map((application) => (
-                      <TableRow key={application.application_id}>
+                      <TableRow
+                        key={application.application_id}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
                         <TableCell className="font-medium">
                           {application.application_id}
                         </TableCell>
@@ -404,6 +410,18 @@ export default function StudentDashboard() {
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(application.status)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="View Application Details"
+                            onClick={() =>
+                              handleApplicationClick(application.application_id)
+                            }
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

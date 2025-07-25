@@ -19,6 +19,7 @@ from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsStudentUser
 
 # Define a combined permission for schedulers or admins
 IsSchedulerOrAdmin = IsSchedulerUser | IsAdminUser
+IsSchedulerOrStudent = IsStudentUser | IsSchedulerUser
 
 class JobPostingFilter(django_filters.FilterSet):
     term = django_filters.NumberFilter()
@@ -188,11 +189,14 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         - Students can create/view/update their own applications.
         - Schedulers/Admins can view any application.
         """
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student', 'submit_with_responses']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student', 'submit_with_responses', 'myapplications']:
             return [IsStudentUser()]
-        elif self.action in ['list', 'retrieve', 'by_posting', 'by_id']:
+        elif self.action == 'by_id':
+            return [IsSchedulerOrStudent()]
+        elif self.action in ['list', 'retrieve', 'by_posting']:
             return [IsSchedulerOrAdmin()]
-        return [IsAuthenticated()]
+        
+        return [IsAuthenticated() ]
 
     def get_queryset(self):
         """
@@ -366,7 +370,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], permission_classes=[IsStudentUser])
     def myapplications(self, request):
-        """Get the current student's own applications, ordered by most recent first"""
+              
         user_type, user_id = self.get_user_info(request)
 
         if user_type != 'student':            

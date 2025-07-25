@@ -57,6 +57,35 @@ export const fetchStudentProfile = async () => {
 };
 
 /**
+ * Fetches the current student's profile data for the app bar/sidebar
+ * @returns {Promise<Object>} Student profile data for UI
+ */
+export const fetchAppBarProfile = async () => {
+  try {
+    const headers = getAuthHeaders();
+    const response = await instance.get("/profile/me/", { headers });
+
+    console.log("App bar profile response:", response.data);
+
+    let student = {};
+    student.name = `${response.data.first_name || ""} ${
+      response.data.last_name || ""
+    }`.trim();
+    student.email = response.data.email;
+    student.avatar = "/placeholder.svg?height=120&width=120";
+
+    return student;
+  } catch (error) {
+    console.error("Error getting app bar information:", error.message);
+    // Return default values instead of throwing
+    return {
+      name: "Student User",
+      email: "",
+      avatar: "/placeholder.svg?height=120&width=120",
+    };
+  }
+};
+/**
  * Updates the student's profile before application submission
  * @param {Object} studentData - Student data to update
  * @returns {Promise<Object>} Updated profile response
@@ -441,23 +470,40 @@ export const fetchTermDetails = async (termId) => {
  * Fetches student's application history
  * @returns {Promise<Array>} Array of student applications
  */
-// export const fetchStudentApplications = async () => {
-//   try {
-//     const headers = getAuthHeaders();
-//     const response = await instance.get("/ajp/applications/my-applications/", {
-//       headers,
-//     });
-//     console.log("Student applications:", response.data);
-//     return response.data;
-//   } catch (error) {
-//     console.error(
-//       "Error fetching student applications:",
-//       error.response?.data || error.message
-//     );
-//     throw error;
-//   }
-// };
+export const fetchStudentApplications = async () => {
+  try {
+    const headers = getAuthHeaders();
 
+    // Check if we have a valid token
+    if (!headers.Authorization) {
+      throw new Error("No authentication token available");
+    }
+
+    console.log("Fetching applications with headers:", headers);
+
+    const response = await instance.get("/ajp/applications/myapplications/", {
+      headers,
+    });
+
+    console.log("Student applications response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching student applications:",
+      error.response?.data || error.message
+    );
+
+    // More specific error handling
+    if (error.response?.status === 401) {
+      console.error("Authentication failed - token may be expired");
+      // Optionally redirect to login or refresh token
+    } else if (error.response?.status === 403) {
+      console.error("Access forbidden - user may not have student permissions");
+    }
+
+    throw error;
+  }
+};
 // ===========================
 // DATA TRANSFORMATION FUNCTIONS
 // ===========================
@@ -981,7 +1027,7 @@ export default {
   submitSupportingDocuments,
   fetchJobPostingDetails,
   fetchTemplateDetails,
-  //fetchStudentApplications,
+  fetchStudentApplications,
   cleanApiDataFormat,
   transformStudentToApiFormat,
   extractSemesterFromDate,
@@ -993,4 +1039,5 @@ export default {
   handleFormSubmission,
   formatDynamicResponsesForSubmission,
   fetchTermDetails,
+  fetchAppBarProfile,
 };
