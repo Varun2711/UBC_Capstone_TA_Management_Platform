@@ -65,25 +65,59 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const result = await getAdminDashboard()
-        const stats = result?.data?.statistics
-        if (stats) {
-          setDashboardStats(stats)
-        } else {
-          throw new Error("No statistics returned from API")
-        }
-      } catch (err) {
-        console.error("Failed to fetch dashboard data:", err)
-        setError(err.message)
-      } finally {
-        setLoading(false)
+  const fetchDashboardData = async () => {
+    try {
+      const result = await getAdminDashboard();
+      const stats = result?.data?.statistics;
+      if (stats) {
+        setSystemStats([
+          {
+            title: "Total Users",
+            value: stats.total_users,
+            icon: Users,
+            color: "text-blue-600",
+            trend: "up",
+            change: "+4.3%",
+          },
+          {
+            title: "Instructors",
+            value: stats.total_instructors,
+            icon: UserCheck,
+            color: "text-green-600",
+            trend: "up",
+            change: "+2.1%",
+          },
+          {
+            title: "Schedulers",
+            value: stats.total_schedulers,
+            icon: Clock,
+            color: "text-yellow-600",
+            trend: "up",
+            change: "+1.5%",
+          },
+          {
+            title: "Admins",
+            value: stats.total_admins,
+            icon: Shield,
+            color: "text-red-600",
+            trend: "up",
+            change: "+0.5%",
+          },
+        ]);
+      } else {
+        throw new Error("No statistics returned from API");
       }
+    } catch (err) {
+      console.error("Failed to fetch dashboard data:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    fetchDashboardData()
-  }, [])
+  fetchDashboardData();
+}, []);
+
 
 
   return (
