@@ -39,7 +39,7 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
       try {
         const result = await getAdminDashboard();
-        const statistics = result?.data?.statistics;
+        const statistics = result?.statistics;
         if (!statistics) {
           throw new Error("Invalid data format from API.");
         }
