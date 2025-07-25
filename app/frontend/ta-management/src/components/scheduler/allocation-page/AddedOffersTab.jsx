@@ -105,20 +105,23 @@ const AddedOffersTab = ({ addedOffers, setAddedOffers, activeOffers, setActiveOf
                             <p className="text-muted-foreground">No course sections added yet.</p>
                         ) : (
                             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                                {taOffer.offers.map((offer, idx) => (
-                                <li key={idx}>
-                                    <span>
-                                        {offer.course_number} - {offer.course_name} (Section {offer.section_number})
-                                    </span>
-                                    <button
-                                    onClick={() => openConfirmDialog(taOffer.taStudentId, idx)}
-                                    className="text-red-500 hover:text-red-700"
-                                    title="Remove"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </li>
-                                ))}
+                                {taOffer.offers.map((offer, idx) => {
+                                    console.log("offer in added offers card: ", offer);
+                                    return (
+                                        <li key={idx} className="flex items-center justify-between gap-2 py-1">
+                                            <span>
+                                                {offer.course_number} - {offer.course_name} ({offer.section_type_display} {offer.section_number})
+                                            </span>
+                                            <button
+                                            onClick={() => openConfirmDialog(taOffer.taStudentId, idx)}
+                                            title="Remove"
+                                            className="w-6 h-6 flex items-center justify-center border border-red-300 rounded hover:bg-red-50 text-red-500 hover:text-red-700"
+                                            >
+                                                <X className="w-4 h-4" strokeWidth={3} />
+                                            </button>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         )}
                     </CardContent>

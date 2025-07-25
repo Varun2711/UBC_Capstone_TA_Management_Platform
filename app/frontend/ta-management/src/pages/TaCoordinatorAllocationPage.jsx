@@ -444,6 +444,7 @@ export default function TAAllocationPage() {
           course_name: selectedCourse.course_name,
           sectionId: selectedCourse.sectionId, // ✅ Correct
           section_number: selectedCourse.section_number,
+          section_type_display: selectedCourse.section_type_display,
           slots: convertTimeSlotsInfoToKeys(selectedCourse.time_slots_info),
         }
       }
@@ -453,6 +454,7 @@ export default function TAAllocationPage() {
           course_name: selectedCourse.course_name,
           sectionId: selectedCourse.sectionId, // ✅ Correct
           section_number: selectedCourse.section_number,
+          section_type_display: selectedCourse.section_type_display,
           slots: selectedCourse.time_slots_info,
         }
       }
