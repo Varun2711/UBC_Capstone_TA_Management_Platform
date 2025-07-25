@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from decouple import config
+from kombu import Queue
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -86,6 +87,11 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+CELERY_TASK_DEFAULT_QUEUE = 'notifications'
+CELERY_QUEUES = (
+    Queue('notifications', routing_key='notifications'),
+)
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'

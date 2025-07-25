@@ -186,6 +186,34 @@ services:
     networks:
       - app-networks
 
+  allocations-worker:
+    build: ./backend/allocations-service
+    command: celery -A allocations_service worker -Q allocations -l info
+    env_file:
+      - .env
+    volumes:
+      - ./backend/allocations-service/src:/app/src
+      - ./shared-utils:/app/shared-utils
+    depends_on:
+      - redis
+      - allocations-service
+    networks:
+      - app-networks
+
+  allocations-beat:
+    build: ./backend/allocations-service
+    command: celery -A allocations_service beat -l info
+    env_file:
+      - .env
+    volumes:
+      - ./backend/allocations-service/src:/app/src
+      - ./shared-utils:/app/shared-utils
+    depends_on:
+      - redis
+      - allocations-service
+    networks:
+      - app-networks
+
   notification-service:
     container_name: notification-service
     build:
@@ -222,7 +250,7 @@ services:
   celery-worker:
     build:
       context: ./backend/notification-service
-    command: celery -A notification_service worker --loglevel=info
+    command: celery -A notification_service worker -Q notifications --loglevel=info
     environment:
     - PYTHONPATH=/app/src 
     env_file:
