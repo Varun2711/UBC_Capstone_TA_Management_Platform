@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Bell,
   BookOpen,
@@ -40,6 +40,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NavigationHeader } from "@/components/ui/navigation-header"
 import { AppSidebar } from "../components/student-dashboard-sidebar"
+import { getProfile } from "@/logic/student-profile"
+
+import axios from "axios"
 
 
 // Mock data for student profile
@@ -122,16 +125,11 @@ const currentOffers = [
     totalPay: 2480,
     startDate: "2024-02-05",
     endDate: "2024-05-20",
+    session: "Winter Session 2025-26",
     offerDate: "2024-01-20",
     responseDeadline: "2024-02-01",
     daysLeft: 5,
     requirements: "Previous programming experience preferred. Must be available for office hours.",
-    responsibilities: [
-      "Assist students during lab and tutorial sessions",
-      "Grade assignments and provide feedback",
-      "Hold 2 hours of office hours per week",
-      "Attend weekly TA meetings",
-    ],
     status: "Pending",
     priority: "High",
   },
@@ -142,11 +140,13 @@ const currentOffers = [
         course: "CS 250 - Computer Organization",
         courseCode: "CS 250",
         instructor: "Dr. Davis",
-        courseOffering: {
-          type: "Lecture",
-          section: "LEC 001",
-          time: "Tue/Thu 11:00-12:30 PM",
-        },
+        courseOfferings: [
+          {
+            type: "Lecture",
+            section: "LEC 001",
+            time: "Tue/Thu 11:00-12:30 PM",
+          },
+        ],
         sharedSessions: [
           {
             type: "Lab",
@@ -164,11 +164,13 @@ const currentOffers = [
         course: "CS 260 - Digital Systems",
         courseCode: "CS 260",
         instructor: "Dr. Lee",
-        courseOffering: {
-          type: "Lecture",
-          section: "LEC 002",
-          time: "Mon/Wed 1:00-2:30 PM",
-        },
+        courseOfferings: [
+          {
+            type: "Lecture",
+            section: "LEC 002",
+            time: "Mon/Wed 1:00-2:30 PM",
+          },
+        ],
         sharedSessions: [
           {
             type: "Lab",
@@ -189,83 +191,117 @@ const currentOffers = [
     totalPay: 3840,
     startDate: "2024-02-05",
     endDate: "2024-05-20",
+    session: "Summer Session 2026",
     offerDate: "2024-01-22",
     responseDeadline: "2024-02-05",
     daysLeft: 9,
     requirements: "Strong understanding of computer architecture and assembly language.",
-    responsibilities: [
-      "Assist with lecture demonstrations",
-      "Grade exams and assignments",
-      "Lead lab and tutorial sessions",
-      "Provide tutoring support",
-    ],
     status: "Pending",
     priority: "Medium",
   },
 ];
 
-
-// Mock data for past offers
 const pastOffers = [
   {
     id: 3,
-    course: "CS 101 - Introduction to Programming",
-    courseCode: "CS 101",
-    instructor: "Dr. Smith",
-    section: "Lab L03",
-    sectionTime: "Friday 1:00-3:00 PM",
-    hoursPerWeek: 8,
-    hourlyRate: 15.0,
-    totalWeeks: 16,
-    totalPay: 1920,
-    startDate: "2024-01-15",
-    endDate: "2024-05-01",
-    offerDate: "2024-01-05",
-    responseDeadline: "2024-01-15",
-    responseDate: "2024-01-12",
+    courses: [
+      {
+        course: "CS 301 - Algorithms",
+        courseCode: "CS 301",
+        instructor: "Dr. Brown",
+        courseOfferings: [
+          {
+            type: "Lecture",
+            section: "LEC 001",
+            time: "Mon/Wed/Fri 10:00-11:00 AM",
+          },
+        ],
+        sharedSessions: [
+          {
+            type: "Lab",
+            section: "LAB L01",
+            time: "Monday 2:00-4:00 PM",
+          },
+        ],
+      },
+      {
+        course: "CS 101 - Introduction to Programming",
+        courseCode: "CS 101",
+        instructor: "Dr. Smith",
+        courseOfferings: [
+        ],
+        sharedSessions: [
+          {
+            type: "Lab",
+            section: "LAB L03",
+            time: "Friday 1:00-3:00 PM",
+          },
+        ],
+      },
+    ],
+    hoursPerWeek: 10,
+    session: "Winter Session 2024-25",
+    offerDate: "2024-01-20",
+    responseDeadline: "2024-02-01",
+    responseDate: "2024-01-30",
     status: "Accepted",
-    priority: "High",
-    currentStatus: "Active",
   },
   {
     id: 4,
-    course: "CS 301 - Algorithms",
-    courseCode: "CS 301",
-    instructor: "Dr. Brown",
-    section: "Lecture 001",
-    sectionTime: "MWF 10:00-11:00 AM",
-    hoursPerWeek: 12,
-    hourlyRate: 17.0,
-    totalWeeks: 16,
-    totalPay: 3264,
-    startDate: "2024-01-15",
-    endDate: "2024-05-01",
-    offerDate: "2024-01-03",
-    responseDeadline: "2024-01-10",
-    responseDate: "2024-01-08",
-    status: "Rejected",
-    rejectionReason: "Schedule conflict with another commitment",
-    priority: "Medium",
-  },
-  {
-    id: 5,
-    course: "CS 350 - Software Engineering",
-    courseCode: "CS 350",
-    instructor: "Dr. Miller",
-    section: "Lab L01",
-    sectionTime: "Tuesday 2:00-4:00 PM",
+    courses: [
+      {
+        course: "CS 102 - Digital Citizenship",
+        courseCode: "CS 102",
+        instructor: "Dr. Smith",
+        courseOfferings: [
+          {
+            type: "Lecture",
+            section: "LEC 001",
+            time: "Mon/Wed/Fri 10:00-11:00 AM",
+          },
+        ],
+        sharedSessions: [
+          {
+            type: "Lab",
+            section: "LAB L01",
+            time: "Monday 2:00-4:00 PM",
+          },
+        ],
+      },
+      {
+        course: "CS 124 - Capstone Software Engineering Project",
+        courseCode: "CS 124",
+        instructor: "Dr. Town",
+        courseOfferings: [
+          {
+            type: "Lecture",
+            section: "LEC 001",
+            time: "Mon/Fri 10:00-11:30 AM",
+          },
+        ],
+        sharedSessions: [
+          {
+            type: "Lab",
+            section: "LAB L04",
+            time: "Friday 1:00-3:00 PM",
+          },
+          {
+            type: "Tutorial",
+            section: "TUT T01",
+            time: "Wednesday 1:00-3:00 PM",
+          },
+        ],
+      },
+    ],
     hoursPerWeek: 10,
-    hourlyRate: 16.5,
-    totalWeeks: 16,
-    totalPay: 2640,
-    startDate: "2023-09-01",
-    endDate: "2023-12-15",
-    offerDate: "2023-08-15",
-    responseDeadline: "2023-08-25",
-    status: "Expired",
-    priority: "Low",
+    session: "Summer Session 2024",
+    offerDate: "2024-02-20",
+    responseDeadline: "2024-03-01",
+    responseDate: "2024-02-27",
+    status: "Rejected",
   },
-]
+];
+
 
 function getStatusBadge(status) {
   switch (status) {
@@ -310,8 +346,12 @@ function getStatusIcon(status) {
   }
 }
 
+
 export default function OffersPage() {
   const [selectedOffer, setSelectedOffer] = useState(null)
+  // State for current user data (displayed and modified)
+  const [userData, setUserData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleAcceptOffer = (offerId) => {
     console.log("Accepting offer:", offerId)
@@ -323,11 +363,89 @@ export default function OffersPage() {
     // Handle reject logic here
   }
 
+  const transformBackendDataToFrontend = (data) => {
+
+    let firstName = '';
+    let lastName = '';
+
+    // Check if backend returns a single 'name' field (expected)
+    if (data.name) {
+      console.log("Using name field:", data.name);
+      const nameParts = data.name.trim().split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    }
+    // Fallback: if backend returns first_name and last_name separately
+    else if (data.first_name || data.last_name) {
+      console.log("Using first_name and last_name fields");
+      if (data.first_name && data.last_name && data.last_name.trim() !== '') {
+        // Both fields exist and are not empty
+        firstName = data.first_name;
+        lastName = data.last_name;
+      } else if (data.first_name) {
+        // Only first_name exists, split it
+        const nameParts = data.first_name.trim().split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+    }
+    // Try student_info if available
+    else if (data.student_info?.name) {
+      const nameParts = data.student_info.name.trim().split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    }
+
+    return {
+      // USE THE PARSED NAMES:
+      firstName: firstName,
+      lastName: lastName,
+      email: data.email || '',
+      avatar: data.avatar || "/placeholder.svg?height=120&width=120",
+    };
+  };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getProfile();
+        console.log("Fetched user data from backend:", data);
+
+        // ✅ ADD THIS DEBUG LOGGING:
+        console.log("=== PROFILE DATA DEBUG ===");
+        console.log("Backend student_info:", data.student_info);
+        console.log("=== END DEBUG ===");
+
+        // Transform data to match frontend structure
+        const profileData = transformBackendDataToFrontend(data);
+        console.log("Transformed data:", profileData);
+
+        setUserData(profileData);
+
+      } catch (error) {
+        setFetchError("Could not load your profile. Please try again later.");
+        console.error("Fetch profile error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUserData();
+  }, []);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading student offers...</div>;
+  }
+
   return (
     <div className="min-h-screen">
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
-          <AppSidebar />
+          <AppSidebar
+            name={`${userData.firstName} ${userData.lastName}`}
+            email={userData.email}
+            avatar={userData.avatar}
+          />
           <div className="flex-1">
             {/* Header */}
             <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
@@ -422,11 +540,11 @@ export default function OffersPage() {
                             <div className="flex items-start justify-between">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                  <CardTitle className="text-lg">{offer.course}</CardTitle>
+                                  <CardTitle className="text-lg">{offer.session} Offer</CardTitle>
                                   {getPriorityBadge(offer.priority)}
                                 </div>
                                 <CardDescription>
-                                  {offer.instructor} • {offer.section} • {offer.sectionTime}
+                                  {offer.courses.map(course => course.instructor).join(", ")}
                                 </CardDescription>
                               </div>
                               <div className="flex items-center gap-2">
@@ -437,8 +555,32 @@ export default function OffersPage() {
                               </div>
                             </div>
                           </CardHeader>
+
                           <CardContent className="space-y-4">
-                            {/* Offer Details Grid */}
+                            {/* Course Details */}
+                            <div className="space-y-3">
+                              {offer.courses.map((course, idx) => (
+                                <div key={idx} className="p-4 bg-muted/50 rounded-lg space-y-2">
+                                  <div className="font-semibold text-base">{course.course}</div>
+                                  <div className="text-sm text-muted-foreground">Instructor: {course.instructor}</div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {course.courseOfferings.map((section, i) => (
+                                      <div key={`offer-${i}`} className="text-sm">
+                                        📘 {section.type} - {section.section} • {section.time}
+                                      </div>
+                                    ))}
+                                    {course.sharedSessions.map((session, i) => (
+                                      <div key={`session-${i}`} className="text-sm">
+                                        🧪 {session.type} - {session.section} • {session.time}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Offer Metadata */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
                               <div>
                                 <p className="text-sm font-medium">Hours/Week</p>
@@ -454,9 +596,7 @@ export default function OffersPage() {
                               </div>
                               <div>
                                 <p className="font-medium">Response Deadline</p>
-                                <p
-                                  className={offer.daysLeft <= 7 ? "text-red-600 font-medium" : "text-muted-foreground"}
-                                >
+                                <p className={offer.daysLeft <= 7 ? "text-red-600 font-medium" : "text-muted-foreground"}>
                                   {offer.responseDeadline}
                                 </p>
                               </div>
@@ -477,6 +617,7 @@ export default function OffersPage() {
                         </Card>
                       ))}
                     </div>
+
                   )}
                 </TabsContent>
 
@@ -500,91 +641,69 @@ export default function OffersPage() {
                             <div className="flex items-start justify-between">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                  {getStatusIcon(offer.status)}
-                                  <CardTitle className="text-lg">{offer.course}</CardTitle>
-                                  {offer.status === "Accepted" && offer.currentStatus === "Active" && (
-                                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Active</Badge>
-                                  )}
+                                  <CardTitle className="text-lg">{offer.session} Offer</CardTitle>
                                 </div>
                                 <CardDescription>
-                                  {offer.instructor} • {offer.section} • {offer.sectionTime}
+                                  {offer.courses.map(course => course.instructor).join(", ")}
                                 </CardDescription>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {getStatusBadge(offer.status)}
-                                {getPriorityBadge(offer.priority)}
                               </div>
                             </div>
                           </CardHeader>
+
                           <CardContent className="space-y-4">
-                            {/* Offer Summary */}
+                            {/* Course Details */}
+                            <div className="space-y-3">
+                              {offer.courses.map((course, idx) => (
+                                <div key={idx} className="p-4 bg-muted/50 rounded-lg space-y-2">
+                                  <div className="font-semibold text-base">{course.course}</div>
+                                  <div className="text-sm text-muted-foreground">Instructor: {course.instructor}</div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {course.courseOfferings.map((section, i) => (
+                                      <div key={`offer-${i}`} className="text-sm">
+                                        📘 {section.type} - {section.section} • {section.time}
+                                      </div>
+                                    ))}
+                                    {course.sharedSessions.map((session, i) => (
+                                      <div key={`session-${i}`} className="text-sm">
+                                        🧪 {session.type} - {session.section} • {session.time}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Offer Metadata */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
                               <div>
                                 <p className="text-sm font-medium">Hours/Week</p>
                                 <p className="text-lg font-bold">{offer.hoursPerWeek}</p>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium">Hourly Rate</p>
-                                <p className="text-lg font-bold">${offer.hourlyRate}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Duration</p>
-                                <p className="text-lg font-bold">{offer.totalWeeks} weeks</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Total Pay</p>
-                                <p
-                                  className={`text-lg font-bold ${offer.status === "Accepted" ? "text-green-600" : "text-muted-foreground"}`}
-                                >
-                                  ${offer.totalPay.toLocaleString()}
-                                </p>
-                              </div>
                             </div>
 
-                            {/* Response Details */}
+                            {/* Timeline */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                               <div>
-                                <p className="font-medium">Offer Date</p>
+                                <p className="font-medium">Offer Received</p>
                                 <p className="text-muted-foreground">{offer.offerDate}</p>
                               </div>
                               <div>
                                 <p className="font-medium">Response Deadline</p>
-                                <p className="text-muted-foreground">{offer.responseDeadline}</p>
+                                <p className={offer.daysLeft <= 7 ? "text-red-600 font-medium" : "text-muted-foreground"}>
+                                  {offer.responseDeadline}
+                                </p>
                               </div>
                               <div>
-                                <p className="font-medium">Your Response</p>
-                                <p className="text-muted-foreground">
-                                  {offer.responseDate ? offer.responseDate : "No response"}
-                                </p>
+                                <p className="font-medium">Status:</p>
+                                <p className={offer.status === "Accepted" ? "text-green-600 font-medium" : "text-red-600 font-medium"}>{offer.status}</p>
                               </div>
                             </div>
 
-                            {/* Status-specific information */}
-                            {offer.status === "Rejected" && offer.rejectionReason && (
-                              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                                <p className="text-sm font-medium text-red-800">Rejection Reason:</p>
-                                <p className="text-sm text-red-700">{offer.rejectionReason}</p>
-                              </div>
-                            )}
-
-                            {offer.status === "Accepted" && offer.currentStatus === "Active" && (
-                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                <p className="text-sm font-medium text-green-800">Position Status:</p>
-                                <p className="text-sm text-green-700">
-                                  Currently active - {offer.startDate} to {offer.endDate}
-                                </p>
-                              </div>
-                            )}
-
-                            {offer.status === "Expired" && (
-                              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                                <p className="text-sm font-medium text-gray-800">Offer Expired:</p>
-                                <p className="text-sm text-gray-700">Response deadline passed without action</p>
-                              </div>
-                            )}
                           </CardContent>
                         </Card>
                       ))}
+
                     </div>
                   )}
                 </TabsContent>
