@@ -6,37 +6,56 @@ account.
 */
 "use client"
 
-import { useState } from "react"
+import { use, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 import { toast } from "sonner"
+import { useLockoutTimer } from "@/hooks/useLockoutTimer"
+import { formatTime, getFailedAttempts, recordFailedAttempt } from "@/logic/password-reset-lockout"
 
 export default function VerifyIdStep({ onNext, verifyId, requestSendResetLink }) {
   // state
   const [id, setId] = useState("")
   const [error, setError] = useState("")
 
+  const { lockedOut, lockoutTime, checkLockoutStatus } = useLockoutTimer();
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if(lockedOut) return;
 
     if(validInput()) {
       // check inputted student/employee id with value in database
       let response = await verifyId(id)
 
       if(response.success) {
-        // attempt to send password reset email
+        // inputted id matches up with what's on file, so attempt to send password reset email
         response = await requestSendResetLink();
         if(response.success) {
-          toast.success("Identity verified, password reset link sent!")
+          toast.success("Identity verified! A password reset link has been sent!")
           onNext(id);
         } else {
           toast.error(response.data)
         }
       } else {
-        toast.error(response.data)
+        // entered wrong id, log failed attempt
+        const timeoutTriggered = recordFailedAttempt(); // = true if this failed attempt triggered a timeout, false if still allowed more attempts
+
+        if(timeoutTriggered) {
+          checkLockoutStatus(); // force React to update immediately so user is informed that they're locked out ASAP
+          toast.error("3 failed attempts. Unable to verify identity")
+        } else {
+          const attemptsRemaining = 3 - getFailedAttempts();
+
+          // display message saying "The ID number you entered does not match our records. X attempt(s) remain(s)."
+          attemptsRemaining === 1 ? 
+          toast.error(response.data + " " + attemptsRemaining + " attempt remains.") :
+          toast.error(response.data + " " + attemptsRemaining + " attempts remain.")
+        }
       }
     }
   }
@@ -87,18 +106,25 @@ export default function VerifyIdStep({ onNext, verifyId, requestSendResetLink })
                 name="id"
                 type="text"
                 inputMode="numeric"
-                value={id}
+                value={lockedOut ? "" : id}
                 onChange={handleIdChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter your student or employee ID"
                 required
+                disabled={lockedOut}
               />
               {error && <span className="text-red-700" role="alert">{error}</span>}
+              {lockedOut && (
+                <p className="text-red-700" role="alert">
+                  You have reached the maximum number of failed verification attempts. Try again in {formatTime(lockoutTime)}, or if you believe this is in error, please contact the system administrator.
+                </p>
+              )}
             </div>
 
             <Button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition duration-200"
+              disabled={lockedOut}
             >
               Next
             </Button>

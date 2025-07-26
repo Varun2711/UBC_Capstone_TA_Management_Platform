@@ -19,11 +19,20 @@ export function useResetPassword() {
     */
     const requestAccountLookup = async (email) => {
         try {             
-            const response = await axios.post(API_URL + '/auth/reset-password/lookup/', 
-                { 
-                    email: email
+            // const response = await axios.post(API_URL + '/auth/reset-password/lookup/', 
+            //     { 
+            //         email: email
+            //     }
+            // );
+
+            // MOCK RN FOR TESTING SO DON'T HAVE TO HAVE DOCKER RUNNING!!!!!!!!!!
+            const response = { 
+                data: {
+                    email: email,
+                    user_type: "student",
+                    id_number: 12345678
                 }
-            );
+            };
 
             const userData = response.data;
             setAccountInfo(userData);
@@ -73,7 +82,7 @@ export function useResetPassword() {
             success: inputtedIDMatchesStoredValue,
             data: inputtedIDMatchesStoredValue
                 ? "Your identity has been verified"
-                : "The ID number you entered does not match our records. X attempts remain."
+                : "The ID number you entered does not match our records."
         }
     }
 

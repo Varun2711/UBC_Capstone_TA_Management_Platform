@@ -2,6 +2,8 @@
  * Test file for rendering and behavior of Reset Password components
  */
 
+const verifyIdMock = vi.fn();
+
 // mock useResetPassword hook so that doesn't rely on docker containers for testing (have to do this at top of file before imports)
 vi.mock('@/hooks/useResetPassword', () => {
   return {
@@ -15,10 +17,7 @@ vi.mock('@/hooks/useResetPassword', () => {
         },
       }),
 
-      verifyId: vi.fn().mockResolvedValue({
-        success: true,
-        data: "Your identity has been verified"
-      }),
+      verifyId: verifyIdMock,
 
       requestSendResetLink: vi.fn().mockResolvedValue({
         success: true,
@@ -102,6 +101,7 @@ const renderStep5 = () => {
 describe('Reset Password', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    verifyIdMock.mockReset()
   })
 
   // test basic page rendering --------------------------------------------------
@@ -232,9 +232,14 @@ describe('Reset Password', () => {
 
   it('sends user a link to reset their password when valid email/id combination provided', async () => {
       // Set up
+      verifyIdMock.mockResolvedValue({
+        success: true,
+        data: "Your identity has been verified"
+      })
+
       renderResetPassword();
       const user = userEvent.setup()
-
+      
       // STEP 1:
       // Type email into input field
       const emailInput = screen.getByLabelText(/email address/i);
@@ -287,6 +292,70 @@ describe('Reset Password', () => {
     // Ensure that step 5 (success) renders
     await waitFor(() => {
       expect(screen.getByRole("heading"), { name: /success!/i }).toBeInTheDocument();
+    })
+  })
+
+  it('times out and displays error message after 3 failed attempts to verify id', async() => {
+    // mock a bad response from verifyid function
+    verifyIdMock
+    .mockResolvedValueOnce({ success: false, data: "The ID number you entered does not match our records." })
+    .mockResolvedValueOnce({ success: false, data: "The ID number you entered does not match our records." })
+    .mockResolvedValueOnce({ success: false, data: "The ID number you entered does not match our records." });
+    
+    // set up
+    renderResetPassword();
+    const user = userEvent.setup()
+      
+    // Render step 1 and populate values so that account data is set
+    const emailInput = screen.getByLabelText(/email address/i);
+    await user.type(emailInput, "johncena@wwe.com");
+    let nextButton = screen.getByRole("button", {name: /next/i });
+    await userEvent.click(nextButton);
+    
+    // Now onto verification: mock entering incorrect id and hitting "next" 3 times
+    const idInput = screen.getByLabelText(/student or employee id/i);
+    nextButton = screen.getByRole("button", {name: /next/i });
+
+    // 1st Time
+    await user.clear(idInput)
+    await user.type(idInput, "33333333");
+    await userEvent.click(nextButton); 
+
+    // check that # of attempts is incremented
+    await waitFor(() => {
+      const attempts = Number(localStorage.getItem("resetpassword_failed_attempts"));
+      expect(attempts).toBe(1);
+    });
+
+    // 2nd Time
+    await user.clear(idInput)
+    await user.type(idInput, "33333333");
+    await userEvent.click(nextButton); 
+
+    // check that # of attempts is incremented
+    await waitFor(() => {
+      const attempts = Number(localStorage.getItem("resetpassword_failed_attempts"));
+      expect(attempts).toBe(2);
+    });
+
+    // 3rd Time: expected to initiate timeout
+    await user.clear(idInput)
+    await user.type(idInput, "33333333");
+    await userEvent.click(nextButton); 
+
+    // check that # of attempts is incremented
+    // AND timeout is set in localStorage
+    await waitFor(() => {
+      const attempts = Number(localStorage.getItem("resetpassword_failed_attempts"));
+      expect(attempts).toBe(3);
+
+      const lockoutTime = Number(localStorage.getItem("resetpassword_lockout_until"));
+      expect(lockoutTime).toBeGreaterThan(1753487010046);
+    });
+
+    // check for error message
+    await waitFor(() => {
+      expect(screen.getByRole("alert"), {name: /you have reached the maximum number of failed verification attempts. try again in/i});
     })
   })
 
