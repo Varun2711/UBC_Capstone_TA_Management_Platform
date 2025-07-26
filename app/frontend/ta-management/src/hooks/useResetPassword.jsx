@@ -19,20 +19,11 @@ export function useResetPassword() {
     */
     const requestAccountLookup = async (email) => {
         try {             
-            // const response = await axios.post(API_URL + '/auth/reset-password/lookup/', 
-            //     { 
-            //         email: email
-            //     }
-            // );
-
-            // MOCK RN FOR TESTING SO DON'T HAVE TO HAVE DOCKER RUNNING!!!!!!!!!!
-            const response = { 
-                data: {
-                    email: email,
-                    user_type: "student",
-                    id_number: 12345678
+            const response = await axios.post(API_URL + '/auth/reset-password/lookup/', 
+                { 
+                    email: email
                 }
-            };
+            );
 
             const userData = response.data;
             setAccountInfo(userData);
