@@ -2,6 +2,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import sys
+from celery.schedules import crontab
+from kombu import Queue
 
 load_dotenv('../../.env')
 
@@ -69,6 +71,28 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
+}
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+
+CELERY_TASK_DEFAULT_QUEUE = 'allocations'
+CELERY_QUEUES = (
+    Queue('allocations', routing_key='allocations'),
+)
+
+CELERY_BEAT_SCHEDULE = {
+    'check-offer-deadlines-every-hour': {
+        'task': 'api.tasks.check_offer_deadlines',
+        'schedule': crontab(minute=0, hour='*'),
+        'options': {'queue': 'allocations'},
+    },
 }
 
 REST_FRAMEWORK = {

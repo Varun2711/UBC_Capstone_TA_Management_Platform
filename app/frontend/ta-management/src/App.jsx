@@ -28,6 +28,7 @@ import InstructorProfile from "./pages/Instructor/instructor-profile";
 import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-management";
 import MyCourses from "./pages/Instructor_MyCourses";
 import StudentOffers from "./pages/StudentOffersPage";
+import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
 
 
 function App() {
@@ -118,6 +119,17 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+<Route
+        path="/ta-requirements"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <InstructorTARequirements />
+          </ProtectedRoute>
+        }
+      />
+
+
 
       {/* Accessible to: scheduler --------------- */}
       <Route

@@ -11,3 +11,6 @@ setuptools
 django-filter==24.3
 pytest==7.4.3
 pytest-django==4.7.0
+requests==2.32.3
+celery==5.4.0
+redis==5.2.0
