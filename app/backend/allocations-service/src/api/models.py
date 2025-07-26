@@ -597,19 +597,24 @@ class Offer(models.Model):
     def is_expired(self):
         """Check if offer has expired safely."""
         # --- FIX STARTS HERE ---
-        # First, check if a deadline even exists. If not, it can't be expired.
-        if not self.response_deadline:
-            return False
+        # An offer is considered expired if its status is already 'expired'.
+        if self.status == 'expired':
+            return True
+
+        # If it's pending, check if the deadline has passed.
+        if self.status == 'pending':
+            if not self.response_deadline:
+                return False  # A pending offer without a deadline cannot be expired.
+            
+            # Check if the deadline is in the past
+            if self.response_deadline < timezone.now():
+                # Auto-update status when checked
+                self.status = 'expired'
+                self.save(update_fields=['status', 'updated_at'])
+                return True
         
-        # Now, it's safe to compare the datetime objects.
-        expired = self.response_deadline < timezone.now() and self.status == 'pending'
-        # --- FIX ENDS HERE ---
-        
-        if expired and self.status == 'pending':
-            # Auto-update status when checked
-            self.status = 'expired'
-            self.save(update_fields=['status', 'updated_at'])
-        return expired
+        # For all other statuses (draft, accepted, etc.), it is not expired.
+        return False
     
     def can_respond(self):
         """Check if student can still respond to offer"""
