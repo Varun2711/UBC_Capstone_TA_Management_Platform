@@ -592,10 +592,10 @@ const FormBuilder = ({ templateId, onSave, onPreview }) => {
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-4">
-        <Button variant="outline" onClick={handlePreview}>
+        {/*  <Button variant="outline" onClick={handlePreview}>
           <Eye className="h-4 w-4 mr-2" />
           Preview
-        </Button>
+        </Button> */}
         <Button onClick={saveTemplate} disabled={saving}>
           <Save className="h-4 w-4 mr-2" />
           {saving ? "Saving..." : "Save Template"}
