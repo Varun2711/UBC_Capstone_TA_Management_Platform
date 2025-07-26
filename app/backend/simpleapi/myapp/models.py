@@ -209,6 +209,15 @@ class CourseOffering(models.Model):
         help_text="Instructor teaching this course offering"
     )
 
+    time_slots = models.ManyToManyField(
+        TimeSlot,
+        blank=True,
+        related_name='course_offerings',
+        help_text="Time slots when this course offering meets"
+    )
+
+    is_active = models.BooleanField(default=True)
+
     class Meta:
         managed = False
         db_table = 'myapp_course_offerings'
@@ -337,6 +346,8 @@ class SharedSession(models.Model):
         help_text="Time slots when this lab section meets"
     )
 
+    is_active = models.BooleanField(default=True)
+    
     class Meta:
         managed = False
         db_table = 'myapp_sharedsessions'

@@ -1106,7 +1106,11 @@
       "course": 3,
       "instructor": 2,
       "academic_term": 1,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440003",
+        "550e8400-e29b-41d4-a716-446655440005"
+      ]
     }
   },
   {
@@ -1117,7 +1121,11 @@
       "course": 4,
       "instructor": 3,
       "academic_term": 1,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440007",
+        "550e8400-e29b-41d4-a716-446655440009"
+      ]
     }
   },
   {
@@ -1128,7 +1136,11 @@
       "course": 5,
       "instructor": 2,
       "academic_term": 2,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440010",
+        "550e8400-e29b-41d4-a716-446655440012"
+      ]
     }
   },
   {
@@ -1150,7 +1162,11 @@
       "course": 7,
       "instructor": 3,
       "academic_term": 3,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440004",
+        "550e8400-e29b-41d4-a716-446655440006"
+      ]
     }
   },
   {
@@ -1172,7 +1188,11 @@
       "course": 9,
       "instructor": 4,
       "academic_term": 1,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440013",
+        "550e8400-e29b-41d4-a716-446655440015"
+      ]
     }
   },
   {
@@ -1205,7 +1225,11 @@
       "course": 12,
       "instructor": 4,
       "academic_term": 1,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440008",
+        "550e8400-e29b-41d4-a716-446655440011"
+      ]
     }
   },
   {
@@ -1238,7 +1262,11 @@
       "course": 1,
       "instructor": 2,
       "academic_term": 1,
-      "section_number": "002"
+      "section_number": "002",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440014",
+        "550e8400-e29b-41d4-a716-446655440016"
+      ]
     }
   },
   {
@@ -1249,7 +1277,11 @@
       "course": 2,
       "instructor": 3,
       "academic_term": 2,
-      "section_number": "002"
+      "section_number": "002",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002"
+      ]
     }
   },
   {
