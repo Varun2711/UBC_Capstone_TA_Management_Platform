@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_URL = 'http://localhost:8080';
-const ADMIN_API = `${API_URL}/api`;
+const ADMIN_API = `${API_URL}/api/profile/admin`;
 
 // Helper to get auth headers
 const getAuthHeaders = () => {
