@@ -11,6 +11,9 @@ from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+import requests
+import logging
+logger = logging.getLogger(__name__)
 
     # Add this import at the top
 from .models import (
@@ -22,6 +25,8 @@ from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedAppli
 # Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
 from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsAuthenticatedUser, IsStudentUser
+
+
 
 # Combined permissions
 IsSchedulerOrAdmin = IsSchedulerUser | IsAdminUser
@@ -217,17 +222,45 @@ class OfferViewSet(viewsets.ModelViewSet):
                 return student.id
             except (User.DoesNotExist, Student.DoesNotExist):
                 return None
+
+
+    def _get_coordinator_email_for_offer(self, offer):
+        """Get coordinator email for an offer"""
+        try:
+            # Option 1: Use the scheduler who created the offer
+            if offer.created_by and hasattr(offer.created_by, 'email') and offer.created_by.email:
+                return offer.created_by.email
+            
+            # Option 2: Try to get instructor from first course offering
+            first_offer_item = offer.offer_items.first()
+            if first_offer_item and first_offer_item.item_type == 'course_offering':
+                course_offering = first_offer_item.course_offering
+                if course_offering and hasattr(course_offering, 'instructor') and course_offering.instructor and hasattr(course_offering.instructor, 'email'):
+                    return course_offering.instructor.email
+            
+            # Option 3: Use scheduler's email as fallback
+            if offer.created_by and hasattr(offer.created_by, 'name'):
+                scheduler_name = offer.created_by.name.lower().replace(' ', '.')
+                return f"{scheduler_name}@ubc.ca"
+            
+            # Final fallback
+            return 'ta-coordinator@ubc.ca'
+            
+        except Exception as e:
+            logger.error(f"Error getting coordinator email for offer {offer.offer_id}: {str(e)}")
+            return 'ta-coordinator@ubc.ca'        
         
     # Update the create_offer method in OfferViewSet
     @action(detail=False, methods=['post'])
     def create_offer(self, request):
-        """Create a new multi-item offer for a shortlisted student"""
-        from datetime import datetime
+        """
+        Create a new DRAFT multi-item offer for a shortlisted student.
+        This does NOT accept a deadline and does NOT send a notification.
+        """
         from django.utils import timezone
         
         application_id = request.data.get('application_id')
         offer_items = request.data.get('offer_items', [])
-        response_deadline_str = request.data.get('response_deadline')
         notes = request.data.get('notes', '')
         
         # Backward compatibility: single item offer
@@ -259,21 +292,6 @@ class OfferViewSet(viewsets.ModelViewSet):
                 {'error': 'offer_items must be a non-empty list'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Parse response_deadline
-        response_deadline = None
-        if response_deadline_str:
-            try:
-                if response_deadline_str.endswith('Z'):
-                    response_deadline_str = response_deadline_str[:-1] + '+00:00'
-                response_deadline = datetime.fromisoformat(response_deadline_str)
-                if response_deadline.tzinfo is None:
-                    response_deadline = timezone.make_aware(response_deadline)
-            except ValueError as e:
-                return Response(
-                    {'error': f'Invalid response_deadline format: {str(e)}'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
         
         # Check authentication
         if not hasattr(request, 'auth') or not request.auth:
@@ -406,53 +424,56 @@ class OfferViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Create multi-item offer
+            # Create multi-item offer with 'draft' status
             with transaction.atomic():
-                # Create the main offer first
-                offer = Offer.objects.create(
-                    application=application,
+                offer, created = Offer.objects.get_or_create(
                     student=student,
-                    response_deadline=response_deadline,
-                    created_by=scheduler,
-                    notes=notes
+                    status='draft',
+                    defaults={
+                        'application': application,  # The application that starts the draft
+                        'created_by': scheduler,
+                        'notes': notes,
+                        'role': 'ta' # Assuming default role
+                    }
                 )
                 
-                # Create and add offer items
-                created_offer_items = []
+                if created:
+                    message = 'New draft offer created successfully.'
+                    response_status = status.HTTP_201_CREATED
+                else:
+                    # If the draft already existed, append notes if new notes are provided
+                    if notes:
+                        offer.notes = f"{offer.notes}\n---\n{notes}" if offer.notes else notes
+                        offer.save(update_fields=['notes'])
+                    message = 'Items added to existing draft offer.'
+                    response_status = status.HTTP_200_OK
+
+                # Create and add new offer items to the (possibly existing) offer
                 for item_data in validated_items:
+                    # Prevent adding duplicate items to the same offer
                     if item_data['type'] == 'course_offering':
+                        if offer.offer_items.filter(course_offering=item_data['object']).exists():
+                            continue  # Skip if this item is already in the offer
                         offer_item = OfferItem.objects.create(
                             item_type='course_offering',
                             course_offering=item_data['object']
                         )
                     else:  # shared_session
+                        if offer.offer_items.filter(shared_session=item_data['object']).exists():
+                            continue  # Skip if this item is already in the offer
                         offer_item = OfferItem.objects.create(
                             item_type='shared_session',
                             shared_session=item_data['object']
                         )
-                    
                     offer.offer_items.add(offer_item)
-                    created_offer_items.append(offer_item)
             
             # Return response with all data
             serializer = self.get_serializer(offer)
-            # In your create_offer method, update the return statement:
             return Response({
                 'success': True,
-                'message': 'Multi-item offer created successfully',
-                'offer': serializer.data,  # ← Simplified: just 'offer' instead of 'offer_data'
-                'summary': {
-                    'offer_id': offer.offer_id,
-                    'student_id': student.id,
-                    'student_number': student.student_number,
-                    'application_id': application.application_id,  # ← Keep reference for fetching details separately
-                    'total_weekly_hours': round(total_hours, 1),
-                    'item_count': len(validated_items),
-                    'courses': [course.course_number for course in offer_courses],
-                    'terms': [term.code for term in offer_terms]
-                    # *** REMOVED: detailed items array
-                }
-            }, status=status.HTTP_201_CREATED)
+                'message': message,
+                'offer': serializer.data
+            }, status=response_status)
             
         except ApplicationShortList.DoesNotExist:
             return Response(
@@ -460,6 +481,7 @@ class OfferViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
+            logger.error(f"Error in create_offer: {str(e)}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
@@ -707,18 +729,18 @@ class OfferViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['put', 'patch'])
     def edit_offer(self, request, pk=None):
-        """Edit a pending offer (only schedulers/admins)"""
+        """Edit a draft or pending offer (only schedulers/admins)"""
         offer = self.get_object()
         
-        # Check if offer can be edited
-        if offer.status != 'pending':
+        # Check if offer can be edited (drafts or pending offers)
+        if offer.status not in ['draft', 'pending']:
             return Response(
-                {'error': f'Cannot edit offer with status "{offer.status}". Only pending offers can be edited.'},
+                {'error': f'Cannot edit offer with status "{offer.status}". Only draft or pending offers can be edited.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if offer has expired
-        if offer.is_expired():
+        # Check if offer has expired (only relevant for pending offers)
+        if offer.status == 'pending' and offer.is_expired():
             return Response(
                 {'error': 'Cannot edit expired offer'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -915,15 +937,68 @@ class OfferViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'], url_path='send-offer')
+    def send_offer(self, request, pk=None):
+        """
+        Finalizes a draft offer, sets its deadline, changes status to 'pending',
+        and sends the notification to the student.
+        """
+        offer = self.get_object()
+
+        # 1. Validate the offer can be sent
+        if offer.status != 'draft':
+            return Response(
+                {'error': f'Only draft offers can be sent. This offer has status "{offer.status}".'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2. Get the response deadline from the request body
+        response_deadline_str = request.data.get('response_deadline')
+        if not response_deadline_str:
+            return Response(
+                {'error': 'response_deadline is required to send an offer.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from datetime import datetime
+            if response_deadline_str.endswith('Z'):
+                response_deadline_str = response_deadline_str[:-1] + '+00:00'
+            response_deadline = datetime.fromisoformat(response_deadline_str)
+            if response_deadline.tzinfo is None:
+                response_deadline = timezone.make_aware(response_deadline)
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid response_deadline format: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 3. Update the offer
+        with transaction.atomic():
+            offer.status = 'pending'
+            offer.offer_date = timezone.now()
+            offer.response_deadline = response_deadline
+            offer.save()
+
+        # 4. Send the notification
+        self._send_offer_notification(offer)
+
+        serializer = self.get_serializer(offer)
+        return Response({
+            'success': True,
+            'message': 'Offer has been sent to the student successfully.',
+            'offer': serializer.data
+        }, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['delete'])
     def cancel_offer(self, request, pk=None):
-        """Cancel a pending offer (only schedulers/admins)"""
+        """Cancel a draft or pending offer (only schedulers/admins)"""
         offer = self.get_object()
         
-        # Check if offer can be cancelled
-        if offer.status != 'pending':
+        # Check if offer can be cancelled using the model method
+        if not offer.can_be_cancelled():
             return Response(
-                {'error': f'Cannot cancel offer with status "{offer.status}". Only pending offers can be cancelled.'},
+                {'error': f'Cannot cancel offer with status "{offer.status}". Only draft or pending offers can be cancelled.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -1026,9 +1101,127 @@ class OfferViewSet(viewsets.ModelViewSet):
                         assigned_by=offer.created_by,
                         notes=f"Auto-assigned from accepted offer {offer.offer_id} - {offer_item.item_type} ({offer_item.weekly_hours}h/week)"
                     )
+            if response_status == 'accepted':
+                self._send_offer_accepted_notification(offer)
+            elif response_status == 'rejected':
+                self._send_offer_rejected_notification(offer)
+    
     
         serializer = self.get_serializer(offer)
         return Response(serializer.data)
+    
+    def _send_offer_notification(self, offer):
+        """Send offer notification via notification service"""
+        
+        try:
+            # Get the first offer item to determine primary course
+            first_offer_item = offer.offer_items.first()
+            
+            if not first_offer_item:
+                logger.error(f"No offer items found for offer {offer.offer_id}")
+                return
+            
+            # Determine course info based on offer items
+            if offer.offer_items.count() == 1:
+                # Single item offer
+                course_code = first_offer_item.course.course_number
+                course_name = first_offer_item.course.course_name
+            else:
+                # Multi-item offer
+                course_code = "Multiple Courses"
+                course_name = f"Multi-course offer ({offer.offer_items.count()} courses)"
+            
+            # Prepare notification data
+            notification_data = {
+                'student_email': offer.student.email,
+                'student_name': offer.student.name,
+                'course_code': course_code,
+                'course_name': course_name,
+                'deadline': offer.response_deadline.strftime('%Y-%m-%d %H:%M:%S'),
+                'offer_id': str(offer.offer_id),
+                'total_hours': offer.total_weekly_hours  # This uses the property that sums all offer items
+            }
+            
+            # Call notification service
+            response = requests.post(
+                'http://notification-service:8006/api/notifications/send_offer_notification/',
+                json=notification_data,
+                timeout=10
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to send offer notification: {response.text}")
+            else:
+                logger.info(f"Offer notification sent successfully for offer {offer.offer_id}")
+                
+        except Exception as e:
+            logger.error(f"Error sending offer notification: {str(e)}")
+            # Don't fail the offer creation if notification fails
+
+    def _send_offer_accepted_notification(self, offer):
+        """Send offer accepted notification to coordinator"""
+        import requests
+        
+        try:
+            # Get coordinator email
+            coordinator_email = self._get_coordinator_email_for_offer(offer)
+            
+            # Get course info from offer items
+            first_offer_item = offer.offer_items.first()
+            if offer.offer_items.count() == 1:
+                course_code = first_offer_item.course.course_number
+                course_name = first_offer_item.course.course_name
+            else:
+                course_code = "Multiple Courses"
+                course_name = f"Multi-course offer ({offer.offer_items.count()} courses)"
+            
+            notification_data = {
+                'student_email': offer.student.email,
+                'student_name': offer.student.name,
+                'course_code': course_code,
+                'course_name': course_name,
+                'coordinator_email': coordinator_email,
+                'total_hours': offer.total_weekly_hours
+            }
+            
+            requests.post(
+                'http://notification-service:8006/api/notifications/send_offer_accepted/',
+                json=notification_data,
+                timeout=10
+            )
+            
+        except Exception as e:
+            logger.error(f"Error sending accepted notification: {str(e)}")
+
+    def _send_offer_rejected_notification(self, offer):
+        """Send offer rejected notification to coordinator"""
+        import requests
+        
+        try:
+            coordinator_email = self._get_coordinator_email_for_offer(offer)
+            
+            # Get course info from offer items
+            first_offer_item = offer.offer_items.first()
+            if offer.offer_items.count() == 1:
+                course_code = first_offer_item.course.course_number
+            else:
+                course_code = f"Multiple Courses ({offer.offer_items.count()})"
+            
+            notification_data = {
+                'student_email': offer.student.email,
+                'student_name': offer.student.name,
+                'course_code': course_code,
+                'coordinator_email': coordinator_email
+            }
+            
+            requests.post(
+                'http://notification-service:8006/api/notifications/send_offer_rejected/',
+                json=notification_data,
+                timeout=10
+            )
+            
+        except Exception as e:
+            logger.error(f"Error sending rejected notification: {str(e)}")
 
 class AssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = AssignmentSerializer
@@ -1049,7 +1242,141 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         active_assignments = self.get_queryset().filter(is_active=True)
         serializer = self.get_serializer(active_assignments, many=True)
         return Response(serializer.data)
+    
+class CourseAllocationActionsViewSet(viewsets.ViewSet):
+    """
+    Actions related to finalizing allocations for a course.
+    """
+    @action(detail=True, methods=['post'], url_path='finalize-allocations', permission_classes=[IsSchedulerOrAdmin])
+    def finalize_allocations(self, request, pk=None):
+        """
+        Finalizes all allocations for a course offering and sends a 
+        consolidated notification to the instructor.
+        """
+        try:
+            course_offering = CourseOffering.objects.get(pk=pk)
+        except CourseOffering.DoesNotExist:
+            return Response({'error': 'Course offering not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        # 1. Gather all active assignments for this course offering
+        active_assignments = Assignment.objects.filter(
+            course_offering=course_offering, 
+            is_active=True
+        ).select_related('student', 'course', 'course_offering__academic_term')
+
+        if not active_assignments.exists():
+            return Response({'message': 'No active assignments to notify for.'}, status=status.HTTP_200_OK)
+
+        # 2. Prepare the allocation details for the notification
+        allocation_details = []
+        for assignment in active_assignments:
+            allocation_details.append({
+                'ta_name': assignment.student.name,
+                'student_number': assignment.student.student_number,
+                'hours': assignment.weekly_hours
+            })
+            
+        # 3. Get instructor and course details
+        instructor = course_offering.instructor
+        if not instructor or not instructor.email:
+            return Response({'error': 'Instructor email not found for this course.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 4. Construct the payload for the notification service
+        notification_payload = {
+            'instructor_email': instructor.email,
+            'instructor_name': instructor.name,
+            'course_code': course_offering.course.course_number,
+            'course_name': course_offering.course.course_name,
+            'term': course_offering.academic_term.term_type, 
+            'allocations': allocation_details
+        }
+
+        # 5. Call the existing notification service endpoint
+        try:
+            notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
+            response = requests.post(notification_url, json=notification_payload, timeout=15)
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to send final allocation notice. Status: {response.status_code}, Body: {response.text}")
+                return Response({'error': 'Failed to trigger notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error calling notification service for final allocation: {e}")
+            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            'message': 'Final allocation notice has been sent to the instructor.',
+            'instructor': instructor.name,
+            'assignments_count': len(active_assignments)
+        })
+
+class SharedSessionAllocationActionsViewSet(viewsets.ViewSet):
+    """
+    Actions related to finalizing allocations for a shared session.
+    """
+    @action(detail=True, methods=['post'], url_path='finalize-allocations', permission_classes=[IsSchedulerOrAdmin])
+    def finalize_allocations(self, request, pk=None):
+        """
+        Finalizes all allocations for a shared session and sends a 
+        consolidated notification to the instructor.
+        """
+        try:
+            shared_session = SharedSession.objects.get(pk=pk)
+        except SharedSession.DoesNotExist:
+            return Response({'error': 'Shared session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # 1. Gather all active assignments for this shared session
+        active_assignments = Assignment.objects.filter(
+            shared_session=shared_session, 
+            is_active=True
+        ).select_related('student', 'course', 'shared_session__academic_term')
+
+        if not active_assignments.exists():
+            return Response({'message': 'No active assignments to notify for.'}, status=status.HTTP_200_OK)
+
+        # 2. Prepare the allocation details for the notification
+        allocation_details = []
+        for assignment in active_assignments:
+            allocation_details.append({
+                'ta_name': assignment.student.name,
+                'student_number': assignment.student.student_number,
+                'hours': assignment.weekly_hours
+            })
+            
+        # 3. Get instructor and course details
+        instructor = shared_session.instructor
+        if not instructor or not instructor.email:
+            return Response({'error': 'Instructor email not found for this shared session.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 4. Construct the payload for the notification service
+        notification_payload = {
+            'instructor_email': instructor.email,
+            'instructor_name': instructor.name,
+            'course_code': f"{shared_session.course.course_number} ({shared_session.session_type})",
+            'course_name': shared_session.course.course_name,
+            'term': shared_session.academic_term.term_type, 
+            'allocations': allocation_details
+        }
+
+        # 5. Call the existing notification service endpoint
+        try:
+            notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
+            response = requests.post(notification_url, json=notification_payload, timeout=15)
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to send final allocation notice. Status: {response.status_code}, Body: {response.text}")
+                return Response({'error': 'Failed to trigger notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error calling notification service for final allocation: {e}")
+            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            'message': 'Final allocation notice has been sent to the instructor.',
+            'instructor': instructor.name,
+            'assignments_count': len(active_assignments)
+        })
+    
 # Root API View
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -1063,10 +1390,11 @@ def api_root(request):
             'shortlisted_applicants': '/api/allocations/shortlisted-applicants/',
             'available_for_allocation': '/api/allocations/shortlisted-applicants/available_for_allocation/',
             
-             # Offers Management
+            # Offers Management
             'offers': '/api/allocations/offers/',
             'create_offer': '/api/allocations/offers/create_offer/',
-            'edit_offer': '/api/allocations/offers/{offer_id}/edit_offer/', 
+            'edit_offer': '/api/allocations/offers/{offer_id}/edit_offer/',
+            'send_offer': '/api/allocations/offers/{offer_id}/send-offer/',
             'cancel_offer': '/api/allocations/offers/{offer_id}/cancel_offer/',
             'pending_offers': '/api/allocations/offers/pending_offers/',
             'accepted_offers': '/api/allocations/offers/accepted_offers/',
@@ -1074,16 +1402,20 @@ def api_root(request):
             'expired_offers': '/api/allocations/offers/expired_offers/',  
             'respond_to_offer': '/api/allocations/offers/{offer_id}/respond_to_offer/',
                 
-             # Assignments Management
-             'assignments': '/api/allocations/assignments/',
-             'active_assignments': '/api/allocations/assignments/active_assignments/',
+            # Assignments Management
+            'assignments': '/api/allocations/assignments/',
+            'active_assignments': '/api/allocations/assignments/active_assignments/',
 
-             # Assignment Modifications
+            # Assignment Modifications
             'create_modification': '/api/allocations/offers/create_modification/', 
             'pending_modifications': '/api/allocations/offers/pending_modifications/', 
             'respond_to_modification': '/api/allocations/offers/{offer_id}/respond_to_modification/',
+
+            # Allocation Finalization
+            'finalize_course_allocations': '/api/allocations/course-offerings/{course_offering_id}/finalize-allocations/', # this is the button scheduler or admin can click to send notif to instructor
+            'finalize_session_allocations': '/api/allocations/shared-sessions/{shared_session_id}/finalize-allocations/',
                 
-             # Service Info
+            # Service Info
             'service_info': '/api/allocations/',
          },
         'authentication': 'Required for all endpoints except root',
@@ -1093,9 +1425,11 @@ def api_root(request):
             'admins': 'Full access to all endpoints'
         },
         'offer_lifecycle': {
-            'pending': 'Offer created, awaiting student response',
+            'draft': 'Offer created, not yet sent to student',
+            'pending': 'Offer sent, awaiting student response',
             'accepted': 'Student accepted offer, assignments created',
             'rejected': 'Student rejected offer',
-            'expired': 'Offer deadline passed without response (auto-updated)'
+            'expired': 'Offer deadline passed without response',
+            'cancelled': 'Offer withdrawn by scheduler before response'
         }
     })

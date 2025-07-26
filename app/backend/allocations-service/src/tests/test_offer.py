@@ -102,6 +102,9 @@ class OfferModelTest(TestCase):
             shared_session=self.shared_session
         )
         offer.offer_items.add(session_item)
+
+        offer.status = 'pending'
+        offer.save()
         
         # Assertions
         self.assertEqual(offer.offer_items.count(), 2)
@@ -151,6 +154,9 @@ class OfferModelTest(TestCase):
             response_deadline=timezone.now() + timedelta(days=7),
             created_by=self.ta_scheduler
         )
+
+        offer.status = 'pending'
+        offer.save()
         
         # Test can respond
         self.assertTrue(offer.can_respond())
