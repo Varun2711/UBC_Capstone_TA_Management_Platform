@@ -400,7 +400,7 @@ export const fetchStudentApplications = async () => {
       throw new Error("No authentication token available");
     }
 
-    console.log("Fetching applications with headers:", headers);
+    // console.log("Fetching applications with headers:", headers);
 
     const response = await instance.get(
       "/ajp/applications/myapplications-short/",
@@ -409,7 +409,7 @@ export const fetchStudentApplications = async () => {
       }
     );
 
-    console.log("Student applications response:", response.data);
+    // console.log("Student applications response:", response.data);
     return response.data;
   } catch (error) {
     console.error(

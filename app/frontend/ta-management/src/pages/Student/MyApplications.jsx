@@ -294,13 +294,13 @@ export default function MyApplications() {
                   View and track your TA position applications
                 </p>
               </div>
-              <Button
+              {/* <Button
                 onClick={handleCreateNew}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 New Application
-              </Button>
+              </Button> */}
             </div>
 
             {/* Applications List */}

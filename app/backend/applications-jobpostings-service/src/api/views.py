@@ -81,17 +81,18 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         return [AllowAny()]
 
     def get_queryset(self):
-        """
-        Filter queryset to only show open job postings to unauthenticated users.
-        """
+        
         queryset = super().get_queryset()
         user_type, _ = self.get_user_info(self.request)
-        
-        # If user is not authenticated, only show open postings
+
         if not user_type:
-            queryset = queryset.filter(status='open')
-        
-        return JobPosting.objects.exclude(status='archived')
+            return queryset.filter(status='open')
+
+        if user_type == 'student':
+            return queryset.exclude(status__in=['archived', 'draft'])
+
+        return queryset.exclude(status='archived')
+
 
     def get_user_info(self, request):
         user_type = getattr(request, 'user_type', None)

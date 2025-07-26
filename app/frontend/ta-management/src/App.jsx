@@ -20,7 +20,7 @@ import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
-import ViewJobPostings from "./pages/Student/Student_ViewJobPostings2";
+import ViewJobPostings from "./pages/Student/Student_ViewJobPostings";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Scheduler/Scheduler_ManageApplications";
 import ViewStudentApplication from "./pages/Scheduler/Scheduler_ViewApplication";

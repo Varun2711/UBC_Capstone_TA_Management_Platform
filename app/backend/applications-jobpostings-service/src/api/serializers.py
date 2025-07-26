@@ -314,8 +314,7 @@ class ApplicationShortListSerializer(serializers.ModelSerializer):
     )
     created_by_id = serializers.PrimaryKeyRelatedField(
         queryset=TAScheduler.objects.all(),
-        source='created_by',
-        write_only=True,
+        source='created_by',       
         required=False,  # Can be set automatically from request user,
         allow_null= True
     )
