@@ -186,6 +186,96 @@ services:
     networks:
       - app-networks
 
+  allocations-worker:
+    build: ./backend/allocations-service
+    command: celery -A allocations_service worker -Q allocations -l info
+    env_file:
+      - .env
+    volumes:
+      - ./backend/allocations-service/src:/app/src
+      - ./shared-utils:/app/shared-utils
+    depends_on:
+      - redis
+      - allocations-service
+    networks:
+      - app-networks
+
+  allocations-beat:
+    build: ./backend/allocations-service
+    command: celery -A allocations_service beat -l info
+    env_file:
+      - .env
+    volumes:
+      - ./backend/allocations-service/src:/app/src
+      - ./shared-utils:/app/shared-utils
+    depends_on:
+      - redis
+      - allocations-service
+    networks:
+      - app-networks
+
+  notification-service:
+    container_name: notification-service
+    build:
+      context: ./backend/notification-service
+    ports:
+      - "8006:8006"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/notification-service:/app
+      - ./shared-utils:/app/shared-utils
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8006/api/notifications/')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-networks
+
+  celery-worker:
+    build:
+      context: ./backend/notification-service
+    command: celery -A notification_service worker -Q notifications --loglevel=info
+    environment:
+    - PYTHONPATH=/app/src 
+    env_file:
+      - .env
+    volumes:
+      - ./backend/notification-service:/app
+      - ./shared-utils:/app/shared-utils
+    depends_on:
+      - redis
+      - notification-service
+    networks:
+      - app-networks
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-networks
+
   frontend:
     build:
       context: ./frontend/ta-management
