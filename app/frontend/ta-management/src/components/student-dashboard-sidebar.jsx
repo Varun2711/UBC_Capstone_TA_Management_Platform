@@ -12,6 +12,7 @@ import {
   User,
   MoreVerticalIcon,
   GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -60,9 +61,9 @@ const navigationItems = [
     url: "/profile",
   },
   {
-    title: "Settings",
-    icon: Settings,
-    url: "#",
+    title: "Offers",
+    icon: Briefcase,
+    url: "/student-offers",
   },
 ]
 
@@ -135,7 +136,9 @@ export function AppSidebar({ name, email, avatar }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   {" "}
-                  <button>My Profile</button>
+                  <button onClick={() => handleNav("/profile")}>
+                    My Profile
+                  </button>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
                   <button>Logout </button>
