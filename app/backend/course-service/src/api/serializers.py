@@ -243,6 +243,7 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
     )
     
     instructor_info = serializers.StringRelatedField(source='instructor', read_only=True)
+    instructor_id_read = serializers.IntegerField(source='instructor.id', read_only=True)  # Add this line
     instructor_id = serializers.PrimaryKeyRelatedField(
         source='instructor',
         queryset=Instructor.objects.all(),
@@ -274,12 +275,13 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
             'term_info',
             'term_id',
             'instructor_info',
+            'instructor_id_read',  # Add this to fields
             'instructor_id',
             'time_slots_info',
             'time_slot_ids',
             'time_slots'
         ]
-        read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info', 'time_slots_info']
+        read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info', 'instructor_id_read', 'time_slots_info']  # Add instructor_id_read here
     
     def validate_section_number(self, value):
         """

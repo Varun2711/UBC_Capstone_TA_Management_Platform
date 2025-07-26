@@ -1,0 +1,61 @@
+// Mock data for instructor's assigned course offerings
+export const mockInstructorCourses = [
+  {
+    id: "cs101-wt1-24-arora",
+    courseCode: "CS 101",
+    courseTitle: "Introduction to Computer Science",
+    section: "Section A",
+    term: "Winter Term 1",
+    year: "2024",
+    hasSubmittedRequirements: false,
+    submittedAt: null,
+    requirements: null,
+  },
+  {
+    id: "cs221-wt1-24-arora",
+    courseCode: "CS 221",
+    courseTitle: "Data Structures and Algorithms",
+    section: "Section B",
+    term: "Winter Term 1",
+    year: "2024",
+    hasSubmittedRequirements: true,
+    submittedAt: "2024-01-15T10:30:00Z",
+    requirements: {
+      generalRequirements: [
+        "Strong programming skills in Java or Python",
+        "Understanding of basic data structures",
+        "Good problem-solving abilities",
+        "Available for evening lab sessions",
+      ],
+    },
+  },
+  {
+    id: "cs301-wt2-24-arora",
+    courseCode: "CS 301",
+    courseTitle: "Software Engineering",
+    section: "Section A",
+    term: "Winter Term 2",
+    year: "2024",
+    hasSubmittedRequirements: false,
+    submittedAt: null,
+    requirements: null,
+  },
+  {
+    id: "cs101-wt2-25-arora",
+    courseCode: "CS 101",
+    courseTitle: "Introduction to Computer Science",
+    section: "Section C",
+    term: "Winter Term 2",
+    year: "2025",
+    hasSubmittedRequirements: true,
+    submittedAt: "2024-02-01T14:20:00Z",
+    requirements: {
+      generalRequirements: [
+        "Python programming experience",
+        "Patience with beginner students",
+        "Strong communication skills",
+        "Assist with lab sessions and tutorials",
+      ],
+    },
+  },
+]
