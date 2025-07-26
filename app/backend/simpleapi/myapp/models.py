@@ -635,6 +635,8 @@ class Offer(models.Model):
     # Response tracking
     responded_at = models.DateTimeField(null=True, blank=True)
     student_response = models.TextField(null=True, blank=True, help_text="Student's response message")
+
+    reminder_sent = models.BooleanField(default=False)
     
     # Administrative
     created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created', db_constraint=False)

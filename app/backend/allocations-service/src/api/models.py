@@ -534,6 +534,9 @@ class Offer(models.Model):
     notes = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
+    #for reminder notification    
+    reminder_sent = models.BooleanField(default=False)
     
     class Meta:
         managed = True

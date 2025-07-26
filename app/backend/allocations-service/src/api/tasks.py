@@ -25,7 +25,7 @@ def check_offer_deadlines():
         response_deadline__gte=reminder_window_start,
         response_deadline__lt=reminder_window_end,
         # Optional: Add a flag to the Offer model to prevent multiple reminders
-        # reminder_sent=False 
+        reminder_sent=False 
     )
 
     if not expiring_offers.exists():
@@ -60,7 +60,7 @@ def check_offer_deadlines():
         if response.status_code == 200:
             logger.info(f"Successfully triggered deadline reminders for {len(recipients)} offers.")
             # Optional: Update a `reminder_sent` flag on the offers here
-            # expiring_offers.update(reminder_sent=True)
+            expiring_offers.update(reminder_sent=True)
             return f"Sent reminders for {len(recipients)} offers."
         else:
             logger.error(f"Failed to send deadline reminders. Status: {response.status_code}, Body: {response.text}")
