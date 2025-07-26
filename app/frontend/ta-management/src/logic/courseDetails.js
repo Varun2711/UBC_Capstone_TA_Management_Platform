@@ -238,17 +238,16 @@ export const fetchCourseDetailsData = async (courseId, term) => {
  * Transforms backend data to match frontend component structure
  */
 export const transformCourseData = (courseFullDetails, offeringsWithTAs, sharedSessionsWithTAs, term) => {
-  // Calculate statistics
+  // Calculate statistics - collect all unique TAs across all offerings and sessions
   const allTAs = [
-    ...offeringsWithTAs.flatMap(o => o.assigned_tas),
-    ...sharedSessionsWithTAs.flatMap(s => s.assigned_tas)
+    ...offeringsWithTAs.flatMap(o => o.assigned_tas || []),
+    ...sharedSessionsWithTAs.flatMap(s => s.assigned_tas || [])
   ];
   
-  // Get unique TAs by student_number or name
+  // Get unique TAs by student_number
   const uniqueTAs = allTAs.filter((ta, index, array) => 
     index === array.findIndex(t => 
-      (t.student_number && ta.student_number && t.student_number === ta.student_number) ||
-      (t.student_name === ta.student_name)
+      t.student_number && ta.student_number && t.student_number === ta.student_number
     )
   );
 
@@ -260,21 +259,33 @@ export const transformCourseData = (courseFullDetails, offeringsWithTAs, sharedS
     description: courseFullDetails.description,
     term: term,
     
-    // Transform offerings to match existing structure
+    // Transform offerings to match existing structure with TA time slot assignments
     offerings: offeringsWithTAs.map(offering => ({
       id: offering.id,
       section: offering.section,
       type: "lecture",
-      schedule_days: offering.time_slots.map(timeSlot => ({
-        days: timeSlot.day,
-        time: convertTimeFormat(timeSlot.time),
-        tas_assigned: offering.assigned_tas.map(ta => ({
-          name: ta.student_name,
-          student_number: ta.student_number,
-          role: ta.role,
-          weekly_hours: ta.weekly_hours
-        }))
-      }))
+      schedule_days: offering.time_slots.map(timeSlot => {
+        // Find TAs assigned to this specific time slot
+        const assignedTAsForTimeSlot = (offering.assigned_tas || []).filter(ta => 
+          ta.time_slot && 
+          ta.time_slot.day === timeSlot.day &&
+          ta.time_slot.start_time === convertTimeFormat(timeSlot.time).split('-')[0] &&
+          ta.time_slot.end_time === convertTimeFormat(timeSlot.time).split('-')[1]
+        );
+
+        return {
+          days: timeSlot.day,
+          time: convertTimeFormat(timeSlot.time),
+          tas_assigned: assignedTAsForTimeSlot.map(ta => ({
+            name: ta.student_name,
+            student_number: ta.student_number,
+            role: ta.role,
+            weekly_hours: ta.weekly_hours,
+            assignment_id: ta.assignment_id,
+            assigned_date: ta.assigned_date
+          }))
+        };
+      })
   })),
 
     // Transform shared sessions to match existing structure
@@ -283,11 +294,13 @@ export const transformCourseData = (courseFullDetails, offeringsWithTAs, sharedS
       type: session.type,
       section: session.section,
       schedule: `${session.day.substring(0, 3)} ${convertTimeFormat(session.time)}`,
-      tas_assigned: session.assigned_tas.map(ta => ({
+      tas_assigned: (session.assigned_tas || []).map(ta => ({
         name: ta.student_name,
         student_number: ta.student_number,
         role: ta.role,
-        weekly_hours: ta.weekly_hours
+        weekly_hours: ta.weekly_hours,
+        assignment_id: ta.assignment_id,
+        assigned_date: ta.assigned_date
       }))
     })),
 
@@ -302,7 +315,22 @@ export const transformCourseData = (courseFullDetails, offeringsWithTAs, sharedS
 };
 
 /**
- * Generates calendar events for react-big-calendar
+ * Helper function to convert time format and handle time slot matching
+ */
+export const convertTimeFormatToTimeSlot = (timeString) => {
+  if (!timeString) return { start_time: '', end_time: '' };
+  
+  const converted = convertTimeFormat(timeString);
+  const [startTime, endTime] = converted.split('-');
+  
+  return {
+    start_time: startTime,
+    end_time: endTime
+  };
+};
+
+/**
+ * Generates calendar events for react-big-calendar with time slot specific TA assignments
  */
 export const generateCalendarEvents = (courseData) => {
   if (!courseData) return [];
@@ -320,11 +348,11 @@ export const generateCalendarEvents = (courseData) => {
     return getDateForDay(dayName).clone().hour(hours).minute(minutes).toDate();
   };
 
-  // Add lecture events
+  // Add lecture events with time slot specific TA assignments
   courseData.offerings.forEach(offering => {
     offering.schedule_days.forEach(scheduleDay => {
       const [startTime, endTime] = scheduleDay.time.split('-');
-      const tasNames = scheduleDay.tas_assigned.map(ta => ta.name).join(', ');
+      const tasNames = scheduleDay.tas_assigned.map(ta => ta.name).join(', ') || 'No TAs assigned';
       
       events.push({
         id: `${offering.id}-${scheduleDay.days}`,
@@ -335,18 +363,19 @@ export const generateCalendarEvents = (courseData) => {
           type: 'lecture',
           section: offering.section,
           tas: tasNames,
-          sessionType: 'lecture'
+          sessionType: 'lecture',
+          tasCount: scheduleDay.tas_assigned.length
         }
       });
     });
   });
 
-  // Add shared session events
+  // Add shared session events (unchanged)
   courseData.shared_sessions.forEach(session => {
     const scheduleInfo = parseScheduleString(session.schedule);
     if (!scheduleInfo) return;
     
-    const tasNames = session.tas_assigned.map(ta => ta.name).join(', ');
+    const tasNames = session.tas_assigned.map(ta => ta.name).join(', ') || 'No TAs assigned';
     
     events.push({
       id: `${session.id}-${scheduleInfo.dayAbbr}`,
@@ -357,7 +386,8 @@ export const generateCalendarEvents = (courseData) => {
         type: session.type,
         section: session.section,
         tas: tasNames,
-        sessionType: session.type
+        sessionType: session.type,
+        tasCount: session.tas_assigned.length
       }
     });
   });

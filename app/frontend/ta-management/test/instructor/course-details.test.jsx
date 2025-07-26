@@ -153,10 +153,162 @@ describe('CourseDetails Page', () => {
     ],
   };
 
+  // Update the mock API response to match the new structure
   const mockApiResponse = {
-    courseFullDetails: { id: 'CS101', code: 'CS101', title: 'Introduction to Computer Science' },
-    offeringsWithTAs: [],
-    sharedSessionsWithTAs: [],
+    courseFullDetails: {
+      id: 'CS101',
+      code: 'CS101',
+      title: 'Introduction to Computer Science',
+      department: 'Computer Science',
+      description: 'Basic programming concepts and computer science fundamentals',
+      offerings: [
+        {
+          id: 'offering-1',
+          section: '001',
+          instructor_id: 'instructor-1',
+          term: 'F2024_T1',
+          time_slots: [
+            { day: 'Monday', time: '10:00 AM - 11:00 AM' },
+            { day: 'Wednesday', time: '10:00 AM - 11:00 AM' },
+            { day: 'Friday', time: '10:00 AM - 11:00 AM' }
+          ]
+        },
+        {
+          id: 'offering-2',
+          section: '002',
+          instructor_id: 'instructor-1',
+          term: 'F2024_T1',
+          time_slots: [
+            { day: 'Tuesday', time: '2:00 PM - 3:30 PM' },
+            { day: 'Thursday', time: '2:00 PM - 3:30 PM' }
+          ]
+        }
+      ],
+      sharedSessions: {
+        'F2024_T1': {
+          labs: [
+            {
+              id: 'lab-1',
+              section: 'L01',
+              day: 'Monday',
+              time: '2:00 PM - 4:00 PM'
+            }
+          ],
+          tutorials: [
+            {
+              id: 'tutorial-1',
+              section: 'T01',
+              day: 'Wednesday',
+              time: '4:00 PM - 5:00 PM'
+            }
+          ],
+          seminars: [],
+          workshops: []
+        }
+      }
+    },
+    offeringsWithTAs: [
+      {
+        id: 'offering-1',
+        section: '001',
+        instructor_id: 'instructor-1',
+        term: 'F2024_T1',
+        time_slots: [
+          { day: 'Monday', time: '10:00 AM - 11:00 AM' },
+          { day: 'Wednesday', time: '10:00 AM - 11:00 AM' },
+          { day: 'Friday', time: '10:00 AM - 11:00 AM' }
+        ],
+        assigned_tas: [
+          {
+            assignment_id: 1,
+            student_name: 'John Doe',
+            student_number: '12345678',
+            role: 'ta',
+            assigned_date: '2025-07-26T20:39:44.165978Z',
+            weekly_hours: 3.0,
+            time_slot: {
+              day: 'Monday',
+              start_time: '10:00',
+              end_time: '11:00'
+            }
+          },
+          {
+            assignment_id: 2,
+            student_name: 'Jane Smith',
+            student_number: '87654321',
+            role: 'ta',
+            assigned_date: '2025-07-26T20:39:44.165978Z',
+            weekly_hours: 3.0,
+            time_slot: {
+              day: 'Monday',
+              start_time: '10:00',
+              end_time: '11:00'
+            }
+          }
+        ]
+      },
+      {
+        id: 'offering-2',
+        section: '002',
+        instructor_id: 'instructor-1',
+        term: 'F2024_T1',
+        time_slots: [
+          { day: 'Tuesday', time: '2:00 PM - 3:30 PM' },
+          { day: 'Thursday', time: '2:00 PM - 3:30 PM' }
+        ],
+        assigned_tas: [
+          {
+            assignment_id: 3,
+            student_name: 'Bob Wilson',
+            student_number: '11223344',
+            role: 'ta',
+            assigned_date: '2025-07-26T20:39:44.165978Z',
+            weekly_hours: 3.0,
+            time_slot: {
+              day: 'Tuesday',
+              start_time: '14:00',
+              end_time: '15:30'
+            }
+          }
+        ]
+      }
+    ],
+    sharedSessionsWithTAs: [
+      {
+        id: 'lab-1',
+        section: 'L01',
+        day: 'Monday',
+        time: '2:00 PM - 4:00 PM',
+        type: 'lab',
+        assigned_tas: [
+          {
+            assignment_id: 4,
+            student_name: 'Alice Johnson',
+            student_number: '55667788',
+            role: 'ta',
+            assigned_date: '2025-07-26T20:39:44.165978Z',
+            weekly_hours: 2.0
+          }
+        ]
+      },
+      {
+        id: 'tutorial-1',
+        section: 'T01',
+        day: 'Wednesday',
+        time: '4:00 PM - 5:00 PM',
+        type: 'tutorial',
+        assigned_tas: [
+          {
+            assignment_id: 5,
+            student_name: 'Charlie Brown',
+            student_number: '99887766',
+            role: 'ta',
+            assigned_date: '2025-07-26T20:39:44.165978Z',
+            weekly_hours: 1.0
+          }
+        ]
+      }
+    ]
   };
 
   const mockCalendarEvents = [
