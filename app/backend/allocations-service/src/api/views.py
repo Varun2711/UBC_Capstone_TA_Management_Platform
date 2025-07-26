@@ -1242,7 +1242,141 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         active_assignments = self.get_queryset().filter(is_active=True)
         serializer = self.get_serializer(active_assignments, many=True)
         return Response(serializer.data)
+    
+class CourseAllocationActionsViewSet(viewsets.ViewSet):
+    """
+    Actions related to finalizing allocations for a course.
+    """
+    @action(detail=True, methods=['post'], url_path='finalize-allocations', permission_classes=[IsSchedulerOrAdmin])
+    def finalize_allocations(self, request, pk=None):
+        """
+        Finalizes all allocations for a course offering and sends a 
+        consolidated notification to the instructor.
+        """
+        try:
+            course_offering = CourseOffering.objects.get(pk=pk)
+        except CourseOffering.DoesNotExist:
+            return Response({'error': 'Course offering not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        # 1. Gather all active assignments for this course offering
+        active_assignments = Assignment.objects.filter(
+            course_offering=course_offering, 
+            is_active=True
+        ).select_related('student', 'course', 'course_offering__academic_term')
+
+        if not active_assignments.exists():
+            return Response({'message': 'No active assignments to notify for.'}, status=status.HTTP_200_OK)
+
+        # 2. Prepare the allocation details for the notification
+        allocation_details = []
+        for assignment in active_assignments:
+            allocation_details.append({
+                'ta_name': assignment.student.name,
+                'student_number': assignment.student.student_number,
+                'hours': assignment.weekly_hours
+            })
+            
+        # 3. Get instructor and course details
+        instructor = course_offering.instructor
+        if not instructor or not instructor.email:
+            return Response({'error': 'Instructor email not found for this course.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 4. Construct the payload for the notification service
+        notification_payload = {
+            'instructor_email': instructor.email,
+            'instructor_name': instructor.name,
+            'course_code': course_offering.course.course_number,
+            'course_name': course_offering.course.course_name,
+            'term': course_offering.academic_term.term_type, 
+            'allocations': allocation_details
+        }
+
+        # 5. Call the existing notification service endpoint
+        try:
+            notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
+            response = requests.post(notification_url, json=notification_payload, timeout=15)
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to send final allocation notice. Status: {response.status_code}, Body: {response.text}")
+                return Response({'error': 'Failed to trigger notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error calling notification service for final allocation: {e}")
+            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            'message': 'Final allocation notice has been sent to the instructor.',
+            'instructor': instructor.name,
+            'assignments_count': len(active_assignments)
+        })
+
+class SharedSessionAllocationActionsViewSet(viewsets.ViewSet):
+    """
+    Actions related to finalizing allocations for a shared session.
+    """
+    @action(detail=True, methods=['post'], url_path='finalize-allocations', permission_classes=[IsSchedulerOrAdmin])
+    def finalize_allocations(self, request, pk=None):
+        """
+        Finalizes all allocations for a shared session and sends a 
+        consolidated notification to the instructor.
+        """
+        try:
+            shared_session = SharedSession.objects.get(pk=pk)
+        except SharedSession.DoesNotExist:
+            return Response({'error': 'Shared session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # 1. Gather all active assignments for this shared session
+        active_assignments = Assignment.objects.filter(
+            shared_session=shared_session, 
+            is_active=True
+        ).select_related('student', 'course', 'shared_session__academic_term')
+
+        if not active_assignments.exists():
+            return Response({'message': 'No active assignments to notify for.'}, status=status.HTTP_200_OK)
+
+        # 2. Prepare the allocation details for the notification
+        allocation_details = []
+        for assignment in active_assignments:
+            allocation_details.append({
+                'ta_name': assignment.student.name,
+                'student_number': assignment.student.student_number,
+                'hours': assignment.weekly_hours
+            })
+            
+        # 3. Get instructor and course details
+        instructor = shared_session.instructor
+        if not instructor or not instructor.email:
+            return Response({'error': 'Instructor email not found for this shared session.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 4. Construct the payload for the notification service
+        notification_payload = {
+            'instructor_email': instructor.email,
+            'instructor_name': instructor.name,
+            'course_code': f"{shared_session.course.course_number} ({shared_session.session_type})",
+            'course_name': shared_session.course.course_name,
+            'term': shared_session.academic_term.term_type, 
+            'allocations': allocation_details
+        }
+
+        # 5. Call the existing notification service endpoint
+        try:
+            notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
+            response = requests.post(notification_url, json=notification_payload, timeout=15)
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to send final allocation notice. Status: {response.status_code}, Body: {response.text}")
+                return Response({'error': 'Failed to trigger notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error calling notification service for final allocation: {e}")
+            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            'message': 'Final allocation notice has been sent to the instructor.',
+            'instructor': instructor.name,
+            'assignments_count': len(active_assignments)
+        })
+    
 # Root API View
 @api_view(['GET'])
 @permission_classes([AllowAny])
