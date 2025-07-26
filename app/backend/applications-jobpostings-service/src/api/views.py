@@ -145,7 +145,8 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().filter(term_id=term_id)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
+    
+   
 class ApplicationFilter(django_filters.FilterSet):  
     status = django_filters.CharFilter()
     positionType = django_filters.CharFilter()
@@ -193,7 +194,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             return [IsStudentUser()]
         elif self.action == 'by_id':
             return [IsSchedulerOrStudent()]
-        elif self.action in ['list', 'retrieve', 'by_posting']:
+        elif self.action in ['list', 'retrieve', 'by_posting', 'count_by_posting']:
             return [IsSchedulerOrAdmin()]
         
         return [IsAuthenticated() ]
@@ -242,9 +243,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             else:
                 raise serializers.ValidationError("Could not find a matching student record for this user.")
         else:
-            raise serializers.ValidationError("Only students can create applications.")
-        
-
+            raise serializers.ValidationError("Only students can create applications.")        
 
     def update(self, request, *args, **kwargs):   
             
@@ -409,12 +408,25 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
 
     
-    @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
+    @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)', permission_classes=[IsSchedulerOrAdmin])  
     def by_posting(self, request, posting_id=None):
-        """Get all applications for a specific job posting."""
+        """Get all applications for a specific job posting. Only accessible by schedulers and admins."""
         applications = self.get_queryset().filter(posting_id=posting_id)
         serializer = self.get_serializer(applications, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path=r'count-by-posting/(?P<posting_id>\d+)', permission_classes=[IsSchedulerOrAdmin])  # New endpoint
+    def count_by_posting(self, request, posting_id=None):
+        """Get count of applications for a specific job posting. Only accessible by schedulers and admins."""
+        count = self.get_queryset().filter(posting_id=posting_id).count()
+        return Response({
+            'posting_id': posting_id,
+            'application_count': count
+        })
+        
+
+       
+
     
     @action(detail=False, methods=['get'], url_path=r'by-id/(?P<application_id>\d+)')    
     def by_id(self, request, application_id=None):
@@ -788,6 +800,7 @@ def api_root(request):
             'create_job_posting': '/api/ajp/jobpostings/',
             'update_job_posting': '/api/ajp/jobpostings/{id}/',
             'archive_job_posting': '/api/ajp/jobpostings/{id}/',  # DELETE (archives)
+            'count_by_posting': '/api/ajp/count-by-posting/{id}',
             
             # Application Management
             'all_applications': '/api/ajp/applications/',

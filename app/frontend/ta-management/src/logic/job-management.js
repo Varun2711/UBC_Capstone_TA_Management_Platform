@@ -161,6 +161,19 @@ export const fetchJobPostingsByTerm = async (termId) => {
   }
 };
 
+export const countApplicationsForJobPosting = async (postingId) => {
+  try {
+    const headers = getAuthHeaders();
+    const response = await instance.get(
+      `/ajp/applications/count-by-posting/${postingId}/`,
+      { headers }
+    );
+    return response.data;
+  } catch (error) {
+    console.log("Error fetching job posting by application count", error);
+  }
+};
+
 // ===============================
 // TEMPLATE FUNCTIONS
 // ===============================
@@ -274,7 +287,7 @@ export const fetchTerms = async () => {
     const response = await instance.get("/course-term-service/terms/", {
       headers,
     });
-    console.log("Terms are here!", response.data.results);
+    //console.log("Terms are here!", response.data.results);
 
     return response.data.results;
   } catch (error) {
@@ -540,4 +553,5 @@ export default {
   buildSearchParams,
   filterJobPostings,
   filterTemplates,
+  countApplicationsForJobPosting,
 };
