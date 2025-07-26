@@ -111,7 +111,7 @@ useEffect(() => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-28 w-full rounded-xl" />
+                <Skeleton key={i} className="h-28 w-full rounded-xl" data-testid="skeleton" />
               ))}
             </div>
           ) : error ? (
