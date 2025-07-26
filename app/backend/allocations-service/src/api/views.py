@@ -1390,10 +1390,11 @@ def api_root(request):
             'shortlisted_applicants': '/api/allocations/shortlisted-applicants/',
             'available_for_allocation': '/api/allocations/shortlisted-applicants/available_for_allocation/',
             
-             # Offers Management
+            # Offers Management
             'offers': '/api/allocations/offers/',
             'create_offer': '/api/allocations/offers/create_offer/',
-            'edit_offer': '/api/allocations/offers/{offer_id}/edit_offer/', 
+            'edit_offer': '/api/allocations/offers/{offer_id}/edit_offer/',
+            'send_offer': '/api/allocations/offers/{offer_id}/send-offer/',
             'cancel_offer': '/api/allocations/offers/{offer_id}/cancel_offer/',
             'pending_offers': '/api/allocations/offers/pending_offers/',
             'accepted_offers': '/api/allocations/offers/accepted_offers/',
@@ -1401,16 +1402,20 @@ def api_root(request):
             'expired_offers': '/api/allocations/offers/expired_offers/',  
             'respond_to_offer': '/api/allocations/offers/{offer_id}/respond_to_offer/',
                 
-             # Assignments Management
-             'assignments': '/api/allocations/assignments/',
-             'active_assignments': '/api/allocations/assignments/active_assignments/',
+            # Assignments Management
+            'assignments': '/api/allocations/assignments/',
+            'active_assignments': '/api/allocations/assignments/active_assignments/',
 
-             # Assignment Modifications
+            # Assignment Modifications
             'create_modification': '/api/allocations/offers/create_modification/', 
             'pending_modifications': '/api/allocations/offers/pending_modifications/', 
             'respond_to_modification': '/api/allocations/offers/{offer_id}/respond_to_modification/',
+
+            # Allocation Finalization
+            'finalize_course_allocations': '/api/allocations/course-offerings/{course_offering_id}/finalize-allocations/', # this is the button scheduler or admin can click to send notif to instructor
+            'finalize_session_allocations': '/api/allocations/shared-sessions/{shared_session_id}/finalize-allocations/',
                 
-             # Service Info
+            # Service Info
             'service_info': '/api/allocations/',
          },
         'authentication': 'Required for all endpoints except root',
@@ -1420,9 +1425,11 @@ def api_root(request):
             'admins': 'Full access to all endpoints'
         },
         'offer_lifecycle': {
-            'pending': 'Offer created, awaiting student response',
+            'draft': 'Offer created, not yet sent to student',
+            'pending': 'Offer sent, awaiting student response',
             'accepted': 'Student accepted offer, assignments created',
             'rejected': 'Student rejected offer',
-            'expired': 'Offer deadline passed without response (auto-updated)'
+            'expired': 'Offer deadline passed without response',
+            'cancelled': 'Offer withdrawn by scheduler before response'
         }
     })
