@@ -262,73 +262,7 @@ TA Management System
             return Response({
                 'error': f'Failed to send application confirmation: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=False, methods=['post'])
-    def send_deadline_reminder(self, request):
-        """Send deadline reminder notifications"""
-        try:
-            recipients = request.data.get('recipients', [])
-            deadline_type = request.data.get('deadline_type')  # e.g., 'application', 'offer_response'
-            deadline_date = request.data.get('deadline_date')
-            course_info = request.data.get('course_info', {})
-            
-            notifications_created = []
-            
-            for recipient in recipients:
-                if deadline_type == 'offer_response':
-                    subject = f"Reminder: TA Offer Response Deadline - {course_info.get('course_code')}"
-                    message_body = f"""
-Dear {recipient.get('name')},
-
-This is a reminder that your TA offer for {course_info.get('course_code')} requires a response by {deadline_date}.
-
-Please log into the TA Management System to accept or reject this offer before the deadline.
-
-Best regards,
-TA Management System
-                    """.strip()
-                elif deadline_type == 'application':
-                    subject = f"Reminder: TA Application Deadline - {course_info.get('course_code')}"
-                    message_body = f"""
-Dear {recipient.get('name')},
-
-This is a reminder that TA applications for {course_info.get('course_code')} are due by {deadline_date}.
-
-Please submit your application before the deadline if you're interested in this position.
-
-Best regards,
-TA Management System
-                    """.strip()
-                else:
-                    continue
-                
-                notification = EmailNotification.objects.create(
-                    recipient_email=recipient.get('email'),
-                    recipient_name=recipient.get('name'),
-                    subject=subject,
-                    message_body=message_body,
-                    notification_type='deadline_reminder',
-                    context_data={
-                        'deadline_type': deadline_type,
-                        'deadline_date': deadline_date,
-                        'course_info': course_info
-                    }
-                )
-                
-                send_email_task.delay(str(notification.id))
-                notifications_created.append(str(notification.id))
-            
-            return Response({
-                'message': f'Deadline reminders sent to {len(notifications_created)} recipients',
-                'notification_ids': notifications_created
-            })
-            
-        except Exception as e:
-            logger.error(f"Error sending deadline reminders: {str(e)}")
-            return Response({
-                'error': f'Failed to send deadline reminders: {str(e)}'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        
     @action(detail=True, methods=['post'])
     def resend(self, request, pk=None):
         """Resend a failed notification"""
@@ -698,21 +632,37 @@ def notification_stats(request):
 @permission_classes([AllowAny])
 def api_root(request):
     """Service status and available endpoints"""
+    base_url = '/api/notifications'
     return JsonResponse({
         'status': 'Notification Service is running',
-        'service_scope': 'Email notification management',
+        'service_scope': 'Handles all email notifications for the TA Management System',
         'available_endpoints': {
-            'notifications': '/api/notifications/',
-            'send_notification': '/api/notifications/send_notification/',
-            'send_offer_notification': '/api/notifications/send_offer_notification/',
-            'send_offer_accepted': '/api/notifications/send_offer_accepted/',          # NEW
-            'send_offer_rejected': '/api/notifications/send_offer_rejected/',          # NEW
-            'send_final_allocation_notice': '/api/notifications/send_final_allocation_notice/', #for instructor
-            'send_application_received': '/api/notifications/send_application_received/',
-            'send_deadline_reminder': '/api/notifications/send_deadline_reminder/',
-            'send_deadline_approaching': '/api/notifications/send_deadline_approaching/', # NEW
-            'send_password_reset': '/api/notifications/send_password_reset/',
-            'notification_stats': '/api/stats/',
-            'notification_logs': '/api/logs/',
-        }
+            'General & Stats': {
+                'list_all_notifications': f'{base_url}/',
+                'get_notification_details': f'{base_url}/{{notification_id}}/',
+                'notification_logs': f'{base_url}/logs/',
+                'notification_stats': f'{base_url}/stats/',
+            },
+            'Offer Lifecycle Notifications': {
+                'send_offer_created': f'{base_url}/send_offer_notification/',
+                'send_offer_accepted': f'{base_url}/send_offer_accepted/',
+                'send_offer_rejected': f'{base_url}/send_offer_rejected/',
+                'send_final_allocation_notice': f'{base_url}/send_final_allocation_notice/',
+            },
+            'Application Lifecycle Notifications': {
+                'send_application_received': f'{base_url}/send_application_received/',
+            },
+            'Deadline Notifications': {
+                'send_deadline_approaching': f'{base_url}/send_deadline_approaching/',
+            },
+            'User Account Notifications': {
+                'send_password_reset': f'{base_url}/send_password_reset/',
+                'verify_reset_token': f'{base_url}/verify_reset_token/?token={{token}}',
+                'mark_token_used': f'{base_url}/mark_token_used/',
+            },
+            'Individual Notification Actions': {
+                'resend_notification': f'{base_url}/{{notification_id}}/resend/',
+            },
+        },
+        'note': 'All POST endpoints expect a JSON body. All endpoints are unauthenticated as this is an internal service called by other backend services.'
     })
