@@ -886,102 +886,63 @@ export default function TAAllocationPage() {
 
 
   useEffect(() => {
-    const loadCoursesAndRelatedData = async () => {
+    const loadInitialData = async () => {
       try {
-        const data = await fetchCourses();
-        const fetchedCourses = data.results;
-        console.log("fetchedCourses from backend are: ", fetchedCourses);
-        setCourses(fetchedCourses);
+        // Using Promise.all to run independent fetches concurrently
+        await Promise.all([
+          (async () => {
+            const data = await fetchCourses();
+            const fetchedCourses = data.results;
+            console.log("fetchedCourses from backend are: ", fetchedCourses);
+            setCourses(fetchedCourses);
 
-        // Loop through each course to fetch offerings and shared sessions
-        for (const course of fetchedCourses) {
-          const courseId = course.id;
+            // Fetch related data for each course
+            for (const course of fetchedCourses) {
+              const courseId = course.id;
+              try {
+                const [offerings, sharedSessions] = await Promise.all([
+                  fetchOfferingsForCourse(courseId),
+                  fetchSharedSessionsForCourse(courseId),
+                ]);
+                setCourseOfferings((prev) => ({ ...prev, [courseId]: offerings }));
+                setSharedSessions((prev) => ({ ...prev, [courseId]: sharedSessions }));
+              } catch (err) {
+                console.error(`Error fetching data for course ${courseId}:`, err);
+              }
+            }
+          })(),
+          (async () => {
+            const fetchedShortlistedApplicants = await fetchShortlistedApplicants();
+            console.log("fetchedShortlistedApplicants from backend are: ", fetchedShortlistedApplicants);
+            setShortlistedApplicants(fetchedShortlistedApplicants);
 
-          try {
-            const [offerings, sharedSessions] = await Promise.all([
-              fetchOfferingsForCourse(courseId),
-              fetchSharedSessionsForCourse(courseId),
-            ]);
-
-            console.log(`Offerings for course ${courseId}:`, offerings);
-            console.log(`Shared sessions for course ${courseId}:`, sharedSessions);
-
-            setCourseOfferings((prev) => ({
-              ...prev,
-              [courseId]: offerings,
-            }));
-
-            setSharedSessions((prev) => ({
-              ...prev,
-              [courseId]: sharedSessions,
-            }));
-          } catch (err) {
-            console.error(`Error fetching data for course ${courseId}:`, err);
-          }
-        }
+            const profiles = await Promise.all(
+              fetchedShortlistedApplicants.map(item =>
+                fetchProfilesOfShortlistedApplicants(item.application.student.student_number)
+                  .catch(err => {
+                    console.error(`Error fetching profile for student ${item.application.student.student_number}:`, err);
+                    return null; // Avoid crashing the whole process
+                  })
+              )
+            );
+            setProfilesOfShortlistedApplicants(profiles.filter(p => p !== null));
+          })(),
+          (async () => {
+            console.log("loadOffers has started");
+            const fetchedOffers = await fetchOffers();
+            console.log("fetchedOffers from backend are: ", fetchedOffers);
+            setOffers(fetchedOffers || []); // Ensure offers is always an array
+          })(),
+        ]);
       } catch (error) {
-        console.error("Error loading courses:", error);
+        console.error("Error loading initial page data:", error);
+        // Fallback to mock data if needed
         setCourses(mockCourses);
+        setShortlistedApplicants(availableTAs);
       }
     };
 
-    const loadShortlistedApplicants = async () => {
-      try {
-        const data = await fetchShortlistedApplicants();
-        const fetchedShortlistedApplicants = data;
-        console.log("fetchedShortlistedApplicants from backend are: ", fetchedShortlistedApplicants);
-        setShortlistedApplicants(fetchedShortlistedApplicants);
-        
-        const allProfiles = [];
-        // Loop through each shortlisted applicant to fetch offerings and shared sessions
-        for (const item of fetchedShortlistedApplicants) {
-          console.log("item of fetchedShortlistedApplicants:", item);
-          console.log("Shortlisted by:", item.shortlisted_by);
-          console.log("Created at:", item.created_at);
-          console.log("Notes:", item.notes);
-          console.log("Application:", item.application);
-
-          const student_number = item.application.student.student_number;
-          console.log("Curent shortlisted applicant's student number is :", student_number);
-
-          const student_id = item.application.student.id;
-          console.log("Curent shortlisted applicant's id is :", student_id);
-
-          
-          try {
-            const profileData = await fetchProfilesOfShortlistedApplicants(student_number);
-            console.log(`Current ${student_number} shortlisted applicant's profile is:`, profileData);
-            allProfiles.push(profileData);
-          } catch (err) {
-            console.error(`Error fetching profile for student ${student_number}:`, err);
-          }
-          
-        }
-        setProfilesOfShortlistedApplicants(allProfiles); 
-      } catch (error) {
-        console.error("Error loading shortlisted applicants:", error);
-        setCourses(availableTAs);
-      }
-    };
-
-    const loadOffers = async () => {
-      try {
-        console.log("loadOffers has started");
-
-        const data = await fetchOffers();
-        console.log("fetchOffers called");
-
-        const fetchedOffers = data;
-        console.log("fetchedOffers from backend are: ", fetchedOffers);
-        setOffers(fetchedOffers);
-      } catch(error) {
-        console.error("Error loading offers:", error);
-      }
-    };
-
-    loadCoursesAndRelatedData();
-    loadShortlistedApplicants();
-    loadOffers();
+    loadInitialData();
   }, []);
 
   const selectedSections = [...selectedCourseOfferings, ...selectedSharedSessions];
