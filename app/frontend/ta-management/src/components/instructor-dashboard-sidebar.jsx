@@ -41,7 +41,7 @@ const navigationItems = [
   {
     title: "TA Requirements",
     icon: GraduationCap,
-    url: "#",
+    url: "/ta-requirements",
   },
 ]
 

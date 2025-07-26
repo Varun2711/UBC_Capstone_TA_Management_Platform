@@ -696,18 +696,14 @@ class UserManagementView(generics.GenericAPIView):
         """Use shared auth permissions"""
         return [IsAdminUser()]
     
+    def get(self, request):
+        """Provide instructions for the endpoint."""
+        return Response(
+            success_response(message="This endpoint is for modifying users. Use a PATCH request with an 'action' ('deactivate' or 'modify').")
+        )
+
     def patch(self, request):
         action = request.data.get('action')
-        
-        if action == 'deactivate':
-            return self.deactivate_user(request)
-        elif action == 'modify':
-            return self.modify_user(request)
-        else:
-            return Response(
-                error_response("Invalid action. Use 'deactivate' or 'modify'"),
-                status=status.HTTP_400_BAD_REQUEST
-            )
     
     def deactivate_user(self, request):
         """Deactivate a user account - Admin only"""
