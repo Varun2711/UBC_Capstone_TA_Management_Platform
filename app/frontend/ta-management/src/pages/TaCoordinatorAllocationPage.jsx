@@ -40,8 +40,7 @@ import { AppSidebar } from "../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants } from "@/logic/coordinator-allocations-page";
-import { fetchProfilesOfShortlistedApplicants } from "@/logic/coordinator-allocations-page";
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -389,6 +388,7 @@ export default function TAAllocationPage() {
   const [taList, setTaList] = useState(availableTAs)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState(null)
+  const [offers, setOffers] = useState([])
   const [addedOffers, setAddedOffers] = useState([])
   const [activeOffers, setActiveOffers] = useState([])
   const [showRescindModal, setShowRescindModal] = useState(false)
@@ -412,7 +412,7 @@ export default function TAAllocationPage() {
 
 
   const selectedTA = shortlistedApplicants.find((item) => item.application.student.id === selectedTAId)
-  console.log("selectedTA main variable is: ", selectedTA);
+  //console.log("selectedTA main variable is: ", selectedTA);
 
   // Function to store the offer of a TA to a course
   const handleAddTAtoAddedOfferTab = (selectedTA, selectedCourse) => {
@@ -421,22 +421,22 @@ export default function TAAllocationPage() {
         (o) => o.taStudentId === selectedTA.application.student.id
       )
 
-      console.log("existingTA at beginning of in handleAddTAtoAddedOfferTab: ", existingTA);
-      console.log("selectedCourse.time_slots_info in handleAddTAtoAddedOfferTab: ", selectedCourse.time_slots_info);
+      //console.log("existingTA at beginning of in handleAddTAtoAddedOfferTab: ", existingTA);
+      //console.log("selectedCourse.time_slots_info in handleAddTAtoAddedOfferTab: ", selectedCourse.time_slots_info);
       const needsConversion = selectedCourse.time_slots_info.some(slot => slot.includes(":"));
-      console.log("In handleAddTAtoAddedOfferTab, needsConversion: ", needsConversion);
+      //console.log("In handleAddTAtoAddedOfferTab, needsConversion: ", needsConversion);
       
       let newOffer;
 
-      console.log("In handleAddTAtoAddedOfferTab, selectedCourse: ", selectedCourse);
-      console.log("In handleAddTAtoAddedOfferTab, course_number: ", selectedCourse.course_number);
-      console.log("In handleAddTAtoAddedOfferTab, course_name: ", selectedCourse.course_name);
-      console.log("In handleAddTAtoAddedOfferTab, section: ", selectedCourse.section);
-      console.log("In handleAddTAtoAddedOfferTab, sectionId: ", selectedCourse.sectionId);
-      console.log("In handleAddTAtoAddedOfferTab, instructor: ", selectedCourse.section_number);
-      console.log("In handleAddTAtoAddedOfferTab, semester: ", selectedCourse.semester);
-      console.log("In handleAddTAtoAddedOfferTab, type: ", selectedCourse.type);
-      console.log("In handleAddTAtoAddedOfferTab, time_slots_info: ", selectedCourse.time_slots_info);
+      //console.log("In handleAddTAtoAddedOfferTab, selectedCourse: ", selectedCourse);
+      //console.log("In handleAddTAtoAddedOfferTab, course_number: ", selectedCourse.course_number);
+      //console.log("In handleAddTAtoAddedOfferTab, course_name: ", selectedCourse.course_name);
+      //console.log("In handleAddTAtoAddedOfferTab, section: ", selectedCourse.section);
+      //console.log("In handleAddTAtoAddedOfferTab, sectionId: ", selectedCourse.sectionId);
+      //console.log("In handleAddTAtoAddedOfferTab, instructor: ", selectedCourse.section_number);
+      //console.log("In handleAddTAtoAddedOfferTab, semester: ", selectedCourse.semester);
+      //console.log("In handleAddTAtoAddedOfferTab, type: ", selectedCourse.type);
+      //console.log("In handleAddTAtoAddedOfferTab, time_slots_info: ", selectedCourse.time_slots_info);
 
       if (needsConversion) {
         newOffer = {
@@ -605,20 +605,20 @@ export default function TAAllocationPage() {
 
   // Helper function to check for scheduling conflicts
   const checkForConflicts = (availability, courseSlots) => {
-    console.log("In checkForConflicts, availability_grid: ", availability);
-    console.log("In checkForConflicts, courseSlots: ", courseSlots);
+    //console.log("In checkForConflicts, availability_grid: ", availability);
+    //console.log("In checkForConflicts, courseSlots: ", courseSlots);
     const availabilitySet = new Set(convertProfileAvailabilityGridToKeys(availability));
 
     // Check if courseSlots are already in key format
     const needsConversion = courseSlots.some(slot => slot.includes(":"));
-    console.log("In checkForConflicts, needsConversion: ", needsConversion);
+    //console.log("In checkForConflicts, needsConversion: ", needsConversion);
     
     const formattedTimeSlotsInfoToKeys = needsConversion
       ? convertTimeSlotsInfoToKeys(courseSlots)
       : courseSlots;
 
-    console.log("In checkForConflicts, availabilitySet: ", availabilitySet);
-    console.log("In checkForConflicts, selected courses's formattedTimeSlotsInfoToKeys: ", formattedTimeSlotsInfoToKeys);
+    //console.log("In checkForConflicts, availabilitySet: ", availabilitySet);
+    //console.log("In checkForConflicts, selected courses's formattedTimeSlotsInfoToKeys: ", formattedTimeSlotsInfoToKeys);
 
     for (const slot of formattedTimeSlotsInfoToKeys) {
       if (availabilitySet.has(slot)) {
@@ -753,7 +753,7 @@ export default function TAAllocationPage() {
     const durationPerDay = durationInMinutes / 60;
 
     const total = days.length * durationPerDay;
-    console.log("result of getTotalHoursFromSlotString: ", total);
+    //console.log("result of getTotalHoursFromSlotString: ", total);
     return total;
   }
 
@@ -779,7 +779,7 @@ export default function TAAllocationPage() {
   })
 
   const filteredShortlistedApplicants = shortlistedApplicants.filter((item) => {
-    console.log("In filteredShortlistedApplicants, shortlistedApplicants item from backend is: ", item);
+    //console.log("In filteredShortlistedApplicants, shortlistedApplicants item from backend is: ", item);
     const matchesSearch =
       item.application.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.application.student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -964,8 +964,24 @@ export default function TAAllocationPage() {
       }
     };
 
+    const loadOffers = async () => {
+      try {
+        console.log("loadOffers has started");
+
+        const data = await fetchOffers();
+        console.log("fetchOffers called");
+
+        const fetchedOffers = data;
+        console.log("fetchedOffers from backend are: ", fetchedOffers);
+        setOffers(fetchedOffers);
+      } catch(error) {
+        console.error("Error loading offers:", error);
+      }
+    };
+
     loadCoursesAndRelatedData();
     loadShortlistedApplicants();
+    loadOffers();
   }, []);
 
   const selectedSections = [...selectedCourseOfferings, ...selectedSharedSessions];

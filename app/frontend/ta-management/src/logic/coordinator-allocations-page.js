@@ -54,4 +54,14 @@ export const fetchProfilesOfShortlistedApplicants = async (student_number) => {
   if (!response.ok) throw new Error("Failed to fetch profile of shortlisted applicant with student number: ", student_number);
   return response.json();
 };
+
+export const fetchOffers = async () => {
+  const response = await fetch(`${API_URL}/allocations/offers/`, {
+    headers: getAuthHeaders()
+});
+  if (!response.ok) throw new Error("Failed to fetch offers");
+  
+  const data = await response.json();
+  return data;
+};
 // Add more functions as needed
