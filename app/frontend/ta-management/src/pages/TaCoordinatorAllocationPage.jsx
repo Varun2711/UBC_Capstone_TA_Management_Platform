@@ -40,7 +40,7 @@ import { AppSidebar } from "../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer } from "@/logic/coordinator-allocations-page";
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -287,7 +287,7 @@ function getPriorityBadge(priority) {
   }
 }
  
-//converts M: 08:00-10:00 to Monday-8-top and so on
+//converts Monday start time end time to Monday-8-top and so on
 function convertTimeSlotsInfoToKeys(time_slots_info) {
   const result = []
 
@@ -389,6 +389,7 @@ export default function TAAllocationPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState(null)
   const [offers, setOffers] = useState([])
+  const [offerSlotTimes, setOfferSlotTimes] = useState([]);
   const [addedOffers, setAddedOffers] = useState([])
   const [activeOffers, setActiveOffers] = useState([])
   const [showRescindModal, setShowRescindModal] = useState(false)
@@ -1012,6 +1013,40 @@ export default function TAAllocationPage() {
     setSelectedSharedSessions([]);
   }, [selectedTA]);
 
+  useEffect(() => {
+    const fetchOfferSlotTimes = async () => {
+      if (!selectedTA) return;
+
+      const relevantOffers = offers.filter(
+        (offer) => offer.student.id === selectedTA.application.student.id
+      );
+
+      const slotPromises = relevantOffers.flatMap((offer) =>
+        offer.offer_items.map(async (item) => {
+          try {
+            if (item.course_offering_id) {
+              const details = await fetchCourseOfferingDetails(item.course_offering_id);
+              return details?.time_slots_info || [];
+            } else if (item.shared_session_id) {
+              const details = await fetchSharedSessionDetails(item.shared_session_id);
+              return details?.time_slots_info || [];
+            }
+            return [];
+          } catch (error) {
+            console.error("Failed to fetch offer item slot info:", error);
+            return [];
+          }
+        })
+      );
+
+      const allSlots = await Promise.all(slotPromises);
+      const flattened = allSlots.flat();
+      setOfferSlotTimes(flattened);
+    };
+
+    fetchOfferSlotTimes();
+  }, [selectedTA, offers]);
+
   const application = filteredShortlistedApplicants.find(
     (item) => item.application.student?.id === selectedTA?.id
   );
@@ -1043,6 +1078,7 @@ export default function TAAllocationPage() {
                     .flatMap(o =>
                       o.offers?.flatMap(offer => offer.slots || []) || []
                     ),
+                  ...offerSlotTimes,
                 ]
               : [];
   console.log("highlightedSlots just now got declared again. it is with selectedTA: ", selectedTA)
@@ -1397,7 +1433,7 @@ export default function TAAllocationPage() {
                                           const isSelected = selectedCourseOfferings.some((s) => s.sectionId === offering.course_offering_id);
                                           const isOffered =
                                             selectedTA && isSectionAlreadyOfferedToTA(selectedTA.id, offering.course_offering_id);
-                                          console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
+                                          //console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
                                           return (
                                             <div
                                               key={`${course.id}-offering-${offering.course_offering_id}`}
@@ -1417,7 +1453,7 @@ export default function TAAllocationPage() {
                                                   course_name: course.course_name,
                                                   course_number: course.course_number,
                                                   sectionId: offering.course_offering_id,
-                                                  time_slots_info: offering.time_slots_info,
+                                                  time_slots_info: convertTimeSlotsInfoToKeys(offering.time_slots_info),
                                                 };
 
                                                 setSelectedCourseOfferings((prev) => {

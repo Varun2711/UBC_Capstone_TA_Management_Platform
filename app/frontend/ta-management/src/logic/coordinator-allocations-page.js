@@ -75,6 +75,17 @@ export const fetchCourseOfferingDetails = async (courseOfferingId) => {
   return data;
 };
 
+export const fetchSharedSessionDetails = async (sharedSessionId) => {
+  try {
+    const response = await fetch(`${API_URL}/course-term-service/shared-sessions/${sharedSessionId}/`);
+    if (!response.ok) throw new Error("Failed to fetch shared session details");
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching shared session details:", error);
+    return null;
+  }
+};
+
 export const createOffer = async (applicationId, sections) => {
 
   const offerItems = sections.map((section) => {
