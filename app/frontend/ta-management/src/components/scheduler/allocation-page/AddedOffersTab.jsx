@@ -98,7 +98,7 @@ const AddedOffersTab = ({
 
             for (const offer of offers) {
             for (const item of offer.offer_items) {
-                const id = item.offer_item_id;
+                const id = item.course_offering_id;
                 console.log("Course offering item in for loop: ", item);
                 console.log("Course offering id in for loop: ", id);
                 if (!detailsMap[id]) {
@@ -125,38 +125,42 @@ const AddedOffersTab = ({
       {offers.length === 0 && (
         <p className="text-muted-foreground">No offers have been added yet.</p>
       )}
-      {offers.map((offer) => (
-        <Card key={offer.offer_id}>
-          <CardHeader>
-            <CardTitle>{offer.student.name} {offer.student.student_number}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {offer.offer_items.length === 0 ? (
-              <p className="text-muted-foreground">No course sections added yet.</p>
-            ) : (
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                {offer.offer_items.map((item, idx) => {
-                    const offeringDetails = courseOfferingDetails[item.course_offering_id];
-                    return (
-                        <li key={idx} className="flex items-center justify-between gap-2 py-1">
-                            <span>
-                            {item.course_number} -  ( {item.section_number})
-                            </span>
-                            <button
-                            onClick={() => openConfirmDialog(offer.offer_id, idx)}
-                            title="Remove"
-                            className="w-6 h-6 flex items-center justify-center border border-red-300 rounded hover:bg-red-50 text-red-500 hover:text-red-700"
-                            >
-                            <X className="w-4 h-4" strokeWidth={3} />
-                            </button>
-                        </li>
-                    );
-                })}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+      {offers.map((offer) => {
+        if (offer.status !== "draft") return null;
+
+        return (
+            <Card key={offer.offer_id}>
+            <CardHeader>
+                <CardTitle>{offer.student.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {offer.offer_items.length === 0 ? (
+                <p className="text-muted-foreground">No course sections added yet.</p>
+                ) : (
+                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                    {offer.offer_items.map((item, idx) => {
+                        const offeringDetails = courseOfferingDetails[item.course_offering_id];
+                        return (
+                            <li key={idx} className="flex items-center justify-between gap-2 py-1">
+                                <span>
+                                {item.course_number} - {item.course_name} ({item.section_type_display} {item.section_number})
+                                </span>
+                                <button
+                                onClick={() => openConfirmDialog(offer.offer_id, idx)}
+                                title="Remove"
+                                className="w-6 h-6 flex items-center justify-center border border-red-300 rounded hover:bg-red-50 text-red-500 hover:text-red-700"
+                                >
+                                <X className="w-4 h-4" strokeWidth={3} />
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
+                )}
+            </CardContent>
+            </Card>
+        );
+      })}
       {offers.length > 0 && (
         <div className="flex justify-end p-4">
           <Button onClick={transferAddedOffersToActive}>Send Offer</Button>
