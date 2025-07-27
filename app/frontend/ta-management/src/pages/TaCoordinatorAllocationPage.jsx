@@ -40,7 +40,7 @@ import { AppSidebar } from "../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers } from "@/logic/coordinator-allocations-page";
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -415,6 +415,7 @@ export default function TAAllocationPage() {
   //console.log("selectedTA main variable is: ", selectedTA);
 
   // Function to store the offer of a TA to a course
+  /*
   const handleAddTAtoAddedOfferTab = (selectedTA, selectedCourse) => {
     setAddedOffers((prevOffers) => {
       const existingTA = prevOffers.find(
@@ -486,6 +487,58 @@ export default function TAAllocationPage() {
       }
     })
   }
+  */
+
+  const handleAddTAtoAddedOfferTab = (selectedTA, selectedSections) => {
+    setAddedOffers((prevOffers) => {
+      const existingTA = prevOffers.find(
+        (o) => o.taStudentId === selectedTA.application.student.id
+      );
+
+      const newOffers = selectedSections.map((section) => {
+        const needsConversion = section.time_slots_info.some(slot => slot.includes(":"));
+
+        return {
+          course_number: section.course_number,
+          course_name: section.course_name,
+          sectionId: section.sectionId,
+          section_number: section.section_number,
+          section_type_display: section.section_type_display,
+          slots: needsConversion
+            ? convertTimeSlotsInfoToKeys(section.time_slots_info)
+            : section.time_slots_info,
+        };
+      });
+
+      if (existingTA) {
+        const uniqueNewOffers = newOffers.filter(
+          (newOffer) =>
+            !existingTA.offers.some(
+              (offer) =>
+                offer.course_number === newOffer.course_number &&
+                offer.sectionId === newOffer.sectionId
+            )
+        );
+        if (uniqueNewOffers.length === 0) return prevOffers;
+
+        return prevOffers.map((o) =>
+          o.taStudentId === selectedTA.application.student.id
+            ? { ...o, offers: [...o.offers, ...uniqueNewOffers] }
+            : o
+        );
+      } else {
+        return [
+          ...prevOffers,
+          {
+            taName: selectedTA.application.student.name,
+            taStudentId: selectedTA.application.student.id,
+            offers: newOffers,
+          },
+        ];
+      }
+    });
+  };
+
 
   const handleRescindOffer = (taStudentId) => {
     setAddedOffers((prevOffers) =>
@@ -884,6 +937,16 @@ export default function TAAllocationPage() {
     });
   }, [filteredCourses]);
 
+  const fetchAndSetOffers = async () => {
+    try {
+      console.log("Refetching offers...");
+      const fetchedOffers = await fetchOffers();
+      console.log("fetchedOffers from backend are: ", fetchedOffers);
+      setOffers(fetchedOffers || []);
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+    }
+  };
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -927,12 +990,8 @@ export default function TAAllocationPage() {
             );
             setProfilesOfShortlistedApplicants(profiles.filter(p => p !== null));
           })(),
-          (async () => {
-            console.log("loadOffers has started");
-            const fetchedOffers = await fetchOffers();
-            console.log("fetchedOffers from backend are: ", fetchedOffers);
-            setOffers(fetchedOffers || []); // Ensure offers is always an array
-          })(),
+          // offers
+          fetchAndSetOffers(),
         ]);
       } catch (error) {
         console.error("Error loading initial page data:", error);
@@ -1354,6 +1413,7 @@ export default function TAAllocationPage() {
 
                                                 const selected = {
                                                   ...offering,
+                                                  item_type: "course_offering",
                                                   course_name: course.course_name,
                                                   course_number: course.course_number,
                                                   sectionId: offering.course_offering_id,
@@ -1409,6 +1469,7 @@ export default function TAAllocationPage() {
 
                                           const selected = {
                                             ...section,
+                                            item_type: "shared_session",
                                             course_name: course.course_name,
                                             course_number: course.course_number,
                                             sectionId: section.shared_session_id,
@@ -1503,7 +1564,7 @@ export default function TAAllocationPage() {
                             Cancel
                           </Button>
                           <Button
-                            onClick={() => {
+                            onClick={async () => {
                               const studentId = selectedTA.application.student.id;
                               const maxWorkload = selectedApplication.application.workload;
                               const existingHours = studentCurrentHours[studentId] || 0;
@@ -1526,7 +1587,6 @@ export default function TAAllocationPage() {
                                 return;
                               }
                               let totalHours = selectedApplication.application.workload;
-                              const newOffers = [];
 
                               for (const course of selectedSections) {
                                 console.log("course in selectedSections after pressing send offer button: ", course);
@@ -1538,25 +1598,29 @@ export default function TAAllocationPage() {
                                   alert(`Conflict with section ${course.course_number} ${course.section_number}`);
                                   return;
                                 }
-                                const hoursToAdd = course.weekHours ?? course.weeklyDuration ?? 0;
-                                totalHours += hoursToAdd;
-                                newOffers.push(course);
                               }
 
+                              try {
+                                // Send to backend
+                                console.log("in try block of add offer button, selectedApplication is: ", selectedApplication);
+                                await createOffer(selectedApplication.application.application_id, selectedSections);
 
-                              newOffers.forEach((course) => {
-                                handleAddTAtoAddedOfferTab(selectedTA, course);
-                              });
+                                await fetchAndSetOffers();
+                                // Update frontend state
+                                handleAddTAtoAddedOfferTab(selectedTA, selectedSections);
 
-                              setStudentCurrentHours((prev) => ({
-                                ...prev,
-                                [studentId]: existingHours + addedHours,
-                              }));
+                                setStudentCurrentHours((prev) => ({
+                                  ...prev,
+                                  [studentId]: existingHours + addedHours,
+                                }));
 
-                              // Reset selections
-                              setSelectedTAId(null);
-                              setSelectedCourseOfferings([]);
-                              setSelectedSharedSessions([]);
+                                setSelectedTAId(null);
+                                setSelectedCourseOfferings([]);
+                                setSelectedSharedSessions([]);
+                              } catch (err) {
+                                console.error("Failed to create offer:", err);
+                                alert("An error occurred while creating the offer.");
+                              }
                             }}
                           >
                             Add Offer

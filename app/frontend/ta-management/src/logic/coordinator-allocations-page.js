@@ -74,4 +74,49 @@ export const fetchCourseOfferingDetails = async (courseOfferingId) => {
   const data = await response.json();
   return data;
 };
+
+export const createOffer = async (applicationId, sections) => {
+
+  const offerItems = sections.map((section) => {
+    if (section.item_type === "course_offering") {
+      return {
+        item_type: "course_offering",
+        course_offering_id: section.course_offering_id,
+      };
+    } else if (section.item_type === "shared_session") {
+      return {
+        item_type: "shared_session",
+        shared_session_id: section.shared_session_id,
+      };
+    } else {
+      throw new Error(`Unsupported item_type: ${section.item_type}`);
+    }
+  });
+
+  console.log("offerItems in createOffer: ", offerItems);
+  console.log("Payload being sent: ", {
+    application_id: applicationId,
+    offer_items: offerItems,
+  });
+
+  const response = await fetch(`${API_URL}/allocations/offers/create_offer/`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+    "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      application_id: applicationId,
+      offer_items: offerItems
+      }),
+  });
+  
+
+  if (!response.ok) {
+    throw new Error("Failed to create offer");
+  }
+
+  return await response.json();
+};
+
 // Add more functions as needed
