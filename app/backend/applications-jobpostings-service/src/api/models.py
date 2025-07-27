@@ -173,7 +173,7 @@ class FormQuestion(models.Model):
     field_name = models.CharField(max_length=100)  # For mapping to response data
     order = models.PositiveIntegerField()
     is_required = models.BooleanField(default=False)
-    help_text = models.TextField(null=True, blank=True)
+    help_text = models.TextField(null=True, blank=True) # Help text for the Student filling the application    
     validation_rules = models.JSONField(null=True, blank=True)  # Store validation rules
     options = models.JSONField(null=True, blank=True)  # For select/radio options
     is_editable = models.BooleanField(default=True)
@@ -217,7 +217,8 @@ class JobPosting(models.Model):
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        help_text="Custom form template for this job posting"
+        help_text="Custom form template for this job posting",
+        db_constraint =False
     )
 
     class Meta:

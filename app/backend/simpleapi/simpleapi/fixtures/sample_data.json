@@ -194,7 +194,7 @@
     "fields": {
       "code": "W2025 Term 1",
       "description": "Winter 2025 Term 1",
-      "subsetOf": null,
+      "subsetOf": 3,
       "start": "2025-01-06",
       "end": "2025-04-04",
       "startCalendarYear": 2025,
@@ -211,7 +211,7 @@
     "fields": {
       "code": "W2025 Term 2",
       "description": "Winter 2025 Term 2",
-      "subsetOf": null,
+      "subsetOf": 3,
       "start": "2025-01-06",
       "end": "2025-04-04",
       "startCalendarYear": 2025,
@@ -590,7 +590,8 @@
       "created_by": 3,
       "term": 1,
       "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
-      "status": "open"
+      "status": "open",
+      "form_template": 1
     }
   },
   {
@@ -605,7 +606,8 @@
       "created_by": 3,
       "term": 2,
       "requirements": "Must be a registered student.",
-      "status": "open"
+      "status": "open",
+      "form_template": 1
     }
   },
   {
@@ -1374,9 +1376,7 @@
       "academic_term": 3,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": [
-        "550e8400-e29b-41d4-a716-446655440016"
-      ]
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440016"]
     }
   },
   {
@@ -1389,9 +1389,7 @@
       "academic_term": 3,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": [
-        "550e8400-e29b-41d4-a716-446655440017"
-      ]
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440017"]
     }
   },
   {
