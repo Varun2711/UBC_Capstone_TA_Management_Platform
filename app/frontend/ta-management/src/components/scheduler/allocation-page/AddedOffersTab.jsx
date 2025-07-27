@@ -8,6 +8,7 @@ import { fetchCourseOfferingDetails } from "@/logic/coordinator-allocations-page
 const AddedOffersTab = ({
   offers,
   setOffers,
+  fetchOffers,
   activeOffers,
   setActiveOffers,
   studentCurrentHours,
@@ -23,7 +24,7 @@ const AddedOffersTab = ({
     setShowConfirmDialog(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!offerToDelete) return;
     const { offerId, itemIndex } = offerToDelete;
 
@@ -53,6 +54,8 @@ const AddedOffersTab = ({
     setOffers(cleanedOffers);
     setShowConfirmDialog(false);
     setOfferToDelete(null);
+
+    await fetchOffers();
   };
 
   const transferAddedOffersToActive = () => {
@@ -93,32 +96,43 @@ const AddedOffersTab = ({
     };
 
     useEffect(() => {
-        const fetchAllDetails = async () => {
-            const detailsMap = {};
+      const fetchAllDetails = async () => {
+        const slotPromises = offers.flatMap((offer) => {
+          if (offer.student.id !== selectedTA?.application.student.id) return [];
 
-            for (const offer of offers) {
-            for (const item of offer.offer_items) {
-                const id = item.course_offering_id;
-                console.log("Course offering item in for loop: ", item);
-                console.log("Course offering id in for loop: ", id);
-                if (!detailsMap[id]) {
-                try {
-                    const details = await getCourseOfferingDetails(id);
-                    detailsMap[id] = details;
-                } catch (error) {
-                    console.error(`Error fetching details for ID ${id}`, error);
-                }
-                }
+          return offer.offer_items.map(async (item) => {
+            try {
+              let id = null;
+
+              if (item.course_offering_id !== null && item.course_offering_id !== undefined) {
+                id = item.course_offering_id;
+              } else if (item.shared_session_id !== null && item.shared_session_id !== undefined) {
+                id = item.shared_session_id;
+              }
+
+              if (!id) return [];
+
+              const details = item.course_offering_id
+                ? await fetchCourseOfferingDetails(id)
+                : await fetchSharedSessionDetails(id);
+
+              return details?.time_slots_info || [];
+            } catch (error) {
+              console.error("Failed to fetch slot info:", error);
+              return [];
             }
-            }
+          });
+        });
 
-            setCourseOfferingDetails(detailsMap);
-        };
+        const allSlots = await Promise.all(slotPromises);
+        setOfferSlotTimes(allSlots.flat());
+      };
 
-        if (offers.length > 0) {
-            fetchAllDetails();
-        }
+      if (offers.length > 0) {
+        fetchAllDetails();
+      }
     }, [offers]);
+
 
   return (
     <div className="space-y-4">

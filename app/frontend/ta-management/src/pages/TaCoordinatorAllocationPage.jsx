@@ -289,6 +289,7 @@ function getPriorityBadge(priority) {
  
 //converts Monday start time end time to Monday-8-top and so on
 function convertTimeSlotsInfoToKeys(time_slots_info) {
+  console.log("time_slots_info in convertTimeSlotsInfoToKeys: ", time_slots_info);
   const result = []
 
   for (const slot of time_slots_info) {
@@ -414,81 +415,6 @@ export default function TAAllocationPage() {
 
   const selectedTA = shortlistedApplicants.find((item) => item.application.student.id === selectedTAId)
   //console.log("selectedTA main variable is: ", selectedTA);
-
-  // Function to store the offer of a TA to a course
-  /*
-  const handleAddTAtoAddedOfferTab = (selectedTA, selectedCourse) => {
-    setAddedOffers((prevOffers) => {
-      const existingTA = prevOffers.find(
-        (o) => o.taStudentId === selectedTA.application.student.id
-      )
-
-      //console.log("existingTA at beginning of in handleAddTAtoAddedOfferTab: ", existingTA);
-      //console.log("selectedCourse.time_slots_info in handleAddTAtoAddedOfferTab: ", selectedCourse.time_slots_info);
-      const needsConversion = selectedCourse.time_slots_info.some(slot => slot.includes(":"));
-      //console.log("In handleAddTAtoAddedOfferTab, needsConversion: ", needsConversion);
-      
-      let newOffer;
-
-      //console.log("In handleAddTAtoAddedOfferTab, selectedCourse: ", selectedCourse);
-      //console.log("In handleAddTAtoAddedOfferTab, course_number: ", selectedCourse.course_number);
-      //console.log("In handleAddTAtoAddedOfferTab, course_name: ", selectedCourse.course_name);
-      //console.log("In handleAddTAtoAddedOfferTab, section: ", selectedCourse.section);
-      //console.log("In handleAddTAtoAddedOfferTab, sectionId: ", selectedCourse.sectionId);
-      //console.log("In handleAddTAtoAddedOfferTab, instructor: ", selectedCourse.section_number);
-      //console.log("In handleAddTAtoAddedOfferTab, semester: ", selectedCourse.semester);
-      //console.log("In handleAddTAtoAddedOfferTab, type: ", selectedCourse.type);
-      //console.log("In handleAddTAtoAddedOfferTab, time_slots_info: ", selectedCourse.time_slots_info);
-
-      if (needsConversion) {
-        newOffer = {
-          course_number: selectedCourse.course_number,
-          course_name: selectedCourse.course_name,
-          sectionId: selectedCourse.sectionId, // ✅ Correct
-          section_number: selectedCourse.section_number,
-          section_type_display: selectedCourse.section_type_display,
-          slots: convertTimeSlotsInfoToKeys(selectedCourse.time_slots_info),
-        }
-      }
-      else {
-        newOffer = {
-          course_number: selectedCourse.course_number,
-          course_name: selectedCourse.course_name,
-          sectionId: selectedCourse.sectionId, // ✅ Correct
-          section_number: selectedCourse.section_number,
-          section_type_display: selectedCourse.section_type_display,
-          slots: selectedCourse.time_slots_info,
-        }
-      }
-
-      if (existingTA) {
-        // Avoid duplicates
-        const alreadyAdded = existingTA.offers.some(
-          (offer) =>
-            offer.course_number === newOffer.course_number &&
-            offer.sectionId === newOffer.sectionId
-        )
-        if (alreadyAdded) return prevOffers
-
-        return prevOffers.map((o) =>
-          o.taStudentId === selectedTA.application.student.id
-            ? { ...o, offers: [...o.offers, newOffer] }
-            : o
-        )
-      } else {
-        // First offer for this TA
-        return [
-          ...prevOffers,
-          {
-            taName: selectedTA.application.student.name,
-            taStudentId: selectedTA.application.student.id,
-            offers: [newOffer],
-          },
-        ]
-      }
-    })
-  }
-  */
 
   const handleAddTAtoAddedOfferTab = (selectedTA, selectedSections) => {
     setAddedOffers((prevOffers) => {
@@ -772,8 +698,9 @@ export default function TAAllocationPage() {
       .join(" | ");
   };
 
+  /*
   function getTotalHoursFromSlotString(slotString) {
-
+    console.log("slotString in getTotalHoursFromSlotString: ", slotString);
     // Normalize en dash to regular dash
     slotString = slotString.replace(/–/g, "-");
 
@@ -810,11 +737,29 @@ export default function TAAllocationPage() {
     //console.log("result of getTotalHoursFromSlotString: ", total);
     return total;
   }
+  */
 
   // Function to get assignments for a specific TA
   function getAssignmentsForTA(taName) {
   return assignments.filter((assignment) => assignment.taName === taName)
   }
+  
+
+  function getTotalHoursFromSlotArray(slotArray) {
+    if (!Array.isArray(slotArray)) return 0;
+
+    // Each slot like "Monday-8-top" is 30 minutes
+    const slotDurationHours = 0.5;
+
+    // Filter valid slot strings
+    const validSlots = slotArray.filter(slot =>
+      typeof slot === "string" && slot.match(/^[A-Za-z]+-\d+-(top|bottom)$/)
+    );
+
+    const totalHours = validSlots.length * slotDurationHours;
+    return totalHours;
+  }
+
 
   const filteredTAs = taList.filter((ta) => {
     const matchesSearch =
@@ -1021,6 +966,13 @@ export default function TAAllocationPage() {
         (offer) => offer.student.id === selectedTA.application.student.id
       );
 
+      console.log("Filtered Offers for TA:", relevantOffers);
+
+      if (relevantOffers.length === 0) {
+        setOfferSlotTimes([]); // No offers → clear times
+        return;
+      }
+
       const slotPromises = relevantOffers.flatMap((offer) =>
         offer.offer_items.map(async (item) => {
           try {
@@ -1085,6 +1037,19 @@ export default function TAAllocationPage() {
   console.log("highlightedSlots: ", highlightedSlots);
 
   console.log("Offers state variable is: ", offers);
+
+  const totalWeeklyHoursForSelectedTA = selectedTA ? (() => {
+    const taOffers = offers.filter(
+      offer => offer.student.id === selectedTA.application.student.id
+    );
+
+    if (taOffers.length === 0) return 0;
+
+    return taOffers.reduce(
+      (sum, offer) => sum + (offer.total_weekly_hours || 0),
+      0
+    );
+  })() : 0;
 
   return (
     <SidebarProvider>
@@ -1157,7 +1122,7 @@ export default function TAAllocationPage() {
                               <div>
                                 <p className="text-lg font-semibold">{selectedApplication.application.student.name}</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {studentCurrentHours[selectedTA.application.student.id]}{" "}/{" "}{selectedApplication.application.workload} hours • {selectedApplication.application.student.study_level}
+                                  {totalWeeklyHoursForSelectedTA}{" "}/{" "}{selectedApplication.application.workload} hours • {selectedApplication.application.student.study_level}
                                 </p>
                               </div>
                             </div>
@@ -1454,6 +1419,7 @@ export default function TAAllocationPage() {
                                                   course_number: course.course_number,
                                                   sectionId: offering.course_offering_id,
                                                   time_slots_info: convertTimeSlotsInfoToKeys(offering.time_slots_info),
+                                                  weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(offering.time_slots_info)),
                                                 };
 
                                                 setSelectedCourseOfferings((prev) => {
@@ -1512,7 +1478,7 @@ export default function TAAllocationPage() {
                                             section_type_display: section.session_type_display,
                                             section_number: section.section_number,
                                             time_slots_info: convertTimeSlotsInfoToKeys(section.time_slots_info),
-                                            weeklyDuration: getTotalHoursFromSlotString(formatSlotsFromTimeInfo(section.time_slots_info)),
+                                            weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(section.time_slots_info)),
                                           };
                                           console.log("selected is having the following after clicking a lab/tutorial: ", selected);
                                           setSelectedSharedSessions((prev) => {
@@ -1573,12 +1539,12 @@ export default function TAAllocationPage() {
                           <p className="text-sm text-muted-foreground mt-2">
                             New workload:{" "}
                             <span className="font-medium">
-                              {studentCurrentHours[selectedTA.application.student.id] || 0} / {selectedApplication.application.workload} hours
+                              {totalWeeklyHoursForSelectedTA} / {selectedApplication.application.workload} hours
                             </span>{" "}
                             →{" "}
                             <span className="font-medium">
                               {
-                                (studentCurrentHours[selectedTA.application.student.id] || 0) +
+                                (totalWeeklyHoursForSelectedTA) +
                                 selectedSections.reduce(
                                   (sum, c) => sum + (c.weekHours ?? c.weeklyDuration ?? 0),
                                   0
@@ -1603,7 +1569,7 @@ export default function TAAllocationPage() {
                             onClick={async () => {
                               const studentId = selectedTA.application.student.id;
                               const maxWorkload = selectedApplication.application.workload;
-                              const existingHours = studentCurrentHours[studentId] || 0;
+                              const existingHours = totalWeeklyHoursForSelectedTA;
 
                               // Calculate total hours of selected sections
                               const addedHours = selectedSections.reduce(
@@ -1622,7 +1588,6 @@ export default function TAAllocationPage() {
                                 );
                                 return;
                               }
-                              let totalHours = selectedApplication.application.workload;
 
                               for (const course of selectedSections) {
                                 console.log("course in selectedSections after pressing send offer button: ", course);
@@ -1673,6 +1638,7 @@ export default function TAAllocationPage() {
                 <AddedOffersTab 
                   offers={offers}
                   setOffers={setOffers}
+                  fetchOffers={fetchOffers}
                   activeOffers={activeOffers}
                   setActiveOffers={setActiveOffers}
                   studentCurrentHours={studentCurrentHours}
