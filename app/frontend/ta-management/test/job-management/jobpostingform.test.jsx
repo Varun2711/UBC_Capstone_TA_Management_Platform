@@ -139,4 +139,106 @@ describe("JobPostingForm", () => {
       expect(defaultProps.onSave).toHaveBeenCalledWith({ id: "updated-id" });
     });
   });
+
+  // New tests
+  test("disables Open status option when no application form template is selected", () => {
+    render(<JobPostingForm {...defaultProps} />);
+    const statusSelect = screen.getByLabelText(/status/i);
+    const openOption = statusSelect.querySelector('option[value="open"]');
+    expect(openOption).toBeDisabled();
+  });
+
+  test("shows Post Job button text and warning when changing status to open on draft job posting", async () => {
+    const jobPostingDraft = {
+      posting_id: 1,
+      title: "",
+      description: "",
+      requirements: "",
+      department: { id: 1, name: "Dept1" },
+      term: { id: 2, code: "Term1" },
+      form_template_id: "3",
+      post_date: "2025-07-17",
+      deadline_date: "2025-07-20",
+      status: "draft",
+      created_by_id: "u1",
+    };
+    render(<JobPostingForm {...defaultProps} jobPosting={jobPostingDraft} />);
+    const statusSelect = await screen.findByLabelText(/status/i);
+    await waitFor(() => {
+      const openOption = statusSelect.querySelector('option[value="open"]');
+      expect(openOption).not.toBeDisabled();
+    });
+    fireEvent.change(statusSelect, { target: { value: "open" } });
+    expect(
+      screen.getByRole("button", { name: /post job/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/This will make the job visible to applicants\./i)
+    ).toBeInTheDocument();
+  });
+
+  test("shows Close Job button text and warning when changing status to closed on open job posting", async () => {
+    const jobPostingOpen = {
+      posting_id: 2,
+      title: "",
+      description: "",
+      requirements: "",
+      department: { id: 1, name: "Dept1" },
+      term: { id: 2, code: "Term1" },
+      form_template_id: "3",
+      post_date: "2025-07-17",
+      deadline_date: "2025-07-20",
+      status: "open",
+      created_by_id: "u1",
+    };
+    render(<JobPostingForm {...defaultProps} jobPosting={jobPostingOpen} />);
+    const statusSelect = await screen.findByLabelText(/status/i);
+    fireEvent.change(statusSelect, { target: { value: "closed" } });
+    expect(
+      screen.getByRole("button", { name: /close job/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /This job post will not accept any further applications\./i
+      )
+    ).toBeInTheDocument();
+  });
+
+  test("displays caution message when changing application form template on open job posting", async () => {
+    const templatesMultiple = [
+      { template_id: 3, name: "Template1", is_active: true },
+      { template_id: 4, name: "Template2", is_active: true },
+    ];
+    const jobPostingOpen = {
+      posting_id: 3,
+      title: "",
+      description: "",
+      requirements: "",
+      department: { id: 1, name: "Dept1" },
+      term: { id: 2, code: "Term1" },
+      form_template_id: "3",
+      post_date: "2025-07-17",
+      deadline_date: "2025-07-20",
+      status: "open",
+      created_by_id: "u1",
+    };
+    render(
+      <JobPostingForm
+        {...defaultProps}
+        templates={templatesMultiple}
+        jobPosting={jobPostingOpen}
+      />
+    );
+    // wait for second template option to appear
+    await waitFor(() => {
+      expect(
+        screen.getByRole("option", { name: /Template2/i })
+      ).toBeInTheDocument();
+    });
+    const templateSelect = screen.getByLabelText(/application form template/i);
+    fireEvent.change(templateSelect, { target: { value: "4" } });
+    expect(
+      screen.getByText(/Caution: Changing Application Form Template/i)
+    ).toBeInTheDocument();
+  });
 });

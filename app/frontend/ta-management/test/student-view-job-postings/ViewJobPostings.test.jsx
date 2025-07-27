@@ -1,10 +1,17 @@
 /* test/student-view-job-postings/ViewJobPostings.test.jsx */
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { BrowserRouter } from "react-router-dom";
-import ViewJobPostings from "@/pages/Student/Student_ViewJobPostings";
-
+/* ────────────────────────────────────────────────────────────
+ *  student‑profile mock (hoist-safe)
+ * ──────────────────────────────────────────────────────────── */
+const fakeProfile = {
+  first_name: "Jane",
+  last_Name: "Doe",
+  email: "jane.doe@example.com",
+  avatar: "avatar.png",
+};
+vi.mock("@/logic/student-profile", () => ({
+  getProfile: () => Promise.resolve(fakeProfile),
+}));
 /* ────────────────────────────────────────────────────────────
  *  axios mock (hoist-safe)
  * ──────────────────────────────────────────────────────────── */
@@ -31,6 +38,11 @@ vi.mock("react-router-dom", async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { BrowserRouter } from "react-router-dom";
+import ViewJobPostings from "@/pages/Student/Student_ViewJobPostings";
 
 /* ────────────────────────────────────────────────────────────
  *  UI component stubs

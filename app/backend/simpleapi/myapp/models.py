@@ -209,6 +209,15 @@ class CourseOffering(models.Model):
         help_text="Instructor teaching this course offering"
     )
 
+    time_slots = models.ManyToManyField(
+        TimeSlot,
+        blank=True,
+        related_name='course_offerings',
+        help_text="Time slots when this course offering meets"
+    )
+
+    is_active = models.BooleanField(default=True)
+
     class Meta:
         managed = False
         db_table = 'myapp_course_offerings'
@@ -337,6 +346,8 @@ class SharedSession(models.Model):
         help_text="Time slots when this lab section meets"
     )
 
+    is_active = models.BooleanField(default=True)
+    
     class Meta:
         managed = False
         db_table = 'myapp_sharedsessions'
@@ -467,7 +478,8 @@ class JobPosting(models.Model):
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        help_text="Custom form template for this job posting"
+        help_text="Custom form template for this job posting",
+        db_constraint =False
     )
 
     class Meta:
@@ -610,6 +622,7 @@ class OfferItem(models.Model):
 class Offer(models.Model):
     """Enhanced offer model supporting multiple items"""
     STATUS_CHOICES = [
+        ('draft', 'Draft'),
         ('pending', 'Pending Response'),
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
@@ -627,13 +640,15 @@ class Offer(models.Model):
     role = models.CharField(max_length=3, choices=[('ta', 'Teaching Assistant')], default='ta')
     
     # Offer lifecycle
-    offer_date = models.DateTimeField(default=timezone.now)
-    response_deadline = models.DateTimeField(help_text="Deadline for student to respond")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    offer_date = models.DateTimeField(null=True, blank=True) # <-- Make nullable, set when sent
+    response_deadline = models.DateTimeField(null=True, blank=True, help_text="Deadline for student to respond") # <-- Make nullable
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft') # <-- CHANGE DEFAULT
     
     # Response tracking
     responded_at = models.DateTimeField(null=True, blank=True)
     student_response = models.TextField(null=True, blank=True, help_text="Student's response message")
+
+    reminder_sent = models.BooleanField(default=False)
     
     # Administrative
     created_by = models.ForeignKey(TAScheduler, on_delete=models.CASCADE, related_name='offers_created', db_constraint=False)

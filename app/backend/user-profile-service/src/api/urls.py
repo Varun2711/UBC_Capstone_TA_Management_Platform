@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (StudentViewSet, InstructorViewSet, TASchedulerViewSet, find_user, api_root, CreateInstructorView, CreateSchedulerView, UserManagementView,
                     ProfileDetailView, ProfileUpdateView, StudentTAExperienceListCreateView, StudentExperienceDetailView,StudentSkillListCreateView, 
                     StudentSkillDetailView, StudentAvailabilityView, StudentCoursePreferenceListCreateView, StudentCoursePreferenceDetailView, DepartmentListView,
-                    scheduler_create_instructor, scheduler_update_instructor, scheduler_delete_instructor)
+                    scheduler_create_instructor, scheduler_update_instructor, scheduler_delete_instructor, admin_dashboard, get_users)
 
 
 router = DefaultRouter()
@@ -21,7 +21,9 @@ urlpatterns = [
     path('admin/create-instructor/', CreateInstructorView.as_view(), name='create-instructor'),
     path('admin/create-scheduler/', CreateSchedulerView.as_view(), name='create-scheduler'),
     path('admin/user-management/', UserManagementView.as_view(), name='user-management'),
+    path('admin/dashboard/', admin_dashboard, name='admin-dashboard'),
     path('departments/', DepartmentListView.as_view(), name='faculty-list'),
+    path('users/', get_users, name='get-users'),
 
     # TA Scheduler instructor management endpoints
     path('scheduler/create-instructor/', scheduler_create_instructor, name='scheduler-create-instructor'),

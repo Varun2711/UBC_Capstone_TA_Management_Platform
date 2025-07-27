@@ -1,361 +1,141 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+// ReviewSection.test.jsx
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ReviewSection from "@/components/application-form/ReviewSection";
 
-// Mock the label mapping functions
-vi.mock("@/components/application-form/labelMappings", () => ({
-  getPositionTypeLabel: vi.fn((value) => {
-    const mappings = {
-      UTA: "Undergraduate Teaching Assistant",
-      GTA2: "Graduate Teaching Assistant 2 (Masters)",
-      GTA1: "Graduate Teaching Assistant 1 (Ph.D)",
-    };
-    return mappings[value] || value;
-  }),
-  getWorkloadLabel: vi.fn((value) => {
-    const mappings = {
-      6: "6 hours",
-      12: "12 hours",
-    };
-    return mappings[value] || value;
-  }),
-  getCitizenshipLabel: vi.fn((value) => {
-    const mappings = {
-      citizen: "Yes - Canadian Citizen",
-      pr: "Yes - Permanent Resident",
-      international: "No - International Student",
-    };
-    return mappings[value] || value;
-  }),
-  getYesNoLabel: vi.fn((value) => {
-    const mappings = {
-      yes: "Yes",
-      no: "No",
-    };
-    return mappings[value] || value;
-  }),
-}));
-
-// Mock student data (no longer used in current component but kept for compatibility)
-const mockStudent = {
-  firstName: "John",
-  lastName: "Doe",
-  email: "john@example.com",
-  studentId: "12345678",
-  major: "Computer Science",
-  studyLevel: "MSc",
-  gpa: "3.85",
-  faculty: "Faculty of Science",
-  degreeStart: "2024",
-  phone: "+1 (555) 123-4567",
-};
-
-// Mock selections data
-const mockSelections = {
-  citizenshipStatus: "citizen",
-  residingInKelowna: "yes",
-  fullTimeEnrollment: "yes",
-  hasOtherPositions: "no",
-  otherPositionHours: "",
-  positionType: "UTA",
-  winterTerm: "W2025 both terms",
-  workload: "6",
-  disciplineRanking: {
-    rank1: "COSC",
-    rank2: "MATH",
-    rank3: "PHYS",
-  },
-};
-
-// Mock documents
-const mockDocuments = [
-  {
-    id: 1,
-    name: "resume.pdf",
-    size: 1024 * 1024, // 1MB in bytes
-  },
-  {
-    id: 2,
-    name: "transcript.pdf",
-    size: 2 * 1024 * 1024, // 2MB in bytes
-  },
-];
-
-const mockSetConfirmation = vi.fn();
-
-const renderReviewSection = (
-  student = mockStudent,
-  selections = mockSelections,
-  confirmation = false,
-  documents = mockDocuments,
-  errors = {}
-) => {
-  return render(
-    <ReviewSection
-      student={student}
-      selections={selections}
-      confirmation={confirmation}
-      setConfirmation={mockSetConfirmation}
-      documents={documents}
-      errors={errors}
-    />
-  );
-};
-
 describe("ReviewSection", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  const baseProps = {
+    student: {},
+    selections: {},
+    dynamicResponses: {},
+    dynamicSections: [],
+    fieldMapping: {},
+    confirmation: false,
+    setConfirmation: vi.fn(),
+    documents: [],
+    errors: {},
+  };
 
-  it("renders the review section title", () => {
-    renderReviewSection();
-    expect(
-      screen.getByText("Review Your Application Responses")
-    ).toBeInTheDocument();
-  });
-
-  it("displays citizenship status correctly", () => {
-    renderReviewSection();
-    expect(screen.getByText("Yes - Canadian Citizen")).toBeInTheDocument();
-  });
-
-  it("displays full-time enrollment status correctly", () => {
-    renderReviewSection();
-    expect(
-      screen.getByText(/enrolled as a full-time student/i)
-    ).toBeInTheDocument();
-  });
-
-  it("displays other positions status correctly", () => {
-    renderReviewSection();
-    expect(screen.getByText(/other student positions/i)).toBeInTheDocument();
-    expect(screen.getByText("No")).toBeInTheDocument();
-  });
-
-  it("displays position type correctly", () => {
-    renderReviewSection();
-    expect(
-      screen.getByText(/which position are you applying for/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Undergraduate Teaching Assistant")
-    ).toBeInTheDocument();
-  });
-
-  it("displays winter term selection correctly", () => {
-    renderReviewSection();
-    expect(
-      screen.getByText(/W2025 applications, which of the following terms/i)
-    ).toBeInTheDocument();
-    expect(screen.getByText("W2025 both terms")).toBeInTheDocument();
-  });
-
-  it("displays workload preference correctly", () => {
-    renderReviewSection();
-    expect(
-      screen.getByText(/preferred maximum average hourly workload/i)
-    ).toBeInTheDocument();
-    expect(screen.getByText("6 hours")).toBeInTheDocument();
-  });
-
-  it("displays discipline ranking correctly", () => {
-    renderReviewSection();
-    expect(
-      screen.getByText(/rank your top 3 preferred disciplines/i)
-    ).toBeInTheDocument();
-    expect(screen.getByText("1st Discipline:")).toBeInTheDocument();
-    expect(screen.getByText("COSC")).toBeInTheDocument();
-    expect(screen.getByText("2nd Discipline:")).toBeInTheDocument();
-    expect(screen.getByText("MATH")).toBeInTheDocument();
-    expect(screen.getByText("3rd Discipline:")).toBeInTheDocument();
-    expect(screen.getByText("PHYS")).toBeInTheDocument();
-  });
-
-  it("displays supporting documents section", () => {
-    renderReviewSection();
-    expect(screen.getByText("Supporting Documents")).toBeInTheDocument();
-    expect(screen.getByText("resume.pdf")).toBeInTheDocument();
-    expect(screen.getByText("(1.00 MB)")).toBeInTheDocument();
-    expect(screen.getByText("transcript.pdf")).toBeInTheDocument();
-    expect(screen.getByText("(2.00 MB)")).toBeInTheDocument();
-  });
-
-  it("shows 'No documents uploaded' when documents array is empty", () => {
-    renderReviewSection(mockStudent, mockSelections, false, []);
-    expect(screen.getByText("No documents uploaded")).toBeInTheDocument();
-  });
-
-  it("shows 'No documents uploaded' when documents is null", () => {
-    renderReviewSection(mockStudent, mockSelections, false, null);
-    expect(screen.getByText("No documents uploaded")).toBeInTheDocument();
-  });
-
-  it("shows international student note when applicable", () => {
-    const selectionsWithIntlStudent = {
-      ...mockSelections,
-      citizenshipStatus: "international",
+  it("renders a dynamic text response", () => {
+    const props = {
+      ...baseProps,
+      dynamicSections: [
+        {
+          section_id: "sec1",
+          name: "Section 1",
+          order: 1,
+          questions: [
+            {
+              field_name: "foo",
+              question_text: "Foo?",
+              question_type: "text",
+              is_required: true,
+            },
+          ],
+        },
+      ],
+      dynamicResponses: { foo: "Bar" },
+      fieldMapping: { foo: false },
     };
-    renderReviewSection(mockStudent, selectionsWithIntlStudent);
 
-    expect(screen.getByText("No - International Student")).toBeInTheDocument();
-    expect(
-      screen.getByText(/valid study permit when requested/i)
-    ).toBeInTheDocument();
+    render(<ReviewSection {...props} />);
+    // Header
+    expect(screen.getByText("Section 1")).toBeTruthy();
+    // Question text
+    expect(screen.getByText("Foo?")).toBeTruthy();
+    // Required asterisk
+    expect(screen.getByText("*")).toBeTruthy();
+    // Response rendered
+    expect(screen.getByText("Bar")).toBeTruthy();
   });
 
-  it("shows other position hours when applicable", () => {
-    const selectionsWithOtherPositions = {
-      ...mockSelections,
-      hasOtherPositions: "yes",
-      otherPositionHours: "10",
+  it("renders a radio response with the correct label", () => {
+    const props = {
+      ...baseProps,
+      dynamicSections: [
+        {
+          section_id: "sec2",
+          name: "Choices",
+          order: 1,
+          questions: [
+            {
+              field_name: "choice",
+              question_text: "Pick one:",
+              question_type: "radio",
+              is_required: false,
+              options: [{ value: "a", label: "Option A" }],
+            },
+          ],
+        },
+      ],
+      dynamicResponses: { choice: "a" },
+      fieldMapping: { choice: false },
     };
-    renderReviewSection(mockStudent, selectionsWithOtherPositions);
 
-    expect(screen.getByText("10")).toBeInTheDocument();
-    expect(
-      screen.getByText(/number of hours per week for other positions/i)
-    ).toBeInTheDocument();
+    render(<ReviewSection {...props} />);
+    expect(screen.getByText("Pick one:")).toBeTruthy();
+    expect(screen.getByText("Option A")).toBeTruthy();
   });
 
-  it("does not show other position hours section when hasOtherPositions is no", () => {
-    const selectionsWithNoOtherPositions = {
-      ...mockSelections,
-      hasOtherPositions: "no",
+  it("displays the study-permit note for international citizenship", () => {
+    const props = {
+      ...baseProps,
+      dynamicSections: [
+        {
+          section_id: "sec3",
+          name: "Citizenship",
+          order: 1,
+          questions: [
+            {
+              field_name: "citizenshipStatus",
+              question_text: "Citizenship?",
+              question_type: "text",
+              is_required: false,
+            },
+          ],
+        },
+      ],
+      dynamicResponses: { citizenshipStatus: "international" },
+      fieldMapping: { citizenshipStatus: false },
     };
-    renderReviewSection(mockStudent, selectionsWithNoOtherPositions);
 
+    render(<ReviewSection {...props} />);
     expect(
-      screen.queryByText(/number of hours per week for other positions/i)
-    ).not.toBeInTheDocument();
+      screen.getByText(
+        /Note: You must submit a valid study permit when requested./
+      )
+    ).toBeTruthy();
   });
 
-  it("renders confirmation checkbox", () => {
-    renderReviewSection();
-
-    const checkbox = screen.getByRole("checkbox");
-    expect(checkbox).toBeInTheDocument();
-    expect(checkbox).not.toBeChecked();
-
-    const confirmationText = screen.getByText(
-      /I confirm that the information I have provided/i
-    );
-    expect(confirmationText).toBeInTheDocument();
-  });
-
-  it("displays confirmation error when provided", () => {
-    const errors = {
-      confirmation: "You must confirm the information is accurate",
+  it("renders supporting documents list when provided", () => {
+    const props = {
+      ...baseProps,
+      documents: [{ id: 1, name: "doc.pdf", size: 1 * 1024 * 1024 }],
     };
-    renderReviewSection(
-      mockStudent,
-      mockSelections,
-      false,
-      mockDocuments,
-      errors
-    );
 
-    expect(
-      screen.getByText("You must confirm the information is accurate")
-    ).toBeInTheDocument();
+    render(<ReviewSection {...props} />);
+    expect(screen.getByText("doc.pdf")).toBeTruthy();
+    // size formatted to 1.00 MB
+    expect(screen.getByText("(1.00 MB)")).toBeTruthy();
   });
 
-  it("displays all citizenship options correctly with mapped labels", () => {
-    // Test Canadian Citizen
-    const citizenSelections = {
-      ...mockSelections,
-      citizenshipStatus: "citizen",
+  it("calls setConfirmation on checkbox change and shows error", () => {
+    const setConfirm = vi.fn();
+    const props = {
+      ...baseProps,
+      setConfirmation: setConfirm,
+      errors: { confirmation: "You must confirm." },
     };
-    renderReviewSection(mockStudent, citizenSelections);
-    expect(screen.getByText("Yes - Canadian Citizen")).toBeInTheDocument();
 
-    // Test Permanent Resident
-    const prSelections = { ...mockSelections, citizenshipStatus: "pr" };
-    renderReviewSection(mockStudent, prSelections);
-    expect(screen.getByText("Yes - Permanent Resident")).toBeInTheDocument();
-  });
+    render(<ReviewSection {...props} />);
+    // Error message shown
+    expect(screen.getByText("You must confirm.")).toBeTruthy();
 
-  it("displays all position types correctly with mapped labels", () => {
-    // Test UTA
-    const utaSelections = { ...mockSelections, positionType: "UTA" };
-    renderReviewSection(mockStudent, utaSelections);
-    expect(
-      screen.getByText("Undergraduate Teaching Assistant")
-    ).toBeInTheDocument();
-
-    // Test GTA2
-    const gta2Selections = { ...mockSelections, positionType: "GTA2" };
-    renderReviewSection(mockStudent, gta2Selections);
-    expect(
-      screen.getByText("Graduate Teaching Assistant 2 (Masters)")
-    ).toBeInTheDocument();
-
-    // Test GTA1
-    const gta1Selections = { ...mockSelections, positionType: "GTA1" };
-    renderReviewSection(mockStudent, gta1Selections);
-    expect(
-      screen.getByText("Graduate Teaching Assistant 1 (Ph.D)")
-    ).toBeInTheDocument();
-  });
-
-  it("displays workload options correctly with mapped labels", () => {
-    // Test 6 hours
-    const sixHourSelections = { ...mockSelections, workload: "6" };
-    renderReviewSection(mockStudent, sixHourSelections);
-    expect(screen.getByText("6 hours")).toBeInTheDocument();
-
-    // Test 12 hours
-    const twelveHourSelections = { ...mockSelections, workload: "12" };
-    renderReviewSection(mockStudent, twelveHourSelections);
-    expect(screen.getByText("12 hours")).toBeInTheDocument();
-  });
-
-  it("renders current application year correctly", () => {
-    renderReviewSection();
-    expect(screen.getByText(/For W2025 applications/i)).toBeInTheDocument();
-  });
-
-  it("handles missing discipline ranking gracefully", () => {
-    const selectionsWithoutRanking = {
-      ...mockSelections,
-      disciplineRanking: {
-        rank1: "",
-        rank2: "MATH",
-        rank3: "PHYS",
-      },
-    };
-    renderReviewSection(mockStudent, selectionsWithoutRanking);
-
-    expect(screen.getByText("1st Discipline:")).toBeInTheDocument();
-    expect(screen.getByText("2nd Discipline:")).toBeInTheDocument();
-    expect(screen.getByText("3rd Discipline:")).toBeInTheDocument();
-    // Empty rank1 should still render but be empty
-    expect(screen.getByText("MATH")).toBeInTheDocument();
-    expect(screen.getByText("PHYS")).toBeInTheDocument();
-  });
-
-  it("formats document file sizes correctly", () => {
-    const documentsWithVariousSizes = [
-      {
-        id: 1,
-        name: "small_file.pdf",
-        size: 500, // 500 bytes
-      },
-      {
-        id: 2,
-        name: "medium_file.pdf",
-        size: 1500000, // ~1.5 MB
-      },
-    ];
-
-    renderReviewSection(
-      mockStudent,
-      mockSelections,
-      false,
-      documentsWithVariousSizes
-    );
-
-    expect(screen.getByText("(0.00 MB)")).toBeInTheDocument(); // 500 bytes
-    expect(screen.getByText("(1.43 MB)")).toBeInTheDocument(); // ~1.5 MB
+    // Click the checkbox
+    const checkbox = screen.getByRole("checkbox", {
+      name: /I confirm that the information/,
+    });
+    fireEvent.click(checkbox);
+    expect(setConfirm).toHaveBeenCalledWith(true);
   });
 });

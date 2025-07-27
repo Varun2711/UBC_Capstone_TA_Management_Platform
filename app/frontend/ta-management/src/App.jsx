@@ -9,9 +9,10 @@ import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
 import ApplicationForm from "./pages/Student/ApplicationForm";
 import StudentDashboard from "./pages/Student_Dashboard";
 import ProfilePage from "./pages/ProfilePage";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
 import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
+import UserManagement from "./pages/Admin/UserManagement";
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -26,6 +27,7 @@ import ViewStudentApplication from "./pages/Scheduler/Scheduler_ViewApplication"
 import InstructorProfile from "./pages/Instructor/instructor-profile";
 import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-management";
 import MyCourses from "./pages/Instructor_MyCourses";
+import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
 
 function App() {
   return (
@@ -107,6 +109,17 @@ function App() {
         }
       />
 
+<Route
+        path="/ta-requirements"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <InstructorTARequirements />
+          </ProtectedRoute>
+        }
+      />
+
+
+
       {/* Accessible to: scheduler --------------- */}
       <Route
         path="/scheduler-dashboard"
@@ -177,6 +190,14 @@ function App() {
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <UserManagement />
           </ProtectedRoute>
         }
       />
