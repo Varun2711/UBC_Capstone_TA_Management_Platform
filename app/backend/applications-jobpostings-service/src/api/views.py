@@ -240,7 +240,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         if user_type == 'student' and user_id:
             student_model_id = self.get_student_model_id(user_id)
             if student_model_id:
-                serializer.save(student_id=student_model_id)
+                application = serializer.save(student_id=student_model_id)
+                self._send_application_confirmation_email(application)
             else:
                 raise serializers.ValidationError("Could not find a matching student record for this user.")
         else:
@@ -335,6 +336,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                             )
                             response_objects.append(response_obj)
                 
+                # Send confirmation email (linked to notification service)
+                self._send_application_confirmation_email(application)
+
                 # Return the complete application with responses
                 complete_serializer = ApplicationSerializer(application)
                 return Response(complete_serializer.data, status=status.HTTP_201_CREATED)
@@ -349,7 +353,49 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 {"error": f"An error occurred: {str(e)}"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    # helper method to send confirmation email via notification service 
+    def _send_application_confirmation_email(self, application):
+        """Send confirmation email to student after application submission"""
+        import requests
+        from django.utils import timezone
+
+        print(f"DEBUG: Starting email send for application {application.application_id}")
+        print(f"DEBUG: Student email: {application.student.email}")
         
+        try:
+            # Prepare the email data
+            email_data = {
+                'student_email': application.student.email,
+                'student_name': application.student.name,
+                'course_code': application.posting.title if application.posting else 'N/A',
+                'course_name': application.posting.description if application.posting else '',
+                'application_date': application.applied_at.strftime('%B %d, %Y at %I:%M %p')
+            }
+
+            print(f"DEBUG: Email data prepared: {email_data}")
+            
+            # Make request to notification service
+            notification_url = 'http://notification-service:8006/api/notifications/send_application_received/'
+            
+            response = requests.post(
+                notification_url, 
+                json=email_data, 
+                timeout=10
+            )
+
+            print(f"DEBUG: Response status: {response.status_code}")
+            print(f"DEBUG: Response text: {response.text}")
+            
+            if response.status_code == 200:
+                print(f"Application confirmation email sent to {application.student.email}")
+            else:
+                print(f"Failed to send email: {response.status_code} - {response.text}")
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending confirmation email: {str(e)}")
+        except Exception as e:
+            print(f"Unexpected error sending email: {str(e)}")
 
     @action(detail=False, methods=['get'], url_path=r'by-student/(?P<student_id>\d+)') 
     def by_student(self, request, student_id=None):
