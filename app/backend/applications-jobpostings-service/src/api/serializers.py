@@ -160,7 +160,7 @@ class JobPostingSerializer(serializers.ModelSerializer):
 
     term_id = serializers.PrimaryKeyRelatedField(
         queryset=Term.objects.all(),
-        source='term'     
+        source='term'       
     )
 
     created_by_id = serializers.PrimaryKeyRelatedField(
@@ -252,7 +252,9 @@ class ApplicationSerializer(serializers.ModelSerializer):
     termSelection_id = serializers.PrimaryKeyRelatedField(
         queryset = Term.objects.all(),
         source = 'termSelection',
-        write_only = True
+        write_only = True,
+        required=False,
+        allow_null=True    
     )
 
     responses = ApplicationResponseSerializer(many=True, read_only=True)
@@ -308,8 +310,7 @@ class ApplicationShortListSerializer(serializers.ModelSerializer):
     # For write operations - use IDs
     application_id = serializers.PrimaryKeyRelatedField(
         queryset=Application.objects.all(),
-        source='application',
-        write_only=True
+        source='application'        
     )
     created_by_id = serializers.PrimaryKeyRelatedField(
         queryset=TAScheduler.objects.all(),
@@ -319,15 +320,15 @@ class ApplicationShortListSerializer(serializers.ModelSerializer):
         allow_null= True
     )
     
+   
     # For read operations - use nested serializers
-    application = ApplicationSerializer(read_only=True)
-    created_by = TAschedulerSerializer(read_only=True)
+    #application = ApplicationSerializer(read_only=True)
+    #created_by = TAschedulerSerializer(read_only=True)
     
     class Meta:
         model = ApplicationShortList
         fields = [
-            'id', 'application_id', 'application', 
-            'created_by_id', 'created_by', 
-            'created_at', 'notes'  # Include the new fields
+            'id', 'application_id', 
+            'created_by_id', 'created_at', 'notes'  # Include the new fields
         ]
         read_only_fields = ['id', 'created_at']

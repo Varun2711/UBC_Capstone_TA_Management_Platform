@@ -22,6 +22,8 @@ load_dotenv('../../.env')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Add src directory to Python path so Django can find api module
+sys.path.insert(0, str(BASE_DIR))
 sys.path.insert(0, os.path.join(BASE_DIR.parent, 'shared-utils'))
 
 
@@ -50,7 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api.apps.CourseApiConfig',
+    'api',
     'rest_framework',
     'django_filters',
     'corsheaders',

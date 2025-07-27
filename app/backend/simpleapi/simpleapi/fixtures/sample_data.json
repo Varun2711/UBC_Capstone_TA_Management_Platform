@@ -194,7 +194,7 @@
     "fields": {
       "code": "W2025 Term 1",
       "description": "Winter 2025 Term 1",
-      "subsetOf": null,
+      "subsetOf": 3,
       "start": "2025-01-06",
       "end": "2025-04-04",
       "startCalendarYear": 2025,
@@ -211,7 +211,7 @@
     "fields": {
       "code": "W2025 Term 2",
       "description": "Winter 2025 Term 2",
-      "subsetOf": null,
+      "subsetOf": 3,
       "start": "2025-01-06",
       "end": "2025-04-04",
       "startCalendarYear": 2025,
@@ -590,7 +590,8 @@
       "created_by": 3,
       "term": 1,
       "requirements": "Strong programming skills in Python, excellent communication skills, previous tutoring or teaching experience preferred. Must be enrolled as a graduate student.",
-      "status": "open"
+      "status": "open",
+      "form_template": 1
     }
   },
   {
@@ -605,7 +606,8 @@
       "created_by": 3,
       "term": 2,
       "requirements": "Must be a registered student.",
-      "status": "open"
+      "status": "open",
+      "form_template": 1
     }
   },
   {
@@ -1119,7 +1121,11 @@
       "course": 3,
       "instructor": 2,
       "academic_term": 1,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440003",
+        "550e8400-e29b-41d4-a716-446655440005"
+      ]
     }
   },
   {
@@ -1130,7 +1136,11 @@
       "course": 4,
       "instructor": 3,
       "academic_term": 1,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440007",
+        "550e8400-e29b-41d4-a716-446655440009"
+      ]
     }
   },
   {
@@ -1141,7 +1151,11 @@
       "course": 5,
       "instructor": 2,
       "academic_term": 2,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440010",
+        "550e8400-e29b-41d4-a716-446655440012"
+      ]
     }
   },
   {
@@ -1163,7 +1177,11 @@
       "course": 7,
       "instructor": 3,
       "academic_term": 3,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440004",
+        "550e8400-e29b-41d4-a716-446655440006"
+      ]
     }
   },
   {
@@ -1185,7 +1203,11 @@
       "course": 9,
       "instructor": 4,
       "academic_term": 1,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440013",
+        "550e8400-e29b-41d4-a716-446655440015"
+      ]
     }
   },
   {
@@ -1218,7 +1240,11 @@
       "course": 12,
       "instructor": 4,
       "academic_term": 1,
-      "section_number": "001"
+      "section_number": "001",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440008",
+        "550e8400-e29b-41d4-a716-446655440011"
+      ]
     }
   },
   {
@@ -1251,7 +1277,11 @@
       "course": 1,
       "instructor": 2,
       "academic_term": 1,
-      "section_number": "002"
+      "section_number": "002",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440014",
+        "550e8400-e29b-41d4-a716-446655440016"
+      ]
     }
   },
   {
@@ -1262,7 +1292,11 @@
       "course": 2,
       "instructor": 3,
       "academic_term": 2,
-      "section_number": "002"
+      "section_number": "002",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002"
+      ]
     }
   },
   {
@@ -1355,9 +1389,7 @@
       "academic_term": 3,
       "section_number": "T01",
       "session_type": "tutorial",
-      "time_slots": [
-        "550e8400-e29b-41d4-a716-446655440016"
-      ]
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440016"]
     }
   },
   {
@@ -1370,9 +1402,7 @@
       "academic_term": 3,
       "section_number": "L01",
       "session_type": "lab",
-      "time_slots": [
-        "550e8400-e29b-41d4-a716-446655440017"
-      ]
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440017"]
     }
   },
   {
