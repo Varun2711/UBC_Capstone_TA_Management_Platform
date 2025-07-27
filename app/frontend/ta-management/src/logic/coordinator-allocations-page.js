@@ -64,4 +64,14 @@ export const fetchOffers = async () => {
   const data = await response.json();
   return data;
 };
+
+export const fetchCourseOfferingDetails = async (courseOfferingId) => {
+  const response = await fetch(`${API_URL}/course-term-service/course-offerings/${courseOfferingId}/`, {
+    headers: getAuthHeaders()
+});
+  if (!response.ok) throw new Error(`Failed to fetch offer for course offering id: ${courseOfferingId}`);
+  
+  const data = await response.json();
+  return data;
+};
 // Add more functions as needed

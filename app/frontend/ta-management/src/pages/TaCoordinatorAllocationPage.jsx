@@ -989,6 +989,8 @@ export default function TAAllocationPage() {
   console.log("highlightedSlots just now got declared again. it is with selectedTA: ", selectedTA)
   console.log("highlightedSlots: ", highlightedSlots);
 
+  console.log("Offers state variable is: ", offers);
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -1569,8 +1571,8 @@ export default function TAAllocationPage() {
               {/* Added Offers Tab */}
               <TabsContent value="added-offers">
                 <AddedOffersTab 
-                  addedOffers={addedOffers} 
-                  setAddedOffers={setAddedOffers}
+                  offers={offers}
+                  setOffers={setOffers}
                   activeOffers={activeOffers}
                   setActiveOffers={setActiveOffers}
                   studentCurrentHours={studentCurrentHours}
