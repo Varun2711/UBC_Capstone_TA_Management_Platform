@@ -1,127 +1,136 @@
-import { render, screen , cleanup } from '@testing-library/react';
-import { vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CourseFilters } from '@/components/scheduler/course_management/course-filters';
-import { Search, ChevronDown, ChevronUp, Check } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronUp } from 'lucide-react';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
-  Search: ({ className }) => <svg data-testid="search-icon" className={className} />,
-  ChevronDown: ({ className }) => <svg data-testid="chevron-down-icon" className={className} />,
-  ChevronUp: ({ className }) => <svg data-testid="chevron-up-icon" className={className} />,
-  Check: ({ className }) => <svg data-testid="check-icon" className={className} />,
+  Search: () => <span data-testid="search-icon" />,
+  Filter: () => <span data-testid="filter-icon" />,
+  ChevronDown: () => <span data-testid="chevron-down-icon" />,
+  Check: () => <span data-testid="check-icon" />,
+  ChevronUp: () => <span data-testid="chevron-up-icon" />,
 }));
 
-// Polyfill scrollIntoView for JSDOM
-beforeAll(() => {
-    window.HTMLElement.prototype.scrollIntoView = vi.fn();
-  });
-  
-
-describe('CourseFilters Component', () => {
-  const user = userEvent.setup();
-  const mockOnSearchChange = vi.fn();
-  const mockOnDepartmentChange = vi.fn();
-  const mockOnYearChange = vi.fn();
-  const mockProps = {
-    searchQuery: '',
-    onSearchChange: mockOnSearchChange,
-    selectedDepartment: 'all',
-    onDepartmentChange: mockOnDepartmentChange,
-    selectedYear: 'all',
-    onYearChange: mockOnYearChange,
-    departments: ['CS', 'Math', 'Physics'],
-    years: ['2023', '2024', '2025'],
-  };
+describe('CourseFilters', () => {
+  let mockOnSearchChange;
+  let mockOnDepartmentChange;
+  let mockOnYearChange;
+  let mockOnTermChange;
 
   beforeEach(() => {
+    mockOnSearchChange = vi.fn();
+    mockOnDepartmentChange = vi.fn();
+    mockOnYearChange = vi.fn();
+    mockOnTermChange = vi.fn();
     vi.clearAllMocks();
-    render(<CourseFilters {...mockProps} />);
   });
 
-  it('renders search input, department select, and year select', () => {
-    expect(screen.getByPlaceholderText('Search courses...')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /Department/i })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /Year/i })).toBeInTheDocument();
-    expect(screen.getByTestId('search-icon')).toBeInTheDocument();
-    expect(screen.getAllByTestId('chevron-down-icon')).toHaveLength(2);
-  });
-
-  it('renders search input with correct initial value and triggers onSearchChange', async () => {
-    const input = screen.getByPlaceholderText('Search courses...');
-    expect(input).toHaveValue('');
-    expect(input).toHaveClass('pl-10');
-
-    await user.type(input, 'CS101');
-    expect(mockOnSearchChange).toHaveBeenCalledTimes(5); // One call per character
-    expect(mockOnSearchChange).toHaveBeenLastCalledWith('1');
-  });
-
-  it('renders department select with correct initial value and opens dropdown', async () => {
-    const departmentSelect = screen.getByRole('combobox', { name: /Department/i });
-    expect(departmentSelect).toHaveTextContent('All Departments');
-    expect(departmentSelect).toHaveAttribute('data-state', 'closed');
-    expect(departmentSelect).toHaveAttribute('aria-expanded', 'false');
-
-    await user.click(departmentSelect);
-
-    expect(departmentSelect).toHaveAttribute('aria-expanded', 'true');
-  });
-
-  it('triggers onDepartmentChange when a department is selected', () => {
-    mockOnDepartmentChange('CS');
-    expect(mockOnDepartmentChange).toHaveBeenCalledWith('CS');
-    expect(mockOnDepartmentChange).toHaveBeenCalledTimes(1);
-  });
-
-  it('renders year select with correct initial value and opens dropdown', async () => {
-    const yearSelect = screen.getByRole('combobox', { name: /Year/i });
-    expect(yearSelect).toHaveTextContent('All Years');
-    expect(yearSelect).toHaveAttribute('data-state', 'closed');
-    expect(yearSelect).toHaveAttribute('aria-expanded', 'false');
-
-    await user.click(yearSelect);
-    expect(yearSelect).toHaveAttribute('aria-expanded', 'true');
-  });
-
-
-  it('triggers onYearChange when a year is selected', () => {
-    mockOnYearChange('2024');
-    expect(mockOnYearChange).toHaveBeenCalledWith('2024');
-    expect(mockOnYearChange).toHaveBeenCalledTimes(1);
-  });
-
-  it('applies correct styling to the search icon', () => {
-    const searchIcon = screen.getByTestId('search-icon');
-    expect(searchIcon).toHaveClass(
-      'absolute',
-      'left-3',
-      'top-1/2',
-      'transform',
-      '-translate-y-1/2',
-      'text-gray-400',
-      'h-4',
-      'w-4'
+  const renderComponent = (props = {}) => {
+    render(
+      <CourseFilters
+        searchQuery=""
+        selectedDepartment="all"
+        selectedYear="all"
+        selectedTerm="all"
+        departments={['Computer Science', 'Mathematics']}
+        years={['2024', '2025']}
+        terms={['Fall', 'Winter']}
+        onSearchChange={mockOnSearchChange}
+        onDepartmentChange={mockOnDepartmentChange}
+        onYearChange={mockOnYearChange}
+        onTermChange={mockOnTermChange}
+        {...props}
+      />
     );
+  };
+
+  it('renders search input and filter dropdowns', () => {
+    renderComponent();
+
+    expect(screen.getByPlaceholderText(/Search courses/)).toBeInTheDocument();
+    expect(screen.getByText('All Departments')).toBeInTheDocument();
+    expect(screen.getByText('All Years')).toBeInTheDocument();
+    expect(screen.getByText('All Terms')).toBeInTheDocument();
   });
 
-  it('renders the container with correct flex styling', () => {
-    const container = screen.getByPlaceholderText('Search courses...').closest('div').parentElement;
-    expect(container).toHaveClass('flex', 'flex-col', 'sm:flex-row', 'gap-4');
+  it('calls onSearchChange when typing', async () => {
+    renderComponent();
+
+    const searchInput = screen.getByPlaceholderText(/Search courses/);
+    fireEvent.change(searchInput, { target: { value: 'CS' } });
+
+    expect(mockOnSearchChange).toHaveBeenCalledWith('CS');
   });
 
-  it('renders department select with updated value', () => {
-    cleanup(); // Clean up previous render
-    render(<CourseFilters {...mockProps} selectedDepartment="CS" />);
-    screen.logTestingPlaygroundURL();
-    expect(screen.getByRole('combobox', { name: /Department/i })).toHaveTextContent('CS');
+  it('displays current search value', () => {
+    renderComponent({ searchQuery: 'Math' });
+
+    expect(screen.getByDisplayValue('Math')).toBeInTheDocument();
   });
 
-  it('renders year select with updated value', () => {
-    cleanup(); // Clean up previous render
-    render(<CourseFilters {...mockProps} selectedYear="2024" />);
-    expect(screen.getByRole('combobox', { name: /Year/i })).toHaveTextContent('2024');
+  it('opens department dropdown and selects option', async () => {
+    renderComponent();
+
+    // Click dropdown trigger
+    fireEvent.click(screen.getByText('All Departments'));
+
+    // Should show options
+    expect(screen.getByText('Computer Science')).toBeInTheDocument();
+    expect(screen.getByText('Mathematics')).toBeInTheDocument();
+
+    // Select option
+    fireEvent.click(screen.getByText('Computer Science'));
+    expect(mockOnDepartmentChange).toHaveBeenCalledWith('Computer Science');
+  });
+
+  it('opens year dropdown and selects option', async () => {
+    renderComponent();
+
+    fireEvent.click(screen.getByText('All Years'));
+    expect(screen.getByText('2024')).toBeInTheDocument();
+    
+    fireEvent.click(screen.getByText('2024'));
+    expect(mockOnYearChange).toHaveBeenCalledWith('2024');
+  });
+
+  it('opens term dropdown and selects option', async () => {
+    renderComponent();
+
+    fireEvent.click(screen.getByText('All Terms'));
+    expect(screen.getByText('Fall')).toBeInTheDocument();
+    
+    fireEvent.click(screen.getByText('Fall'));
+    expect(mockOnTermChange).toHaveBeenCalledWith('Fall');
+  });
+
+  it('displays selected values', () => {
+    renderComponent({
+      selectedDepartment: 'Computer Science',
+      selectedYear: '2024',
+      selectedTerm: 'Fall'
+    });
+
+    expect(screen.getByText('Computer Science')).toBeInTheDocument();
+    expect(screen.getByText('2024')).toBeInTheDocument();
+    expect(screen.getByText('Fall')).toBeInTheDocument();
+  });
+
+  it('shows filter summary', () => {
+    renderComponent();
+    expect(screen.getByText(/Showing all departments/)).toBeInTheDocument();
+  });
+
+  it('handles empty arrays', () => {
+    renderComponent({
+      departments: [],
+      years: [],
+      terms: []
+    });
+
+    expect(screen.getByText('All Departments')).toBeInTheDocument();
+    expect(screen.getByText('All Years')).toBeInTheDocument();
+    expect(screen.getByText('All Terms')).toBeInTheDocument();
   });
 });

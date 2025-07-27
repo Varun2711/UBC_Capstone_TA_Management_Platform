@@ -243,6 +243,7 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
     )
     
     instructor_info = serializers.StringRelatedField(source='instructor', read_only=True)
+    instructor_id_read = serializers.IntegerField(source='instructor.id', read_only=True)  # Add this line
     instructor_id = serializers.PrimaryKeyRelatedField(
         source='instructor',
         queryset=Instructor.objects.all(),
@@ -251,22 +252,37 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
         write_only=True
     )
     
+    # Many-to-many time slots - support both ID-based and data-based creation
+    time_slots_info = TimeSlotSerializer(source='time_slots', many=True, read_only=True)
+    time_slot_ids = serializers.PrimaryKeyRelatedField(
+        source='time_slots',
+        queryset=TimeSlot.objects.all(),
+        many=True,
+        required=False,
+        write_only=True
+    )
+    
+    # Accept time slot data for auto-creation/linking
+    time_slots = TimeSlotInputSerializer(many=True, required=False, write_only=True)
+    
     class Meta:
         model = CourseOffering
         fields = [
             'course_offering_id',
             'course_info',
             'course_id',
-            'course',  # Add for test compatibility
             'section_number',
             'term_info',
             'term_id',
-            'academic_term',  # Add for test compatibility
             'instructor_info',
+            'instructor_id_read',  # Add this to fields
             'instructor_id',
-            'instructor'  # Add for test compatibility
+            'time_slots_info',
+            'time_slot_ids',
+            'time_slots',
+            'is_active'
         ]
-        read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info']
+        read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info', 'instructor_id_read', 'time_slots_info']  # Add instructor_id_read here
     
     def validate_section_number(self, value):
         """
@@ -275,6 +291,96 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError("Section number cannot be empty.")
         return value.strip().upper()
+    
+    def validate_term_id(self, value):
+        """
+        Validate that the academic term is active (not archived).
+        """
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"Cannot create course offering for archived term '{value.code}'. "
+                "Please select an active term."
+            )
+        return value
+    
+    def validate_course_id(self, value):
+        """
+        Validate that the course is active (not archived).
+        """
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"Cannot create course offering for archived course '{value.course_number}'. "
+                "Please select an active course."
+            )
+        return value
+
+    def _handle_time_slots(self, validated_data):
+        """
+        Helper method to handle time slot creation/linking.
+        Returns a list of TimeSlot objects to be assigned to the CourseOffering.
+        """
+        # Extract time slot data - both fields map to 'time_slots' in validated_data due to source mapping
+        # We need to check the original data to see which format was used
+        time_slot_objects = []
+        
+        # Get the time slots from validated_data (could be from either field)
+        time_slots_value = validated_data.pop('time_slots', [])
+        
+        # Check if we have TimeSlot objects (from time_slot_ids) or data dicts (from time_slots)
+        for slot_item in time_slots_value:
+            if hasattr(slot_item, 'slot_id'):
+                # This is already a TimeSlot object from PrimaryKeyRelatedField
+                time_slot_objects.append(slot_item)
+            else:
+                # This is slot data for creation/finding
+                # Use the input serializer for proper validation
+                slot_serializer = TimeSlotInputSerializer(data=slot_item)
+                if slot_serializer.is_valid(raise_exception=True):
+                    validated_slot_data = slot_serializer.validated_data
+                    
+                    # Try to find existing time slot first, create if not found
+                    time_slot, created = TimeSlot.objects.get_or_create(
+                        day=validated_slot_data['day'],
+                        start_time=validated_slot_data['start_time'],
+                        end_time=validated_slot_data['end_time']
+                    )
+                    time_slot_objects.append(time_slot)
+        
+        return time_slot_objects
+    
+    def create(self, validated_data):
+        """
+        Custom create method to handle time slot creation/linking.
+        """
+        # Handle time slots
+        time_slot_objects = self._handle_time_slots(validated_data)
+        
+        # Create the CourseOffering
+        course_offering = CourseOffering.objects.create(**validated_data)
+        
+        # Assign time slots
+        if time_slot_objects:
+            course_offering.time_slots.set(time_slot_objects)
+        
+        return course_offering
+    
+    def update(self, instance, validated_data):
+        """
+        Custom update method to handle time slot updates.
+        """
+        # Handle time slots
+        time_slot_objects = self._handle_time_slots(validated_data)
+        
+        # Update the CourseOffering fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update time slots if provided
+        if time_slot_objects:
+            instance.time_slots.set(time_slot_objects)
+        
+        return instance
 
 
 # SharedSession Serializer
@@ -339,7 +445,8 @@ class SharedSessionSerializer(serializers.ModelSerializer):
             'student_id',
             'time_slots_info',
             'time_slot_ids',
-            'time_slots'
+            'time_slots',
+            'is_active'
         ]
         read_only_fields = ['shared_session_id', 'session_type_display', 'course_info', 'academic_term_info', 'student_info', 'time_slots_info']
     
@@ -370,6 +477,28 @@ class SharedSessionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Section number cannot be empty.")
         return value.strip().upper()
     
+    def validate_academic_term_id(self, value):
+        """
+        Validate that the academic term is active (not archived).
+        """
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"Cannot create shared session for archived term '{value.code}'. "
+                "Please select an active term."
+            )
+        return value
+    
+    def validate_course_id(self, value):
+        """
+        Validate that the course is active (not archived).
+        """
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"Cannot create shared session for archived course '{value.course_number}'. "
+                "Please select an active course."
+            )
+        return value
+
     def _handle_time_slots(self, validated_data):
         """
         Helper method to handle time slot creation/linking.
@@ -488,6 +617,34 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f"Request description at index {i} cannot be empty.")
             # Trim whitespace from each description
             value[i] = description.strip()
+        
+        return value
+    
+    def validate_course_offering_id(self, value):
+        """
+        Validate that the course offering and its references are active.
+        """
+        if value:
+            # Check if the course offering itself is active
+            if not value.is_active:
+                raise serializers.ValidationError(
+                    f"Cannot create instructor request for archived course offering '{value}'. "
+                    "Please select an active course offering."
+                )
+            
+            # Check if the associated term is active
+            if not value.academic_term.is_active:
+                raise serializers.ValidationError(
+                    f"Cannot create instructor request for course offering in archived term '{value.academic_term.code}'. "
+                    "Please select a course offering from an active term."
+                )
+            
+            # Check if the associated course is active
+            if not value.course.is_active:
+                raise serializers.ValidationError(
+                    f"Cannot create instructor request for course offering with archived course '{value.course.course_number}'. "
+                    "Please select a course offering with an active course."
+                )
         
         return value
     

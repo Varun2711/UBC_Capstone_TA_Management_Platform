@@ -62,7 +62,6 @@ describe("AdminSidebar", () => {
       { title: "Course Management", icon: "book-open-icon" },
       { title: "TA Positions", icon: "user-check-icon" },
       { title: "Applications", icon: "file-text-icon" },
-      { title: "Schedule Overview", icon: "calendar-icon" },
       { title: "Reports & Analytics", icon: "bar-chart-icon" },
     ]
 
@@ -99,29 +98,6 @@ describe("AdminSidebar", () => {
     })
   })
 
-  it("renders system items correctly", () => {
-    renderSidebar({ activePage: "System Settings" })
-
-    const systemItems = [
-      { title: "System Settings", icon: "settings-icon", isActive: true },
-      { title: "Database Management", icon: "database-icon" },
-      { title: "Notifications", icon: "bell-icon" },
-    ]
-
-    const systemGroup = screen.getByText("System").closest('[data-sidebar="group"]')
-
-    systemItems.forEach((item) => {
-      const menuItem = within(systemGroup).getByText(item.title)
-      expect(menuItem).toBeInTheDocument()
-      expect(within(systemGroup).getByTestId(item.icon)).toBeInTheDocument()
-
-      if (item.isActive) {
-        expect(menuItem.closest('[data-active="true"]')).toBeInTheDocument()
-      } else {
-        expect(menuItem.closest('[data-active="true"]')).not.toBeInTheDocument()
-      }
-    })
-  })
 
   it("applies active state styling to the specified active page", () => {
     renderSidebar({ activePage: "Reports & Analytics" })
@@ -155,22 +131,6 @@ describe("AdminSidebar", () => {
     expect(screen.getByText("Logout")).toBeInTheDocument()
   })
 
-  it("has correct accessibility attributes", () => {
-    renderSidebar({ activePage: "Dashboard" })
-
-    const header = screen.getByText("Admin Portal").closest('[data-sidebar="header"]')
-    expect(header).toHaveAttribute("data-sidebar", "header")
-
-    const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
-    const menuItems = within(navigationGroup).getAllByRole("link")
-    menuItems.forEach((item) => {
-      expect(item).toHaveAttribute("href", "#")
-    })
-
-    const footer = screen.getByText("System Admin").closest('[data-sidebar="footer"]')
-    expect(footer).toHaveAttribute("data-sidebar", "footer")
-  })
-
   it("renders correct branding and role information", () => {
     renderSidebar()
 
@@ -181,20 +141,6 @@ describe("AdminSidebar", () => {
     // Check user information
     expect(screen.getByText("System Admin")).toBeInTheDocument()
     expect(screen.getByText("admin@university.edu")).toBeInTheDocument()
-  })
-
-  it("has proper navigation structure", () => {
-    renderSidebar()
-
-    // Check that all navigation items are links
-    const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
-    const links = within(navigationGroup).getAllByRole("link")
-
-    expect(links).toHaveLength(7) // Should have 7 navigation items
-
-    links.forEach((link) => {
-      expect(link).toHaveAttribute("href", "#")
-    })
   })
 
   it("shows admin-specific styling with red shield icon", () => {

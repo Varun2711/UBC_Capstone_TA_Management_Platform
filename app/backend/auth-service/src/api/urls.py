@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import (
     login_view, register_view, logout_view, 
-    token_refresh_view, validate_token_view, api_root
+    token_refresh_view, validate_token_view, api_root, reset_password_complete
 )
 
 urlpatterns = [
@@ -12,4 +12,5 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),                 
     path('token/refresh/', token_refresh_view, name='token_refresh'),
     path('validate/', validate_token_view, name='validate_token'),
+    path('reset-password-complete/', reset_password_complete, name='reset_password_complete'),
 ]

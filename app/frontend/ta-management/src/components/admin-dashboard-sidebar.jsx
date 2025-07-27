@@ -45,17 +45,17 @@ const navigationItems = [
   {
     title: "Dashboard",
     icon: Home,
-    url: "#",
+    url: "/admin-dashboard",
   },
   {
     title: "User Management",
     icon: Users,
-    url: "#",
+    url: "/user-management",
   },
   {
     title: "Course Management",
     icon: BookOpen,
-    url: "#",
+    url: "/admin-course-management",
   },
   {
     title: "TA Positions",
@@ -67,11 +67,7 @@ const navigationItems = [
     icon: FileText,
     url: "#",
   },
-  {
-    title: "Schedule Overview",
-    icon: Calendar,
-    url: "#",
-  },
+  
   {
     title: "Reports & Analytics",
     icon: BarChart3,
@@ -85,11 +81,11 @@ const systemItems = [
     icon: Settings,
     url: "#",
   },
-  {
-    title: "Database Management",
-    icon: Database,
-    url: "#",
-  },
+  // {
+  //   title: "Database Management",
+  //   icon: Database,
+  //   url: "#",
+  // },
   {
     title: "Notifications",
     icon: Bell,

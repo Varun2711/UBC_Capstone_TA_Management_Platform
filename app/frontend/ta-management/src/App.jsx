@@ -6,12 +6,13 @@ import UnauthorizedPage from "./pages/UnauthorizedPage";
 
 import LoginPage from "./pages/LoginPage";
 import TASchedulerDashboard from "./pages/Scheduler_Dashboard";
-import ApplicationForm from "./pages/ApplicationForm";
+import ApplicationForm from "./pages/Student/ApplicationForm";
 import StudentDashboard from "./pages/Student_Dashboard";
 import ProfilePage from "./pages/ProfilePage";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
 import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
+import UserManagement from "./pages/Admin/UserManagement";
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -19,13 +20,14 @@ import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
-import ViewJobPostings from "./pages/ViewJobPostings_Student";
+import ViewJobPostings from "./pages/Student/Student_ViewJobPostings";
 import InstructorDashboard from "./pages/InstructorDashboard";
-import ManageApplications from "./pages/Coordinator_ManageApplications";
-import ViewStudentApplication from "./pages/Coordinator_ViewApplication";
+import ManageApplications from "./pages/Scheduler/Scheduler_ManageApplications";
+import ViewStudentApplication from "./pages/Scheduler/Scheduler_ViewApplication";
 import InstructorProfile from "./pages/Instructor/instructor-profile";
-
+import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-management";
 import MyCourses from "./pages/Instructor_MyCourses";
+import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
 
 function App() {
   return (
@@ -42,23 +44,23 @@ function App() {
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
-    {/* Accessible to: student ---------------- */}
-      <Route 
-        path="/student-dashboard" 
+      {/* Accessible to: student ---------------- */}
+      <Route
+        path="/student-dashboard"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
             <StudentDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
 
-      <Route 
-        path="/profile" 
+      <Route
+        path="/profile"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
             <ProfilePage />
           </ProtectedRoute>
-        } 
+        }
       />
 
       <Route
@@ -69,33 +71,33 @@ function App() {
           </ProtectedRoute>
         }
       />
-          
-      <Route 
-        path="/apply" 
+
+      <Route
+        path="/apply"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
             <ViewJobPostings />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Accessible to: instructor -------------- */}
-      <Route 
-        path="/instructor-dashboard" 
+      <Route
+        path="/instructor-dashboard"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
             <InstructorDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
 
-      <Route 
-        path="/instructor-profile" 
+      <Route
+        path="/instructor-profile"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
             <InstructorProfile />
           </ProtectedRoute>
-        } 
+        }
       />
 
       <Route
@@ -107,41 +109,52 @@ function App() {
         }
       />
 
+<Route
+        path="/ta-requirements"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <InstructorTARequirements />
+          </ProtectedRoute>
+        }
+      />
+
+
+
       {/* Accessible to: scheduler --------------- */}
-      <Route 
-        path="/scheduler-dashboard" 
+      <Route
+        path="/scheduler-dashboard"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
             <TASchedulerDashboard />
-          </ProtectedRoute> 
-        } 
+          </ProtectedRoute>
+        }
       />
-      
-      <Route 
-        path="/user-profile-scheduler" 
+
+      <Route
+        path="/user-profile-scheduler"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
             <UserProfile />
           </ProtectedRoute>
-        } 
+        }
       />
 
-      <Route 
-        path="/ta-coordinator-allocation" 
+      <Route
+        path="/ta-coordinator-allocation"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
             <TaCoordinatorAllocationPage />
           </ProtectedRoute>
-        } 
+        }
       />
 
-      <Route 
-        path="/course-management" 
+      <Route
+        path="/course-management"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
             <CourseManagement />
           </ProtectedRoute>
-        } 
+        }
       />
 
       <Route
@@ -153,15 +166,15 @@ function App() {
         }
       />
 
-      <Route 
-        path="/manage-applications" 
+      <Route
+        path="/manage-applications"
         element={
-          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}> 
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
             <ManageApplications />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       <Route
         path="manage-applications/view/:applicationid"
         element={
@@ -172,15 +185,31 @@ function App() {
       />
 
       {/* Accessible to: admin ------------------- */}
-      <Route 
-        path="/admin-dashboard" 
+      <Route
+        path="/admin-dashboard"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
             <AdminDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-   
+      <Route
+        path="/user-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <UserManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manage-templates"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <JobPostingManagerPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Add more routes if needed */}
     </Routes>
   );
