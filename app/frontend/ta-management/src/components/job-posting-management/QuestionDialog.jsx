@@ -209,6 +209,9 @@ const QuestionDialog = ({ isOpen, onClose, question, onSave }) => {
     formData.question_type
   );
 
+  // Check if this is a term selection question
+  const isTermSelection = formData.field_name === "termSelection";
+
   // Error message component
   const ErrorMessage = ({ error }) => {
     if (!error) return null;
@@ -336,112 +339,138 @@ const QuestionDialog = ({ isOpen, onClose, question, onSave }) => {
           {needsOptions && (
             <div>
               <Label>Options *</Label>
-              <div className="bg-muted p-3 rounded-lg text-sm text-muted-foreground mb-3">
-                <div className="flex items-start gap-2">
-                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Understanding Options:</p>
-                    <p className="mt-1">
-                      <strong>Value:</strong> Stored in database (e.g.,
-                      "citizen", "pr", "international") - must be consistent for
-                      data analysis
-                    </p>
-                    <p>
-                      <strong>Label:</strong> What users see on the form (e.g.,
-                      "Canadian Citizen", "Permanent Resident") - can be updated
-                      for clarity
-                    </p>
+              {/* Show special message for termSelection questions */}
+              {isTermSelection && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-blue-800 font-medium">
+                        Term Selection
+                      </p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Term options shown to the applicant will depend on the
+                        term selected for the Job Posting. For e.g. If the
+                        Winter 2025 is selected for Job Posting, then only
+                        Winter 2025 term options will be shown to the applicant.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                {(formData.options || []).map((option, index) => {
-                  const isExistingOption =
-                    isExistingNonEditable && option.value !== "";
-                  const isNewOption = !isExistingOption;
-
-                  return (
-                    <div key={index} className="flex space-x-2">
-                      <div className="flex-1">
-                        <Label className="text-xs text-muted-foreground">
-                          Value{" "}
-                          {isExistingOption && (
-                            <Lock className="h-3 w-3 inline ml-1" />
-                          )}
-                        </Label>
-                        <Input
-                          placeholder="e.g., citizen"
-                          value={option.value}
-                          disabled={isExistingOption}
-                          onChange={(e) =>
-                            updateOption(index, "value", e.target.value)
-                          }
-                          className={`${
-                            errors.options ? "border-red-500" : ""
-                          } ${
-                            isExistingOption
-                              ? "bg-muted text-muted-foreground"
-                              : ""
-                          }`}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label className="text-xs text-muted-foreground">
-                          Label
-                        </Label>
-                        <Input
-                          placeholder="e.g., Canadian Citizen"
-                          value={option.label}
-                          onChange={(e) =>
-                            updateOption(index, "label", e.target.value)
-                          }
-                          className={errors.options ? "border-red-500" : ""}
-                        />
-                      </div>
-                      <div className="flex items-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeOption(index)}
-                          type="button"
-                          disabled={isExistingOption}
-                          className={isExistingOption ? "opacity-50" : ""}
-                          title={
-                            isExistingOption
-                              ? "Cannot remove existing options from protected templates"
-                              : "Remove this option"
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <ErrorMessage error={errors.options} />
-              <Button
-                variant="outline"
-                onClick={addOption}
-                type="button"
-                className="mt-2"
-                disabled={false} // Always allow adding new options
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Option
-              </Button>
-              {isExistingNonEditable && (
-                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                  <Plus className="h-3 w-3" />
-                  You can add new options to expand this question, but existing
-                  options are protected
-                </p>
               )}
-              {formData.question_type === "ranking" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Ranking questions require at least 2 options
-                </p>
+              {!isTermSelection && (
+                <div className="bg-muted p-3 rounded-lg text-sm text-muted-foreground mb-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">Understanding Options:</p>
+                      <p className="mt-1">
+                        <strong>Value:</strong> Stored in database (e.g.,
+                        "citizen", "pr", "international") - must be consistent
+                        for data analysis
+                      </p>
+                      <p>
+                        <strong>Label:</strong> What users see on the form
+                        (e.g., "Canadian Citizen", "Permanent Resident") - can
+                        be updated for clarity
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!isTermSelection && (
+                <div className="space-y-2">
+                  {(formData.options || []).map((option, index) => {
+                    const isExistingOption =
+                      isExistingNonEditable && option.value !== "";
+                    const isNewOption = !isExistingOption;
+
+                    return (
+                      <div key={index} className="flex space-x-2">
+                        <div className="flex-1">
+                          <Label className="text-xs text-muted-foreground">
+                            Value{" "}
+                            {isExistingOption && (
+                              <Lock className="h-3 w-3 inline ml-1" />
+                            )}
+                          </Label>
+                          <Input
+                            placeholder="e.g., citizen"
+                            value={option.value}
+                            disabled={isExistingOption}
+                            onChange={(e) =>
+                              updateOption(index, "value", e.target.value)
+                            }
+                            className={`${
+                              errors.options ? "border-red-500" : ""
+                            } ${
+                              isExistingOption
+                                ? "bg-muted text-muted-foreground"
+                                : ""
+                            }`}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs text-muted-foreground">
+                            Label
+                          </Label>
+                          <Input
+                            placeholder="e.g., Canadian Citizen"
+                            value={option.label}
+                            onChange={(e) =>
+                              updateOption(index, "label", e.target.value)
+                            }
+                            className={errors.options ? "border-red-500" : ""}
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeOption(index)}
+                            type="button"
+                            disabled={isExistingOption}
+                            className={isExistingOption ? "opacity-50" : ""}
+                            title={
+                              isExistingOption
+                                ? "Cannot remove existing options from protected templates"
+                                : "Remove this option"
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {!isTermSelection && (
+                <div>
+                  <ErrorMessage error={errors.options} />
+                  <Button
+                    variant="outline"
+                    onClick={addOption}
+                    type="button"
+                    className="mt-2"
+                    disabled={false} // Always allow adding new options
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Option
+                  </Button>
+                  {isExistingNonEditable && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <Plus className="h-3 w-3" />
+                      You can add new options to expand this question, but
+                      existing options are protected
+                    </p>
+                  )}
+                  {formData.question_type === "ranking" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Ranking questions require at least 2 options
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}

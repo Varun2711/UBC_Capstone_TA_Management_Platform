@@ -243,6 +243,7 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
     )
     
     instructor_info = serializers.StringRelatedField(source='instructor', read_only=True)
+    instructor_id_read = serializers.IntegerField(source='instructor.id', read_only=True)  # Add this line
     instructor_id = serializers.PrimaryKeyRelatedField(
         source='instructor',
         queryset=Instructor.objects.all(),
@@ -274,12 +275,14 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
             'term_info',
             'term_id',
             'instructor_info',
+            'instructor_id_read',  # Add this to fields
             'instructor_id',
             'time_slots_info',
             'time_slot_ids',
-            'time_slots'
+            'time_slots',
+            'is_active'
         ]
-        read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info', 'time_slots_info']
+        read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info', 'instructor_id_read', 'time_slots_info']  # Add instructor_id_read here
     
     def validate_section_number(self, value):
         """
@@ -289,6 +292,28 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Section number cannot be empty.")
         return value.strip().upper()
     
+    def validate_term_id(self, value):
+        """
+        Validate that the academic term is active (not archived).
+        """
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"Cannot create course offering for archived term '{value.code}'. "
+                "Please select an active term."
+            )
+        return value
+    
+    def validate_course_id(self, value):
+        """
+        Validate that the course is active (not archived).
+        """
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"Cannot create course offering for archived course '{value.course_number}'. "
+                "Please select an active course."
+            )
+        return value
+
     def _handle_time_slots(self, validated_data):
         """
         Helper method to handle time slot creation/linking.
@@ -420,7 +445,8 @@ class SharedSessionSerializer(serializers.ModelSerializer):
             'student_id',
             'time_slots_info',
             'time_slot_ids',
-            'time_slots'
+            'time_slots',
+            'is_active'
         ]
         read_only_fields = ['shared_session_id', 'session_type_display', 'course_info', 'academic_term_info', 'student_info', 'time_slots_info']
     
@@ -451,6 +477,28 @@ class SharedSessionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Section number cannot be empty.")
         return value.strip().upper()
     
+    def validate_academic_term_id(self, value):
+        """
+        Validate that the academic term is active (not archived).
+        """
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"Cannot create shared session for archived term '{value.code}'. "
+                "Please select an active term."
+            )
+        return value
+    
+    def validate_course_id(self, value):
+        """
+        Validate that the course is active (not archived).
+        """
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"Cannot create shared session for archived course '{value.course_number}'. "
+                "Please select an active course."
+            )
+        return value
+
     def _handle_time_slots(self, validated_data):
         """
         Helper method to handle time slot creation/linking.
@@ -569,6 +617,34 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f"Request description at index {i} cannot be empty.")
             # Trim whitespace from each description
             value[i] = description.strip()
+        
+        return value
+    
+    def validate_course_offering_id(self, value):
+        """
+        Validate that the course offering and its references are active.
+        """
+        if value:
+            # Check if the course offering itself is active
+            if not value.is_active:
+                raise serializers.ValidationError(
+                    f"Cannot create instructor request for archived course offering '{value}'. "
+                    "Please select an active course offering."
+                )
+            
+            # Check if the associated term is active
+            if not value.academic_term.is_active:
+                raise serializers.ValidationError(
+                    f"Cannot create instructor request for course offering in archived term '{value.academic_term.code}'. "
+                    "Please select a course offering from an active term."
+                )
+            
+            # Check if the associated course is active
+            if not value.course.is_active:
+                raise serializers.ValidationError(
+                    f"Cannot create instructor request for course offering with archived course '{value.course.course_number}'. "
+                    "Please select a course offering with an active course."
+                )
         
         return value
     

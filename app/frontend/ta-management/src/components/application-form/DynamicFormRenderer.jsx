@@ -20,22 +20,54 @@ const DynamicFormRenderer = ({
   template,
   responses = {},
   setResponses,
+  dynamicResponses = {},
+  setDynamicResponses,
   errors = {},
-  currentSection = null, // If null, render all sections
+  currentSection = null,
+  fieldMapping = {},
+  termDetails = {}, // New prop for term details
 }) => {
   const [localResponses, setLocalResponses] = useState(responses);
+  const [localDynamicResponses, setLocalDynamicResponses] =
+    useState(dynamicResponses);
 
   useEffect(() => {
     setLocalResponses(responses);
   }, [responses]);
 
+  useEffect(() => {
+    setLocalDynamicResponses(dynamicResponses);
+  }, [dynamicResponses]);
+
   const handleResponseChange = useCallback(
     (fieldName, value) => {
-      const newResponses = { ...localResponses, [fieldName]: value };
-      setLocalResponses(newResponses);
-      setResponses?.(newResponses);
+      // Check if this field exists in default responses
+      const shouldUseDefaultResponses = fieldMapping[fieldName] === true;
+
+      if (shouldUseDefaultResponses) {
+        // Store in default responses
+        const newResponses = { ...localResponses, [fieldName]: value };
+        setLocalResponses(newResponses);
+        setResponses?.(newResponses);
+        console.log("Updated default resp", newResponses);
+      } else {
+        // Store in dynamic responses
+        const newDynamicResponses = {
+          ...localDynamicResponses,
+          [fieldName]: value,
+        };
+        setLocalDynamicResponses(newDynamicResponses);
+        setDynamicResponses?.(newDynamicResponses);
+        //   console.log("Updated dynamic resp", newDynamicResponses);
+      }
     },
-    [localResponses, setResponses]
+    [
+      localResponses,
+      localDynamicResponses,
+      setResponses,
+      setDynamicResponses,
+      fieldMapping,
+    ]
   );
 
   const renderQuestion = (question) => {
@@ -50,9 +82,21 @@ const DynamicFormRenderer = ({
       validation_rules = {},
     } = question;
 
+    //if field_name == termSelection, use the term details from the parent component
+
     // Transform options to consistent array format
     let normalizedOptions = [];
-    if (Array.isArray(options)) {
+
+    // Special handling for termSelection field - use termDetails from props
+    if (
+      field_name === "termSelection" &&
+      termDetails &&
+      Array.isArray(termDetails) &&
+      termDetails.length > 0
+    ) {
+      //console.log("Using termDetails for termSelection:", termDetails);
+      normalizedOptions = termDetails;
+    } else if (Array.isArray(options)) {
       // Already in correct format
       normalizedOptions = options;
     } else if (typeof options === "object" && options !== null) {
@@ -63,7 +107,20 @@ const DynamicFormRenderer = ({
       }));
     }
 
-    const value = localResponses[field_name] || "";
+    // Get value from appropriate responses object
+    const shouldUseDefaultResponses = fieldMapping[field_name] === true;
+    const value = shouldUseDefaultResponses
+      ? localResponses[field_name] || ""
+      : localDynamicResponses[field_name] || "";
+
+    // Debug value retrieval
+    // console.log(`Getting value for ${field_name}:`, {
+    //   shouldUseDefaultResponses,
+    //   valueFromDefault: localResponses[field_name],
+    //   valueFromDynamic: localDynamicResponses[field_name],
+    //   finalValue: value,
+    // });
+
     const error = errors[field_name];
 
     const questionLabel = (
@@ -273,24 +330,24 @@ const DynamicFormRenderer = ({
     }
 
     return (
-      <Card key={section.section_id} className="col-span-full">
-        <CardHeader>
-          <CardTitle className="flex items-center">
+      <div className="space-y-8 col-span-full">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
             {section.name}
             {section.is_required && (
               <span className="text-red-500 ml-1">*</span>
             )}
-          </CardTitle>
+          </h2>
           {section.description && (
             <p className="text-muted-foreground">{section.description}</p>
           )}
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div>
           {section.questions
             .sort((a, b) => a.order - b.order)
             .map(renderQuestion)}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 
@@ -304,7 +361,15 @@ const DynamicFormRenderer = ({
 
   return (
     <div className="space-y-6">
-      {template.sections.sort((a, b) => a.order - b.order).map(renderSection)}
+      {template.sections
+        .sort((a, b) => a.order - b.order)
+        .map((section) => (
+          <div
+            key={section.section_id || section.id || `section-${section.order}`}
+          >
+            {renderSection(section)}
+          </div>
+        ))}
     </div>
   );
 };
@@ -312,40 +377,44 @@ const DynamicFormRenderer = ({
 // Fixed ranking component using the RankSelect component - no infinite loops
 const RankingComponent = ({ options, value, onChange, maxRanks }) => {
   const [rankings, setRankings] = useState(() => value || {});
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Only update local state when value prop actually changes
+  // Initialize rankings from value prop only once
   useEffect(() => {
-    if (JSON.stringify(value) !== JSON.stringify(rankings)) {
-      setRankings(value || {});
+    if (!isInitialized && value) {
+      setRankings(value);
+      setIsInitialized(true);
     }
-  }, [value]); // Remove rankings from dependencies to avoid loop
+  }, [value, isInitialized]);
 
   const updateRank = useCallback(
     (rankKey, optionValue) => {
-      setRankings((prevRankings) => {
-        const newRankings = { ...prevRankings };
+      const newRankings = { ...rankings };
 
-        // If empty string (cleared), remove the ranking
-        if (!optionValue) {
-          delete newRankings[rankKey];
-        } else {
-          // Remove the option from any existing rank first
-          Object.keys(newRankings).forEach((key) => {
-            if (newRankings[key] === optionValue) {
-              delete newRankings[key];
-            }
-          });
+      // If empty string (cleared), remove the ranking
+      if (!optionValue) {
+        delete newRankings[rankKey];
+      } else {
+        // Remove the option from any existing rank first
+        Object.keys(newRankings).forEach((key) => {
+          if (newRankings[key] === optionValue) {
+            delete newRankings[key];
+          }
+        });
 
-          // Set the new ranking
-          newRankings[rankKey] = optionValue;
-        }
+        // Set the new ranking
+        newRankings[rankKey] = optionValue;
+      }
 
-        // Call onChange with the new rankings
+      // Update local state first
+      setRankings(newRankings);
+
+      // Then call onChange - this should only happen from user interaction
+      if (onChange) {
         onChange(newRankings);
-        return newRankings;
-      });
+      }
     },
-    [onChange]
+    [rankings, onChange]
   );
 
   // Convert normalized options back to simple array for RankSelect

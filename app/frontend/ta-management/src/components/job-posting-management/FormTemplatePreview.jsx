@@ -79,6 +79,8 @@ const CustomSectionPreview = ({ template }) => {
       }));
     }
 
+    const isTermSelection = field_name === "termSelection";
+
     const questionLabel = (
       <div className="block mb-2 text-lg font-semibold">
         {question_text}
@@ -99,6 +101,15 @@ const CustomSectionPreview = ({ template }) => {
       </div>
     );
 
+    const termSelectionMessage = isTermSelection && (
+      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          Term options shown to the applicant will depend on the term selected
+          for the Job Posting.
+        </p>
+      </div>
+    );
+
     switch (question_type) {
       case "radio":
         return (
@@ -109,25 +120,38 @@ const CustomSectionPreview = ({ template }) => {
             {previewBadge}
             {questionLabel}
             {helpTextElement}
-            <div className="space-y-2">
-              {normalizedOptions.length > 0 ? (
-                normalizedOptions.map((option, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 opacity-60"
-                  >
-                    <div className="w-4 h-4 border border-gray-400 rounded-full"></div>
-                    <span className="text-sm">
-                      {option.label || option.value}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-500 italic">
-                  No options configured yet
+
+            {isTermSelection ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 opacity-60">
+                  <div className="w-4 h-4 border border-gray-400 rounded-full"></div>
+                  <span className="text-sm text-gray-500 italic">
+                    Term options will be populated dynamically
+                  </span>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {normalizedOptions.length > 0 ? (
+                  normalizedOptions.map((option, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 opacity-60"
+                    >
+                      <div className="w-4 h-4 border border-gray-400 rounded-full"></div>
+                      <span className="text-sm">
+                        {option.label || option.value}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500 italic">
+                    No options configured yet
+                  </div>
+                )}
+              </div>
+            )}
+            {termSelectionMessage}
           </div>
         );
 
@@ -140,25 +164,38 @@ const CustomSectionPreview = ({ template }) => {
             {previewBadge}
             {questionLabel}
             {helpTextElement}
-            <div className="space-y-2">
-              {normalizedOptions.length > 0 ? (
-                normalizedOptions.map((option, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 opacity-60"
-                  >
-                    <div className="w-4 h-4 border border-gray-400 rounded"></div>
-                    <span className="text-sm">
-                      {option.label || option.value}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-500 italic">
-                  No options configured yet
+
+            {isTermSelection ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 opacity-60">
+                  <div className="w-4 h-4 border border-gray-400 rounded-full"></div>
+                  <span className="text-sm text-gray-500 italic">
+                    Term options will be populated dynamically
+                  </span>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {normalizedOptions.length > 0 ? (
+                  normalizedOptions.map((option, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 opacity-60"
+                    >
+                      <div className="w-4 h-4 border border-gray-400 rounded"></div>
+                      <span className="text-sm">
+                        {option.label || option.value}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500 italic">
+                    No options configured yet
+                  </div>
+                )}
+              </div>
+            )}
+            {termSelectionMessage}
           </div>
         );
 
@@ -174,7 +211,8 @@ const CustomSectionPreview = ({ template }) => {
             <div className="w-full p-2 border border-gray-300 rounded bg-gray-50 opacity-60">
               <span className="text-gray-500">Select an option ▼</span>
             </div>
-            {normalizedOptions.length > 0 ? (
+
+            {isTermSelection ? null : normalizedOptions.length > 0 ? (
               <div className="text-xs text-gray-500 mt-1">
                 Options:{" "}
                 {normalizedOptions
@@ -186,6 +224,7 @@ const CustomSectionPreview = ({ template }) => {
                 No options configured yet
               </div>
             )}
+            {termSelectionMessage}
           </div>
         );
 

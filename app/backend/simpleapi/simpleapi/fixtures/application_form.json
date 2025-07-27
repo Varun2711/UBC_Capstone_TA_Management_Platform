@@ -129,7 +129,7 @@
     "pk": 5,
     "fields": {
       "section": 1,
-      "question_text": "Please indicate how many hours per week:",
+      "question_text": "If yes to the above, please indicate how many hours per week:",
       "question_type": "number",
       "field_name": "otherPositionHours",
       "order": 5,
@@ -177,9 +177,9 @@
     "pk": 7,
     "fields": {
       "section": 2,
-      "question_text": "For W2025 applications, which of the following terms are you applying to TA for?",
+      "question_text": "Which of the following terms are you applying to TA for?",
       "question_type": "radio",
-      "field_name": "winterTerm",
+      "field_name": "termSelection",
       "order": 2,
       "is_required": true,
       "help_text": null,

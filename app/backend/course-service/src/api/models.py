@@ -235,6 +235,8 @@ class CourseOffering(models.Model):
         help_text="Time slots when this course offering meets"
     )
 
+    is_active = models.BooleanField(default=True)
+
     class Meta:
         managed = True
         db_table = 'myapp_course_offerings'
@@ -293,6 +295,8 @@ class SharedSession(models.Model):
         related_name='lab_sections',
         help_text="Time slots when this lab section meets"
     )
+
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         managed = True
