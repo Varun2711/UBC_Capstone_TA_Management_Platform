@@ -762,9 +762,9 @@ class OfferViewSet(viewsets.ModelViewSet):
         response_deadline_str = request.data.get('response_deadline')
         notes = request.data.get('notes', offer.notes)
         
-        if not offer_items or not isinstance(offer_items, list):
+        if offer_items is None or not isinstance(offer_items, list):
             return Response(
-                {'error': 'offer_items must be a non-empty list'},
+                {'error': 'offer_items must be a list (can be empty)'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         

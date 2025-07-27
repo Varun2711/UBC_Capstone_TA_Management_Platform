@@ -548,8 +548,8 @@ class Offer(models.Model):
         super().clean()
         
         # Must have at least one offer item
-        if self.pk and self.offer_items.count() == 0:
-            raise ValidationError("Offer must contain at least one item")
+        # if self.pk and self.offer_items.count() == 0:
+        #     raise ValidationError("Offer must contain at least one item")
     
     @property
     def courses(self):
