@@ -177,4 +177,25 @@ export const editOffer = async (applicationId, offer_items, offer_id) => {
 
   return await response.json();
 };
+
+export const sendOffer = async (response_deadline, offer_id) => {
+
+  const response = await fetch(`${API_URL}/allocations/offers/${offer_id}/send-offer/`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+    "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      response_deadline: response_deadline,
+      }),
+  });
+  
+
+  if (!response.ok) {
+    throw new Error("Failed to send offer");
+  }
+
+  return await response.json();
+};
 // Add more functions as needed

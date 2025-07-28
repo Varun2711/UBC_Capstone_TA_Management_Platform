@@ -528,12 +528,14 @@ export default function TAAllocationPage() {
   */
 
   const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
-    const taOffer = offers.find((o) => o.taStudentId === taStudentId);
+    console.log("Offers in isSectionAlreadyOfferedToTA:", offers);
+    const taOffer = offers.find((o) => o.student.id === taStudentId);
     if (!taOffer) return false;
 
+    console.log("taOffer in isSectionAlreadyOfferedToTA: ", taOffer);
     return taOffer.offer_items.some(
       (offerItem) =>
-        String(offerItem.course_session_id ?? offerItem.shared_session_id) === String(sectionId)
+        String(offerItem.course_offering_id ?? offerItem.shared_session_id) === String(sectionId)
     );
   };
 
@@ -982,9 +984,9 @@ export default function TAAllocationPage() {
       }
 
       const relevantOffers = offers.filter(
-        (offer) => offer.student.id === selectedApplication.application.student.id
+        (offer) => offer.student.id === selectedApplication?.application?.student?.id
       );
-      console.log("relevantOffers for TA:", selectedApplication.application.student.id, "are: ", relevantOffers);
+      console.log("relevantOffers for TA:", selectedApplication?.application?.student?.id, "are: ", relevantOffers);
       console.log("Filtered Offers for TA:", relevantOffers);
 
       if (relevantOffers.length === 0) {
@@ -1422,9 +1424,13 @@ export default function TAAllocationPage() {
                                     <div className=" mb-2 ">
                                       <div className="space-y-2 mt-1">
                                         {availableOfferings.map((offering) => {
+                                          console.log("selectedApplication in availableOfferings map: ", selectedApplication);
+                                          console.log("offering in availableOfferings map: ", offering);
                                           const isSelected = selectedCourseOfferings.some((s) => s.sectionId === offering.course_offering_id);
-                                          const isOffered =
-                                            selectedTA && isSectionAlreadyOfferedToTA(selectedTA.id, offering.course_offering_id);
+                                          const studentId = selectedApplication?.application?.student?.id;
+                                          console.log("studentId in availableOfferings map: ", studentId);
+                                          console.log("about to call isSectionAlreadyOfferedToTA for student: ", studentId);
+                                          const isOffered = studentId && isSectionAlreadyOfferedToTA(studentId, offering.course_offering_id);
                                           //console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
                                           return (
                                             <div
@@ -1477,8 +1483,8 @@ export default function TAAllocationPage() {
                                   {/* Shared Sessions (e.g. Lecture Sections) */}
                                   {availableSections.map((section) => {
                                     const isSelected = selectedSections.some((s) => s.sectionId === section.shared_session_id);
-                                    const isOffered =
-                                      selectedTA && isSectionAlreadyOfferedToTA(selectedTAProfile.id, section.shared_session_id);
+                                    const studentId = selectedApplication?.application?.student?.id;
+                                    const isOffered = studentId && isSectionAlreadyOfferedToTA(studentId, section.shared_session_id);
                                     //console.log("Checking section ID:", section.id)
                                     //console.log("selectedCourses:", selectedCourses.map(s => s.sectionId))
                                     //console.log("activeOffers:", activeOffers)
@@ -1683,38 +1689,48 @@ export default function TAAllocationPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {activeOffers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center">
-                        No active offers at the moment.
-                      </p>
-                    ) : (
-                      <div className="space-y-4">
-                        {activeOffers.map((taOffer, index) => (
-                          <div key={index} className="p-3 border rounded-lg">
-                            <p className="font-medium mb-2">{taOffer.taName}</p>
-                            <ul className="ml-4 list-disc text-sm text-muted-foreground">
-                              {taOffer.offers.map((offer, i) => (
-                                <li key={i}>
-                                  {offer.course_number} - {offer.course_name} - {offer.type} Section {offer.section}
-                                </li>
-                              ))}
-                            </ul>
-                            <div className="mt-4 flex justify-end">
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  setTaToRescind(taOffer)
-                                  setShowRescindModal(true)
-                                }}
-                              >
-                                Rescind Offer
-                              </Button>
+                    {/* Filter offers for "pending" status and check if any exist */}
+                    {/* Create a filtered array first */}
+                    {(() => { // Using an IIFE (Immediately Invoked Function Expression) to declare filteredOffers
+                      const filteredOffers = offers.filter(offer => offer.status === "pending" && offer.offer_items.length > 0);
+
+                      // You can console.log the filtered offers here if you want to inspect them
+                      console.log("Filtered Pending Offers:", filteredOffers);
+
+                      return filteredOffers.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center">
+                          No active offers at the moment.
+                        </p>
+                      ) : (
+                        <div className="space-y-4">
+                          {filteredOffers.map((pendingOffer) => (
+                            <div key={pendingOffer.offer_id} className="p-3 border rounded-lg"> {/* Use offer_id as key */}
+                              <p className="font-medium mb-2">{pendingOffer.student.name}</p> {/* Access student name */}
+                              <ul className="ml-4 list-disc text-sm text-muted-foreground">
+                                {pendingOffer.offer_items.map((item, i) => (
+                                  <li key={i}>
+                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number} {/* Access correct properties */}
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="mt-4 flex justify-end">
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Ensure setTaToRescind expects the 'pendingOffer' structure
+                                    setTaToRescind(pendingOffer);
+                                    setShowRescindModal(true);
+                                  }}
+                                >
+                                  Rescind Offer
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               </TabsContent>

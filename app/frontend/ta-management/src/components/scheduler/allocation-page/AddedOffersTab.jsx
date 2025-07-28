@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { fetchCourseOfferingDetails, editOffer } from "@/logic/coordinator-allocations-page";
+import { fetchCourseOfferingDetails, editOffer, sendOffer } from "@/logic/coordinator-allocations-page";
 
 const AddedOffersTab = ({
   offers,
@@ -18,6 +18,25 @@ const AddedOffersTab = ({
   const [offerToDelete, setOfferToDelete] = useState(null); // { offerId, itemIndex }
   const [courseOfferingDetails, setCourseOfferingDetails] = useState({});
 
+  // Declare the function inside the component
+  const generateResponseDeadline = () => {
+    const now = new Date();
+    // Add 7 days to the current date
+    now.setDate(now.getDate() + 7);
+
+    // Set the time to 23:59:59 UTC
+    now.setUTCHours(23);
+    now.setUTCMinutes(59);
+    now.setUTCSeconds(59);
+    now.setUTCMilliseconds(0); // Ensure milliseconds are zeroed out
+
+    // Format to ISO string and append 'Z' for UTC
+    return now.toISOString().slice(0, 19) + 'Z';
+  };
+
+  // Initialize responseDeadline with the generated value
+  const [responseDeadline, setResponseDeadline] = useState(generateResponseDeadline());
+  console.log("responseDeadline in AddedOffersTab: ", responseDeadline);
 
   const openConfirmDialog = (offerId, itemIndex) => {
     setOfferToDelete({ offerId, itemIndex });
@@ -86,7 +105,7 @@ const AddedOffersTab = ({
     }
   };
 
-
+  
   const transferAddedOffersToActive = () => {
     setActiveOffers((prev) => {
       const merged = [...prev];
@@ -110,6 +129,48 @@ const AddedOffersTab = ({
     });
 
     setOffers([]);
+  };
+  
+  const handleSendOffers = async () => {
+    // Filter out offers that have no items
+    const offersToSend = offers.filter((offer) => offer.status === "draft" && offer.offer_items.length > 0);
+    console.log("offersToSend: ", offersToSend);
+    if (offersToSend.length === 0) {
+      console.warn("No offers with items to send.");
+      return;
+    }
+
+    // You might want to get the response deadline from a user input here
+    // For this example, we're using a default or a state variable `responseDeadline`.
+    if (!responseDeadline) {
+        alert("Please set a response deadline before sending offers.");
+        return;
+    }
+
+    for (const offer of offersToSend) {
+      try {
+        console.log(`Sending offer for student: ${offer.student.name} (Offer ID: ${offer.offer_id})`);
+        const response = await sendOffer(responseDeadline, offer.offer_id);
+        console.log("Response from sendOffer:", response);
+        if (response.status === "pending") {
+          setActiveOffers((prev) => [...prev, response]);
+        }
+      } catch (error) {
+        console.error(`Failed to send offer ${offer.offer_id}:`, error);
+        // You could add more sophisticated error handling here, like
+        // showing a toast notification or storing failed offers.
+      }
+    }
+
+    // After attempting to send all offers, refresh the offers list to reflect status changes
+    try {
+      const refreshedOffers = await fetchOffers();
+      console.log("refreshedOffers after sending offers:", refreshedOffers);
+      setOffers(refreshedOffers);
+      setActiveOffers(refreshedOffers.filter(o => o.status === "pending"));
+    } catch (err) {
+      console.error("Failed to fetch updated offers after sending:", err);
+    }
   };
 
     const getCourseOfferingDetails = async (courseOfferingId) => {
@@ -207,7 +268,7 @@ const AddedOffersTab = ({
       })}
       {offers.some((offer) => offer.status === "draft" && offer.offer_items.length > 0) && (
         <div className="flex justify-end p-4">
-          <Button onClick={transferAddedOffersToActive}>Send Offer</Button>
+          <Button onClick={handleSendOffers}>Send Offer</Button>
         </div>
       )}
 
