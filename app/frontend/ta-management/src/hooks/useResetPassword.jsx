@@ -49,7 +49,7 @@ export function useResetPassword() {
     }
 
     /*
-    * Compare inputted id (student id or employee id, depending on user_type) to one that we have on file
+    Compare inputted id (student id or employee id, depending on user_type) to one that we have on file
     Returns object in following format:
     {
         success: true/false,
@@ -65,10 +65,9 @@ export function useResetPassword() {
             }
         }
 
-        // boolean: does provided id match what is set in their account?
+        // boolean: check if provided id match what's set in their account
         const inputtedIDMatchesStoredValue = accountInfo.id_number == parseInt(id);
 
-        // todo: implement set # of attempts to verify identity (security)
         return {
             success: inputtedIDMatchesStoredValue,
             data: inputtedIDMatchesStoredValue
@@ -77,32 +76,19 @@ export function useResetPassword() {
         }
     }
 
-    const requestPasswordReset = async (password, confirm) => {
-        // todo: check that passwords match
-        // then set user's password as "password" in the db
-        console.log("request password reset")
-        return true;
-    }
-
     /*
-    * Request notification service to email user a link to reset their password
+    * Request notification service to send a password reset link to provided email address
     */
     const requestSendResetLink = async() => {
-        try {             
-            // const response = await axios.post(API_URL + '/notifications/send_password_reset/', 
-            //     { 
-            //         email: userData.email,
-            //         user_type: userData.user_type,
-            //         user_id: userData.id_number
-            //     }
-            // );
-
-            // mocked for now, since waiting on actual notification service to be finalized
-            const response = 
-            {
-                message: "Password reset email sent",
-                notification_id: "134546t3t9refdshg293121245t6rfds"
-            }
+        try {    
+            
+            const response = await axios.post(API_URL + '/notifications/send_password_reset/', 
+                { 
+                    email: accountInfo.email,
+                    user_type: accountInfo.user_type,
+                    user_id: accountInfo.id_number
+                }
+            );
 
             return {
                 success: true,
@@ -115,8 +101,27 @@ export function useResetPassword() {
                     data: "There was an error sending your password reset link. Please try again, or if the issue persists, contact the system administrator."
                 }
             }
+
+            // handle any other misc. error, so that app doesn't crash
+            return {
+                success: false,
+                data: "Encountered unknown error sending your password reset link. Please try again, or if the issue persists, contact the system administrator."
+            }
         }
     }
+
+    // TODO
+    const requestPasswordReset = async (password, confirm) => {
+        console.log("request password reset")
+
+        // const response = await axios.post(API_URL + '/auth/reset_password_complete/', 
+        //     { 
+        //         token: 'adfladlfadsgnds',
+        //         new_password: 'dafdfadfs'
+        //     }
+        // );
+        return true;
+    }
     
-    return { requestAccountLookup, verifyId, requestPasswordReset, requestSendResetLink }
+    return { requestAccountLookup, verifyId, requestSendResetLink, requestPasswordReset}
 }
