@@ -56,11 +56,6 @@ const navigationItems = [
     url: "#",
   },
   {
-    title: "Profile",
-    icon: User,
-    url: "/profile",
-  },
-  {
     title: "Offers",
     icon: Briefcase,
     url: "/student-offers",
@@ -118,7 +113,7 @@ export function AppSidebar({ name, email, avatar }) {
               <DropdownMenuTrigger asChild className="h-10">
                 <SidebarMenuButton className="bg-background text-foreground hover:bg-muted" aria-label="account menu">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={avatar || "/placeholder.svg"} alt={name}/>
+                    <AvatarImage src={avatar || "/placeholder.svg"} alt={name} />
                     <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -134,14 +129,11 @@ export function AppSidebar({ name, email, avatar }) {
               >
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  {" "}
-                  <button onClick={() => handleNav("/profile")}>
-                    My Profile
-                  </button>
+                <DropdownMenuItem onClick={() => handleNav("/profile")}>
+                  My Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
-                  <button>Logout </button>
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
