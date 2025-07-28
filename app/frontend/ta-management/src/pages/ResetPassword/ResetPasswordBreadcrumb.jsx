@@ -18,7 +18,7 @@ export default function ResetPasswordBreadcrumb() {
             <SlashIcon />
           </BreadcrumbSeparator>
           <BreadcrumbItem>
-            <BreadcrumbPage>Forgot Password</BreadcrumbPage>
+            <BreadcrumbPage>Reset Password</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>

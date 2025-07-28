@@ -74,7 +74,7 @@ export default function EmailStep({ onNext, requestAccountLookup }) {
       <div className="flex-grow flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Forgot Password</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Reset Password</h1>
             <p className="text-gray-600 mb-8">
               Enter the email address associated with your account. 
             </p>

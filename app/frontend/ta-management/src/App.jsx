@@ -42,7 +42,6 @@ function App() {
       <Route path="/create-account/step1" element={<CreateAccount1 />} />
       <Route path="/create-account/step2" element={<CreateAccount2 />} />
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
-      <Route path="/forgot-password" element={<ResetPasswordController />} />
       <Route path="/reset-password" element={<ResetPasswordController />} />
 
       {/* Accessible to: student ---------------- */}
