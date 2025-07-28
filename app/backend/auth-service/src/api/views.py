@@ -376,7 +376,7 @@ def api_root(request):
             'validate': '/api/auth/validate/',
             'token_refresh': '/api/auth/token/refresh/',
             'logout': '/api/auth/logout/',
-            'lookup_account': '/api/auth/reset-password/lookup/'
+            'lookup_account': '/api/auth/reset-password/lookup/',
             'reset_password_complete': '/api/auth/reset-password-complete/',
         }
     })
