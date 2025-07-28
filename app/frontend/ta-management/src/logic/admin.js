@@ -2,6 +2,7 @@ import axios from "axios";
 
 const API_URL = 'http://localhost:8080';
 const ADMIN_API = `${API_URL}/api/profile/admin`;
+const ADMIN_API_V2 = `${API_URL}/api/profile/`;
 
 // Helper to get auth headers
 const getAuthHeaders = () => {
@@ -58,7 +59,7 @@ export const getAdminDashboard = async () => {
 
 // Get a list of all users (can be filtered by type via query param ?user_type=)
 export const getAllUsers = async (userType = "") => {
-  const url = `${API_URL}/users/${userType ? `?user_type=${userType}` : ""}`;
+  const url = `${ADMIN_API_V2}/users/${userType ? `?user_type=${userType}` : ""}`;
   const response = await axios.get(url, {
     headers: getAuthHeaders()
   });
