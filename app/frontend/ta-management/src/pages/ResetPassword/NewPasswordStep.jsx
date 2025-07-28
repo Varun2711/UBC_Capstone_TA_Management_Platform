@@ -12,6 +12,7 @@ import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
+import { toast } from "sonner"
 
 /* 
   Helper fn: performs input validation on inputted passwords and 
@@ -44,9 +45,9 @@ export function getPasswordValidationErrors(pass, confirmPass) {
 }
 
 /*
-Main component
+MAIN COMPONENT FOUND HERE!
 */
-export default function NewPasswordStep({ onNext, requestPasswordReset }) {
+export default function NewPasswordStep({ token, onNext, requestPasswordReset }) {
   // state
   const [password, setPassword] = useState(""); // new password
   const [confirm, setConfirm] = useState(""); // confirm new password
@@ -64,11 +65,13 @@ export default function NewPasswordStep({ onNext, requestPasswordReset }) {
     const noErrors = Object.keys(validationErrors).length === 0
 
     if(noErrors) {
-      // attempt password reset (todo)
-      const success = await requestPasswordReset(password, confirm);
-      if(success) {
-        //console.log("password has been reset!")
+      // Make request to auth service to perform password reset
+      const response = await requestPasswordReset(password, token);
+      if(response.success) {
+        toast.success(response.data)
         onNext();
+      } else {
+        toast.error(response.data)
       }
     }
   }

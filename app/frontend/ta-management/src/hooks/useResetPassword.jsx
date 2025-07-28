@@ -110,17 +110,32 @@ export function useResetPassword() {
         }
     }
 
-    // TODO
-    const requestPasswordReset = async (password, confirm) => {
-        console.log("request password reset")
+    /*
+    Request auth service to execute a password reset
+    - The reset-password-complete endpoint handles everything, including getting the notification
+    service to verify the token and mark it as used, so just have to make the one request here
+    */
+    const requestPasswordReset = async (password, token) => {
+        try {
+            const response = await axios.post(API_URL + '/auth/reset-password-complete/', 
+                { 
+                    token: token,
+                    new_password: password
+                }
+            );
 
-        // const response = await axios.post(API_URL + '/auth/reset_password_complete/', 
-        //     { 
-        //         token: 'adfladlfadsgnds',
-        //         new_password: 'dafdfadfs'
-        //     }
-        // );
-        return true;
+            return {
+                success: true,
+                data: response.message
+            }
+        
+        } catch(error) {
+            return {
+                success: false,
+                data: error.message
+            }
+        }
+        
     }
     
     return { requestAccountLookup, verifyId, requestSendResetLink, requestPasswordReset}
