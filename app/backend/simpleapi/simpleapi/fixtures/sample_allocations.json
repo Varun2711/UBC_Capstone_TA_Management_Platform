@@ -1,0 +1,64 @@
+[
+  {
+    "model": "myapp.offeritem",
+    "pk": "550e8400-e29b-41d4-a716-446655440301",
+    "fields": {
+      "item_type": "course_offering",
+      "course_offering": "550e8400-e29b-41d4-a716-446655440101",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440009"
+    }
+  },
+  {
+    "model": "myapp.offeritem",
+    "pk": "550e8400-e29b-41d4-a716-446655440302",
+    "fields": {
+      "item_type": "shared_session",
+      "course_offering": null,
+      "shared_session": "550e8400-e29b-41d4-a716-446655440201",
+      "time_slot": "550e8400-e29b-41d4-a716-446655440013"
+    }
+  },
+  {
+    "model": "myapp.offer",
+    "pk": 1,
+    "fields": {
+      "application": 1,
+      "student": 1,
+      "role": "ta",
+      "offer_date": "2024-12-01T10:00:00Z",
+      "response_deadline": "2024-12-15T23:59:59Z",
+      "status": "pending",
+      "responded_at": null,
+      "student_response": "",
+      "reminder_sent": false,
+      "created_by": 3,
+      "notes": "Multi-item offer for COSC courses",
+      "created_at": "2024-12-01T10:00:00Z",
+      "updated_at": "2025-07-28T22:39:03.543Z",
+      "offer_items": [
+        "550e8400-e29b-41d4-a716-446655440301",
+        "550e8400-e29b-41d4-a716-446655440302"
+      ]
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 1,
+    "fields": {
+      "offer": 1,
+      "student": 1,
+      "course": 10,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440108",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440001",
+      "role": "ta",
+      "assigned_date": "2025-07-28T22:39:33Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "",
+      "created_at": "2025-07-28T22:39:33Z",
+      "updated_at": "2025-07-28T22:40:21.158Z"
+    }
+  }
+]

@@ -93,8 +93,8 @@ export const transformAssignmentsToCalendarEvents = (assignments) => {
             sessionType = "Lab";
           }
 
-          console.log("Course info", courseInfo);
-          console.log("sessionType", sessionType);
+          //console.log("Course info", courseInfo);
+          //console.log("sessionType", sessionType);
 
           // Create recurring events for the assignment period
           // Start from the assignment date and go for a reasonable academic period

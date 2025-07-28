@@ -146,6 +146,7 @@ export default function ViewStudentSchedule() {
   );
 
   // Render assignment card
+  // Updated AssignmentCard component
   const AssignmentCard = ({ assignment }) => {
     const formatted = formatAssignmentDisplay(assignment);
     const statusInfo = getAssignmentStatus(assignment);
@@ -168,43 +169,75 @@ export default function ViewStudentSchedule() {
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Clock className="h-4 w-4" />
-                <span>{formatted.weeklyHours} hours/week</span>
-              </div>
+              {/* Display combined offer item information */}
+              {formatted.offerItems && formatted.offerItems.length > 0 && (
+                <div className="space-y-2">
+                  {formatted.offerItems.map((item, index) => {
+                    const timeSlot = item.time_slot;
+                    const sessionType =
+                      item.item_type === "course_offering" ? "Course" : "Lab";
+                    const courseCode = item.course_number;
 
-              {/* Display multiple time slots if available */}
-              {formatted.timeSlots && formatted.timeSlots.length > 0 && (
-                <div className="space-y-1">
-                  {formatted.timeSlots.map((timeSlot, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 text-sm text-gray-600"
-                    >
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {timeSlot.day} {timeSlot.start_time} -{" "}
-                        {timeSlot.end_time}
-                      </span>
-                    </div>
-                  ))}
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 text-sm text-gray-600"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {timeSlot ? (
+                            <>
+                              {timeSlot.day} {timeSlot.start_time} -{" "}
+                              {timeSlot.end_time} • {sessionType}, {courseCode}
+                            </>
+                          ) : (
+                            <>
+                              {sessionType}, {courseCode} • Time TBD
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
-              {/* Display locations if available */}
-              {formatted.timeSlots &&
-                formatted.timeSlots.some((slot) => slot.location) && (
+              {/* Fallback to original time slots display if offer items not available */}
+              {(!formatted.offerItems || formatted.offerItems.length === 0) &&
+                formatted.timeSlots &&
+                formatted.timeSlots.length > 0 && (
                   <div className="space-y-1">
-                    {formatted.timeSlots
-                      .filter((slot) => slot.location)
-                      .map((timeSlot, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-2 text-sm text-gray-600"
-                        ></div>
-                      ))}
+                    {formatted.timeSlots.map((timeSlot, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 text-sm text-gray-600"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {timeSlot.day} {timeSlot.start_time} -{" "}
+                          {timeSlot.end_time}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
+
+              {/* Display locations if available */}
+              {formatted.offerItems && formatted.offerItems.length > 0 && (
+                <div className="space-y-1">
+                  {formatted.offerItems
+                    .filter((item) => item.time_slot?.location)
+                    .map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 text-sm text-gray-600"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        <span>{item.time_slot.location}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -220,6 +253,14 @@ export default function ViewStudentSchedule() {
                 </div>
               )}
 
+              {/* Show total weekly hours */}
+              {formatted.weeklyHours > 0 && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Clock className="h-4 w-4" />
+                  <span>{formatted.weeklyHours} hours/week</span>
+                </div>
+              )}
+
               <div className="text-xs text-gray-500">
                 Assigned:{" "}
                 {new Date(formatted.assignedDate).toLocaleDateString()}
@@ -227,20 +268,15 @@ export default function ViewStudentSchedule() {
             </div>
           </div>
 
-          {/* Show detailed breakdown for multi-item assignments */}
+          {/* Show detailed breakdown for multi-item assignments - simplified */}
           {formatted.offerItems && formatted.offerItems.length > 1 && (
             <div className="mt-3 p-3 bg-blue-50 rounded-md">
               <p className="text-sm font-medium text-blue-900 mb-2">
-                Assignment Details:
+                Assignment Summary:
               </p>
-              <div className="space-y-1">
-                {formatted.offerItems.map((item, index) => (
-                  <div key={index} className="text-xs text-blue-800">
-                    • {item.course_number} {item.section_number}(
-                    {item.item_type === "course_offering" ? "Course" : "Lab"}) -{" "}
-                    {item.weekly_hours}h/week
-                  </div>
-                ))}
+              <div className="text-xs text-blue-800">
+                Total: {formatted.offerItems.length} sessions •{" "}
+                {formatted.weeklyHours} hours/week
               </div>
             </div>
           )}
@@ -301,14 +337,13 @@ export default function ViewStudentSchedule() {
                 {/* Header */}
                 <div className="mb-8">
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    My TA Schedule
+                    Schedule
                   </h1>
                   <p className="text-gray-600">
                     View and manage your teaching assistant assignments
                   </p>
 
-                  {/* Summary Cards */}
-                  {assignmentsSummary && (
+                  {/*  Summary Cards {assignmentsSummary && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                       <Card>
                         <CardContent className="p-4">
@@ -341,7 +376,7 @@ export default function ViewStudentSchedule() {
                         </CardContent>
                       </Card>
                     </div>
-                  )}
+                  )} */}
                 </div>
 
                 {/* Error Display */}
