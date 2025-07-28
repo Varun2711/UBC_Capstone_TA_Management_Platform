@@ -27,8 +27,10 @@ vi.mock('@/hooks/useResetPassword', () => {
         }
       }),
       
-      // todo, works for now, will adjust as i write the actual backend logic
-      requestPasswordReset: vi.fn().mockResolvedValue(true)
+      requestPasswordReset: vi.fn().mockResolvedValue({
+        success: true,
+        data: "Password reset successful!"
+      })
     }),
   };
 });
@@ -115,7 +117,7 @@ describe('Reset Password', () => {
     const loginLink = screen.getByRole("link", { name: "Login" })
     expect(loginLink).toHaveAttribute("href", "/login")
 
-    expect(screen.getByRole("link", {name: "Forgot Password"})).toBeInTheDocument()
+    expect(screen.getByRole("link", {name: "Reset Password"})).toBeInTheDocument()
 
     // heading and page description
     expect(screen.getByRole("heading"), { name: /forgot password/i }).toBeInTheDocument();
@@ -142,7 +144,7 @@ describe('Reset Password', () => {
     const loginLink = screen.getByRole("link", { name: "Login" })
     expect(loginLink).toHaveAttribute("href", "/login")
 
-    expect(screen.getByRole("link", {name: "Forgot Password"})).toBeInTheDocument()
+    expect(screen.getByRole("link", {name: "Reset Password"})).toBeInTheDocument()
 
     // heading and page description
     expect(screen.getByRole("heading"), { name: /confirm your identity/i }).toBeInTheDocument();
@@ -169,7 +171,7 @@ describe('Reset Password', () => {
     const loginLink = screen.getByRole("link", { name: "Login" })
     expect(loginLink).toHaveAttribute("href", "/login")
 
-    expect(screen.getByRole("link", {name: "Forgot Password"})).toBeInTheDocument()
+    expect(screen.getByRole("link", {name: "Reset Password"})).toBeInTheDocument()
 
     // heading and page description
     expect(screen.getByRole("heading"), { name: /email sent!/i }).toBeInTheDocument();
@@ -187,7 +189,7 @@ describe('Reset Password', () => {
     const loginLink = screen.getByRole("link", { name: "Login" })
     expect(loginLink).toHaveAttribute("href", "/login")
 
-    expect(screen.getByRole("link", {name: "Forgot Password"})).toBeInTheDocument()
+    expect(screen.getByRole("link", {name: "Reset Password"})).toBeInTheDocument()
 
     // heading and page description
     expect(screen.getByRole("heading"), { name: /set new password/i }).toBeInTheDocument();
@@ -220,7 +222,7 @@ describe('Reset Password', () => {
     const loginLink = screen.getByRole("link", { name: "Login" })
     expect(loginLink).toHaveAttribute("href", "/login")
 
-    expect(screen.getByRole("link", {name: "Forgot Password"})).toBeInTheDocument()
+    expect(screen.getByRole("link", {name: "Reset Password"})).toBeInTheDocument()
 
     // heading and page description
     expect(screen.getByRole("heading"), { name: /success!/i }).toBeInTheDocument();
@@ -343,8 +345,7 @@ describe('Reset Password', () => {
     await user.type(idInput, "33333333");
     await userEvent.click(nextButton); 
 
-    // check that # of attempts is incremented
-    // AND timeout is set in localStorage
+    // check that # of attempts is incremented AND timeout is set in localStorage
     await waitFor(() => {
       const attempts = Number(localStorage.getItem("resetpassword_failed_attempts"));
       expect(attempts).toBe(3);
