@@ -70,7 +70,7 @@ describe("Logout", () => {
 
       // Wait for the redirect to the login/landing page.
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: /TA Application Portal/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /Teaching Assistant Application Portal/i })).toBeInTheDocument();
       });
 
       // Verify sessionStorage was cleared
