@@ -198,7 +198,7 @@ class OfferSerializer(serializers.ModelSerializer):
 class AssignmentSerializer(serializers.ModelSerializer):
     """Updated assignment serializer"""
     student = StudentSerializer(read_only=True)
-    course = CourseSerializer(read_only=True)
+    course = CourseSerializer(read_only=True) #Course is nested in course_offering
     course_offering = CourseOfferingSerializer(read_only=True)
     shared_session = SharedSessionSerializer(read_only=True)
     offer_details = OfferSerializer(source='offer', read_only=True)
@@ -211,7 +211,9 @@ class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = [
-            'assignment_id', 'offer', 'student', 'course', 'course_offering', 'shared_session',
+            'assignment_id', 'offer', 'student', 
+            'course', #course is nested in course_offering
+            'course_offering', 'shared_session',
             # *** REMOVE: 'required_hours' (doesn't exist in model anymore)
             'role', 'assigned_date', 'assigned_by', 'is_active',
             'notes', 'offer_details', 'created_at', 'updated_at',
