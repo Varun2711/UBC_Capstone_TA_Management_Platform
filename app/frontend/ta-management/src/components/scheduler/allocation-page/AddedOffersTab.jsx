@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { fetchCourseOfferingDetails } from "@/logic/coordinator-allocations-page";
+import { fetchCourseOfferingDetails, editOffer } from "@/logic/coordinator-allocations-page";
 
 const AddedOffersTab = ({
   offers,
@@ -28,6 +28,10 @@ const AddedOffersTab = ({
     if (!offerToDelete) return;
     const { offerId, itemIndex } = offerToDelete;
 
+    console.log("offerToDelete: ", offerToDelete);
+
+    let modifiedOffer = null;
+
     const updatedOffers = offers.map((offer) => {
       if (offer.offer_id !== offerId) return offer;
 
@@ -45,18 +49,43 @@ const AddedOffersTab = ({
       });
 
       const newItems = offer.offer_items.filter((_, idx) => idx !== itemIndex);
-      return { ...offer, offer_items: newItems };
+      modifiedOffer = { ...offer, offer_items: newItems };
+      return modifiedOffer;
     });
 
     // Remove empty offers
     const cleanedOffers = updatedOffers.filter((offer) => offer.offer_items.length > 0);
 
-    setOffers(cleanedOffers);
     setShowConfirmDialog(false);
     setOfferToDelete(null);
 
-    await fetchOffers();
+    console.log("modifiedOffer: ", modifiedOffer);
+
+    // 🔁 Call editOffer if there's still items in the modified offer
+    if (modifiedOffer) {
+      try {
+        console.log("about to call editOffer api endpoint");
+        const response = await editOffer(
+          modifiedOffer.student.application_id,
+          modifiedOffer.offer_items,
+          modifiedOffer.offer_id
+        );
+        console.log("response in editOffer: ", response);
+      } catch (err) {
+        console.error("Failed to edit offer:", err);
+      }
+    }
+
+    // ✅ Fetch offers and update the state
+    try {
+      const refreshedOffers = await fetchOffers();
+      console.log("refreshedOffers: ", refreshedOffers);
+      setOffers(refreshedOffers);
+    } catch (err) {
+      console.error("Failed to fetch updated offers:", err);
+    }
   };
+
 
   const transferAddedOffersToActive = () => {
     setActiveOffers((prev) => {
@@ -95,10 +124,11 @@ const AddedOffersTab = ({
         }
     };
 
+    /*
     useEffect(() => {
       const fetchAllDetails = async () => {
         const slotPromises = offers.flatMap((offer) => {
-          if (offer.student.id !== selectedTA?.application.student.id) return [];
+          if (offer.student.id !== selectedApplication?.application.student.id) return [];
 
           return offer.offer_items.map(async (item) => {
             try {
@@ -132,7 +162,7 @@ const AddedOffersTab = ({
         fetchAllDetails();
       }
     }, [offers]);
-
+    */
 
   return (
     <div className="space-y-4">
@@ -140,7 +170,7 @@ const AddedOffersTab = ({
         <p className="text-muted-foreground">No offers have been added yet.</p>
       )}
       {offers.map((offer) => {
-        if (offer.status !== "draft") return null;
+        if (offer.status !== "draft" || offer.offer_items.length === 0) return null;
 
         return (
             <Card key={offer.offer_id}>
@@ -175,7 +205,7 @@ const AddedOffersTab = ({
             </Card>
         );
       })}
-      {offers.length > 0 && (
+      {offers.some((offer) => offer.status === "draft" && offer.offer_items.length > 0) && (
         <div className="flex justify-end p-4">
           <Button onClick={transferAddedOffersToActive}>Send Offer</Button>
         </div>

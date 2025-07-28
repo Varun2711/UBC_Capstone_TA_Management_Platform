@@ -517,12 +517,25 @@ export default function TAAllocationPage() {
     }
   }
 
+  /*
   const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
     const taOffer = addedOffers.find((o) => o.taStudentId === taStudentId)
+    //const taOffer = offers.find((o) => o.taStudentId === taStudentId)
     if (!taOffer) return false
 
     return taOffer.offers.some((offer) => String(offer.sectionId) === String(sectionId))
   }
+  */
+
+  const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
+    const taOffer = offers.find((o) => o.taStudentId === taStudentId);
+    if (!taOffer) return false;
+
+    return taOffer.offer_items.some(
+      (offerItem) =>
+        String(offerItem.course_session_id ?? offerItem.shared_session_id) === String(sectionId)
+    );
+  };
 
 
   //Adding emily to the list of assignments since she is already assigned to a course
@@ -958,14 +971,20 @@ export default function TAAllocationPage() {
     setSelectedSharedSessions([]);
   }, [selectedTA]);
 
+  console.log("offers state variable RIGHT BEFORE fetchOfferSlotTimes useEffect is called: ", offers);
+  console.log("selectedApplication RIGHT BEFORE fetchOfferSlotTimes useEffect is called: ", selectedApplication);
   useEffect(() => {
     const fetchOfferSlotTimes = async () => {
-      if (!selectedTA) return;
+      console.log("fetchOfferSlotTimes has begun");
+      if (!selectedApplication) {
+        console.log("No selected application to fetch offer slot times for.");
+        return;
+      }
 
       const relevantOffers = offers.filter(
-        (offer) => offer.student.id === selectedTA.application.student.id
+        (offer) => offer.student.id === selectedApplication.application.student.id
       );
-
+      console.log("relevantOffers for TA:", selectedApplication.application.student.id, "are: ", relevantOffers);
       console.log("Filtered Offers for TA:", relevantOffers);
 
       if (relevantOffers.length === 0) {
@@ -975,8 +994,11 @@ export default function TAAllocationPage() {
 
       const slotPromises = relevantOffers.flatMap((offer) =>
         offer.offer_items.map(async (item) => {
+          console.log("offer item in fetchOfferSlotTimes: ", item);
+          console.log("item.course_offering_id in fetchOfferSlotTimes: ", item.course_offering_id);
+          console.log("item.shared_session_id in fetchOfferSlotTimes: ", item.shared_session_id);
           try {
-            if (item.course_offering_id) {
+            if (item.course_offering_id || item.course_offering_id !== null) {
               const details = await fetchCourseOfferingDetails(item.course_offering_id);
               return details?.time_slots_info || [];
             } else if (item.shared_session_id) {
@@ -997,7 +1019,7 @@ export default function TAAllocationPage() {
     };
 
     fetchOfferSlotTimes();
-  }, [selectedTA, offers]);
+  }, [selectedTA, selectedApplication, offers]);
 
   const application = filteredShortlistedApplicants.find(
     (item) => item.application.student?.id === selectedTA?.id
@@ -1010,6 +1032,11 @@ export default function TAAllocationPage() {
   console.log("selectedApplication in CardContent: ", selectedApplication);
   console.log("selectedTAProfile in CardContent: ", selectedTAProfile);
   console.log("selectedSections before highlightedSlots is updated: ", selectedSections);
+  
+  console.log("offerSlotTimes before highlightedSlots is updated: ", offerSlotTimes);
+  console.log("selectedSections before highlightedSlots is updated: ", selectedSections);
+  console.log("assignments before highlightedSlots is updated: ", assignments);
+  console.log("activeOffers before highlightedSlots is updated: ", activeOffers);
   const highlightedSlots = selectedTA ? [
                   // Include slots from the currently selected course section (red highlight for potential offer)
                   ...(selectedSections.length > 0
@@ -1020,11 +1047,11 @@ export default function TAAllocationPage() {
                       .filter(a => a.taStudentId === selectedTA.application.student.id)
                       .flatMap(a => a.slots || []),
                   // Include slots from added offers for this TA (persistent red highlight)
-                  ...addedOffers
-                    .filter(o => o.taStudentId === selectedTA.application.student.id)
-                    .flatMap(o =>
-                      o.offers?.flatMap(offer => offer.slots || []) || []
-                    ),
+                  //...addedOffers
+                    //.filter(o => o.taStudentId === selectedTA.application.student.id)
+                    //.flatMap(o =>
+                      //o.offers?.flatMap(offer => offer.slots || []) || []
+                    //),
                   ...activeOffers
                     .filter(o => o.taStudentId === selectedTA.application.student.id)
                     .flatMap(o =>

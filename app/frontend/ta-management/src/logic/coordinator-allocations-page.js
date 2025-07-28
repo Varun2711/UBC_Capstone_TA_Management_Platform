@@ -68,7 +68,7 @@ export const fetchOffers = async () => {
 export const fetchCourseOfferingDetails = async (courseOfferingId) => {
   const response = await fetch(`${API_URL}/course-term-service/course-offerings/${courseOfferingId}/`, {
     headers: getAuthHeaders()
-});
+  });
   if (!response.ok) throw new Error(`Failed to fetch offer for course offering id: ${courseOfferingId}`);
   
   const data = await response.json();
@@ -77,7 +77,10 @@ export const fetchCourseOfferingDetails = async (courseOfferingId) => {
 
 export const fetchSharedSessionDetails = async (sharedSessionId) => {
   try {
-    const response = await fetch(`${API_URL}/course-term-service/shared-sessions/${sharedSessionId}/`);
+    console.log("Fetching shared session ID:", sharedSessionId);
+    const response = await fetch(`${API_URL}/course-term-service/shared-sessions/${sharedSessionId}/`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) throw new Error("Failed to fetch shared session details");
     return await response.json();
   } catch (error) {
@@ -130,4 +133,48 @@ export const createOffer = async (applicationId, sections) => {
   return await response.json();
 };
 
+export const editOffer = async (applicationId, offer_items, offer_id) => {
+
+  const offerItems = offer_items.map((item) => {
+    if (item.item_type === "course_offering") {
+      return {
+        item_type: "course_offering",
+        course_offering_id: item.course_offering_id,
+      };
+    } else if (item.item_type === "shared_session") {
+      return {
+        item_type: "shared_session",
+        shared_session_id: item.shared_session_id,
+      };
+    } else {
+      throw new Error(`Unsupported item_type: ${section.item_type}`);
+    }
+  });
+
+  console.log("offerItems in editOffer: ", offerItems);
+  console.log("offer_id in editOffer: ", offer_id);
+  console.log("Payload being sent: ", {
+    application_id: applicationId,
+    offer_items: offerItems,
+  });
+
+  const response = await fetch(`${API_URL}/allocations/offers/${offer_id}/edit_offer/`, {
+    method: "PUT",
+    headers: {
+      ...getAuthHeaders(),
+    "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      application_id: applicationId,
+      offer_items: offerItems
+      }),
+  });
+  
+
+  if (!response.ok) {
+    throw new Error("Failed to create offer");
+  }
+
+  return await response.json();
+};
 // Add more functions as needed
