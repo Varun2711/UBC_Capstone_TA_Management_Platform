@@ -720,9 +720,12 @@ export default function ProfilePage() {
   const validateAcademicForm = () => {
     const newErrors = {};
 
-    // Validate required fields - same as your original
+    // Validate required fields and their formats
     if (!userData.major?.trim()) {
       newErrors.major = "Major is required";
+    } else {
+      const majorError = validateAcademicField("major", userData.major);
+      if (majorError) newErrors.major = majorError;
     }
 
     if (!userData.year?.trim()) {
@@ -731,18 +734,101 @@ export default function ProfilePage() {
 
     if (!userData.academicInfo?.degreeStart?.trim()) {
       newErrors.degreeStart = "Degree start year is required";
+    } else {
+      const degreeStartError = validateAcademicField("academicInfo.degreeStart", userData.academicInfo.degreeStart);
+      if (degreeStartError) newErrors.degreeStart = degreeStartError;
     }
 
     if (!userData.academicInfo?.yearStanding?.trim()) {
       newErrors.yearStanding = "Year standing is required";
+    } else {
+      const yearStandingError = validateAcademicField("academicInfo.yearStanding", userData.academicInfo.yearStanding);
+      if (yearStandingError) newErrors.yearStanding = yearStandingError;
     }
 
     if (!userData.academicInfo?.expectedGraduation?.trim()) {
       newErrors.expectedGraduation = "Expected graduation is required";
     }
 
+    // Validate optional fields if they have values
+    if (userData.gpa && userData.gpa.trim() !== "") {
+      const gpaError = validateAcademicField("gpa", userData.gpa);
+      if (gpaError) newErrors.gpa = gpaError;
+    }
+
+    if (userData.minor && userData.minor.trim() !== "") {
+      const minorError = validateAcademicField("minor", userData.minor);
+      if (minorError) newErrors.minor = minorError;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const validateExperienceForm = (editedExperience) => {
+    const newErrors = {};
+    let hasErrors = false;
+    editedExperience.forEach((exp, index) => {
+      const courseError = validateExperienceField("course", exp.course);
+      if (courseError) {
+        newErrors[`course_${index}`] = courseError;
+        hasErrors = true;
+      }
+      const semesterError = validateExperienceField("semester", exp.semester);
+      if (semesterError) {
+        newErrors[`semester_${index}`] = semesterError;
+        hasErrors = true;
+      }
+      const professorError = validateExperienceField("professor", exp.professor);
+      if (professorError) {
+        newErrors[`professor_${index}`] = professorError;
+        hasErrors = true;
+      }
+    });
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors, experience: "Please fix the validation errors before saving." }));
+    }
+    return !hasErrors;
+  };
+
+  const validateSkillsForm = (editedSkills) => {
+    const newErrors = {};
+    let hasErrors = false;
+    editedSkills.technicalSkills.forEach((skill, index) => {
+      const error = validateSkillField(skill);
+      if (error) {
+        newErrors[`technical_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+    editedSkills.softSkills.forEach((skill, index) => {
+      const error = validateSkillField(skill);
+      if (error) {
+        newErrors[`soft_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors, skills: "Please fix the validation errors before saving." }));
+    }
+    return !hasErrors;
+  };
+
+  // Add validation function for the entire course preferences form
+  const validateCoursePreferencesForm = (coursePreference) => {
+    const newErrors = {};
+    let hasErrors = false;
+    coursePreference.forEach((course, index) => {
+      const error = validateCoursePreference(course);
+      if (error) {
+        newErrors[`course_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors }));
+    }
+    return !hasErrors;
   };
 
   // Fix the handleSaveAcademicInfo function to match your working original
@@ -1008,8 +1094,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Remove the duplicate handleSaveAcademicInfo function and duplicate validateAcademicForm
-  // Keep only the version that's in the right place
 
   // Add the majors array
   const majors = [
