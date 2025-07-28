@@ -126,13 +126,25 @@ export function useResetPassword() {
 
             return {
                 success: true,
-                data: response.message
+                data: response.data?.message ?? "Password reset successful!"
             }
         
         } catch(error) {
+            const errorMsg = error.response?.data?.error || "An unexpected error occurred when resetting your password";
+
+            // default to error message provided by api, and adjust to be more descriptive for most commonly encountered errors
+            let data = errorMsg;
+
+            // Display user-friendly error message:
+            if(errorMsg == "Student not found" || errorMsg == "Instructor not found" || errorMsg == "Scheduler not found" || errorMsg == "Admin not found") {
+                data = "Unable to find your account. Please ensure that your account exists and your email address hasn't changed"
+            } else if(errorMsg == "Invalid or expired token") {
+                data = "Email link invalid or expired. Please return to 'Reset Password' to request a new link."
+            }
+
             return {
                 success: false,
-                data: error.message
+                data: data
             }
         }
         

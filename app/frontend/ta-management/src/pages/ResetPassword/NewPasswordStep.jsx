@@ -68,7 +68,7 @@ export default function NewPasswordStep({ token, onNext, requestPasswordReset })
       // Make request to auth service to perform password reset
       const response = await requestPasswordReset(password, token);
       if(response.success) {
-        toast.success("Password reset successful!")
+        toast.success(response.data)
         onNext();
       } else {
         toast.error(response.data)
@@ -95,7 +95,7 @@ export default function NewPasswordStep({ token, onNext, requestPasswordReset })
       <div className="flex-grow flex items-center justify-center p-4">      
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">GOOBERSet New Password</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Set New Password</h1>
             <p className="text-gray-600">
               Enter a new password to be used for your account.
             </p>
