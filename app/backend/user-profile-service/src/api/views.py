@@ -857,7 +857,7 @@ def create_admin(request):
         )
 
 @api_view(['GET'])
-@scheduler_required
+@permission_classes([IsSchedulerOrAdmin])
 def get_users(request):
     """Get all users - Scheduler and Admin access"""
     try:

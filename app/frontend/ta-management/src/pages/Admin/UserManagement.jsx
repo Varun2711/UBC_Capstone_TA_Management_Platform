@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Users,
   UserPlus,
@@ -14,6 +14,9 @@ import {
   GraduationCap,
   Calendar,
   User,
+  ChevronUp,
+  UserX,
+  Building
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,108 +44,278 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
 
+// API Configuration
+const API_URL = 'http://localhost:8080'
+const ADMIN_API = `${API_URL}/api/profile/admin`
+
+// Helper to get auth headers
+const getAuthHeaders = () => {
+  if (typeof window !== 'undefined') {
+    const token = sessionStorage.getItem('accessToken')
+    if (token) {
+      return {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  }
+  return {}
+}
+
+// API Functions
+const getAllUsers = async (userType = '') => {
+  try {
+    const url = `${API_URL}/users/${userType ? `?user_type=${userType}` : ''}`
+    const response = await fetch(url, {
+      headers: getAuthHeaders()
+    })
+    const data = await response.json()
+    return data
+  } catch (error) {
+    throw error
+  }
+}
+
+const createInstructor = async (instructorData) => {
+  try {
+    const response = await fetch(`${ADMIN_API}/create-instructor/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(instructorData)
+    })
+    const data = await response.json()
+    return data
+  } catch (error) {
+    throw error
+  }
+}
+
+const createScheduler = async (schedulerData) => {
+  try {
+    const response = await fetch(`${ADMIN_API}/create-scheduler/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(schedulerData)
+    })
+    const data = await response.json()
+    return data
+  } catch (error) {
+    throw error
+  }
+}
+
+const updateUser = async (updateData) => {
+  try {
+    const response = await fetch(`${ADMIN_API}/user-management/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(updateData)
+    })
+    const data = await response.json()
+    return data
+  } catch (error) {
+    throw error
+  }
+}
+
 export default function UserManagement() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [roleFilter, setRoleFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [users, setUsers] = useState([])
+  const [filteredUsers, setFilteredUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [createType, setCreateType] = useState('instructor')
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    employee_number: '',
+    department: ''
+  })
 
-  // Mock user data
-  const users = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah.johnson@university.edu",
-      role: "Student",
-      status: "Active",
-      lastLogin: "2 hours ago",
-      joinDate: "2023-08-15",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 2,
-      name: "Dr. Michael Smith",
-      email: "m.smith@university.edu",
-      role: "Instructor",
-      status: "Active",
-      lastLogin: "1 day ago",
-      joinDate: "2022-01-10",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 3,
-      name: "Emily Chen",
-      email: "e.chen@university.edu",
-      role: "TA Scheduler",
-      status: "Active",
-      lastLogin: "30 minutes ago",
-      joinDate: "2023-03-22",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 4,
-      name: "Admin User",
-      email: "admin@university.edu",
-      role: "Admin",
-      status: "Active",
-      lastLogin: "5 minutes ago",
-      joinDate: "2021-09-01",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 5,
-      name: "John Doe",
-      email: "j.doe@university.edu",
-      role: "Student",
-      status: "Inactive",
-      lastLogin: "2 weeks ago",
-      joinDate: "2023-09-01",
-      avatar: "/placeholder.svg",
-    },
+  const departments = [
+    { code: 'cosc', name: 'Computer Science' },
+    { code: 'math', name: 'Mathematics' },
+    { code: 'phy', name: 'Physics' },
+    { code: 'astr', name: 'Astronomy' },
+    { code: 'data', name: 'Data Science' },
+    { code: 'stat', name: 'Statistics' }
   ]
 
-  const userStats = [
-    {
-      title: "Total Users",
-      value: "1,247",
-      change: "+23 this week",
-      icon: Users,
-      color: "text-blue-600",
-    },
-    {
-      title: "Students",
-      value: "1,089",
-      change: "87.3% of total",
-      icon: GraduationCap,
-      color: "text-green-600",
-    },
-    {
-      title: "Instructors",
-      value: "124",
-      change: "9.9% of total",
-      icon: User,
-      color: "text-purple-600",
-    },
-    {
-      title: "Admins",
-      value: "34",
-      change: "2.8% of total",
-      icon: Shield,
-      color: "text-red-600",
-    },
-  ]
+  // Load users on component mount
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  // Filter users when search term or filters change
+  useEffect(() => {
+    filterUsers()
+  }, [users, searchQuery, roleFilter, statusFilter])
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      const response = await getAllUsers()
+      if (response.success) {
+        setUsers(response.data.users)
+      } else {
+        setError('Failed to fetch users')
+      }
+    } catch (err) {
+      setError('Error fetching users: ' + (err.message || 'Unknown error'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filterUsers = () => {
+    let filtered = users
+
+    // Filter by role
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => user.type === roleFilter)
+    }
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      const isActive = statusFilter === 'active'
+      filtered = filtered.filter(user => user.is_active === isActive)
+    }
+
+    // Filter by search term
+    if (searchQuery) {
+      filtered = filtered.filter(user =>
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.id.toString().toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    setFilteredUsers(filtered)
+  }
+
+  const handleCreateUser = async () => {
+    try {
+      // Basic validation
+      if (!formData.first_name || !formData.last_name || !formData.email || !formData.employee_number || !formData.department) {
+        alert('Please fill in all fields')
+        return
+      }
+
+      setLoading(true)
+      
+      let response
+      if (createType === 'instructor') {
+        response = await createInstructor(formData)
+      } else {
+        response = await createScheduler(formData)
+      }
+
+      if (response.success) {
+        setShowCreateForm(false)
+        setFormData({
+          first_name: '',
+          last_name: '',
+          email: '',
+          employee_number: '',
+          department: ''
+        })
+        fetchUsers() // Refresh the user list
+        alert(`${createType === 'instructor' ? 'Instructor' : 'TA Scheduler'} created successfully!\nTemporary password: ${response.data.temporary_password}`)
+      } else {
+        alert('Error creating user: ' + response.message)
+      }
+    } catch (err) {
+      alert('Error creating user: ' + (err.message || 'Unknown error'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePromoteToCoordinator = async (user) => {
+    if (user.type !== 'instructor') {
+      alert('Only instructors can be promoted to TA coordinators')
+      return
+    }
+
+    try {
+      // Create a scheduler record with the same details as the instructor
+      const schedulerData = {
+        first_name: user.name.split(' ')[0],
+        last_name: user.name.split(' ').slice(1).join(' '),
+        email: user.email,
+        employee_number: user.id,
+        department: getDepartmentCode(user.department)
+      }
+
+      const response = await createScheduler(schedulerData)
+      if (response.success) {
+        alert(`${user.name} has been promoted to TA Coordinator!`)
+        fetchUsers()
+      } else {
+        alert('Error promoting user: ' + response.message)
+      }
+    } catch (err) {
+      alert('Error promoting user: ' + (err.message || 'Unknown error'))
+    }
+  }
+
+  const handleDeactivateUser = async (user) => {
+    if (window.confirm(`Are you sure you want to deactivate ${user.name}?`)) {
+      try {
+        const response = await updateUser({
+          action: 'deactivate',
+          user_type: user.type,
+          user_id: user.id
+        })
+
+        if (response.success) {
+          alert(`${user.name} has been deactivated`)
+          fetchUsers()
+        } else {
+          alert('Error deactivating user: ' + response.message)
+        }
+      } catch (err) {
+        alert('Error deactivating user: ' + (err.message || 'Unknown error'))
+      }
+    }
+  }
+
+  const getDepartmentCode = (departmentName) => {
+    const dept = departments.find(d => d.name === departmentName)
+    return dept ? dept.code : 'cosc'
+  }
 
   const getRoleIcon = (role) => {
     switch (role) {
-      case "Admin":
+      case 'admin':
         return <Shield className="h-4 w-4 text-red-600" />
-      case "Instructor":
+      case 'instructor':
         return <User className="h-4 w-4 text-purple-600" />
-      case "TA Scheduler":
+      case 'scheduler':
         return <Calendar className="h-4 w-4 text-blue-600" />
-      case "Student":
+      case 'student':
         return <GraduationCap className="h-4 w-4 text-green-600" />
       default:
         return <User className="h-4 w-4 text-gray-400" />
@@ -151,27 +324,76 @@ export default function UserManagement() {
 
   const getRoleBadgeVariant = (role) => {
     switch (role) {
-      case "Admin":
-        return "destructive"
-      case "Instructor":
-        return "default"
-      case "TA Scheduler":
-        return "secondary"
-      case "Student":
-        return "outline"
+      case 'admin':
+        return 'destructive'
+      case 'instructor':
+        return 'default'
+      case 'scheduler':
+        return 'secondary'
+      case 'student':
+        return 'outline'
       default:
-        return "outline"
+        return 'outline'
     }
   }
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesRole = roleFilter === "all" || user.role === roleFilter
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter
-    return matchesSearch && matchesRole && matchesStatus
-  })
+  const getRoleLabel = (type) => {
+    const labels = {
+      admin: 'Admin',
+      scheduler: 'TA Coordinator',
+      instructor: 'Instructor',
+      student: 'Student'
+    }
+    return labels[type] || type
+  }
+
+  // Calculate user stats
+  const userStats = [
+    {
+      title: 'Total Users',
+      value: users.length.toString(),
+      change: `${filteredUsers.length} shown`,
+      icon: Users,
+      color: 'text-blue-600',
+    },
+    {
+      title: 'Students',
+      value: users.filter(u => u.type === 'student').length.toString(),
+      change: `${((users.filter(u => u.type === 'student').length / users.length) * 100 || 0).toFixed(1)}% of total`,
+      icon: GraduationCap,
+      color: 'text-green-600',
+    },
+    {
+      title: 'Instructors',
+      value: users.filter(u => u.type === 'instructor').length.toString(),
+      change: `${((users.filter(u => u.type === 'instructor').length / users.length) * 100 || 0).toFixed(1)}% of total`,
+      icon: User,
+      color: 'text-purple-600',
+    },
+    {
+      title: 'TA Coordinators',
+      value: users.filter(u => u.type === 'scheduler').length.toString(),
+      change: `${((users.filter(u => u.type === 'scheduler').length / users.length) * 100 || 0).toFixed(1)}% of total`,
+      icon: Calendar,
+      color: 'text-blue-600',
+    },
+  ]
+
+  if (loading && users.length === 0) {
+    return (
+      <SidebarProvider>
+        <AdminSidebar activePage="User Management" />
+        <SidebarInset>
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading users...</p>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    )
+  }
 
   return (
     <SidebarProvider>
@@ -209,8 +431,17 @@ export default function UserManagement() {
               <Users className="h-6 w-6 text-blue-600" />
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">User Management</h1>
             </div>
-            <p className="text-muted-foreground">Manage all system users, roles, and permissions</p>
+            <p className="text-muted-foreground">Manage instructors, TA coordinators, and other users</p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="pt-6">
+                <p className="text-red-800">{error}</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* User Stats */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -227,62 +458,6 @@ export default function UserManagement() {
               </Card>
             ))}
           </div>
-
-          {/* Create User Form */}
-          {showCreateForm && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Create New User</CardTitle>
-                <CardDescription>Add a new user to the system</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" placeholder="Enter full name" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" placeholder="Enter email address" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="instructor">Instructor</SelectItem>
-                        <SelectItem value="ta-scheduler">TA Scheduler</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cs">Computer Science</SelectItem>
-                        <SelectItem value="math">Mathematics</SelectItem>
-                        <SelectItem value="physics">Physics</SelectItem>
-                        <SelectItem value="chemistry">Chemistry</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                    Cancel
-                  </Button>
-                  <Button>Create User</Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Filters and Search */}
           <Card>
@@ -305,7 +480,7 @@ export default function UserManagement() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search users by name or email..."
+                    placeholder="Search users by name, email, or ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -317,10 +492,10 @@ export default function UserManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="Student">Students</SelectItem>
-                    <SelectItem value="Instructor">Instructors</SelectItem>
-                    <SelectItem value="TA Scheduler">TA Schedulers</SelectItem>
-                    <SelectItem value="Admin">Admins</SelectItem>
+                    <SelectItem value="student">Students</SelectItem>
+                    <SelectItem value="instructor">Instructors</SelectItem>
+                    <SelectItem value="scheduler">TA Coordinators</SelectItem>
+                    <SelectItem value="admin">Admins</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -329,8 +504,8 @@ export default function UserManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -341,43 +516,45 @@ export default function UserManagement() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Department</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Last Login</TableHead>
-                    <TableHead>Join Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow key={`${user.type}-${user.id}`}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
                             <AvatarFallback>
-                              {user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
+                              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <div className="font-medium">{user.name}</div>
                             <div className="text-sm text-muted-foreground">{user.email}</div>
+                            <div className="text-xs text-muted-foreground">ID: {user.id}</div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {getRoleIcon(user.role)}
-                          <Badge variant={getRoleBadgeVariant(user.role)}>{user.role}</Badge>
+                          {getRoleIcon(user.type)}
+                          <Badge variant={getRoleBadgeVariant(user.type)}>{getRoleLabel(user.type)}</Badge>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={user.status === "Active" ? "default" : "secondary"}>{user.status}</Badge>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Building className="h-4 w-4 text-muted-foreground" />
+                          <span>{user.department || 'N/A'}</span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{user.lastLogin}</TableCell>
-                      <TableCell className="text-muted-foreground">{user.joinDate}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -395,11 +572,22 @@ export default function UserManagement() {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit User
                             </DropdownMenuItem>
+                            {user.type === 'instructor' && user.is_active && (
+                              <DropdownMenuItem onClick={() => handlePromoteToCoordinator(user)}>
+                                <ChevronUp className="mr-2 h-4 w-4" />
+                                Promote to TA Coordinator
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete User
-                            </DropdownMenuItem>
+                            {user.is_active && user.type !== 'admin' && (
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => handleDeactivateUser(user)}
+                              >
+                                <UserX className="mr-2 h-4 w-4" />
+                                Deactivate User
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -407,9 +595,121 @@ export default function UserManagement() {
                   ))}
                 </TableBody>
               </Table>
+
+              {filteredUsers.length === 0 && !loading && (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No users found matching your criteria</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </main>
+
+        {/* Create User Dialog */}
+        <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                Create New {createType === 'instructor' ? 'Instructor' : 'TA Scheduler'}
+              </DialogTitle>
+              <DialogDescription>
+                Add a new {createType === 'instructor' ? 'instructor' : 'TA scheduler'} to the system
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="flex space-x-2 mb-4">
+                <Button
+                  type="button"
+                  variant={createType === 'instructor' ? 'default' : 'outline'}
+                  onClick={() => setCreateType('instructor')}
+                  size="sm"
+                >
+                  Instructor
+                </Button>
+                <Button
+                  type="button"
+                  variant={createType === 'scheduler' ? 'default' : 'outline'}
+                  onClick={() => setCreateType('scheduler')}
+                  size="sm"
+                >
+                  TA Scheduler
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                    placeholder="Enter last name"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  placeholder="Enter email address"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="employee_number">Employee Number</Label>
+                <Input
+                  id="employee_number"
+                  value={formData.employee_number}
+                  onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
+                  placeholder="Enter employee number"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <Select 
+                  value={formData.department} 
+                  onValueChange={(value) => setFormData({...formData, department: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.code} value={dept.code}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateUser} disabled={loading}>
+                {loading ? 'Creating...' : 'Create User'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
     </SidebarProvider>
   )
