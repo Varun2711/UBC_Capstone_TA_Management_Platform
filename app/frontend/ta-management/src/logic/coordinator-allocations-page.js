@@ -198,4 +198,22 @@ export const sendOffer = async (response_deadline, offer_id) => {
 
   return await response.json();
 };
+
+export const deleteOffer = async (offer_id) => {
+
+  const response = await fetch(`${API_URL}/allocations/offers/${offer_id}/cancel_offer/`, {
+    method: "DELETE",
+    headers: {
+      ...getAuthHeaders(),
+    "Content-Type": "application/json",
+    },
+  });
+  
+
+  if (!response.ok) {
+    throw new Error("Failed to delete offer");
+  }
+
+  return await response.json();
+};
 // Add more functions as needed

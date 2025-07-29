@@ -40,7 +40,7 @@ import { AppSidebar } from "../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails } from "@/logic/coordinator-allocations-page";
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -289,7 +289,7 @@ function getPriorityBadge(priority) {
  
 //converts Monday start time end time to Monday-8-top and so on
 function convertTimeSlotsInfoToKeys(time_slots_info) {
-  console.log("time_slots_info in convertTimeSlotsInfoToKeys: ", time_slots_info);
+  //console.log("time_slots_info in convertTimeSlotsInfoToKeys: ", time_slots_info);
   const result = []
 
   for (const slot of time_slots_info) {
@@ -373,7 +373,7 @@ function convertProfileAvailabilityGridToKeys(availabilityObj) {
       }
     }
   }
-  console.log("result from convertProfileAvailabilityGridToKeys is being returned as: ", result);
+  //console.log("result from convertProfileAvailabilityGridToKeys is being returned as: ", result);
   return result;
 }
 
@@ -394,7 +394,7 @@ export default function TAAllocationPage() {
   const [addedOffers, setAddedOffers] = useState([])
   const [activeOffers, setActiveOffers] = useState([])
   const [showRescindModal, setShowRescindModal] = useState(false)
-  const [taToRescind, setTaToRescind] = useState(null)
+  const [offerToRescind, setOfferToRescind] = useState(null)
   const [filters, setFilters] = useState({
     discipline: "",
     term_code: "",
@@ -467,10 +467,19 @@ export default function TAAllocationPage() {
   };
 
 
-  const handleRescindOffer = (taStudentId) => {
-    setAddedOffers((prevOffers) =>
-      prevOffers.filter((offer) => offer.taStudentId !== taStudentId)
-    )
+  const handleRescindOffer = async (offer_id) => {
+    console.log("enter handleRescindOffer");
+    console.log("about to delete offer with offer id ", offer_id);
+    await deleteOffer(offer_id);
+    console.log("deleteOffer has finished ");
+
+    // Add a small delay (e.g., 500ms or 1000ms)
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
+
+
+    console.log("await fetchAndSetOffers is about to be called after rescinding");
+    await fetchAndSetOffers();
+    console.log("await fetchAndSetOffers has finished being called after rescinding");
   }
 
   const handleDeleteAssignment = (assignmentToDelete) => {
@@ -528,11 +537,12 @@ export default function TAAllocationPage() {
   */
 
   const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
-    console.log("Offers in isSectionAlreadyOfferedToTA:", offers);
+    //console.log("Offers in isSectionAlreadyOfferedToTA:", offers);
     const taOffer = offers.find((o) => o.student.id === taStudentId);
     if (!taOffer) return false;
 
-    console.log("taOffer in isSectionAlreadyOfferedToTA: ", taOffer);
+    //console.log("taOffer in isSectionAlreadyOfferedToTA: ", taOffer);
+    if (taOffer.status === "cancelled") return false;
     return taOffer.offer_items.some(
       (offerItem) =>
         String(offerItem.course_offering_id ?? offerItem.shared_session_id) === String(sectionId)
@@ -599,14 +609,14 @@ export default function TAAllocationPage() {
   }, [])
 
 
-  async function getAssignedSlotsForTA(taStudentId) {
+  async function getAssignedAndOfferedSlotsForTA(taStudentId) {
     // Collect slots from assignments
     const assignmentSlots = assignments
       .filter(a => a.taStudentId === taStudentId)
       .flatMap(a => a.slots || []);
 
     // Collect slots from offers (fetch details for each offer item)
-    const taOffers = offers.filter(o => o.student.id === taStudentId);
+    const taOffers = offers.filter(o => o.student.id === taStudentId && o.status !== "cancelled");
     let offerSlots = [];
 
     for (const offer of taOffers) {
@@ -638,7 +648,7 @@ export default function TAAllocationPage() {
       : courseSlots;
 
     // Get all slots already assigned to this TA
-    const assignedAndOfferedSlots = new Set(await getAssignedSlotsForTA(taStudentId));
+    const assignedAndOfferedSlots = new Set(await getAssignedAndOfferedSlotsForTA(taStudentId));
 
     //console.log("In checkForConflicts, availabilitySet: ", availabilitySet);
     //console.log("In checkForConflicts, selected courses's formattedTimeSlotsInfoToKeys: ", formattedTimeSlotsInfoToKeys);
@@ -949,7 +959,7 @@ export default function TAAllocationPage() {
           (async () => {
             const data = await fetchCourses();
             const fetchedCourses = data.results;
-            console.log("fetchedCourses from backend are: ", fetchedCourses);
+            //console.log("fetchedCourses from backend are: ", fetchedCourses);
             setCourses(fetchedCourses);
 
             // Fetch related data for each course
@@ -969,7 +979,7 @@ export default function TAAllocationPage() {
           })(),
           (async () => {
             const fetchedShortlistedApplicants = await fetchShortlistedApplicants();
-            console.log("fetchedShortlistedApplicants from backend are: ", fetchedShortlistedApplicants);
+            //console.log("fetchedShortlistedApplicants from backend are: ", fetchedShortlistedApplicants);
             setShortlistedApplicants(fetchedShortlistedApplicants);
 
             const profiles = await Promise.all(
@@ -1016,10 +1026,11 @@ export default function TAAllocationPage() {
       }
 
       const relevantOffers = offers.filter(
-        (offer) => offer.student.id === selectedApplication?.application?.student?.id
+        (offer) => offer.student.id === selectedApplication?.application?.student?.id &&
+        offer.status !== "cancelled"
       );
       console.log("relevantOffers for TA:", selectedApplication?.application?.student?.id, "are: ", relevantOffers);
-      console.log("Filtered Offers for TA:", relevantOffers);
+      //console.log("Filtered Offers for TA:", relevantOffers);
 
       if (relevantOffers.length === 0) {
         setOfferSlotTimes([]); // No offers → clear times
@@ -1028,9 +1039,9 @@ export default function TAAllocationPage() {
 
       const slotPromises = relevantOffers.flatMap((offer) =>
         offer.offer_items.map(async (item) => {
-          console.log("offer item in fetchOfferSlotTimes: ", item);
-          console.log("item.course_offering_id in fetchOfferSlotTimes: ", item.course_offering_id);
-          console.log("item.shared_session_id in fetchOfferSlotTimes: ", item.shared_session_id);
+          //console.log("offer item in fetchOfferSlotTimes: ", item);
+          //console.log("item.course_offering_id in fetchOfferSlotTimes: ", item.course_offering_id);
+          //console.log("item.shared_session_id in fetchOfferSlotTimes: ", item.shared_session_id);
           try {
             if (item.course_offering_id || item.course_offering_id !== null) {
               const details = await fetchCourseOfferingDetails(item.course_offering_id);
@@ -1064,7 +1075,7 @@ export default function TAAllocationPage() {
   );
 
   console.log("selectedApplication in CardContent: ", selectedApplication);
-  console.log("selectedTAProfile in CardContent: ", selectedTAProfile);
+  //console.log("selectedTAProfile in CardContent: ", selectedTAProfile);
   console.log("selectedSections before highlightedSlots is updated: ", selectedSections);
   
   console.log("offerSlotTimes before highlightedSlots is updated: ", offerSlotTimes);
@@ -1086,11 +1097,11 @@ export default function TAAllocationPage() {
                     //.flatMap(o =>
                       //o.offers?.flatMap(offer => offer.slots || []) || []
                     //),
-                  ...activeOffers
-                    .filter(o => o.taStudentId === selectedTA.application.student.id)
-                    .flatMap(o =>
-                      o.offers?.flatMap(offer => offer.slots || []) || []
-                    ),
+                  //...activeOffers
+                   //.filter(o => o.taStudentId === selectedTA.application.student.id)
+                    //.flatMap(o =>
+                      //o.offers?.flatMap(offer => offer.slots || []) || []
+                    //),
                   ...offerSlotTimes,
                 ]
               : [];
@@ -1101,7 +1112,7 @@ export default function TAAllocationPage() {
 
   const totalWeeklyHoursForSelectedTA = selectedTA ? (() => {
     const taOffers = offers.filter(
-      offer => offer.student.id === selectedTA.application.student.id
+      offer => offer.student.id === selectedTA.application.student.id && offer.status !== "cancelled"
     );
 
     if (taOffers.length === 0) return 0;
@@ -1272,8 +1283,8 @@ export default function TAAllocationPage() {
                             <div>
                               <div>
                                 <h4 className="text-sm font-medium mb-2">Availability</h4>
-                                {console.log("addedOffers right before WeeklyAvailabilityCalendar is called is: ", addedOffers)}
-                                {console.log("selectedTAProfile right before WeeklyAvailabilityCalendar is called is: ", selectedTAProfile)}
+                                {/*console.log("addedOffers right before WeeklyAvailabilityCalendar is called is: ", addedOffers)*/}
+                                {/*console.log("selectedTAProfile right before WeeklyAvailabilityCalendar is called is: ", selectedTAProfile)*/}
                                 <WeeklyAvailabilityCalendar
                                   mode={"allocation"}
                                   editable={false}
@@ -1319,9 +1330,9 @@ export default function TAAllocationPage() {
                                         setSelectedTAId(currentStudentId)
                                         setSelectedApplication(item);
                                         setSelectedTAProfile(profilesOfShortlistedApplicants.find((profile) => profile.id === currentStudentId));
-                                        console.log(" On clicking the applicant, selectedTAId: ", selectedTAId);
-                                        console.log(" On clicking the applicant, selectedApplication: ", selectedApplication);
-                                        console.log(" On clicking the applicant, selectedTAProfile: ", selectedTAProfile);
+                                        //console.log(" On clicking the applicant, selectedTAId: ", selectedTAId);
+                                        //console.log(" On clicking the applicant, selectedApplication: ", selectedApplication);
+                                        //console.log(" On clicking the applicant, selectedTAProfile: ", selectedTAProfile);
                                       }}
                                     >
                                       <div className="flex items-center justify-between">
@@ -1456,12 +1467,12 @@ export default function TAAllocationPage() {
                                     <div className=" mb-2 ">
                                       <div className="space-y-2 mt-1">
                                         {availableOfferings.map((offering) => {
-                                          console.log("selectedApplication in availableOfferings map: ", selectedApplication);
-                                          console.log("offering in availableOfferings map: ", offering);
+                                          //console.log("selectedApplication in availableOfferings map: ", selectedApplication);
+                                          //console.log("offering in availableOfferings map: ", offering);
                                           const isSelected = selectedCourseOfferings.some((s) => s.sectionId === offering.course_offering_id);
                                           const studentId = selectedApplication?.application?.student?.id;
-                                          console.log("studentId in availableOfferings map: ", studentId);
-                                          console.log("about to call isSectionAlreadyOfferedToTA for student: ", studentId);
+                                          //console.log("studentId in availableOfferings map: ", studentId);
+                                          //console.log("about to call isSectionAlreadyOfferedToTA for student: ", studentId);
                                           const isOffered = studentId && isSectionAlreadyOfferedToTA(studentId, offering.course_offering_id);
                                           //console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
                                           return (
@@ -1545,7 +1556,7 @@ export default function TAAllocationPage() {
                                             time_slots_info: convertTimeSlotsInfoToKeys(section.time_slots_info),
                                             weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(section.time_slots_info)),
                                           };
-                                          console.log("selected is having the following after clicking a lab/tutorial: ", selected);
+                                          //console.log("selected is having the following after clicking a lab/tutorial: ", selected);
                                           setSelectedSharedSessions((prev) => {
                                             const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
                                             return alreadySelected
@@ -1592,8 +1603,8 @@ export default function TAAllocationPage() {
                           <ul className="list-disc list-inside text-sm text-muted-foreground mt-2">
                             {selectedSections.map((c, idx) => {
                               const hours = c.weekHours ?? c.weeklyDuration ?? 0;
-                              console.log("c in selectedSections.map in Send offer card is: ", c);
-                              console.log("hours in selectedSections.map in Send offer card is: ", hours);
+                              //console.log("c in selectedSections.map in Send offer card is: ", c);
+                              //console.log("hours in selectedSections.map in Send offer card is: ", hours);
                               return (
                                 <li key={idx}>
                                   {c.course_number} - {c.course_name} - {c.section_type_display} Section {c.section_number} ({hours} hrs)
@@ -1655,7 +1666,7 @@ export default function TAAllocationPage() {
                               }
 
                               for (const course of selectedSections) {
-                                console.log("course in selectedSections after pressing send offer button: ", course);
+                                //console.log("course in selectedSections after pressing send offer button: ", course);
                                 const result = await checkForConflicts(
                                   selectedTAProfile.availability,
                                   course.time_slots_info,
@@ -1732,7 +1743,7 @@ export default function TAAllocationPage() {
                       const filteredOffers = offers.filter(offer => offer.status === "pending" && offer.offer_items.length > 0);
 
                       // You can console.log the filtered offers here if you want to inspect them
-                      console.log("Filtered Pending Offers:", filteredOffers);
+                      //console.log("Filtered Pending Offers:", filteredOffers);
 
                       return filteredOffers.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center">
@@ -1756,7 +1767,7 @@ export default function TAAllocationPage() {
                                   size="sm"
                                   onClick={() => {
                                     // Ensure setTaToRescind expects the 'pendingOffer' structure
-                                    setTaToRescind(pendingOffer);
+                                    setOfferToRescind(pendingOffer);
                                     setShowRescindModal(true);
                                   }}
                                 >
@@ -1852,30 +1863,32 @@ export default function TAAllocationPage() {
               )}
 
               {/* Rescind modal */}
-              {showRescindModal && taToRescind && (
+              {showRescindModal && offerToRescind && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                   <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
                     <h2 className="text-lg font-semibold mb-4">Confirm Rescind</h2>
                     <p className="text-sm mb-6">
                       Are you sure you want to rescind all offers made to{" "}
-                      <strong>{taToRescind.taName}</strong>?
+                      <strong>{offerToRescind.student.name}</strong>?
                     </p>
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
                         onClick={() => {
                           setShowRescindModal(false)
-                          setTaToRescind(null)
+                          setOfferToRescind(null)
                         }}
                       >
                         Cancel
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => {
-                          handleRescindOffer(taToRescind.taStudentId)
+                        onClick={ async () => {
+                          console.log("offerToRescind is: ", offerToRescind);
+                          handleRescindOffer(offerToRescind.offer_id)
+                          console.log("offers after rescinding and doing fetchAndSetOffers: ", offers);
                           setShowRescindModal(false)
-                          setTaToRescind(null)
+                          setOfferToRescind(null)
                         }}
                       >
                         Yes, Rescind
