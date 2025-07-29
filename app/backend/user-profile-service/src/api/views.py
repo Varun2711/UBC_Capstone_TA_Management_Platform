@@ -703,7 +703,18 @@ class UserManagementView(generics.GenericAPIView):
         )
 
     def patch(self, request):
+        """Handle PATCH requests for user management actions"""
         action = request.data.get('action')
+        
+        if action == 'deactivate':
+            return self.deactivate_user(request)
+        elif action == 'modify':
+            return self.modify_user(request)
+        else:
+            return Response(
+                error_response("Invalid action. Use 'deactivate' or 'modify'"),
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     def deactivate_user(self, request):
         """Deactivate a user account - Admin only"""

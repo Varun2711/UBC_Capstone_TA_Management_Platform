@@ -57,6 +57,7 @@ import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
 // API Configuration
 const API_URL = 'http://localhost:8080'
 const ADMIN_API = `${API_URL}/api/profile/admin`
+const PROFILE_API = `${API_URL}/api/profile`
 
 // Helper to get auth headers
 const getAuthHeaders = () => {
@@ -64,23 +65,39 @@ const getAuthHeaders = () => {
     const token = sessionStorage.getItem('accessToken')
     if (token) {
       return {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
     }
   }
-  return {}
+  return {
+    'Content-Type': 'application/json'
+  }
 }
 
 // API Functions
 const getAllUsers = async (userType = '') => {
   try {
-    const url = `${API_URL}/users/${userType ? `?user_type=${userType}` : ''}`
+    // Use the correct API endpoint with proper prefix
+    const url = `${PROFILE_API}/users/${userType ? `?user_type=${userType}` : ''}`
+    console.log('Fetching users from:', url) // Debug log
+    
     const response = await fetch(url, {
+      method: 'GET',
       headers: getAuthHeaders()
     })
+    
+    // Check if response is ok
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('API Error Response:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
     const data = await response.json()
     return data
   } catch (error) {
+    console.error('Error in getAllUsers:', error)
     throw error
   }
 }
@@ -89,15 +106,20 @@ const createInstructor = async (instructorData) => {
   try {
     const response = await fetch(`${ADMIN_API}/create-instructor/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(instructorData)
     })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Create Instructor Error:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
     const data = await response.json()
     return data
   } catch (error) {
+    console.error('Error in createInstructor:', error)
     throw error
   }
 }
@@ -106,15 +128,20 @@ const createScheduler = async (schedulerData) => {
   try {
     const response = await fetch(`${ADMIN_API}/create-scheduler/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(schedulerData)
     })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Create Scheduler Error:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
     const data = await response.json()
     return data
   } catch (error) {
+    console.error('Error in createScheduler:', error)
     throw error
   }
 }
@@ -123,15 +150,20 @@ const updateUser = async (updateData) => {
   try {
     const response = await fetch(`${ADMIN_API}/user-management/`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(updateData)
     })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Update User Error:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
     const data = await response.json()
     return data
   } catch (error) {
+    console.error('Error in updateUser:', error)
     throw error
   }
 }
