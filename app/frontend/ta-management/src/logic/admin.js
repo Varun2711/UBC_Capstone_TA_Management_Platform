@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_URL = 'http://localhost:8080';
 const ADMIN_API = `${API_URL}/api/profile/admin`;
-const PROFILE_API = `${API_URL}/api/profile`; // Add this
+const PROFILE_API = `${API_URL}/api/profile`; 
 
 // Helper to get auth headers
 const getAuthHeaders = () => {
@@ -85,7 +85,7 @@ export const getAdminDashboard = async () => {
   }
 };
 
-// Get a list of all users - FIXED ENDPOINT
+// Get a list of all users 
 export const getAllUsers = async (userType = "") => {
   try {
     const url = `${PROFILE_API}/users/${userType ? `?user_type=${userType}` : ""}`;
