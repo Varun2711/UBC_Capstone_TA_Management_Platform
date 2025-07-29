@@ -1,7 +1,8 @@
 // test/student-dashboard/MyApplications.test.jsx
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 
 // ─── Mocks ───────────────────────────────────────────────────
 // Mocks for react-router-dom
@@ -80,8 +81,9 @@ describe("MyApplications", () => {
 
   it("navigates to application detail on card click", async () => {
     render(<MyApplications />);
+    const user = userEvent.setup();
     const card = await screen.findByText("TA for CPSC 110");
-    fireEvent.click(card);
+    await user.click(card);
     expect(mockNavigate).toHaveBeenCalledWith("/my-applications/detail/42");
   });
 

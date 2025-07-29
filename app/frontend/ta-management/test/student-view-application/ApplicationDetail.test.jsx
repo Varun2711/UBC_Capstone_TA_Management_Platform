@@ -1,7 +1,8 @@
 // test/student-dashboard/ApplicationDetail.test.jsx
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 
 // ─── Mocks ───────────────────────────────────────────────────
 const mockNavigate = vi.fn();
@@ -113,10 +114,11 @@ describe("ApplicationDetail", () => {
 
   it("navigates back to My Applications on button click", async () => {
     render(<ApplicationDetail />);
+    const user = userEvent.setup();
     const backBtn = await screen.findByRole("button", {
       name: /Back to Applications/i,
     });
-    fireEvent.click(backBtn);
+    await user.click(backBtn);
     expect(mockNavigate).toHaveBeenCalledWith("/my-applications");
   });
 });

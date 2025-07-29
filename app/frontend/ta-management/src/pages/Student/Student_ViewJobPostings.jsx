@@ -40,12 +40,20 @@ export default function ViewJobPostings() {
   const getAuthHeaders = () => {
     const token = sessionStorage.getItem("accessToken");
     if (!token) {
-      console.warn("Access token not found in sessionStorage");
+      // console.warn("Access token not found in sessionStorage");
       return {};
     }
     return {
       Authorization: `Bearer ${token}`,
     };
+  };
+
+  //helper function which checks if the post is more than 7 days past deadline
+  const isMoreThan7DaysExpired = (deadlineDate) => {
+    const currentDate = new Date();
+    const deadline = new Date(deadlineDate);
+    const daysDifference = (currentDate - deadline) / (1000 * 60 * 60 * 24);
+    return daysDifference > 7;
   };
 
   useEffect(() => {
@@ -54,10 +62,15 @@ export default function ViewJobPostings() {
         // Fetch all job postings (not just open ones) so we can show closed ones too
         const headers = getAuthHeaders();
         const response = await instance.get("/ajp/jobpostings/", { headers });
-        setJobPostings(response.data);
+
+        const filteredPostings = response.data.filter((posting) => {
+          return !isMoreThan7DaysExpired(posting.deadline_date);
+        });
+
+        setJobPostings(filteredPostings);
       } catch (err) {
         setError("Failed to load job postings");
-        console.error("Error fetching job postings:", err);
+        // console.error("Error fetching job postings:", err);
       } finally {
         setLoading(false);
       }
@@ -363,16 +376,6 @@ export default function ViewJobPostings() {
                       : null}
                   </div>
                 )}
-
-                {/* Back to Dashboard */}
-                {/* <div className="mt-8 text-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/student-dashboard")}
-                  >
-                    Back to Dashboard
-                  </Button>
-                </div> */}
               </div>
             </div>
           </main>

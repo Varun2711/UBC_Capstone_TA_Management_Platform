@@ -18,7 +18,7 @@ const instance = axios.create({
 const getAuthHeaders = () => {
   const token = sessionStorage.getItem("accessToken");
   if (!token) {
-    console.warn("Access token not found in sessionStorage");
+    //console.warn("Access token not found in sessionStorage");
     return {};
   }
   return {
@@ -45,10 +45,10 @@ export const fetchStudentProfile = async () => {
     //console.log("Cleaned student data:", cleanedData);
     return cleanedData;
   } catch (error) {
-    console.error(
-      "Error fetching student profile:",
-      error.response?.data || error.message
-    );
+    // console.error(
+    //   "Error fetching student profile:",
+    //   error.response?.data || error.message
+    // );
 
     // Fallback to mock data for development
     console.warn("Falling back to mock data");
@@ -94,12 +94,12 @@ export const updateStudentProfile = async (studentData) => {
   try {
     const headers = getAuthHeaders();
     const profileData = transformStudentToApiFormat(studentData);
-    console.log("Updating student profile with:", profileData);
+    // console.log("Updating student profile with:", profileData);
 
     const response = await instance.patch("/profile/me/update/", profileData, {
       headers,
     });
-    console.log("Profile update response:", response.data);
+    // console.log("Profile update response:", response.data);
     return response.data;
   } catch (error) {
     console.error(
@@ -150,9 +150,9 @@ export const submitApplication = async ({
 
     const allResponses = getAllResponses(defaultResponses, dynamicResponses);
 
-    console.log("All combined responses:", allResponses);
-    console.log("Default responses:", defaultResponses);
-    console.log("Dynamic responses:", dynamicResponses);
+    //("All combined responses:", allResponses);
+    //console.log("Default responses:", defaultResponses);
+    //console.log("Dynamic responses:", dynamicResponses);
 
     // Prepare application data (static fields that go in Application model)
     const applicationData = {
@@ -171,7 +171,7 @@ export const submitApplication = async ({
       status: "submitted",
     };
 
-    console.log("here's application data:", applicationData);
+    // console.log("here's application data:", applicationData);
     // Prepare dynamic responses data
     const responsesData = formatDynamicResponsesForSubmission(
       allResponses, // Use combined responses instead of just dynamicResponses
@@ -185,22 +185,22 @@ export const submitApplication = async ({
       template_id: templateId,
     };
 
-    console.log("Submitting application:", submissionPayload);
+    //console.log("Submitting application:", submissionPayload);
 
     // Submit the application
     const headers = getAuthHeaders();
-    console.log(headers);
+    //console.log(headers);
     const response = await instance.post(
       "/ajp/applications/submit_with_responses/",
       submissionPayload,
       { headers }
     );
-    console.log("Application submitted successfully:", response.data);
+    //console.log("Application submitted successfully:", response.data);
 
     // Update student profile if needed
     try {
       await updateStudentProfile(student);
-      console.log("Student profile updated successfully");
+      // console.log("Student profile updated successfully");
     } catch (profileError) {
       console.warn(
         "Profile update failed, but application was submitted:",
@@ -216,7 +216,7 @@ export const submitApplication = async ({
           applicationResponse.data.id,
           supportingDocs
         );
-        console.log("Supporting documents submitted successfully");
+        //  console.log("Supporting documents submitted successfully");
       } catch (docError) {
         console.warn("Document submission failed:", docError.message);
         // Don't fail the entire submission if document upload fails
@@ -282,11 +282,11 @@ export const formatDynamicResponsesForSubmission = (
     }
   });
 
-  console.log(
-    "Formatted dynamic responses (excluding Application model fields):",
-    formattedResponses
-  );
-  console.log("Application model fields excluded:", applicationModelFields);
+  // console.log(
+  //   "Formatted dynamic responses (excluding Application model fields):",
+  //   formattedResponses
+  // );
+  //console.log("Application model fields excluded:", applicationModelFields);
   return formattedResponses;
 };
 
@@ -320,7 +320,7 @@ export const handleFormSubmission = async (submissionData) => {
     return false;
   }
 
-  console.log("✅ All validation passed, proceeding with submission");
+  // console.log("✅ All validation passed, proceeding with submission");
   setValidationErrors({});
 
   try {
@@ -340,10 +340,10 @@ export const handleFormSubmission = async (submissionData) => {
       setValidationErrors,
     });
 
-    console.log("🎉 Application submitted successfully!");
+    //console.log("🎉 Application submitted successfully!");
     return true;
   } catch (error) {
-    console.error("💥 Application submission failed:", error);
+    //console.error("💥 Application submission failed:", error);
     setSubmissionStatus("error");
     return false;
   }
@@ -370,7 +370,7 @@ export const submitSupportingDocuments = async (applicationId, documents) => {
     const response = await instance.post("/ajp/documents/", documentData, {
       headers,
     });
-    console.log("Documents submitted successfully:", response.data);
+    // console.log("Documents submitted successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error(
@@ -395,10 +395,10 @@ export const fetchJobPostingDetails = async (postingId) => {
     // console.log("Job posting details:", response.data);
     return response.data;
   } catch (error) {
-    console.error(
-      "Error fetching job posting:",
-      error.response?.data || error.message
-    );
+    // console.error(
+    //   "Error fetching job posting:",
+    //   error.response?.data || error.message
+    // );
     throw error;
   }
 };
@@ -408,17 +408,17 @@ export const fetchTemplateDetails = async (templateId) => {
     const response = await instance.get(`/ajp/form-templates/${templateId}/`);
     return response.data;
   } catch (error) {
-    console.error(
-      "Error fetching template:",
-      error.response?.data || error.message
-    );
+    // console.error(
+    //   "Error fetching template:",
+    //   error.response?.data || error.message
+    // );
     //
   }
 };
 
 export const fetchTermDetails = async (termId) => {
   try {
-    console.log("Fetching term details for term ID:", termId);
+    //console.log("Fetching term details for term ID:", termId);
     const headers = getAuthHeaders();
 
     // Fetch the main term details
@@ -433,8 +433,8 @@ export const fetchTermDetails = async (termId) => {
       { headers }
     );
 
-    console.log("Main term info:", termResponse.data);
-    console.log("Subterms info:", subtermResponse.data);
+    // console.log("Main term info:", termResponse.data);
+    //console.log("Subterms info:", subtermResponse.data);
 
     // Create options array for the termSelection field
     const termOptions = [];
@@ -457,13 +457,13 @@ export const fetchTermDetails = async (termId) => {
       });
     }
 
-    console.log("Generated term options:", termOptions);
+    //console.log("Generated term options:", termOptions);
     return termOptions;
   } catch (error) {
-    console.error(
-      "Error fetching term information:",
-      error.response?.data || error.message
-    );
+    // console.error(
+    //   "Error fetching term information:",
+    //   error.response?.data || error.message
+    // );
   }
 };
 /**
@@ -479,19 +479,19 @@ export const fetchStudentApplications = async () => {
       throw new Error("No authentication token available");
     }
 
-    console.log("Fetching applications with headers:", headers);
+    // console.log("Fetching applications with headers:", headers);
 
     const response = await instance.get("/ajp/applications/myapplications/", {
       headers,
     });
 
-    console.log("Student applications response:", response.data);
+    // console.log("Student applications response:", response.data);
     return response.data;
   } catch (error) {
-    console.error(
-      "Error fetching student applications:",
-      error.response?.data || error.message
-    );
+    // console.error(
+    //   "Error fetching student applications:",
+    //   error.response?.data || error.message
+    // );
 
     // More specific error handling
     if (error.response?.status === 401) {
@@ -519,17 +519,17 @@ export const cleanApiDataFormat = (apiData) => {
     //  console.log("Input availability:", availability);
 
     if (Array.isArray(availability)) {
-      console.log("Already array format, returning as-is");
+      //  console.log("Already array format, returning as-is");
       return availability;
     }
 
     if (!availability || typeof availability !== "object") {
-      console.log("No availability data, returning empty array");
+      //console.log("No availability data, returning empty array");
       return [];
     }
 
     const availabilityGrid = availability.availability_grid || availability;
-    console.log("Extracted grid:", availabilityGrid);
+    //console.log("Extracted grid:", availabilityGrid);
 
     if (!availabilityGrid || typeof availabilityGrid !== "object") {
       return [];
@@ -581,8 +581,8 @@ export const cleanApiDataFormat = (apiData) => {
       }
     });
 
-    console.log("Transformed slots:", selectedSlots);
-    console.log("=== END AVAILABILITY DEBUG ===");
+    //console.log("Transformed slots:", selectedSlots);
+    // console.log("=== END AVAILABILITY DEBUG ===");
     return selectedSlots;
   };
 
@@ -731,7 +731,7 @@ export const extractSemesterFromDate = (dateString) => {
 
   // If it's already in "Fall 2022" format, return as-is
   if (dateString.match(/^(Fall|Winter|Summer)\s+\d{4}$/)) {
-    console.log("Already in semester format:", dateString);
+    //console.log("Already in semester format:", dateString);
     return dateString;
   }
 
@@ -744,23 +744,23 @@ export const extractSemesterFromDate = (dateString) => {
   }
 
   try {
-    console.log("dateString is:", dateString);
+    //console.log("dateString is:", dateString);
 
     // Only try to parse if it looks like a date
     if (dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
       const date = new Date(dateString);
-      console.log("dateString to date becomes:", date);
+      //console.log("dateString to date becomes:", date);
 
       // Check if date is valid
       if (isNaN(date.getTime())) {
-        console.log("Invalid date, returning original string");
+        //  console.log("Invalid date, returning original string");
         return dateString;
       }
 
       const year = date.getFullYear();
       const month = date.getMonth(); // 0-indexed: Jan=0, Sep=8, Dec=11
 
-      console.log("Extracted semester info:", { year, month });
+      //console.log("Extracted semester info:", { year, month });
 
       let term = "Winter";
       if (month >= 4 && month <= 7) term = "Summer"; // May-Aug
@@ -768,15 +768,15 @@ export const extractSemesterFromDate = (dateString) => {
       // Jan-Apr stays as Winter
 
       const result = `${term} ${year}`;
-      console.log("Final result:", result);
+      //console.log("Final result:", result);
       return result;
     }
 
     // If it doesn't look like a date, return as-is
-    console.log("Not a date format, returning original:", dateString);
+    // console.log("Not a date format, returning original:", dateString);
     return dateString;
   } catch (e) {
-    console.error("Date parsing error:", e);
+    //console.error("Date parsing error:", e);
     return dateString;
   }
 };
@@ -935,11 +935,11 @@ export const handleNextStep = (
   const isDynamicStep = currentStep <= dynamicSections.length;
 
   if (isDynamicStep) {
-    console.log("=== DYNAMIC STEP VALIDATION ===");
-    console.log("Validating dynamic step:", currentStep);
+    //console.log("=== DYNAMIC STEP VALIDATION ===");
+    //console.log("Validating dynamic step:", currentStep);
 
     const currentSection = dynamicSections[currentStep - 1];
-    console.log("Current section:", currentSection?.name);
+    // console.log("Current section:", currentSection?.name);
 
     // Use the new dynamic validation system
     const { isValid, errors } = validateDynamicStep(
@@ -951,10 +951,10 @@ export const handleNextStep = (
     );
 
     if (isValid) {
-      console.log(
-        "✅ Dynamic step validation passed, moving to step:",
-        currentStep + 1
-      );
+      // console.log(
+      //   "✅ Dynamic step validation passed, moving to step:",
+      //   currentStep + 1
+      // );
       setStep(currentStep + 1);
       if (setValidationErrors) setValidationErrors({});
       return true;
@@ -964,26 +964,26 @@ export const handleNextStep = (
       return false;
     }
   } else {
-    console.log("=== STATIC STEP NAVIGATION ===");
+    //console.log("=== STATIC STEP NAVIGATION ===");
     const adjustedStep = currentStep - dynamicSections.length;
-    console.log("Adjusted step for static validation:", adjustedStep);
+    //console.log("Adjusted step for static validation:", adjustedStep);
 
     // Handle specific static sections
     if (adjustedStep === 1) {
       // Personal Details section
-      console.log("Personal Details section - moving to next step");
+      //console.log("Personal Details section - moving to next step");
       setStep(currentStep + 1);
       if (setValidationErrors) setValidationErrors({});
       return true;
     } else if (adjustedStep === 2) {
       // Supporting Documents section
-      console.log("Supporting Documents section - moving to next step");
+      // console.log("Supporting Documents section - moving to next step");
       setStep(currentStep + 1);
       if (setValidationErrors) setValidationErrors({});
       return true;
     } else if (legacyValidateStep) {
       // Use legacy validation for other static sections
-      console.log("Using legacy validation for static section");
+      //console.log("Using legacy validation for static section");
       const { isValid, errors } = legacyValidateStep(
         adjustedStep,
         student,
@@ -995,13 +995,13 @@ export const handleNextStep = (
         if (setValidationErrors) setValidationErrors({});
         return true;
       } else {
-        console.log("Legacy validation errors:", errors);
+        //console.log("Legacy validation errors:", errors);
         if (setValidationErrors) setValidationErrors(errors);
         return false;
       }
     } else {
       // No validation function provided, just move forward
-      console.log("No validation function, moving to next step");
+      //console.log("No validation function, moving to next step");
       setStep(currentStep + 1);
       if (setValidationErrors) setValidationErrors({});
       return true;

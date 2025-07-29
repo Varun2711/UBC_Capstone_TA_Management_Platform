@@ -13,7 +13,7 @@ const instance = axios.create({
 const getAuthHeaders = () => {
   const token = sessionStorage.getItem("accessToken");
   if (!token) {
-    console.warn("Access token not found in sessionStorage");
+    // console.warn("Access token not found in sessionStorage");
     return {};
   }
   return {
@@ -67,7 +67,7 @@ export const createJobPosting = async (jobPostingData) => {
       headers,
     });
 
-    console.log("Job posting created successfully:", response.data);
+    //console.log("Job posting created successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error creating job posting:", error);
@@ -112,7 +112,7 @@ export const deleteJobPosting = async (postingId) => {
       headers,
     });
 
-    console.log("Job posting archived successfully:", response.data);
+    //  console.log("Job posting archived successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error archiving job posting:", error);
@@ -133,10 +133,10 @@ export const assignTemplateToJobPosting = async (postingId, templateId) => {
       { headers }
     );
 
-    console.log("Template assigned successfully:", response.data);
+    // console.log("Template assigned successfully:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error assigning template:", error);
+    // console.error("Error assigning template:", error);
     throw error;
   }
 };
@@ -146,7 +146,7 @@ export const fetchOpenJobPostings = async () => {
     const response = await instance.get("/ajp/jobpostings/open/");
     return response.data;
   } catch (error) {
-    console.error("Error fetching open job postings:", error);
+    // console.error("Error fetching open job postings:", error);
     throw error;
   }
 };
@@ -156,7 +156,7 @@ export const fetchJobPostingsByTerm = async (termId) => {
     const response = await instance.get(`/ajp/jobpostings/by-term/${termId}/`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching job postings by term:", error);
+    // console.error("Error fetching job postings by term:", error);
     throw error;
   }
 };
@@ -170,7 +170,7 @@ export const countApplicationsForJobPosting = async (postingId) => {
     );
     return response.data;
   } catch (error) {
-    console.log("Error fetching job posting by application count", error);
+    // console.log("Error fetching job posting by application count", error);
   }
 };
 
@@ -272,11 +272,11 @@ export const deleteTemplate = async (templateId) => {
 export const fetchDepartments = async () => {
   try {
     const response = await instance.get("/profile/departments/");
-    console.log("Departments are here!", response.data);
+    //console.log("Departments are here!", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching departments from API:", error);
-    console.log("Falling back to mock departments");
+    // console.error("Error fetching departments from API:", error);
+    // console.log("Falling back to mock departments");
     return mockDepartments;
   }
 };
@@ -309,7 +309,7 @@ export const fetchSchedulerProfile = async () => {
     //  console.log("Scheduler profile fetched:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching scheduler profile:", error);
+    // console.error("Error fetching scheduler profile:", error);
     throw error;
   }
 };
@@ -415,7 +415,7 @@ export const fetchJobManagementData = async () => {
       templates,
     };
   } catch (error) {
-    console.error("Error fetching job management data:", error);
+    // console.error("Error fetching job management data:", error);
     throw error;
   }
 };

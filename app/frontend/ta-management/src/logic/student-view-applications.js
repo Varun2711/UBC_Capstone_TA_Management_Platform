@@ -14,7 +14,7 @@ const instance = axios.create({
 const getAuthHeaders = () => {
   const token = sessionStorage.getItem("accessToken");
   if (!token) {
-    console.warn("Access token not found in sessionStorage");
+    // console.warn("Access token not found in sessionStorage");
     return {};
   }
   return {
@@ -35,7 +35,7 @@ export const fetchApplicationDetail = async (applicationId) => {
       throw new Error("No authentication token available");
     }
 
-    console.log("Fetching application detail for ID:", applicationId);
+    //console.log("Fetching application detail for ID:", applicationId);
 
     const response = await instance.get(
       `/ajp/applications/by-id/${applicationId}/`,
@@ -44,7 +44,7 @@ export const fetchApplicationDetail = async (applicationId) => {
       }
     );
 
-    console.log("Application detail response:", response.data);
+    //console.log("Application detail response:", response.data);
     return response.data;
   } catch (error) {
     console.error(
@@ -83,7 +83,7 @@ export const fetchJobPostingFormTemplate = async (jobPostingId) => {
 
     // Then fetch the template details
     const template = await fetchTemplateDetails(jobPosting.form_template_id);
-    console.log("Form template for job posting:", template);
+    //console.log("Form template for job posting:", template);
 
     return template;
   } catch (error) {
@@ -102,10 +102,10 @@ export const fetchJobPostingFormTemplate = async (jobPostingId) => {
  */
 export const getApplicationWithFormData = async (application) => {
   try {
-    console.log(
-      "Processing application with form data:",
-      application.application_id
-    );
+    //  console.log(
+    //  "Processing application with form data:",
+    //  application.application_id
+    //  );
 
     // Get the form template used for this job posting
     let formTemplate = null;
@@ -129,7 +129,7 @@ export const getApplicationWithFormData = async (application) => {
         : [],
     };
 
-    console.log("Organized application data:", organizedData);
+    //console.log("Organized application data:", organizedData);
     return organizedData;
   } catch (error) {
     console.error("Error organizing application form data:", error);

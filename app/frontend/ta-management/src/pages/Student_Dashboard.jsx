@@ -181,16 +181,16 @@ export default function StudentDashboard() {
       try {
         setIsLoadingProfile(true);
         const data = await getProfile();
-        console.log("Fetched user data:", data);
-        console.log("ID of student data:", data.id);
+        //console.log("Fetched user data:", data);
+        //console.log("ID of student data:", data.id);
 
         const profileData = transformBackendDataToFrontend(data);
-        console.log("Transformed user data:", profileData);
+        //console.log("Transformed user data:", profileData);
 
         setUserData(profileData); // ✅ Let this trigger the next useEffect
       } catch (error) {
         setFetchError("Could not load your profile. Please try again later.");
-        console.error("Fetch profile error:", error);
+        //console.error("Fetch profile error:", error);
       } finally {
         setIsLoadingProfile(false);
       }
@@ -205,7 +205,7 @@ export default function StudentDashboard() {
         setIsLoadingApplications(true);
 
         if (!userData) {
-          console.error("User data is not available yet.");
+          //  console.error("User data is not available yet.");
           setIsLoadingApplications(false);
           return;
         }

@@ -42,10 +42,11 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BrowserRouter } from "react-router-dom";
 import ViewJobPostings from "@/pages/Student/Student_ViewJobPostings";
+import userEvent from "@testing-library/user-event";
 
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarProvider: ({ children }) => (
@@ -92,6 +93,18 @@ vi.mock("@/components/ui/badge", () => ({
   ),
 }));
 
+//JobPost with deadline - currentdate > 7 will not show on page
+//Generate job posting deadlines for future dates to ensure tests will pass
+const futureDeadline1 = new Date();
+const futureDeadline2 = new Date();
+const currentDeadline = new Date();
+futureDeadline1.setDate(futureDeadline1.getDate() + 30);
+futureDeadline2.setDate(futureDeadline2.getDate() + 7);
+currentDeadline.setDate(currentDeadline.getDate());
+const futureDeadlineString1 = futureDeadline1.toISOString().split("T")[0]; // "YYYY-MM-DD"
+const futureDeadlineString2 = futureDeadline2.toISOString().split("T")[0]; // "YYYY-MM-DD"
+const currentDeadlineString = currentDeadline.toISOString().split("T")[0];
+
 describe("ViewJobPostings", () => {
   const mockJobPostings = [
     {
@@ -100,8 +113,8 @@ describe("ViewJobPostings", () => {
       department: { name: "Computer Science" },
       description: "Assist with CS101 course",
       term: { description: "Fall 2024" },
-      post_date: "2024-01-15",
-      deadline_date: "2024-12-31",
+      post_date: "2025-01-15",
+      deadline_date: futureDeadlineString1,
       requirements: "Must have completed CS101",
       status: "open",
     },
@@ -112,7 +125,7 @@ describe("ViewJobPostings", () => {
       description: "Help with calculus courses",
       term: { description: "Spring 2024" },
       post_date: "2024-01-20",
-      deadline_date: "2024-12-31",
+      deadline_date: futureDeadlineString2,
       requirements: "Strong math background",
       status: "open",
     },
@@ -137,8 +150,6 @@ describe("ViewJobPostings", () => {
 
   it("displays job postings when data is loaded successfully", async () => {
     mockAxiosInstance.get.mockResolvedValueOnce({ data: mockJobPostings });
-    // .mockResolvedValueOnce({ data: fakeProfile })
-    // .mockResolvedValueOnce({ data: [] });
 
     renderComponent();
 
@@ -150,8 +161,6 @@ describe("ViewJobPostings", () => {
 
   it("displays no positions message when no job postings exist", async () => {
     mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
-    // .mockResolvedValueOnce({ data: fakeProfile })
-    // .mockResolvedValueOnce({ data: [] });
 
     renderComponent();
 
@@ -163,17 +172,16 @@ describe("ViewJobPostings", () => {
   it("shows 'View Application' button when student has already applied", async () => {
     const applications = [{ posting_id: 1, application_id: 101 }];
     mockAxiosInstance.get.mockResolvedValueOnce({ data: mockJobPostings });
-    // .mockResolvedValueOnce({ data: fakeProfile })
-    // .mockResolvedValueOnce({ data: applications });
 
     renderComponent();
+    const user = userEvent.setup();
 
     await waitFor(() => {
       expect(screen.getByText("View Application")).toBeInTheDocument();
       expect(screen.getByText("Application Submitted")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText("View Application"));
+    await user.click(screen.getByText("View Application"));
     expect(mockNavigate).toHaveBeenCalledWith("/my-applications/detail/101");
   });
 
@@ -181,7 +189,7 @@ describe("ViewJobPostings", () => {
     const closedPosting = {
       ...mockJobPostings[1],
       status: "closed",
-      deadline_date: "2023-01-01",
+      deadline_date: currentDeadlineString,
     };
 
     mockAxiosInstance.get
@@ -198,5 +206,35 @@ describe("ViewJobPostings", () => {
 
     // assert it’s disabled
     expect(closedBtn).toBeDisabled();
+  });
+
+  it("does not display job postings more than 7 days past deadline", async () => {
+    // Create a posting with a deadline more than 7 days ago
+    const oldDeadline = new Date();
+    oldDeadline.setDate(oldDeadline.getDate() - 8); // 8 days ago
+
+    const expiredPosting = {
+      posting_id: 3,
+      title: "History TA",
+      department: { name: "History" },
+      description: "Assist with history tutorials",
+      term: { description: "Winter 2024" },
+      post_date: "2024-01-10",
+      deadline_date: oldDeadline.toISOString().split("T")[0],
+      requirements: "History background",
+      status: "open",
+    };
+
+    // Mock response to include the expired posting
+    mockAxiosInstance.get
+      .mockResolvedValueOnce({ data: [expiredPosting] }) // job postings
+      .mockResolvedValueOnce({ data: fakeProfile }) // app bar/profile
+      .mockResolvedValueOnce({ data: [] }); // student applications
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.queryByText("History TA")).not.toBeInTheDocument(); // Should NOT render
+    });
   });
 });
