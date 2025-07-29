@@ -13,7 +13,7 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import CourseManagement from "./pages/Scheduler/course-management";
 import InstructorRequirements from "./pages/Scheduler/instructor-requirements";
 import UserManagement from "./pages/Admin/UserManagement";
-
+import SystemSettings from "./pages/Admin/SystemSetting";
 import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
@@ -202,6 +202,14 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/system-settings"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <SystemSettings />
+          </ProtectedRoute>
+        }
+      />  
       <Route
         path="/manage-templates"
         element={
