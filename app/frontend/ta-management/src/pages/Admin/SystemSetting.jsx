@@ -21,6 +21,42 @@ import {
   FileText,
   BookOpen,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
+
 
 // Mock data for academic terms
 const mockAcademicTerms = [
@@ -252,18 +288,9 @@ export default function SystemSettings() {
   }
 
   return (
-    <div className="flex bg-gray-50 min-h-screen">
-      {/* Sidebar placeholder */}
-      <div className="w-64 bg-white shadow-sm border-r p-4">
-        <div className="text-lg font-semibold mb-4">Admin Panel</div>
-        <div className="space-y-2">
-          <div className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded cursor-pointer">Dashboard</div>
-          <div className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded cursor-pointer">Users</div>
-          <div className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded cursor-pointer">Courses</div>
-          <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded font-medium">System Settings</div>
-        </div>
-      </div>
-
+    <SidebarProvider>
+        <AdminSidebar activePage="System Settings" />
+            <SidebarInset>
       {/* Main content */}
       <div className="flex-1 p-6">
         <div className="max-w-6xl mx-auto">
@@ -563,9 +590,8 @@ export default function SystemSettings() {
             )}
           </div>
         </div>
-      </div>
-      
-      <AddTermModal />
-    </div>
+      </div>    
+    </SidebarInset>
+    </SidebarProvider>
   )
 }
