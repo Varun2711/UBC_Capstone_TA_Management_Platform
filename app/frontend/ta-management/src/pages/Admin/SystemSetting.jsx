@@ -591,6 +591,7 @@ export default function SystemSettings() {
           </div>
         </div>
       </div>    
+      <AddTermModal />
     </SidebarInset>
     </SidebarProvider>
   )
