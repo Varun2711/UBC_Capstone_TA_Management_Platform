@@ -59,11 +59,6 @@ const navigationItems = [
     icon: User,
     url: "/profile",
   },
-  {
-    title: "Settings",
-    icon: Settings,
-    url: "#",
-  },
 ]
 
 export function AppSidebar({ name, email, avatar }) {
@@ -136,6 +131,9 @@ export function AppSidebar({ name, email, avatar }) {
                 <DropdownMenuItem>
                   {" "}
                   <button>My Profile</button>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/reset-password")}>
+                  <button>Change Password</button>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
                   <button>Logout </button>
