@@ -598,12 +598,37 @@ export default function TAAllocationPage() {
     })
   }, [])
 
+
+  async function getAssignedSlotsForTA(taStudentId) {
+    // Collect slots from assignments
+    const assignmentSlots = assignments
+      .filter(a => a.taStudentId === taStudentId)
+      .flatMap(a => a.slots || []);
+
+    // Collect slots from offers (fetch details for each offer item)
+    const taOffers = offers.filter(o => o.student.id === taStudentId);
+    let offerSlots = [];
+
+    for (const offer of taOffers) {
+      for (const item of offer.offer_items) {
+        if (item.course_offering_id) {
+          const details = await fetchCourseOfferingDetails(item.course_offering_id);
+          offerSlots.push(...(details?.time_slots_info ? convertTimeSlotsInfoToKeys(details.time_slots_info) : []));
+        } else if (item.shared_session_id) {
+          const details = await fetchSharedSessionDetails(item.shared_session_id);
+          offerSlots.push(...(details?.time_slots_info ? convertTimeSlotsInfoToKeys(details.time_slots_info) : []));
+        }
+      }
+    }
+    // Combine all slots
+    return [...assignmentSlots, ...offerSlots];
+  }
   // Helper function to check for scheduling conflicts
-  const checkForConflicts = (availability, courseSlots) => {
+  const checkForConflicts = async (availability, courseSlots, taStudentId) => {
     //console.log("In checkForConflicts, availability_grid: ", availability);
     //console.log("In checkForConflicts, courseSlots: ", courseSlots);
     const availabilitySet = new Set(convertProfileAvailabilityGridToKeys(availability));
-
+    
     // Check if courseSlots are already in key format
     const needsConversion = courseSlots.some(slot => slot.includes(":"));
     //console.log("In checkForConflicts, needsConversion: ", needsConversion);
@@ -612,16 +637,23 @@ export default function TAAllocationPage() {
       ? convertTimeSlotsInfoToKeys(courseSlots)
       : courseSlots;
 
+    // Get all slots already assigned to this TA
+    const assignedAndOfferedSlots = new Set(await getAssignedSlotsForTA(taStudentId));
+
     //console.log("In checkForConflicts, availabilitySet: ", availabilitySet);
     //console.log("In checkForConflicts, selected courses's formattedTimeSlotsInfoToKeys: ", formattedTimeSlotsInfoToKeys);
 
     for (const slot of formattedTimeSlotsInfoToKeys) {
       if (availabilitySet.has(slot)) {
-        return true // ❗️Conflict: TA not available at this time
+        return { conflict: true, type: "availability", slot }; // ❗️Conflict: TA not available at this time
+      }
+
+      if (assignedAndOfferedSlots.has(slot)) {
+        return { conflict: true, type: "assignment", slot };
       }
     }
 
-    return false // ✅ All course slots are within TA availability
+    return { conflict: false }; // ✅ All course slots are within TA availability and assignedAndOfferedSlots
   }
 
   // Function to update TA hours after assignment
@@ -1624,12 +1656,17 @@ export default function TAAllocationPage() {
 
                               for (const course of selectedSections) {
                                 console.log("course in selectedSections after pressing send offer button: ", course);
-                                const hasConflict = checkForConflicts(
+                                const result = await checkForConflicts(
                                   selectedTAProfile.availability,
-                                  course.time_slots_info
+                                  course.time_slots_info,
+                                  selectedApplication.application.student.id
                                 );
-                                if (hasConflict) {
-                                  alert(`Conflict with section ${course.course_number} ${course.section_number}`);
+                                if (result.conflict) {
+                                  alert(
+                                    result.type === "availability"
+                                      ? `Conflict with TA's availability in ${course.course_number} ${course.section_number} `
+                                      : `Conflict with previously assigned section in ${course.course_number} ${course.section_number}`
+                                  );
                                   return;
                                 }
                               }
