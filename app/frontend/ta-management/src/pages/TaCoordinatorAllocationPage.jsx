@@ -1159,7 +1159,7 @@ export default function TAAllocationPage() {
               <TabsList>
                 <TabsTrigger value="allocate">Allocate TAs</TabsTrigger>
                 <TabsTrigger value="added-offers">Added Offers</TabsTrigger>
-                <TabsTrigger value="active-offers">Active Offers</TabsTrigger>
+                <TabsTrigger value="pending-offers">Pending Offers</TabsTrigger>
                 <TabsTrigger value="allocated">Allocated TAs</TabsTrigger>
 
               </TabsList>
@@ -1167,19 +1167,19 @@ export default function TAAllocationPage() {
               {/* Allocate Tab */}
               <TabsContent value="allocate" className="space-y-4">
                 <div className="flex gap-4 h-[700px]">
-                  {/* TA Selection */}
+                  {/* Shortlisted Applicants Selection */}
                   <Card className="flex flex-col flex-1">
                     <CardHeader>
-                      <CardTitle>Select TA</CardTitle>
+                      <CardTitle>Select Shortlisted Applicant</CardTitle>
                       <CardDescription>
-                        {selectedTA ? "TA Details" : "Choose a TA to assign to a course section"}
+                        {selectedTA ? "Shortlisted Applicant Details" : "Choose a shortlisted applicant to assign to a course section"}
                       </CardDescription>
                     </CardHeader>
 
                     <CardContent className="flex flex-col flex-1 overflow-hidden">
                       <div className="flex-grow overflow-y-auto pr-2">
                         {selectedTA && selectedApplication && selectedTAProfile ? (
-                          // ✅ TA DETAIL VIEW
+                          // ✅ Shortlisted Applicant DETAIL VIEW
                           <div className="space-y-4">
                             <div className="flex items-center gap-4">
                               <Avatar className="h-12 w-12">
@@ -1297,17 +1297,21 @@ export default function TAAllocationPage() {
                             </div>
 
                             {/* ✅ Go Back Button */}
-                            <Button variant="outline" onClick={() => setSelectedTAId(null)}>
+                            <Button variant="outline" onClick={() => {
+                              setSelectedTAId(null)
+                              setSelectedApplication(null);
+                            }}
+                            >
                               ← Go Back
                             </Button>
                           </div>
                         ) : (
-                          // ✅ TA LIST VIEW
+                          // ✅ Shortlisted Applicants LIST VIEW
                           <>
                             {/* ✅ Search Bar */}
                             <input
                               type="text"
-                              placeholder="Search TAs by name, email, ID, major, and other details..."
+                              placeholder="Search Shortlisted Applicants by name, email, ID, major, and other details..."
                               className="w-full mb-4 p-2 border border-gray-300 rounded-md"
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1473,7 +1477,8 @@ export default function TAAllocationPage() {
                                           const studentId = selectedApplication?.application?.student?.id;
                                           //console.log("studentId in availableOfferings map: ", studentId);
                                           //console.log("about to call isSectionAlreadyOfferedToTA for student: ", studentId);
-                                          const isOffered = studentId && isSectionAlreadyOfferedToTA(studentId, offering.course_offering_id);
+                                          console.log("studentId is: ", studentId);
+                                          const isOffered = selectedApplication?.application?.student?.id && isSectionAlreadyOfferedToTA(studentId, offering.course_offering_id);
                                           //console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
                                           return (
                                             <div
@@ -1527,7 +1532,7 @@ export default function TAAllocationPage() {
                                   {availableSections.map((section) => {
                                     const isSelected = selectedSections.some((s) => s.sectionId === section.shared_session_id);
                                     const studentId = selectedApplication?.application?.student?.id;
-                                    const isOffered = studentId && isSectionAlreadyOfferedToTA(studentId, section.shared_session_id);
+                                    const isOffered = selectedApplication?.application?.student?.id && isSectionAlreadyOfferedToTA(studentId, section.shared_session_id);
                                     //console.log("Checking section ID:", section.id)
                                     //console.log("selectedCourses:", selectedCourses.map(s => s.sectionId))
                                     //console.log("activeOffers:", activeOffers)
@@ -1697,6 +1702,7 @@ export default function TAAllocationPage() {
                                 }));
 
                                 setSelectedTAId(null);
+                                setSelectedApplication(null);
                                 setSelectedCourseOfferings([]);
                                 setSelectedSharedSessions([]);
                               } catch (err) {
@@ -1727,11 +1733,11 @@ export default function TAAllocationPage() {
                 />
               </TabsContent>
 
-              {/* Active Offers Tab */}
-              <TabsContent value="active-offers" className="space-y-4">
+              {/* Pending Offers Tab */}
+              <TabsContent value="pending-offers" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Active TA Offers</CardTitle>
+                    <CardTitle>Pending TA Offers</CardTitle>
                     <CardDescription>
                       These are the TA assignments that have been sent as offers to the students.
                     </CardDescription>
