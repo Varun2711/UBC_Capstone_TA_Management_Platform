@@ -11,7 +11,7 @@ const instance = axios.create({
 const getAuthHeaders = () => {
   const token = sessionStorage.getItem("accessToken");
   if (!token) {
-    console.warn("Access token not found in sessionStorage");
+    //console.warn("Access token not found in sessionStorage");
     return {};
   }
   return {
@@ -29,7 +29,7 @@ export const fetchStudentAssignments = async () => {
         headers,
       }
     );
-    console.log("Student assignments response:", response.data);
+    // console.log("Student assignments response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching assignments:", error);

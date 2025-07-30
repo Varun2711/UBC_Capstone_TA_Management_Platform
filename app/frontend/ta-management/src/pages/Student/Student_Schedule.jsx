@@ -27,7 +27,6 @@ import { Calendar as BigCalendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
-// Import the logic functions
 import {
   fetchStudentAssignments,
   transformAssignmentsToCalendarEvents,
@@ -120,7 +119,6 @@ export default function ViewStudentSchedule() {
   };
 
   // Custom event component for calendar
-
   const EventComponent = ({ event }) => (
     <div
       className="h-full w-full overflow-hidden p-1 rounded-sm"
@@ -135,18 +133,10 @@ export default function ViewStudentSchedule() {
     >
       <div className="font-semibold truncate">{event.title}</div>
       <div className="font-semibold truncate">{event.sessionType}</div>
-      {/* <div className="font-semibold truncate">{event.start}</div> */}
-
-      {/* {event.resource?.hours && (
-        <div className="text-[10px] opacity-80">
-          {event.resource.hours}h/week
-        </div>
-      )} */}
     </div>
   );
 
   // Render assignment card
-  // Updated AssignmentCard component
   const AssignmentCard = ({ assignment }) => {
     const formatted = formatAssignmentDisplay(assignment);
     const statusInfo = getAssignmentStatus(assignment);
@@ -405,7 +395,7 @@ export default function ViewStudentSchedule() {
                           </h3>
                           <p className="text-gray-600">
                             You don't have any TA assignments at the moment.
-                            Check back later or contact your coordinator.
+                            Check back later.
                           </p>
                         </CardContent>
                       </Card>
@@ -463,6 +453,7 @@ export default function ViewStudentSchedule() {
                               //   console.log("Selected event:", event);
                               // }}
                               eventPropGetter={(event) => ({
+                                //needed to correctly format the event box on calendar
                                 style: {
                                   borderRadius: "4px",
                                   border: "none",
@@ -474,7 +465,7 @@ export default function ViewStudentSchedule() {
                                   flexDirection: "column",
                                   justifyContent: "center",
                                   minHeight: "50px",
-                                  backgroundColor: "#3b82f6", // Important to avoid default blue!
+                                  backgroundColor: "#3b82f6", // Important to avoid default blue background!
                                 },
                               })}
                               formats={{

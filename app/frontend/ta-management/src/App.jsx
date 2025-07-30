@@ -29,7 +29,7 @@ import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-manag
 import MyCourses from "./pages/Instructor_MyCourses";
 import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
-import ViewStudentSchedule from "./pages/Student/Student_MySchedule";
+import ViewStudentSchedule from "./pages/Student/Student_Schedule";
 
 function App() {
   return (
