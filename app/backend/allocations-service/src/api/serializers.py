@@ -184,17 +184,6 @@ class OfferSerializer(serializers.ModelSerializer):
         data['is_expired'] = instance.is_expired()
         
         return data
-
-    # *** ADD: Computed fields for backward compatibility ***
-    def to_representation(self, instance):
-        """Add computed fields that were previously model properties"""
-        data = super().to_representation(instance)
-        
-        # Add the missing method-based fields
-        data['can_respond'] = instance.can_respond()
-        data['is_expired'] = instance.is_expired()
-        
-        return data
     
     def get_is_modification(self, obj):
         """Check if this offer is part of an assignment modification"""

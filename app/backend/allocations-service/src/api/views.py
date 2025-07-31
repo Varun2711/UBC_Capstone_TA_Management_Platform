@@ -248,7 +248,29 @@ class OfferViewSet(viewsets.ModelViewSet):
             
         except Exception as e:
             logger.error(f"Error getting coordinator email for offer {offer.offer_id}: {str(e)}")
-            return 'ta-coordinator@ubc.ca'        
+            return 'ta-coordinator@ubc.ca'    
+
+    # Add this temporary method to OfferViewSet in views.py
+    @action(detail=False, methods=['post'])
+    def debug_create_offer(self, request):
+        """Temporary debug method to see what's being received"""
+        import json
+        
+        print(f"Request data type: {type(request.data)}")
+        print(f"Request data: {request.data}")
+        print(f"Request body: {request.body}")
+        
+        try:
+            if hasattr(request, 'data'):
+                print(f"request.data content: {json.dumps(request.data, default=str, indent=2)}")
+        except Exception as e:
+            print(f"Error serializing request.data: {e}")
+        
+        return Response({
+            'data_type': str(type(request.data)),
+            'data_content': str(request.data),
+            'body_content': request.body.decode('utf-8') if request.body else None
+        })    
         
     # Update the create_offer method in OfferViewSet
     @action(detail=False, methods=['post'])
@@ -291,36 +313,59 @@ class OfferViewSet(viewsets.ModelViewSet):
             validated_items = []
             offer_courses = set()
             offer_terms = set()
-            
+
+            grouped_items = {}
             for item_data in offer_items:
+                item_type = item_data.get('item_type')
+                if item_type == 'course_offering':
+                    # Course offerings are treated individually per time slot
+                    section_id = f"course_{item_data.get('course_offering_id')}_{item_data.get('time_slot')['day']}_{item_data.get('time_slot')['start_time']}"
+                elif item_type == 'shared_session':
+                    # Shared sessions are grouped by their ID
+                    section_id = f"session_{item_data.get('shared_session_id')}"
+                else:
+                    continue
+
+                if section_id not in grouped_items:
+                    grouped_items[section_id] = item_data
+            
+            # Process the grouped items
+            for item_data in grouped_items.values():
                 item_type = item_data.get('item_type')
                 time_slot_details = item_data.get('time_slot')
 
                 if not time_slot_details or not isinstance(time_slot_details, dict):
                     return Response({'error': 'Each item in offer_items must have a "time_slot" object.'}, status=status.HTTP_400_BAD_REQUEST)
                 
-                day = time_slot_details.get('day')
-                start_time = time_slot_details.get('start_time')
-                end_time = time_slot_details.get('end_time')
-
-                if not all([day, start_time, end_time]):
-                    return Response({'error': 'The "time_slot" object must contain "day", "start_time", and "end_time".'}, status=status.HTTP_400_BAD_REQUEST)
-
+                # Validate time slot format
+                required_time_fields = ['day', 'start_time', 'end_time']
+                for field in required_time_fields:
+                    if field not in time_slot_details:
+                        return Response({'error': f'time_slot must contain {field}'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Get or create time slot
                 try:
-                    time_slot = TimeSlot.objects.get(day=day.lower(), start_time=start_time, end_time=end_time)
-                except TimeSlot.DoesNotExist:
-                    return Response({'error': f'Time slot for {day} {start_time}-{end_time} not found.'}, status=status.HTTP_404_NOT_FOUND)
-
+                    time_slot, created = TimeSlot.objects.get_or_create(
+                        day=time_slot_details['day'].lower(),
+                        start_time=time_slot_details['start_time'],
+                        end_time=time_slot_details['end_time']
+                    )
+                except Exception as e:
+                    return Response({'error': f'Invalid time slot data: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+                
                 if item_type == 'course_offering':
                     course_offering_id = item_data.get('course_offering_id')
+                    if not course_offering_id:
+                        return Response({'error': 'course_offering_id is required for course_offering items'}, status=status.HTTP_400_BAD_REQUEST)
+                    
                     try:
                         course_offering = CourseOffering.objects.prefetch_related('time_slots').get(course_offering_id=course_offering_id)
                         if not course_offering.time_slots.filter(pk=time_slot.pk).exists():
                             return Response({'error': f'Time slot {time_slot} does not belong to course offering {course_offering_id}'}, status=status.HTTP_400_BAD_REQUEST)
-                        
+
                         temp_item = OfferItem(item_type='course_offering', course_offering=course_offering, time_slot=time_slot)
                         calculated_hours = temp_item.weekly_hours
-                        
+
                         validated_items.append({'type': 'course_offering', 'object': course_offering, 'time_slot': time_slot, 'hours': calculated_hours})
                         offer_courses.add(course_offering.course)
                         offer_terms.add(course_offering.academic_term)
@@ -330,6 +375,9 @@ class OfferViewSet(viewsets.ModelViewSet):
                 
                 elif item_type == 'shared_session':
                     shared_session_id = item_data.get('shared_session_id')
+                    if not shared_session_id:
+                        return Response({'error': 'shared_session_id is required for shared_session items'}, status=status.HTTP_400_BAD_REQUEST)
+                    
                     try:
                         shared_session = SharedSession.objects.prefetch_related('time_slots').get(shared_session_id=shared_session_id)
                         if not shared_session.time_slots.filter(pk=time_slot.pk).exists():
@@ -345,75 +393,64 @@ class OfferViewSet(viewsets.ModelViewSet):
                     except SharedSession.DoesNotExist:
                         return Response({'error': f'Shared session {shared_session_id} not found'}, status=status.HTTP_404_NOT_FOUND)
                 else:
-                    return Response({'error': f'Invalid item_type: {item_type}.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'error': f'Invalid item_type: {item_type}. Must be "course_offering" or "shared_session"'}, status=status.HTTP_400_BAD_REQUEST)
             
+            # Check student workload
             current_allocation = self.calculate_student_allocation(student)
             max_hours = int(application.workload) if application.workload and str(application.workload).isdigit() else 12
             
             if current_allocation['total_hours'] + total_hours > max_hours:
-                return Response({'error': f'This offer would exceed student\'s maximum hours. Current: {current_allocation["total_hours"]}, Max: {max_hours}, Requested: {total_hours}'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    'error': f'Adding {total_hours} hours would exceed student maximum of {max_hours} hours. Current: {current_allocation["total_hours"]} hours.'
+                }, status=status.HTTP_400_BAD_REQUEST)
             
+            # Get scheduler
             scheduler = self.get_scheduler_from_jwt(user_type, user_id)
             if not scheduler:
-                return Response({'error': f'Scheduler not found for user_id: {user_id}'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'error': 'Scheduler not found'}, status=status.HTTP_404_NOT_FOUND)
             
             # Create multi-item offer with 'draft' status
             with transaction.atomic():
-                offer, created = Offer.objects.get_or_create(
+                offer = Offer.objects.create(
+                    application=application,
                     student=student,
+                    role='ta',
                     status='draft',
-                    defaults={
-                        'application': application,  # The application that starts the draft
-                        'created_by': scheduler,
-                        'notes': notes,
-                        'role': 'ta' # Assuming default role
-                    }
+                    created_by=scheduler,
+                    notes=notes
                 )
                 
-                if created:
-                    message = 'New draft offer created successfully.'
-                    response_status = status.HTTP_201_CREATED
-                else:
-                    # If the draft already existed, append notes if new notes are provided
-                    if notes:
-                        offer.notes = f"{offer.notes}\n---\n{notes}" if offer.notes else notes
-                        offer.save(update_fields=['notes'])
-                    message = 'Items added to existing draft offer.'
-                    response_status = status.HTTP_200_OK
-
-                # Create and add new offer items to the (possibly existing) offer
+                # Create offer items
                 for item_data in validated_items:
-                    # Prevent adding duplicate items to the same offer
                     if item_data['type'] == 'course_offering':
-                        if offer.offer_items.filter(course_offering=item_data['object']).exists():
-                            continue  # Skip if this item is already in the offer
                         offer_item = OfferItem.objects.create(
                             item_type='course_offering',
-                            course_offering=item_data['object']
+                            course_offering=item_data['object'],
+                            time_slot=item_data['time_slot']
                         )
-                    else:  # shared_session
-                        if offer.offer_items.filter(shared_session=item_data['object']).exists():
-                            continue  # Skip if this item is already in the offer
+                        offer.offer_items.add(offer_item)
+                    elif item_data['type'] == 'shared_session':
                         offer_item = OfferItem.objects.create(
                             item_type='shared_session',
-                            shared_session=item_data['object']
+                            shared_session=item_data['object'],
+                            time_slot=item_data['time_slot']
                         )
-                    offer.offer_items.add(offer_item)
+                        offer.offer_items.add(offer_item)
             
             serializer = self.get_serializer(offer)
             return Response({
                 'success': True,
-                'message': message,
+                'message': 'Draft offer created successfully',
                 'offer': serializer.data
-            }, status=response_status)
+            }, status=status.HTTP_201_CREATED)
             
         except ApplicationShortList.DoesNotExist:
             return Response({'error': 'Application not found in shortlist'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             logger.error(f"Error in create_offer: {str(e)}")
             return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': f'Internal server error: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
     @action(detail=False, methods=['post'])
