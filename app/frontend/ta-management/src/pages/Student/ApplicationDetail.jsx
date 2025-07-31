@@ -126,22 +126,6 @@ const ApplicationHeader = ({ application }) => {
             {formatDate(application.applied_at)}
           </div>
         </div>
-
-        {/* <div>
-          <div className="text-sm text-gray-600">Deadline</div>
-          <div className="font-medium">
-            {application.posting?.deadline_date
-              ? new Date(application.posting.deadline_date).toLocaleDateString(
-                  "en-US",
-                  {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }
-                )
-              : "N/A"}
-          </div>
-        </div> */}
       </div>
     </div>
   );
@@ -180,9 +164,6 @@ const FormSection = ({ section }) => {
               <div className="flex flex-col space-y-2">
                 <label className="text-sm font-medium text-gray-700">
                   {question.question_text}
-                  {question.is_required && (
-                    <span className="text-red-500 ml-1">*</span>
-                  )}
                 </label>
 
                 {question.help_text && (

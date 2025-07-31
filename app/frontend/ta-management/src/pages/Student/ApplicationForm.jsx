@@ -43,9 +43,9 @@ const applicationResponses = {
   hasOtherPositions: "",
   otherPositionHours: "",
   positionType: "",
-  winterTerm: "",
+  termSelection: "",
   workload: "",
-  disciplineRanking: {
+  disciplineRankings: {
     rank1: "",
     rank2: "",
     rank3: "",
@@ -93,7 +93,7 @@ export default function ApplicationForm() {
         const jobData = await fetchJobPostingDetails(postingId);
         setJobPosting(jobData);
 
-        console.log("Job posting template id:", jobData.form_template_id);
+        // console.log("Job posting template id:", jobData.form_template_id);
 
         // Fetch template details if available
         if (jobData.form_template_id) {
@@ -116,7 +116,7 @@ export default function ApplicationForm() {
               // Check field mapping
               const mapping = checkApplicationFields(sortedSections);
               setFieldMapping(mapping);
-              // console.log("Field mapping:", mapping);
+              //console.log("Field mapping:", mapping);
 
               // Calculate total steps: dynamic sections + static sections (Personal Details + Supporting Docs + Review)
               const dynamicStepCount = sortedSections.length;
@@ -166,15 +166,6 @@ export default function ApplicationForm() {
       }
     } catch (error) {
       console.error("Error initializing application form:", error);
-      // Set default step labels as fallback
-      // setStepLabels({
-      //   1: "Eligibility",
-      //   2: "Selections",
-      //   3: "Personal Details",
-      //   4: "Supporting Documents",
-      //   5: "Review",
-      // });
-      //show message to contact administrator
     } finally {
       setLoading(false);
     }
@@ -195,16 +186,6 @@ export default function ApplicationForm() {
         if (!validation.canAccess) {
           setAccessDenied(true);
           setLoading(false);
-
-          // Auto-redirect after showing the message for a few seconds
-          // setTimeout(() => {
-          //   navigate(validation.redirectTo, {
-          //     state: {
-          //       message: validation.message,
-          //       type: "warning",
-          //     },
-          //   });
-          // }, 3000);
 
           return;
         }
@@ -228,6 +209,7 @@ export default function ApplicationForm() {
   const handleNext = (e) => {
     e.preventDefault();
 
+    //console.log("In the handle next on app form", defaultResponses);
     // All validation logic is now handled in student-applications.js
     handleNextStep(
       currentStep,
@@ -486,8 +468,8 @@ export default function ApplicationForm() {
                   confirmation={confirmation}
                   setConfirmation={setConfirmation}
                   documents={supportingDocs}
+                  termDetails={termDetails}
                   errors={validationErrors}
-                  jobPosting={jobPosting}
                 />
               )}
 

@@ -154,15 +154,14 @@ export const submitApplication = async ({
     //console.log("Default responses:", defaultResponses);
     //console.log("Dynamic responses:", dynamicResponses);
 
-    // Prepare application data (static fields that go in Application model)
+    // Prepare application data
     const applicationData = {
       student_id: student.id,
       posting_id: postingId,
-      termSelection_id: allResponses.termSelection, // You may want to make this dynamic
+      termSelection_id: allResponses.termSelection,
       positionType: allResponses.positionType || null,
       workload: allResponses.workload || null,
-      disciplineRankings:
-        allResponses.disciplineRanking || allResponses.disciplineRankings || {},
+      disciplineRankings: allResponses.disciplineRankings || {},
       citizenshipStatus: allResponses.citizenshipStatus || null,
       residingInKelowna: allResponses.residingInKelowna || null,
       fullTimeEnrollment: allResponses.fullTimeEnrollment || null,
@@ -171,10 +170,10 @@ export const submitApplication = async ({
       status: "submitted",
     };
 
-    // console.log("here's application data:", applicationData);
+    console.log("here's application data:", applicationData);
     // Prepare dynamic responses data
     const responsesData = formatDynamicResponsesForSubmission(
-      allResponses, // Use combined responses instead of just dynamicResponses
+      allResponses,
       dynamicSections
     );
 
@@ -251,13 +250,13 @@ export const formatDynamicResponsesForSubmission = (
   const applicationModelFields = [
     "positionType",
     "workload",
-    "disciplineRanking",
     "disciplineRankings",
     "citizenshipStatus",
     "residingInKelowna",
     "fullTimeEnrollment",
     "hasOtherPositions",
     "otherPositionHours",
+    "termSelection",
   ];
 
   // Go through each section and question to map responses
@@ -416,6 +415,7 @@ export const fetchTemplateDetails = async (templateId) => {
   }
 };
 
+//Fetch the term details to use in the term selection question
 export const fetchTermDetails = async (termId) => {
   try {
     //console.log("Fetching term details for term ID:", termId);
@@ -862,7 +862,7 @@ export const checkApplicationFields = (sections) => {
     positionType: false,
     termSelection: false,
     workload: false,
-    disciplineRanking: false,
+    disciplineRankings: false,
   };
 
   // Check each section and question
