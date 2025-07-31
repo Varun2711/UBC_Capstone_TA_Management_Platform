@@ -1210,8 +1210,8 @@ export default function TAAllocationPage() {
                 if there are conflicts.
               </div>
               <TabsList>
-                <TabsTrigger value="allocate">Allocate TAs</TabsTrigger>
-                <TabsTrigger value="added-offers">Added Offers</TabsTrigger>
+                <TabsTrigger value="allocate">Allocate Shortlisted Applicants</TabsTrigger>
+                <TabsTrigger value="added-offers">Draft Offers</TabsTrigger>
                 <TabsTrigger value="pending-offers">Pending Offers</TabsTrigger>
                 <TabsTrigger value="rejected-offers">Rejected Offers</TabsTrigger>
 
