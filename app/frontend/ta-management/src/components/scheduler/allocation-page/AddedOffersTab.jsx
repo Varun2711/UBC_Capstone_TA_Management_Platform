@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -184,88 +184,72 @@ const AddedOffersTab = ({
             return null;
         }
     };
-
-    /*
-    useEffect(() => {
-      const fetchAllDetails = async () => {
-        const slotPromises = offers.flatMap((offer) => {
-          if (offer.student.id !== selectedApplication?.application.student.id) return [];
-
-          return offer.offer_items.map(async (item) => {
-            try {
-              let id = null;
-
-              if (item.course_offering_id !== null && item.course_offering_id !== undefined) {
-                id = item.course_offering_id;
-              } else if (item.shared_session_id !== null && item.shared_session_id !== undefined) {
-                id = item.shared_session_id;
-              }
-
-              if (!id) return [];
-
-              const details = item.course_offering_id
-                ? await fetchCourseOfferingDetails(id)
-                : await fetchSharedSessionDetails(id);
-
-              return details?.time_slots_info || [];
-            } catch (error) {
-              console.error("Failed to fetch slot info:", error);
-              return [];
-            }
-          });
-        });
-
-        const allSlots = await Promise.all(slotPromises);
-        setOfferSlotTimes(allSlots.flat());
-      };
-
-      if (offers.length > 0) {
-        fetchAllDetails();
-      }
-    }, [offers]);
-    */
-
+  /*
   return (
     <div className="space-y-4">
       {offers.length === 0 && (
         <p className="text-muted-foreground">No offers have been added yet.</p>
       )}
-      {offers.map((offer) => {
-        if (offer.status !== "draft" || offer.offer_items.length === 0) return null;
+    */
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Draft Offers</CardTitle>
+          <CardDescription>
+            These are the draft offers that have been created for shortlisted applicants.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const filteredOffers = offers.filter(
+              (offer) => offer.status === "draft" && offer.offer_items.length > 0
+            );
 
-        return (
-            <Card key={offer.offer_id}>
-            <CardHeader>
-                <CardTitle>{offer.student.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {offer.offer_items.length === 0 ? (
-                <p className="text-muted-foreground">No course sections added yet.</p>
-                ) : (
-                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    {offer.offer_items.map((item, idx) => {
-                        const offeringDetails = courseOfferingDetails[item.course_offering_id];
-                        return (
-                            <li key={idx} className="flex items-center justify-between gap-2 py-1">
-                                <span>
-                                {item.course_number} - {item.course_name} ({item.section_type_display} {item.section_number})
-                                </span>
-                                <button
-                                onClick={() => openConfirmDialog(offer.offer_id, idx)}
-                                title="Remove"
-                                className="w-6 h-6 flex items-center justify-center border border-red-300 rounded hover:bg-red-50 text-red-500 hover:text-red-700"
-                                >
-                                <X className="w-4 h-4" strokeWidth={3} />
-                                </button>
-                            </li>
-                        );
-                    })}
-                </ul>
-                )}
-            </CardContent>
-            </Card>
-        );
-      })}
+            if (filteredOffers.length === 0) {
+              return (
+                <p className="text-sm text-muted-foreground text-center">
+                  No draft offers at the moment.
+                </p>
+              );
+            }
+
+            return (
+              <div className="space-y-4">
+                {filteredOffers.map((offer) => (
+                  <Card key={offer.offer_id} className="border border-border">
+                    <CardHeader>
+                      <CardTitle>{offer.student.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        {offer.offer_items.map((item, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-center justify-between gap-2 py-1"
+                          >
+                            <span>
+                              {item.course_number} - {item.course_name} (
+                              {item.section_type_display} {item.section_number})
+                            </span>
+                            <button
+                              onClick={() => openConfirmDialog(offer.offer_id, idx)}
+                              title="Remove"
+                              className="w-6 h-6 flex items-center justify-center border border-red-300 rounded hover:bg-red-50 text-red-500 hover:text-red-700"
+                            >
+                              <X className="w-4 h-4" strokeWidth={3} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>   
       {offers.some((offer) => offer.status === "draft" && offer.offer_items.length > 0) && (
         <div className="flex justify-end p-4">
           <Button onClick={handleSendOffers}>Send Offer</Button>

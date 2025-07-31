@@ -666,6 +666,59 @@ export default function TAAllocationPage() {
     return { conflict: false }; // ✅ All course slots are within TA availability and assignedAndOfferedSlots
   }
 
+  const checkForConflictsWithinSelectedSections = (selectedSections) => {
+    // For each section, get its slots and check against all other sections' slots
+    for (let i = 0; i < selectedSections.length; i++) {
+      const currentSection = selectedSections[i];
+      const currentSlots = currentSection.time_slots_info || [];
+
+      // Convert current section's slots if needed
+      const needsConversion = currentSlots.some(slot => slot.includes(":"));
+      const currentFormattedSlots = needsConversion 
+        ? convertTimeSlotsInfoToKeys(currentSlots)
+        : currentSlots;
+
+      // Convert to Set for O(1) lookup
+      const currentSlotsSet = new Set(currentFormattedSlots);
+
+      // Check against all other sections
+      for (let j = i + 1; j < selectedSections.length; j++) {
+        const otherSection = selectedSections[j];
+        const otherSlots = otherSection.time_slots_info || [];
+
+        // Convert other section's slots if needed
+        const otherNeedsConversion = otherSlots.some(slot => slot.includes(":"));
+        const otherFormattedSlots = otherNeedsConversion
+          ? convertTimeSlotsInfoToKeys(otherSlots)
+          : otherSlots;
+
+        // Check for any overlapping slots
+        for (const slot of otherFormattedSlots) {
+          if (currentSlotsSet.has(slot)) {
+            return {
+              conflict: true,
+              sections: {
+                section1: {
+                  course_number: currentSection.course_number,
+                  section_number: currentSection.section_number,
+                  section_type_display: currentSection.section_type_display
+                },
+                section2: {
+                  course_number: otherSection.course_number,
+                  section_number: otherSection.section_number,
+                  section_type_display: otherSection.section_type_display
+                }
+              },
+              slot
+            };
+          }
+        }
+      }
+    }
+
+    return { conflict: false };
+  };
+
   // Function to update TA hours after assignment
   const updateHours = (ta, course) => {
     const newHours = ta.currentHours + course.weekHours
@@ -1670,6 +1723,16 @@ export default function TAAllocationPage() {
                                 return;
                               }
 
+                              // First check for conflicts between selected sections
+                              const sectionConflict = checkForConflictsWithinSelectedSections(selectedSections);
+                              if (sectionConflict.conflict) {
+                                alert(
+                                  `Time conflict detected between ${sectionConflict.sections.section1.course_number} ${sectionConflict.sections.section1.section_type_display} ${sectionConflict.sections.section1.section_number} and ${sectionConflict.sections.section2.course_number} ${sectionConflict.sections.section2.section_type_display} ${sectionConflict.sections.section2.section_number}`
+                                );
+                                return;
+                              }
+
+
                               for (const course of selectedSections) {
                                 //console.log("course in selectedSections after pressing send offer button: ", course);
                                 const result = await checkForConflicts(
@@ -1686,6 +1749,8 @@ export default function TAAllocationPage() {
                                   return;
                                 }
                               }
+
+
 
                               try {
                                 // Send to backend
