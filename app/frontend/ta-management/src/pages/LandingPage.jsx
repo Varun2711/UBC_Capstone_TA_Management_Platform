@@ -133,7 +133,7 @@ export function LandingPage() {
                     
                     {/* Application Status */}
                     {activePostings.length > 0 ? (
-                        <Alert className="max-w-2xl mx-auto border-green-200 bg-green-50">
+                        <Alert className="max-w-xl mx-auto border-green-200 bg-green-50">
                             <CheckCircle className="h-4 w-4 text-green-600" />
                             <AlertDescription>
                                 <span className="font-medium text-green-800">
@@ -145,7 +145,7 @@ export function LandingPage() {
                             </AlertDescription>
                         </Alert>
                     ) : (
-                        <Alert className="max-w-2xl mx-auto border-orange-200 bg-orange-50">
+                        <Alert className="max-w-lg mx-auto border-orange-200 bg-orange-50">
                             <AlertCircle className="h-4 w-4 text-orange-600" />
                             <AlertDescription>
                                 <span className="font-medium text-orange-800">
