@@ -68,9 +68,9 @@ describe("Logout", () => {
       const logoutMenuItem = await screen.findByRole("menuitem", { name: /logout/i });
       await user.click(logoutMenuItem);
 
-      // Wait for the redirect to the login/landing page.
+      // Wait for the redirect to the landing page - updated to match new landing page
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: /Teaching Assistant Application Portal/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /Become a Teaching Assistant/i, level: 1 })).toBeInTheDocument();
       });
 
       // Verify sessionStorage was cleared
