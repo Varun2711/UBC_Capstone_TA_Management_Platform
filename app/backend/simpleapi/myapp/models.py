@@ -697,6 +697,7 @@ class OfferItem(models.Model):
     # Foreign keys to different item types
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
     shared_session = models.ForeignKey(SharedSession, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False, help_text="Specific time slot for this offer item")
     
     class Meta:
         managed = False
@@ -752,6 +753,7 @@ class Assignment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
     shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False, help_text="Specific time slot assigned within the course offering or shared session")
     
     role = models.CharField(max_length=3, choices=[('ta', 'Teaching Assistant')], default='ta')
     

@@ -81,15 +81,15 @@ class OfferItemSerializer(serializers.ModelSerializer):
     section_number = serializers.SerializerMethodField()
     weekly_hours = serializers.SerializerMethodField()
     section_type_display = serializers.SerializerMethodField()
-
     course_offering_id = serializers.UUIDField(source='course_offering.course_offering_id', read_only=True, allow_null=True)
     shared_session_id = serializers.UUIDField(source='shared_session.shared_session_id', read_only=True, allow_null=True)
+    time_slot = serializers.SerializerMethodField()
     
     class Meta:
         model = OfferItem
         fields = [
             'offer_item_id', 'item_type', 
-            'course_number', 'course_name', 'section_number', 'weekly_hours',  'section_type_display',
+            'course_number', 'course_name', 'section_number', 'weekly_hours', 'time_slot', 'section_type_display',
             'course_offering_id', 'shared_session_id'
         ]
     
@@ -115,6 +115,14 @@ class OfferItemSerializer(serializers.ModelSerializer):
             return 'Lecture'
         if obj.item_type == 'shared_session' and obj.shared_session:
             return obj.shared_session.get_session_type_display()
+
+    def get_time_slot(self, obj):
+        """Get the specific time slot details for this item."""
+        details = obj.time_slot_details
+        # The property returns a list, we want the first (and only) item
+        if details:
+            return details[0]
+
         return None
 
 class OfferSerializer(serializers.ModelSerializer):

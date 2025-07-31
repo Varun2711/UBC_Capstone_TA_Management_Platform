@@ -67,11 +67,7 @@ const navigationItems = [
     icon: FileText,
     url: "#",
   },
-  {
-    title: "Schedule Overview",
-    icon: Calendar,
-    url: "#",
-  },
+  
   {
     title: "Reports & Analytics",
     icon: BarChart3,
@@ -85,11 +81,11 @@ const systemItems = [
     icon: Settings,
     url: "#",
   },
-  {
-    title: "Database Management",
-    icon: Database,
-    url: "#",
-  },
+  // {
+  //   title: "Database Management",
+  //   icon: Database,
+  //   url: "#",
+  // },
   {
     title: "Notifications",
     icon: Bell,
