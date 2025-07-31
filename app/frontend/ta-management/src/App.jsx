@@ -29,6 +29,7 @@ import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-manag
 import MyCourses from "./pages/Instructor_MyCourses";
 import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
+import SchedulerAssignmentPage from "./pages/Scheduler/Scheduler_AssignmentPage";
 
 
 function App() {
@@ -172,6 +173,15 @@ function App() {
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
             <InstructorRequirements />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/assignment-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <SchedulerAssignmentPage />
           </ProtectedRoute>
         }
       />
