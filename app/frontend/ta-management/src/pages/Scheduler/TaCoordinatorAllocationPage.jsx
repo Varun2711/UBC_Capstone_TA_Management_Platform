@@ -1160,7 +1160,7 @@ export default function TAAllocationPage() {
                 <TabsTrigger value="allocate">Allocate TAs</TabsTrigger>
                 <TabsTrigger value="added-offers">Added Offers</TabsTrigger>
                 <TabsTrigger value="pending-offers">Pending Offers</TabsTrigger>
-                <TabsTrigger value="allocated">Allocated TAs</TabsTrigger>
+                <TabsTrigger value="rejected-offers">Rejected Offers</TabsTrigger>
 
               </TabsList>
 
@@ -1789,47 +1789,47 @@ export default function TAAllocationPage() {
                 </Card>
               </TabsContent>
 
-              {/* Allocated TAs Tab */}
-              <TabsContent value="allocated" className="space-y-4">
-                {taList.filter(
-                (ta) => ta.status === "Fully Allocated" || ta.status === "Partially Allocated")
-                .map((ta) => (
-                  <Card key={ta.id}>
-                    <CardHeader>
-                       <CardTitle>{ta.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Current Workload: {ta.currentHours}/{ta.maxHours} hours
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Status: {ta.status}
-                      </p>
-                    
-                      {getAssignmentsForTA(ta.name).map((assignment, idx) => (
-                        <div key={`${assignment.taStudentId}-${assignment.course_number}-${assignment.section}`}>
-                          <p className="font-medium mt-2">
-                            {assignment.taName} - {assignment.taStudentId}   
-                          </p>
-                          <p className="text-sm text-muted-foreground">                      
-                            {assignment.course_number} - {assignment.course_name} - {assignment.section}
-                          </p>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              setAssignmentToDelete(assignment)
-                              setShowDeleteModal(true)
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      ))} 
+              {/* Rejected Offers Tab */}
+              <TabsContent value="rejected-offers" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Rejected TA Offers</CardTitle>
+                    <CardDescription>
+                      These are the offers that were rejected by students.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Filter offers for "rejected" status and check if any exist */}
+                    {/* Create a filtered array first */}
+                    {(() => { // Using an IIFE (Immediately Invoked Function Expression) to declare rejectedOffers
+                      const rejectedOffers = offers.filter(offer => offer.status === "rejected" && offer.offer_items.length > 0);
 
-                    </CardContent>
-                  </Card>
-                ))}
+                      // You can console.log the filtered offers here if you want to inspect them
+                      //console.log("Filtered Pending Offers:", filteredOffers);
+
+                      return rejectedOffers.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center">
+                          No rejected offers at the moment.
+                        </p>
+                      ) : (
+                        <div className="space-y-4">
+                          {rejectedOffers.map((rejectedOffer) => (
+                            <div key={rejectedOffer.offer_id} className="p-3 border rounded-lg"> {/* Use offer_id as key */}
+                              <p className="font-medium mb-2">{rejectedOffer.student.name}</p> {/* Access student name */}
+                              <ul className="ml-4 list-disc text-sm text-muted-foreground">
+                                {rejectedOffer.offer_items.map((item, i) => (
+                                  <li key={i}>
+                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number} {/* Access correct properties */}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {showDeleteModal && assignmentToDelete && (
