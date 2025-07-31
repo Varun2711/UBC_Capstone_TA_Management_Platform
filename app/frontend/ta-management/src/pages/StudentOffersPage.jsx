@@ -41,6 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NavigationHeader } from "@/components/ui/navigation-header"
 import { AppSidebar } from "../components/student-dashboard-sidebar"
 import { getProfile } from "@/logic/student-profile"
+import { getPendingOffers, getCourseOfferingDetails, getSharedSessionDetails } from "@/logic/student-offers-page"
 
 import axios from "axios"
 
@@ -305,13 +306,13 @@ const pastOffers = [
 
 function getStatusBadge(status) {
   switch (status) {
-    case "Pending":
+    case "pending":
       return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending Response</Badge>
-    case "Accepted":
+    case "accepted":
       return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Accepted</Badge>
-    case "Rejected":
+    case "rejected":
       return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>
-    case "Expired":
+    case "expired":
       return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Expired</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
@@ -352,6 +353,10 @@ export default function OffersPage() {
   // State for current user data (displayed and modified)
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingOffers, setPendingOffers] = useState([]);
+  const [isLoadingPendingOffers, setIsLoadingPendingOffers] = useState(true);
+  const [isLoadingOfferItemsDetails, setIsLoadingOfferItemsDetails] = useState(true);
+  const [error, setError] = useState(null);
 
   const handleAcceptOffer = (offerId) => {
     console.log("Accepting offer:", offerId)
@@ -406,34 +411,55 @@ export default function OffersPage() {
   };
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchAllData = async () => {
       try {
+        // First fetch user data
         setIsLoading(true);
         const data = await getProfile();
-        console.log("Fetched user data from backend:", data);
-
-        // ✅ ADD THIS DEBUG LOGGING:
-        console.log("=== PROFILE DATA DEBUG ===");
-        console.log("Backend student_info:", data.student_info);
-        console.log("=== END DEBUG ===");
-
-        // Transform data to match frontend structure
         const profileData = transformBackendDataToFrontend(data);
-        console.log("Transformed data:", profileData);
-
         setUserData(profileData);
-
+        
+        // Then fetch pending offers
+        setIsLoadingPendingOffers(true);
+        const pendingOffersData = await getPendingOffers();
+        setPendingOffers(pendingOffersData);
+        
+        // Only fetch details if we have pending offers
+        if (pendingOffersData.length > 0) {
+          setIsLoadingOfferItemsDetails(true);
+          const offersWithDetails = await Promise.all(
+            pendingOffersData.map(async (offer) => {
+              const detailedItems = await Promise.all(
+                offer.offer_items.map(async (item) => {
+                  if (item.item_type === "course_offering") {
+                    const details = await getCourseOfferingDetails(item.course_offering_id);
+                    return { ...item, details };
+                  } else if (item.item_type === "shared_session") {
+                    const details = await getSharedSessionDetails(item.shared_session_id);
+                    return { ...item, details };
+                  }
+                  return item; //if item_type is not recognized, then return the item as is
+                })
+              );
+              return { ...offer, offer_items: detailedItems };
+            })
+          );
+          setPendingOffers(offersWithDetails);
+        }
       } catch (error) {
-        setFetchError("Could not load your profile. Please try again later.");
-        console.error("Fetch profile error:", error);
+        setError("Failed to load data");
+        console.error("Fetch error:", error);
       } finally {
         setIsLoading(false);
+        setIsLoadingPendingOffers(false);
+        setIsLoadingOfferItemsDetails(false);
       }
     };
-    fetchUserData();
-  }, []);
 
-  if (isLoading) {
+    fetchAllData();
+  }, []); // Only runs once on mount
+
+  if (isLoading && isLoadingPendingOffers && isLoadingOfferItemsDetails) {
     return <div className="flex justify-center items-center h-screen">Loading student offers...</div>;
   }
 
@@ -482,7 +508,7 @@ export default function OffersPage() {
                     <Mail className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{currentOffers.length}</div>
+                    <div className="text-2xl font-bold">{pendingOffers.length}</div>
                     <p className="text-xs text-muted-foreground">Awaiting response</p>
                   </CardContent>
                 </Card>
@@ -521,11 +547,11 @@ export default function OffersPage() {
 
                 {/* Current Offers Tab */}
                 <TabsContent value="current" className="space-y-4">
-                  {currentOffers.length === 0 ? (
+                  {pendingOffers.length === 0 ? (
                     <Card>
                       <CardContent className="flex flex-col items-center justify-center py-12">
                         <Mail className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No Current Offers</h3>
+                        <h3 className="text-lg font-semibold mb-2">No Pending Offers</h3>
                         <p className="text-muted-foreground text-center">
                           You don't have any pending offers at the moment. Check back later or browse available
                           positions.
@@ -534,24 +560,21 @@ export default function OffersPage() {
                     </Card>
                   ) : (
                     <div className="space-y-4">
-                      {currentOffers.map((offer) => (
-                        <Card key={offer.id} className="overflow-hidden">
+                      {pendingOffers.map((offer) => (
+                        <Card key={offer.offer_id} className="overflow-hidden">
                           <CardHeader>
                             <div className="flex items-start justify-between">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                  <CardTitle className="text-lg">{offer.session} Offer</CardTitle>
-                                  {getPriorityBadge(offer.priority)}
+                                  <CardTitle className="text-lg">{"offer.session"} Offer</CardTitle>
                                 </div>
                                 <CardDescription>
-                                  {offer.courses.map(course => course.instructor).join(", ")}
+                                  {/*offer.courses.map(course = course.instructor).join(", ")*/}
+                                  course instructor
                                 </CardDescription>
                               </div>
                               <div className="flex items-center gap-2">
                                 {getStatusBadge(offer.status)}
-                                <Badge variant={offer.daysLeft <= 7 ? "destructive" : "secondary"}>
-                                  {offer.daysLeft} days left
-                                </Badge>
                               </div>
                             </div>
                           </CardHeader>
@@ -559,7 +582,7 @@ export default function OffersPage() {
                           <CardContent className="space-y-4">
                             {/* Course Details */}
                             <div className="space-y-3">
-                              {offer.courses.map((course, idx) => (
+                              {offer.offer_items.map((course, idx) => (
                                 <div key={idx} className="p-4 bg-muted/50 rounded-lg space-y-2">
                                   <div className="font-semibold text-base">{course.course}</div>
                                   <div className="text-sm text-muted-foreground">Instructor: {course.instructor}</div>
