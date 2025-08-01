@@ -40,7 +40,7 @@ import { AppSidebar } from "../../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer } from "@/logic/coordinator-allocations-page";
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer, editOffer } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -1536,10 +1536,10 @@ export default function TAAllocationPage() {
                                             <div
                                               key={`${course.id}-offering-${offering.course_offering_id}`}
                                               className={`p-3 border rounded-lg transition-colors ${isOffered
-                                                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                                  : isSelected
-                                                    ? "border-blue-500 bg-blue-50 cursor-pointer"
-                                                    : "hover:bg-muted/50 cursor-pointer"
+                                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                                : isSelected
+                                                  ? "border-blue-500 bg-blue-50 cursor-pointer"
+                                                  : "hover:bg-muted/50 cursor-pointer"
                                                 }`}
                                               onClick={() => {
                                                 if (isOffered) return;
@@ -1593,10 +1593,10 @@ export default function TAAllocationPage() {
                                       <div
                                         key={`${course.id}-${section.shared_session_id}`}
                                         className={`p-3 border rounded-lg transition-colors ${isOffered
-                                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                            : isSelected
-                                              ? "border-blue-500 bg-blue-50 cursor-pointer"
-                                              : "hover:bg-muted/50 cursor-pointer"
+                                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                          : isSelected
+                                            ? "border-blue-500 bg-blue-50 cursor-pointer"
+                                            : "hover:bg-muted/50 cursor-pointer"
                                           }`}
                                         onClick={() => {
                                           if (isOffered) return;
@@ -1749,69 +1749,106 @@ export default function TAAllocationPage() {
                                 }
                               }
 
-                              const offerItemsPayload = selectedSections.flatMap(section => {
-                                const timeSlots = section.time_slots_info_raw || [];
+                              // Find if a draft offer already exists for this student
+                              const existingDraftOffer = offers.find(
+                                (o) => o.student.id === studentId && o.status === "draft"
+                              );
 
-                                // If it's a shared session, create only ONE offer item for all its slots.
-                                if (section.item_type === 'shared_session') {
+                              // Create a payload for the NEWLY selected sections, ensuring one item per shared session
+                              const newOfferItemsPayload = selectedSections.flatMap(section => {
+                                if (section.item_type === 'course_offering') {
+                                  const timeSlots = section.time_slots_info_raw || [];
                                   return timeSlots.map(slot => ({
+                                    item_type: section.item_type,
+                                    course_offering_id: section.sectionId,
+                                    shared_session_id: null,
+                                    time_slot: { day: slot.day, start_time: slot.start_time, end_time: slot.end_time }
+                                  }));
+                                }
+                                if (section.item_type === 'shared_session') {
+                                  return [{
                                     item_type: section.item_type,
                                     course_offering_id: null,
                                     shared_session_id: section.sectionId,
-                                    time_slot: {
-                                      day: slot.day,
-                                      start_time: slot.start_time,
-                                      end_time: slot.end_time,
-                                    }
-                                  }));
+                                    time_slot: null // Indicates the entire session
+                                  }];
                                 }
-
-                                // For course offerings, create an offer item for EACH selected time slot.
-                                // This maintains the ability to assign different TAs to different slots of the same lecture.
-                                return timeSlots.map(slot => ({
-                                  item_type: section.item_type,
-                                  course_offering_id: section.sectionId,
-                                  shared_session_id: null,
-                                  time_slot: {
-                                    day: slot.day,
-                                    start_time: slot.start_time,
-                                    end_time: slot.end_time,
-                                  }
-                                }));
+                                return [];
                               });
 
-                              if (offerItemsPayload.length === 0) {
+                              if (newOfferItemsPayload.length === 0) {
                                 alert("No valid time slots found for the selected sections. Cannot create offer.");
                                 return;
                               }
 
-                              const dataToSend = {
-                                application_id: selectedApplication.application.application_id,
-                                offer_items: offerItemsPayload, // Use the correctly formatted payload
-                                notes: `Draft offer for ${selectedTA.application.student.name}`,
-                              };
-
                               try {
-                                // Send to backend
-                                console.log("in try block of add offer button, selectedApplication is: ", selectedApplication);
-                                await createOffer(dataToSend);
+                                if (existingDraftOffer) {
+                                  // UPDATE existing draft offer
+                                  // 1. Re-format existing items to match the backend's expected input format
+                                  const formattedExistingItems = (existingDraftOffer.offer_items || []).map(item => ({
+                                    item_type: item.item_type,
+                                    course_offering_id: item.course_offering_id,
+                                    shared_session_id: item.shared_session_id,
+                                    time_slot: item.time_slot,
+                                  }));
 
+                                  // 2. Combine old and new items
+                                  const combinedItems = [...formattedExistingItems, ...newOfferItemsPayload];
+
+                                  // 3. De-duplicate the combined list with nuanced logic
+                                  const uniqueItems = [];
+                                  const seenKeys = new Set();
+                                  for (const item of combinedItems) {
+                                    let key;
+                                    if (item.item_type === 'shared_session') {
+                                      // For shared sessions, the session ID is the unique key.
+                                      // This prevents adding the same lab/tutorial multiple times.
+                                      key = `shared-${item.shared_session_id}`;
+                                    } else if (item.item_type === 'course_offering') {
+                                      // For course offerings, the combination of the offering ID and the specific time slot is the unique key.
+                                      // This allows adding multiple items for the same lecture if they occur at different times.
+                                      const ts = item.time_slot;
+                                      key = `course-${item.course_offering_id}-${ts.day}-${ts.start_time}`;
+                                    } else {
+                                      // Should not happen, but skip if it does
+                                      continue;
+                                    }
+
+                                    if (!seenKeys.has(key)) {
+                                      uniqueItems.push(item);
+                                      seenKeys.add(key);
+                                    }
+                                  }
+
+                                  const dataToUpdate = {
+                                    offer_items: uniqueItems,
+                                    notes: `Updated draft offer for ${selectedTA.application.student.name}`,
+                                  };
+                                  await editOffer(existingDraftOffer.offer_id, dataToUpdate);
+                                } else {
+                                  // CREATE new draft offer
+                                  const dataToSend = {
+                                    application_id: selectedApplication.application.application_id,
+                                    offer_items: newOfferItemsPayload,
+                                    notes: `Draft offer for ${selectedTA.application.student.name}`,
+                                  };
+                                  await createOffer(dataToSend);
+                                }
+
+                                // ... (rest of the function: refresh offers, reset UI state, etc.) ...
                                 await fetchAndSetOffers();
-                                // Update frontend state
-                                handleAddTAtoAddedOfferTab(selectedTA, selectedSections);
-
                                 setStudentCurrentHours((prev) => ({
                                   ...prev,
                                   [studentId]: existingHours + addedHours,
                                 }));
-
                                 setSelectedTAId(null);
                                 setSelectedApplication(null);
                                 setSelectedCourseOfferings([]);
                                 setSelectedSharedSessions([]);
+
                               } catch (err) {
-                                console.error("Failed to create offer:", err);
-                                alert("An error occurred while creating the offer.");
+                                console.error("Failed to create or update offer:", err);
+                                alert("An error occurred while creating or updating the offer.");
                               }
                             }}
                           >
@@ -1834,6 +1871,7 @@ export default function TAAllocationPage() {
                   setActiveOffers={setActiveOffers}
                   studentCurrentHours={studentCurrentHours}
                   setStudentCurrentHours={setStudentCurrentHours}
+                  fetchAndSetOffers={fetchAndSetOffers}
                 />
               </TabsContent>
 

@@ -13,6 +13,7 @@ const AddedOffersTab = ({
   setActiveOffers,
   studentCurrentHours,
   setStudentCurrentHours,
+  fetchAndSetOffers,
 }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState(null); // { offerId, itemIndex }
@@ -47,65 +48,60 @@ const AddedOffersTab = ({
     if (!offerToDelete) return;
     const { offerId, itemIndex } = offerToDelete;
 
-    console.log("offerToDelete: ", offerToDelete);
+    // Find the specific offer being modified
+    const offerToModify = offers.find((o) => o.offer_id === offerId);
+    if (!offerToModify) {
+      console.error("Could not find the offer to modify.");
+      setShowConfirmDialog(false);
+      setOfferToDelete(null);
+      return;
+    }
 
-    let modifiedOffer = null;
+    // Create the updated list of items by filtering out the one to be deleted
+    const updatedOfferItems = offerToModify.offer_items.filter((_, idx) => idx !== itemIndex);
 
-    const updatedOffers = offers.map((offer) => {
-      if (offer.offer_id !== offerId) return offer;
-
-      const deletedItem = offer.offer_items[itemIndex];
-      const sectionHours = (deletedItem?.slots?.length ?? 0) * 0.5;
-      const studentId = offer.student.id;
-
-      // Update studentCurrentHours
-      setStudentCurrentHours((prevHours) => {
-        const current = prevHours[studentId] || 0;
-        return {
-          ...prevHours,
-          [studentId]: Math.max(0, current - sectionHours),
-        };
-      });
-
-      const newItems = offer.offer_items.filter((_, idx) => idx !== itemIndex);
-      modifiedOffer = { ...offer, offer_items: newItems };
-      return modifiedOffer;
-    });
-
-    // Remove empty offers
-    const cleanedOffers = updatedOffers.filter((offer) => offer.offer_items.length > 0);
+    // Prepare the data payload for the API
+    const dataToUpdate = {
+      offer_items: updatedOfferItems.map(item => ({
+        // Re-construct the payload to ensure it matches what the backend expects
+        item_type: item.item_type,
+        course_offering_id: item.course_offering_id,
+        shared_session_id: item.shared_session_id,
+        time_slot: item.time_slot, // Ensure this is in the correct format if needed
+      })),
+      notes: offerToModify.notes, // Preserve existing notes
+    };
 
     setShowConfirmDialog(false);
     setOfferToDelete(null);
 
-    console.log("modifiedOffer: ", modifiedOffer);
-
-    // 🔁 Call editOffer if there's still items in the modified offer
-    if (modifiedOffer) {
-      try {
-        console.log("about to call editOffer api endpoint");
-        const response = await editOffer(
-          modifiedOffer.student.application_id,
-          modifiedOffer.offer_items,
-          modifiedOffer.offer_id
-        );
-        console.log("response in editOffer: ", response);
-      } catch (err) {
-        console.error("Failed to edit offer:", err);
-      }
-    }
-
-    // ✅ Fetch offers and update the state
     try {
-      const refreshedOffers = await fetchOffers();
-      console.log("refreshedOffers: ", refreshedOffers);
-      setOffers(refreshedOffers);
+      // If there are still items left, call editOffer.
+      // If not, the backend should handle deleting the offer if it's empty,
+      // or you could call a deleteOffer function here instead.
+      if (updatedOfferItems.length > 0) {
+        console.log("Calling editOffer to update items...");
+        await editOffer(offerId, dataToUpdate);
+      } else {
+        // Optional: If the offer is now empty, you might want to delete it entirely.
+        // This depends on your application's logic.
+        // For now, we'll just update it to be empty.
+        console.log("Offer is now empty, updating with no items...");
+        await editOffer(offerId, dataToUpdate);
+      }
+
+      // Refresh the offers from the backend to ensure UI is in sync
+      await fetchAndSetOffers();
+
     } catch (err) {
-      console.error("Failed to fetch updated offers:", err);
+      console.error("Failed to update offer after deleting an item:", err);
+      alert("An error occurred while removing the item. Please refresh and try again.");
+      // Even on error, try to refresh to get the latest state
+      await fetchAndSetOffers();
+      
     }
   };
 
-  
   const transferAddedOffersToActive = () => {
     setActiveOffers((prev) => {
       const merged = [...prev];
@@ -130,7 +126,7 @@ const AddedOffersTab = ({
 
     setOffers([]);
   };
-  
+
   const handleSendOffers = async () => {
     // Filter out offers that have no items
     const offersToSend = offers.filter((offer) => offer.status === "draft" && offer.offer_items.length > 0);
@@ -143,8 +139,8 @@ const AddedOffersTab = ({
     // You might want to get the response deadline from a user input here
     // For this example, we're using a default or a state variable `responseDeadline`.
     if (!responseDeadline) {
-        alert("Please set a response deadline before sending offers.");
-        return;
+      alert("Please set a response deadline before sending offers.");
+      return;
     }
 
     for (const offer of offersToSend) {
@@ -173,17 +169,17 @@ const AddedOffersTab = ({
     }
   };
 
-    const getCourseOfferingDetails = async (courseOfferingId) => {
-        try {
-            const courseOfferingDetails = await fetchCourseOfferingDetails(courseOfferingId);
-            console.log("Course Offering Details in courseOfferingDetails:", courseOfferingDetails);
-            return courseOfferingDetails;
-            
-        } catch (error) {
-            console.error("Error fetching course offering details:", error);
-            return null;
-        }
-    };
+  const getCourseOfferingDetails = async (courseOfferingId) => {
+    try {
+      const courseOfferingDetails = await fetchCourseOfferingDetails(courseOfferingId);
+      console.log("Course Offering Details in courseOfferingDetails:", courseOfferingDetails);
+      return courseOfferingDetails;
+
+    } catch (error) {
+      console.error("Error fetching course offering details:", error);
+      return null;
+    }
+  };
   /*
   return (
     <div className="space-y-4">
@@ -249,7 +245,7 @@ const AddedOffersTab = ({
             );
           })()}
         </CardContent>
-      </Card>   
+      </Card>
       {offers.some((offer) => offer.status === "draft" && offer.offer_items.length > 0) && (
         <div className="flex justify-end p-4">
           <Button onClick={handleSendOffers}>Send Offer</Button>

@@ -2,6 +2,7 @@
 
 import axios from "axios";
 
+
 const API_URL = 'http://localhost:8080/api';
 
 // Helper function to get the auth token from session storage
@@ -133,30 +134,13 @@ export const createOffer = async (dataToSend) => {
   }
 };
 
-export const editOffer = async (applicationId, offer_items, offer_id) => {
+export const editOffer = async (offer_id, dataToUpdate) => {
+  console.log("Payload being sent to editOffer:", JSON.stringify(dataToUpdate, null, 2));
+  console.log("Offer ID in editOffer:", offer_id);
 
-  const offerItems = offer_items.map((item) => {
-    if (item.item_type === "course_offering") {
-      return {
-        item_type: "course_offering",
-        course_offering_id: item.course_offering_id,
-      };
-    } else if (item.item_type === "shared_session") {
-      return {
-        item_type: "shared_session",
-        shared_session_id: item.shared_session_id,
-      };
-    } else {
-      throw new Error(`Unsupported item_type: ${item.item_type}`);
-    }
-  });
-
-  console.log("offerItems in editOffer: ", offerItems);
-  console.log("offer_id in editOffer: ", offer_id);
-  console.log("Payload being sent: ", {
-    application_id: applicationId,
-    offer_items: offerItems,
-  });
+  if (!dataToUpdate || !Array.isArray(dataToUpdate.offer_items)) {
+    throw new Error("Invalid payload: dataToUpdate.offer_items must be an array.");
+  }
 
   const response = await fetch(`${API_URL}/allocations/offers/${offer_id}/edit_offer/`, {
     method: "PUT",
@@ -164,19 +148,18 @@ export const editOffer = async (applicationId, offer_items, offer_id) => {
       ...getAuthHeaders(),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      application_id: applicationId,
-      offer_items: offerItems
-    }),
+    body: JSON.stringify(dataToUpdate),
   });
 
-
   if (!response.ok) {
-    throw new Error("Failed to create offer");
+    const errorData = await response.json().catch(() => ({ detail: "Failed to edit offer" }));
+    console.error("Error from backend on editOffer:", errorData);
+    throw new Error(errorData.detail || "Failed to edit offer");
   }
 
   return await response.json();
 };
+
 
 export const sendOffer = async (response_deadline, offer_id) => {
 
