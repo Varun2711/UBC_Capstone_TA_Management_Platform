@@ -49,59 +49,61 @@ export default function CreateAccount1() {
   }
 
   const handleNext = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const studentNumber = formData.ubcStudentNumber.trim();
+  const studentNumber = formData.ubcStudentNumber.trim();
 
-    // Validate UBC student number (exactly 8 digits)
-    if (!/^\d{8}$/.test(studentNumber)) {
-      setError("UBC student number must be exactly 8 digits");
-      return;
-    }
-
-    const { firstName, lastName } = formData;
-    if (!firstName.trim()) {
-      setError("First name is required");
-      return;
-    }
-    if (!/^[A-Za-z\s'-]+$/.test(firstName.trim())) {
-      setError("First name must only contain letters");
-      return;
-    }
-    if (!lastName.trim()) {
-      setError("Last name is required");
-      return;
-    }
-    if (!/^[A-Za-z\s'-]+$/.test(lastName.trim())) {
-      setError("Last name must only contain letters");
-      return;
-    }
-
-    //Duplicate check using /find-user/
-    try {
-      const response = await axios.get(`${API_URL}/find-user/`, {
-        params: { student_number: studentNumber },
-      });
-
-      // If a user is returned, it's a duplicate
-      if (response.data && Object.keys(response.data).length > 0) {
-        setError("This UBC student number is already registered.");
-        return;
-      }
-    } catch (err) {
-      if (err.response?.status === 404) {
-        // 404 = No match found, safe to proceed
-      } else {
-        console.error("Error checking student number:", err);
-        setError("Failed to validate student number. Please try again.");
-        return;
-      }
-    }
-
-    //Passed validation, proceed
-    sessionStorage.setItem("createAccount1", JSON.stringify(formData));
-    navigate("/create-account/step2");
+  // Validate UBC student number (exactly 8 digits)
+  if (!/^\d{8}$/.test(studentNumber)) {
+    setError("UBC student number must be exactly 8 digits");
+    return;
   }
+
+  const { firstName, lastName } = formData;
+  if (!firstName.trim()) {
+    setError("First name is required");
+    return;
+  }
+  if (!/^[A-Za-z\s'-]+$/.test(firstName.trim())) {
+    setError("First name must only contain letters");
+    return;
+  }
+  if (!lastName.trim()) {
+    setError("Last name is required");
+    return;
+  }
+  if (!/^[A-Za-z\s'-]+$/.test(lastName.trim())) {
+    setError("Last name must only contain letters");
+    return;
+  }
+
+  // Check for duplicate student number using find-user endpoint
+  try {
+    const response = await axios.get(`${API_URL}/find-user/`, {
+      params: { student_number: studentNumber },
+    });
+
+    // If the request succeeds and returns data, the student number exists
+    if (response.data && response.status === 200) {
+      // The endpoint returned a user, so it's a duplicate
+      setError("This UBC student number is already registered.");
+      return;
+    }
+  } catch (err) {
+    if (err.response?.status === 404) {
+      // 404 = No user found, student number is available - this is what we want
+      // Continue with the flow
+    } else {
+      console.error("Error checking student number:", err);
+      setError("Failed to validate student number. Please try again.");
+      return;
+    }
+  }
+
+  // Passed validation, proceed
+  sessionStorage.setItem("createAccount1", JSON.stringify(formData));
+  navigate("/create-account/step2");
+}
 
 
 
