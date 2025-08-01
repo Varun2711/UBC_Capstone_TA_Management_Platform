@@ -1107,51 +1107,6 @@ export default function ProfilePage() {
     "Other (please specify)",
   ];
 
-  const handleSaveAvailability = async (availabilityData) => {
-    console.log("=== DEBUG AVAILABILITY SAVE ===");
-    console.log("availabilityData:", availabilityData);
-    console.log("availabilityData type:", typeof availabilityData);
-    console.log("availabilityData length:", availabilityData?.length);
-    console.log("Is array?", Array.isArray(availabilityData));
-    console.log("First 5 elements:", availabilityData?.slice(0, 5));
-    console.log("================================");
-    setIsSaving(true);
-    setErrors({});
-
-    try {
-      // Use the specialized availability update function
-      await updateAvailability(availabilityData);
-
-      // Update local state
-      setUserData(prev => ({
-        ...prev,
-        availability: [...availabilityData]
-      }));
-
-      setOriginalUserData(prev => ({
-        ...prev,
-        availability: [...availabilityData]
-      }));
-
-      setIsEditingAvailability(false);
-      showSuccessMessage("Availability updated successfully");
-    } catch (error) {
-      if (error.response && error.response.status === 400 && error.response.data) {
-        const backendErrors = error.response.data;
-        const formattedErrors = {};
-        for (const field in backendErrors) {
-          formattedErrors[field] = backendErrors[field][0];
-        }
-        setErrors(formattedErrors);
-      } else {
-        setErrors({ api: "Failed to save availability. Please try again." });
-      }
-      console.error("Failed to save availability:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading profile...</div>;
   }
