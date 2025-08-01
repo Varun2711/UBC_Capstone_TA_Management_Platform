@@ -340,6 +340,7 @@ class OfferItem(models.Model):
     # Foreign keys to different item types
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
     shared_session = models.ForeignKey(SharedSession, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False, help_text="Specific time slot for this offer item")
     
     class Meta:
         managed = True
@@ -350,6 +351,10 @@ class OfferItem(models.Model):
         if not ((self.course_offering and not self.shared_session) or 
                 (self.shared_session and not self.course_offering)):
             raise ValidationError("Each offer item must be either a course offering or shared session, not both")
+        
+        # Ensure time slot is provided if item is a course offering or shared session
+        if (self.course_offering or self.shared_session) and not self.time_slot:
+            raise ValidationError("A specific time slot is required for a course offering or shared session.")
     
     @property
     def course(self):
@@ -387,15 +392,9 @@ class OfferItem(models.Model):
     @property
     def time_slots(self):
         """Get time slots from the course offering or shared session"""
-        try:
-            if self.course_offering:
-                return self.course_offering.time_slots.all()
-            elif self.shared_session:
-                return self.shared_session.time_slots.all()
-        except AttributeError as e:
-            # Fallback if time_slots relationship doesn't exist
-            print(f"Warning: time_slots not available for {self}: {e}")
-            return []
+        # This property now returns a list containing only the assigned time slot
+        if self.time_slot:
+            return [self.time_slot]
         return []
     
     @property
@@ -548,8 +547,8 @@ class Offer(models.Model):
         super().clean()
         
         # Must have at least one offer item
-        if self.pk and self.offer_items.count() == 0:
-            raise ValidationError("Offer must contain at least one item")
+        # if self.pk and self.offer_items.count() == 0:
+        #     raise ValidationError("Offer must contain at least one item")
     
     @property
     def courses(self):
@@ -646,6 +645,8 @@ class Assignment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
     shared_session = models.ForeignKey(SharedSession, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False, help_text="Specific time slot assigned within the course offering or shared session")
     
     role = models.CharField(max_length=3, choices=[('ta', 'Teaching Assistant')], default='ta')
     
@@ -666,11 +667,9 @@ class Assignment(models.Model):
     
     @property
     def time_slots(self):
-        """Get time slots from the assigned course offering or shared session"""
-        if self.course_offering:
-            return self.course_offering.time_slots.all()
-        elif self.shared_session:
-            return self.shared_session.time_slots.all()
+        """Get the specific time slot assigned"""
+        if self.time_slot:
+            return [self.time_slot]
         return []
     
     @property

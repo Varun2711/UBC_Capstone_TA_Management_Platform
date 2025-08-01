@@ -19,7 +19,7 @@ import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserProfile from "./pages/profile-page-scheduler";
-import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
+import TaCoordinatorAllocationPage from "./pages/Scheduler/TaCoordinatorAllocationPage";
 import ViewJobPostings from "./pages/Student/Student_ViewJobPostings";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Scheduler/Scheduler_ManageApplications";
@@ -28,6 +28,7 @@ import InstructorProfile from "./pages/Instructor/instructor-profile";
 import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-management";
 import MyCourses from "./pages/Instructor_MyCourses";
 import StudentOffers from "./pages/StudentOffersPage";
+import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
 
 
@@ -129,6 +130,14 @@ function App() {
         }
       />
 
+      <Route
+        path="/course-details/:courseId/:term"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <CourseDetails />
+          </ProtectedRoute>
+        }
+      />
 
 
       {/* Accessible to: scheduler --------------- */}

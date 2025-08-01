@@ -1041,7 +1041,7 @@ export default function ProfilePage() {
     } finally {
       setIsSaving(false)
     }
-  };
+  }
 
   const handleSaveCourses = async (coursePreference) => {
     const hasEmptyCoursePreference = coursePreference.some(course => course.trim() === "");
@@ -1739,6 +1739,9 @@ export default function ProfilePage() {
                         ) : (
                           <p className="text-sm">{exp.semester}</p>
                         )}
+                        {isEditingExperience && (
+                          <p className="text-xs text-muted-foreground">Accepted formats are Fall 2023, Winter 2024, Summer 2021</p>
+                        )}
                       </div>
 
                       <div className="space-y-1">
@@ -2217,15 +2220,9 @@ export default function ProfilePage() {
                     ) : (
                       <Button
                         onClick={() => {
-                          // FIX 
-                          if (Array.isArray(availabilityData) && availabilityData.length === 50) {
-                            // Use existing valid data
-                            setIsEditingAvailability(true);
-                          } else {
-                            // Create new valid data if current data is invalid
-                            setAvailabilityData(Array(50).fill(false));
-                            setIsEditingAvailability(true);
-                          }
+                          // Initialize editing state with fresh copy of saved availability
+                          setAvailabilityData(userData.availability ? [...userData.availability] : Array(50).fill(false));
+                          setIsEditingAvailability(true);
                         }}
                         className="gap-2"
                       >
@@ -2237,10 +2234,67 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <p>
-                    Please indicate your general weekly availability below. Blue boxes
-                    represent times that you are available for TA work, and white boxes
-                    represent times that you are not.<br /><br />
+
+
+                    <span style={{ display: "block", marginBottom: "1rem" }}>
+                      Please indicate your general weekly availability below.
+                    </span>
+
+                    <div style={{
+                      backgroundColor: "#f0f7ff",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                      marginBottom: "1rem",
+                      border: "1px solid #cfe2ff"
+                    }}>
+                      <strong style={{ color: "#2563eb" }}>Blue boxes</strong> represent times that you are
+                      <strong style={{ color: "#ef4444" }}> NOT available </strong>for work, and
+                      <strong style={{ color: "#000" }}> white boxes </strong>represent times that you
+                      <strong style={{ color: "#22c55e" }}> ARE available</strong>.
+                    </div>
+
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1.5rem",
+                      marginBottom: "1.5rem"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <div style={{
+                          width: "20px",
+                          height: "20px",
+                          backgroundColor: "#2563eb",
+                          border: "1px solid #ccc"
+                        }} />
+                        <span style={{ color: "#dc2626", fontWeight: "bold" }}>Not Available</span>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <div style={{
+                          width: "20px",
+                          height: "20px",
+                          backgroundColor: "#fff",
+                          border: "1px solid #ccc"
+                        }} />
+                        <span style={{ color: "#22c55e", fontWeight: "bold" }}>Available</span>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      backgroundColor: "#fff5f5",
+                      border: "1px solid #fecaca",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                      marginBottom: "1.5rem"
+    
+                    }}>
+                      <strong style={{ color: "#b91c1c" }}>⚠ Tip:</strong>
+                      <span style={{ color: "#b91c1c", marginLeft: "0.5rem" }}>
+                        Only highlight the times you are <u>NOT available</u>!
+                      </span>
+                    </div>
                   </p>
+
                   {isEditingAvailability ? (
                     <WeeklyAvailabilityCalendar
                       editable={true}

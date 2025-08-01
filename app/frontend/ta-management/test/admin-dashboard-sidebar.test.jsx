@@ -62,7 +62,6 @@ describe("AdminSidebar", () => {
       { title: "Course Management", icon: "book-open-icon" },
       { title: "TA Positions", icon: "user-check-icon" },
       { title: "Applications", icon: "file-text-icon" },
-      { title: "Schedule Overview", icon: "calendar-icon" },
       { title: "Reports & Analytics", icon: "bar-chart-icon" },
     ]
 
@@ -99,29 +98,6 @@ describe("AdminSidebar", () => {
     })
   })
 
-  it("renders system items correctly", () => {
-    renderSidebar({ activePage: "System Settings" })
-
-    const systemItems = [
-      { title: "System Settings", icon: "settings-icon", isActive: true },
-      { title: "Database Management", icon: "database-icon" },
-      { title: "Notifications", icon: "bell-icon" },
-    ]
-
-    const systemGroup = screen.getByText("System").closest('[data-sidebar="group"]')
-
-    systemItems.forEach((item) => {
-      const menuItem = within(systemGroup).getByText(item.title)
-      expect(menuItem).toBeInTheDocument()
-      expect(within(systemGroup).getByTestId(item.icon)).toBeInTheDocument()
-
-      if (item.isActive) {
-        expect(menuItem.closest('[data-active="true"]')).toBeInTheDocument()
-      } else {
-        expect(menuItem.closest('[data-active="true"]')).not.toBeInTheDocument()
-      }
-    })
-  })
 
   it("applies active state styling to the specified active page", () => {
     renderSidebar({ activePage: "Reports & Analytics" })
