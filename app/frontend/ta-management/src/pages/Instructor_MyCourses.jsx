@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Link } from "react-router-dom";
 import { useCurrentAcademicSession } from "@/hooks/useCurrentAcademicSession";
 import { useMyCourses } from "@/hooks/useMyCourses";
+import CourseDetails from "@/pages/Instructor/CourseDetails";
 
 export default function MyCourses() {
     // State
@@ -70,7 +71,7 @@ export default function MyCourses() {
                                             {/* todo: this should go to the Course Details page that shows TA allocations across the whole course,
                                             but that is a completely separate issue */}
                                             <Link
-                                                to={`/`}
+                                                to={`/course-details/${course.id}`}
                                                 className="text-primary font-medium underline underline-offset-4"
                                             >
                                                 View Details
@@ -102,7 +103,7 @@ export default function MyCourses() {
                                         <CardContent>
                                             {/* todo: this should go to the Course Details page that shows TA allocations across the whole course */}
                                             <Link
-                                                to={`/`}
+                                                to={`/course-details/${course.id}`}
                                                 className="text-primary font-medium underline underline-offset-4"
                                             >
                                                 View Details

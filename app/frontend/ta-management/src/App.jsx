@@ -27,6 +27,7 @@ import ViewStudentApplication from "./pages/Scheduler/Scheduler_ViewApplication"
 import InstructorProfile from "./pages/Instructor/instructor-profile";
 import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-management";
 import MyCourses from "./pages/Instructor_MyCourses";
+import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
 import MyApplications from "./pages/Student/MyApplications";
 import ApplicationDetail from "./pages/Student/ApplicationDetail";
@@ -116,6 +117,15 @@ function App() {
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
             <InstructorTARequirements />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/course-details/:courseId/:term"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <CourseDetails />
           </ProtectedRoute>
         }
       />
