@@ -48,66 +48,61 @@ export default function CreateAccount1() {
     sessionStorage.setItem("createAccount1", JSON.stringify(updated)) // Optional live save
   }
 
-  const handleNext = async(e) => {
-    e.preventDefault()
+  const handleNext = async (e) => {
+    e.preventDefault();
 
-    //Validate UBC student number is exactly 8 digits
-    const studentNumber = formData.ubcStudentNumber.trim()
+    const studentNumber = formData.ubcStudentNumber.trim();
+
+    // Validate UBC student number (exactly 8 digits)
     if (!/^\d{8}$/.test(studentNumber)) {
-      setError("UBC student number must be exactly 8 digits")
-      return
+      setError("UBC student number must be exactly 8 digits");
+      return;
     }
 
-    const { firstName, lastName } = formData
-    // Validation: First Name
+    const { firstName, lastName } = formData;
     if (!firstName.trim()) {
-      setError("First name is required")
-      return
+      setError("First name is required");
+      return;
     }
     if (!/^[A-Za-z\s'-]+$/.test(firstName.trim())) {
-      setError("First name must only contain letters")
-      return
+      setError("First name must only contain letters");
+      return;
     }
-
-    // Validation: Last Name
     if (!lastName.trim()) {
-      setError("Last name is required")
-      return
+      setError("Last name is required");
+      return;
     }
     if (!/^[A-Za-z\s'-]+$/.test(lastName.trim())) {
-      setError("Last name must only contain letters")
-    // Duplicate check API call using axios
-    try {
-      const response = await axios.get(`${API_URL}/api/auth/check-student/${studentNumber}`);
+      setError("Last name must only contain letters");
+      return;
+    }
 
-      // If backend returns 409 (duplicate student number)
-      if (response.status === 409) {
+    //Duplicate check using /find-user/
+    try {
+      const response = await axios.get(`${API_URL}/find-user/`, {
+        params: { student_number: studentNumber },
+      });
+
+      // If a user is returned, it's a duplicate
+      if (response.data && Object.keys(response.data).length > 0) {
         setError("This UBC student number is already registered.");
         return;
       }
     } catch (err) {
-      if (err.response) {
-        if (err.response.status === 409) {
-          setError("This UBC student number is already registered.");
-          return;
-        } else {
-          setError("Failed to validate student number. Please try again.");
-          return;
-        }
+      if (err.response?.status === 404) {
+        // 404 = No match found, safe to proceed
       } else {
-        console.error("Network error:", err);
-        setError("Network error. Please check your connection.");
+        console.error("Error checking student number:", err);
+        setError("Failed to validate student number. Please try again.");
         return;
       }
-      }
-
-      setError("") // Clear error before proceeding
-
-      // Store form data in localStorage or context
-      sessionStorage.setItem("createAccount1", JSON.stringify(formData))
-      navigate("/create-account/step2")
     }
+
+    //Passed validation, proceed
+    sessionStorage.setItem("createAccount1", JSON.stringify(formData));
+    navigate("/create-account/step2");
   }
+
 
 
   return (
