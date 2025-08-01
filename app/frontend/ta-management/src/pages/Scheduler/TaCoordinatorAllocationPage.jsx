@@ -412,6 +412,10 @@ export default function TAAllocationPage() {
   const [selectedTAProfile, setSelectedTAProfile] = useState([]);
   const [studentCurrentHours, setStudentCurrentHours] = useState({});
 
+  const [showSlotSelectionModal, setShowSlotSelectionModal] = useState(false);
+  const [pendingSlotSelection, setPendingSlotSelection] = useState(null);
+  const [selectedSlotsBySectionId, setSelectedSlotsBySectionId] = useState({});
+
 
   const selectedTA = shortlistedApplicants.find((item) => item.application.student.id === selectedTAId)
   //console.log("selectedTA main variable is: ", selectedTA);
@@ -673,13 +677,13 @@ export default function TAAllocationPage() {
       const currentSlots = currentSection.time_slots_info || [];
 
       // Convert current section's slots if needed
-      const needsConversion = currentSlots.some(slot => slot.includes(":"));
-      const currentFormattedSlots = needsConversion
-        ? convertTimeSlotsInfoToKeys(currentSlots)
-        : currentSlots;
+      //const needsConversion = currentSlots.some(slot => slot.includes(":"));
+      //const currentFormattedSlots = needsConversion
+        //? convertTimeSlotsInfoToKeys(currentSlots)
+        //: currentSlots;
 
       // Convert to Set for O(1) lookup
-      const currentSlotsSet = new Set(currentFormattedSlots);
+      const currentSlotsSet = new Set(currentSlots);
 
       // Check against all other sections
       for (let j = i + 1; j < selectedSections.length; j++) {
@@ -1092,13 +1096,13 @@ export default function TAAllocationPage() {
 
       const slotPromises = relevantOffers.flatMap((offer) =>
         offer.offer_items.map(async (item) => {
-          //console.log("offer item in fetchOfferSlotTimes: ", item);
+          console.log("offer item in fetchOfferSlotTimes: ", item);
           //console.log("item.course_offering_id in fetchOfferSlotTimes: ", item.course_offering_id);
           //console.log("item.shared_session_id in fetchOfferSlotTimes: ", item.shared_session_id);
           try {
             if (item.course_offering_id || item.course_offering_id !== null) {
               const details = await fetchCourseOfferingDetails(item.course_offering_id);
-              return details?.time_slots_info || [];
+              return item?.time_slot || [];
             } else if (item.shared_session_id) {
               const details = await fetchSharedSessionDetails(item.shared_session_id);
               return details?.time_slots_info || [];
@@ -1175,6 +1179,83 @@ export default function TAAllocationPage() {
       0
     );
   })() : 0;
+
+  const SlotSelectionModal = ({ slotKeys, onConfirm, onClose }) => {
+    const [selectedSlots, setSelectedSlots] = useState([]);
+
+    const toggleSlot = (slot) => {
+      const exists = selectedSlots.some(
+        s => s.day === slot.day && s.start_time === slot.start_time
+      );
+      setSelectedSlots(prev =>
+        exists
+          ? prev.filter(s => !(s.day === slot.day && s.start_time === slot.start_time))
+          : [...prev, slot]
+      );
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full space-y-4">
+          <h2 className="text-lg font-semibold">Select Days & Time Slots</h2>
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {slotKeys.map((slot, idx) => (
+              <label key={idx} className="block">
+                <input
+                  type="checkbox"
+                  checked={selectedSlots.some(
+                    s => s.day === slot.day && s.start_time === slot.start_time
+                  )}
+                  onChange={() => toggleSlot(slot)}
+                />
+                <span className="ml-2">
+                  {slot.day}, {slot.start_time} - {slot.end_time}
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <button onClick={onClose} className="text-gray-600 hover:underline">Cancel</button>
+            <button
+              onClick={() => {
+                console.log("selectedSlots in return statement of SlotSelectionModal: ", selectedSlots);
+                console.log("calling onConfirm with selectedSlots in return statement of SlotSelectionModal: ", selectedSlots);
+                onConfirm(selectedSlots)
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // A helper function to parse the string format into an array of objects
+const parseSlotInfoForModal = (time_slots_info_array) => {
+  const dayMapping = {
+    'M': 'Monday', 'T': 'Tuesday', 'W': 'Wednesday',
+    'R': 'Thursday', 'F': 'Friday'
+  };
+
+  const slotObjects = [];
+  
+  time_slots_info_array.forEach(slotString => {
+      // Handle the 'Monday-8-top' format
+      // You'll need to parse this format into a day, start time, and end time.
+      // This is a more complex conversion, but a simplified example is below.
+      const [day, hour, half] = slotString.split('-');
+      slotObjects.push({
+        day: day,
+        start_time: `${hour}:00`, // Simplified time representation
+        end_time: `${half === 'top' ? hour : parseInt(hour) + 1}:00`
+      });
+    
+  });
+
+  return slotObjects;
+};
 
   return (
     <SidebarProvider>
@@ -1542,25 +1623,42 @@ export default function TAAllocationPage() {
                                                     : "hover:bg-muted/50 cursor-pointer"
                                                 }`}
                                               onClick={() => {
+                                                console.log("enter after clicking on an offering");
+                                                console.log("clicked on an offering: ", offering);
                                                 if (isOffered) return;
 
-                                                const selected = {
-                                                  ...offering,
-                                                  item_type: "course_offering",
-                                                  course_name: course.course_name,
-                                                  course_number: course.course_number,
-                                                  sectionId: offering.course_offering_id,
-                                                  time_slots_info: convertTimeSlotsInfoToKeys(offering.time_slots_info),
-                                                  time_slots_info_raw: offering.time_slots_info,
-                                                  weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(offering.time_slots_info)),
-                                                };
+                                                // Convert the offering's raw slot info into the object format the modal expects
+                                                const slotKeysForModal = offering.time_slots_info;
+                                                console.log("slotKeysForModal which is offering.time_slots_info: ", slotKeysForModal);
+                                                if (slotKeysForModal.length > 1) {
+                                                  setPendingSlotSelection({
+                                                    offering,
+                                                    slotKeys: slotKeysForModal, // Pass the array of objects here
+                                                    course,
+                                                  });
+                                                  setShowSlotSelectionModal(true);
+                                                } else {
+                                                  // Single-day offering, just select it directly
+                                                  console.log("offering.time_slots_info: ", offering.time_slots_info);
+                                                  console.log("offering.time_slots_info converted to keys and stored in selected for Course offering: ", convertTimeSlotsInfoToKeys(offering.time_slots_info));
+                                                  const selected = {
+                                                    ...offering,
+                                                    item_type: "course_offering",
+                                                    course_name: course.course_name,
+                                                    course_number: course.course_number,
+                                                    sectionId: offering.course_offering_id,
+                                                    time_slots_info: convertTimeSlotsInfoToKeys(offering.time_slots_info),
+                                                    time_slots_info_raw: offering.time_slots_info,
+                                                    weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(offering.time_slots_info)),
+                                                  };
 
-                                                setSelectedCourseOfferings((prev) => {
-                                                  const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
-                                                  return alreadySelected
-                                                    ? prev.filter((s) => s.sectionId !== selected.sectionId)
-                                                    : [...prev, selected];
-                                                });
+                                                  setSelectedCourseOfferings((prev) => {
+                                                    const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
+                                                    return alreadySelected
+                                                      ? prev.filter((s) => s.sectionId !== selected.sectionId)
+                                                      : [...prev, selected];
+                                                  });
+                                                }
                                               }}
                                             >
                                               <div className="flex items-center justify-between">
@@ -2006,6 +2104,43 @@ export default function TAAllocationPage() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {showSlotSelectionModal && pendingSlotSelection && (
+                <SlotSelectionModal
+                  onClose={() => {
+                    setShowSlotSelectionModal(false);
+                    setPendingSlotSelection(null);
+                  }}
+                  onConfirm={(selectedDaysAndSlots) => {
+                      // --- NEW: Map the objects from the modal back to strings ---
+                      console.log("selectedDaysAndSlots in SlotSelectionModal: ", selectedDaysAndSlots);
+                      const { offering, course } = pendingSlotSelection;
+                      const selected = {
+                          ...offering,
+                          item_type: "course_offering",
+                          course_name: pendingSlotSelection.course.course_name,
+                          course_number: pendingSlotSelection.course.course_number,
+                          sectionId: pendingSlotSelection.offering.course_offering_id,
+                          // --- NEW: Pass the newly formatted array to the conversion function ---
+                          time_slots_info: convertTimeSlotsInfoToKeys(selectedDaysAndSlots),
+                          time_slots_info_raw: selectedDaysAndSlots,
+                          weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(selectedDaysAndSlots)),
+                      };
+                      console.log("selected in SlotSelectionModal: ", selected);
+                      setSelectedCourseOfferings((prev) => {
+                        const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
+                        console.log("alreadySelected in SlotSelectionModal: ", alreadySelected);
+                        return alreadySelected
+                        ? prev.filter((s) => s.sectionId !== selected.sectionId)
+                        : [...prev, selected];
+                      });
+
+                      setShowSlotSelectionModal(false);
+                      setPendingSlotSelection(null);
+                  }}
+                  slotKeys={pendingSlotSelection.slotKeys}
+                />
               )}
             </Tabs>
           </main>
