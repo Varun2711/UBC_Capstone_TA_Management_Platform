@@ -391,11 +391,10 @@ class OfferItem(models.Model):
     
     @property
     def time_slots(self):
-        """Get time slots from the course offering or shared session"""
-        # This property now returns a list containing only the assigned time slot
+        """Get time slots from the course offering or shared session"""       
         if self.time_slot:
             return [self.time_slot]
-        return []
+        return []       
     
     @property
     def weekly_hours(self):
@@ -448,7 +447,8 @@ class OfferItem(models.Model):
             logger.error(f"Error calculating weekly hours for {self}: {e}")
             # Final fallback
             return 3.0 if self.item_type == 'course_offering' else 1.5
-    
+        
+            
     @property
     def course(self):
         """Get the course associated with this offer item"""
@@ -485,11 +485,34 @@ class OfferItem(models.Model):
                 'duration_hours': slot.duration.total_seconds() / 3600 if slot.duration else 0,
                 'time_increments': slot.time_increments if hasattr(slot, 'time_increments') else []
             })
-        return slots
+        return slots    
     
     def get_time_slot_details(self):
         """Legacy method name for backward compatibility"""
         return self.time_slot_details
+    
+
+    @property
+    def session_time_slot_details(self):
+        """Get detailed time slot information for the related course offering or shared session"""
+        slots = []
+        if self.item_type == 'course_offering' and self.course_offering:
+            time_slots = self.course_offering.time_slots.all()
+        elif self.item_type == 'shared_session' and self.shared_session:
+            time_slots = self.shared_session.time_slots.all()
+        
+    
+        for slot in time_slots:
+            slots.append({
+                'slot_id': str(slot.slot_id),
+                'day': slot.get_day_display(),
+                'day_code': slot.day,
+                'start_time': slot.start_time.strftime('%H:%M'),
+                'end_time': slot.end_time.strftime('%H:%M'),
+                'duration_hours': slot.duration.total_seconds() / 3600 if slot.duration else 0,
+                'time_increments': slot.time_increments if hasattr(slot, 'time_increments') else []
+            })
+        return slots
     
     def __str__(self):
         weekly_hours = self.weekly_hours

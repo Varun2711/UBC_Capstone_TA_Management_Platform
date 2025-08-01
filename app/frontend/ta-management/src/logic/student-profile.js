@@ -2,17 +2,17 @@
 
 import axios from "axios";
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = "http://localhost:8080/api";
 
 // Helper function to get the auth token from local storage
 const getAuthHeaders = () => {
-  const token = sessionStorage.getItem('accessToken');
+  const token = sessionStorage.getItem("accessToken");
   if (!token) {
     console.error("Access token not found in local storage.");
     return {};
   }
   return {
-    'Authorization': `Bearer ${token}`
+    Authorization: `Bearer ${token}`,
   };
 };
 
@@ -23,12 +23,15 @@ const getAuthHeaders = () => {
 export const getProfile = async () => {
   try {
     const headers = getAuthHeaders();
-    console.log("Sending headers:", headers); // Debugging log
+    // console.log("Sending headers:", headers); // Debugging log
     const response = await axios.get(`${API_URL}/profile/me/`, { headers });
-    console.log("API response:", response.data); // Debugging log
+    //console.log("API response:", response.data); // Debugging log
     return response.data;
   } catch (error) {
-    console.error("Error fetching profile:", error.response?.data || error.message);
+    console.error(
+      "Error fetching profile:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -38,32 +41,32 @@ export const getProfile = async () => {
  * @param {object} profileData - The user data to update.
  */
 export const updateProfile = async (profileData) => {
-  const token = sessionStorage.getItem('accessToken');
+  const token = sessionStorage.getItem("accessToken");
   if (!token) {
-    throw new Error('No authentication token found');
+    throw new Error("No authentication token found");
   }
 
   try {
     console.log("updateProfile called with:", profileData);
-    
+
     const response = await axios.patch(
       `${API_URL}/profile/me/update/`,
       profileData,
       {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
     );
 
     console.log("updateProfile response:", response.data);
     return response.data;
   } catch (error) {
-    console.error('Update profile error details:', {
+    console.error("Update profile error details:", {
       status: error.response?.status,
       data: error.response?.data,
-      message: error.message
+      message: error.message,
     });
     throw error;
   }
@@ -78,29 +81,40 @@ export const updateAcademicInfo = async (academicData) => {
     // Format academic data to match backend structure
     const formattedData = {
       // Student model fields
-      program: academicData.major,  // Major -> program
-      study_level: academicData.academicLevel,  // Academic Level -> study_level
-      year_standing: academicData.yearStanding ? parseInt(academicData.yearStanding) : null,
-      
+      program: academicData.major, // Major -> program
+      study_level: academicData.academicLevel, // Academic Level -> study_level
+      year_standing: academicData.yearStanding
+        ? parseInt(academicData.yearStanding)
+        : null,
+
       // StudentProfile fields
       student_profile: {
         gpa: academicData.gpa || null,
-        minor: academicData.minor || '',
-        year_degree_start: academicData.degreeStart ? parseInt(academicData.degreeStart) : null,
-        expected_graduation: academicData.expectedGraduation || ''
-      }
+        minor: academicData.minor || "",
+        year_degree_start: academicData.degreeStart
+          ? parseInt(academicData.degreeStart)
+          : null,
+        expected_graduation: academicData.expectedGraduation || "",
+      },
     };
 
     console.log("Sending academic data to backend:", formattedData);
 
-    const response = await axios.patch(`${API_URL}/profile/me/update/`, formattedData, {
-      headers: getAuthHeaders()
-    });
-    
+    const response = await axios.patch(
+      `${API_URL}/profile/me/update/`,
+      formattedData,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
     console.log("Academic update response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error updating academic info:", error.response?.data || error.message);
+    console.error(
+      "Error updating academic info:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -124,11 +138,15 @@ export const updateSkills = async (skillsArray) => {
     const addedSkills = [];
     if (skillsArray && skillsArray.length > 0) {
       for (const skill of skillsArray) {
-        const response = await axios.post(`${API_URL}/profile/me/skills/`, {
-          skill_type: skill.skill_type,
-          name: skill.skill_name
-        }, { headers });
-        
+        const response = await axios.post(
+          `${API_URL}/profile/me/skills/`,
+          {
+            skill_type: skill.skill_type,
+            name: skill.skill_name,
+          },
+          { headers }
+        );
+
         // Collect the added skills
         if (response.data) {
           addedSkills.push(response.data);
@@ -137,13 +155,16 @@ export const updateSkills = async (skillsArray) => {
     }
 
     // Return the skills in the expected format that ProfilePage expects
-    return { 
-      data: { 
-        skills: addedSkills 
-      }
+    return {
+      data: {
+        skills: addedSkills,
+      },
     };
   } catch (error) {
-    console.error("Error updating skills:", error.response?.data || error.message);
+    console.error(
+      "Error updating skills:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -159,7 +180,10 @@ export const updateExperience = async (experienceData) => {
 
     // Delete existing experiences first
     try {
-      const deleteResponse = await axios.delete(`${API_URL}/profile/me/experience/`, { headers });
+      const deleteResponse = await axios.delete(
+        `${API_URL}/profile/me/experience/`,
+        { headers }
+      );
       console.log("Delete experiences response:", deleteResponse.status); // Debug log
     } catch (deleteError) {
       console.warn("No experiences to delete or delete failed:", deleteError);
@@ -169,7 +193,11 @@ export const updateExperience = async (experienceData) => {
     if (experienceData && experienceData.length > 0) {
       for (const exp of experienceData) {
         console.log("Adding experience:", exp); // Debug log
-        const response = await axios.post(`${API_URL}/profile/me/experience/`, exp, { headers });
+        const response = await axios.post(
+          `${API_URL}/profile/me/experience/`,
+          exp,
+          { headers }
+        );
         console.log("Experience added successfully:", response.data); // Debug log
       }
       return { success: true };
@@ -177,7 +205,10 @@ export const updateExperience = async (experienceData) => {
 
     return { success: true };
   } catch (error) {
-    console.error("Error updating experiences:", error.response?.data || error.message);
+    console.error(
+      "Error updating experiences:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -190,7 +221,7 @@ export const updateAvailability = async (availabilityData) => {
   try {
     const headers = getAuthHeaders();
 
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const days = ["monday", "tuesday", "wednesday", "thursday", "friday"];
 
     const availabilityGrid = {
       monday: [],
@@ -201,11 +232,13 @@ export const updateAvailability = async (availabilityData) => {
     };
 
     if (Array.isArray(availabilityData)) {
-      const stringSlots = availabilityData.filter(slot => typeof slot === 'string' && slot.includes('-'));
+      const stringSlots = availabilityData.filter(
+        (slot) => typeof slot === "string" && slot.includes("-")
+      );
 
       if (stringSlots.length > 0) {
-        stringSlots.forEach(slot => {
-          const parts = slot.split('-');
+        stringSlots.forEach((slot) => {
+          const parts = slot.split("-");
           if (parts.length >= 3) {
             const dayName = parts[0].toLowerCase();
             const timeSlot = parts[1];
@@ -213,25 +246,29 @@ export const updateAvailability = async (availabilityData) => {
 
             // Extended time map to include slots up to 9:30 PM
             const timeMap = {
-              '8': { top: '8:00am', bottom: '8:30am' },
-              '9': { top: '9:00am', bottom: '9:30am' },
-              '10': { top: '10:00am', bottom: '10:30am' },
-              '11': { top: '11:00am', bottom: '11:30am' },
-              '12': { top: '12:00pm', bottom: '12:30pm' },
-              '13': { top: '1:00pm', bottom: '1:30pm' },
-              '14': { top: '2:00pm', bottom: '2:30pm' },
-              '15': { top: '3:00pm', bottom: '3:30pm' },
-              '16': { top: '4:00pm', bottom: '4:30pm' },
-              '17': { top: '5:00pm', bottom: '5:30pm' },
-              '18': { top: '6:00pm', bottom: '6:30pm' },
-              '19': { top: '7:00pm', bottom: '7:30pm' },
-              '20': { top: '8:00pm', bottom: '8:30pm' },
-              '21': { top: '9:00pm', bottom: '9:30pm' }
+              8: { top: "8:00am", bottom: "8:30am" },
+              9: { top: "9:00am", bottom: "9:30am" },
+              10: { top: "10:00am", bottom: "10:30am" },
+              11: { top: "11:00am", bottom: "11:30am" },
+              12: { top: "12:00pm", bottom: "12:30pm" },
+              13: { top: "1:00pm", bottom: "1:30pm" },
+              14: { top: "2:00pm", bottom: "2:30pm" },
+              15: { top: "3:00pm", bottom: "3:30pm" },
+              16: { top: "4:00pm", bottom: "4:30pm" },
+              17: { top: "5:00pm", bottom: "5:30pm" },
+              18: { top: "6:00pm", bottom: "6:30pm" },
+              19: { top: "7:00pm", bottom: "7:30pm" },
+              20: { top: "8:00pm", bottom: "8:30pm" },
+              21: { top: "9:00pm", bottom: "9:30pm" },
             };
 
             const timeString = timeMap[timeSlot]?.[halfSlot];
 
-            if (days.includes(dayName) && timeString && !availabilityGrid[dayName].includes(timeString)) {
+            if (
+              days.includes(dayName) &&
+              timeString &&
+              !availabilityGrid[dayName].includes(timeString)
+            ) {
               availabilityGrid[dayName].push(timeString);
             }
           }
@@ -240,12 +277,13 @@ export const updateAvailability = async (availabilityData) => {
     }
 
     const formattedPayload = {
-      availability_grid: availabilityGrid
+      availability_grid: availabilityGrid,
     };
 
     console.log("Formatted payload:", formattedPayload);
 
-    const response = await axios.patch(`${API_URL}/profile/me/availability/`,
+    const response = await axios.patch(
+      `${API_URL}/profile/me/availability/`,
       formattedPayload,
       { headers }
     );
@@ -253,7 +291,10 @@ export const updateAvailability = async (availabilityData) => {
     console.log("API response successful:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error updating availability:", error.response?.data || error.message);
+    console.error(
+      "Error updating availability:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -272,7 +313,8 @@ export const updateCoursePreferences = async (coursePreferences) => {
     } catch (getError) {
       // If 404, try to establish profile connection first
       if (getError.response?.status === 404) {
-        await axios.patch(`${API_URL}/profile/me/update/`,
+        await axios.patch(
+          `${API_URL}/profile/me/update/`,
           { first_name: "", last_name: "" },
           { headers }
         );
@@ -281,10 +323,10 @@ export const updateCoursePreferences = async (coursePreferences) => {
 
     // Format the preferences for the backend
     const formattedPreferences = coursePreferences
-      .filter(course => course.trim() !== '')
+      .filter((course) => course.trim() !== "")
       .map((course, index) => ({
         course_code: course.trim(),
-        preference_rank: index + 1
+        preference_rank: index + 1,
       }));
 
     // First delete existing preferences
@@ -297,13 +339,18 @@ export const updateCoursePreferences = async (coursePreferences) => {
     // Add new preferences one by one
     if (formattedPreferences.length > 0) {
       for (const pref of formattedPreferences) {
-        await axios.post(`${API_URL}/profile/me/preferences/`, pref, { headers });
+        await axios.post(`${API_URL}/profile/me/preferences/`, pref, {
+          headers,
+        });
       }
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Error updating course preferences:", error.response?.data || error.message);
+    console.error(
+      "Error updating course preferences:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -318,11 +365,17 @@ export const connectUserProfile = async () => {
 
     // First get the user's profile to ensure it exists
     try {
-      const profileResponse = await axios.get(`${API_URL}/profile/me/`, { headers });
+      const profileResponse = await axios.get(`${API_URL}/profile/me/`, {
+        headers,
+      });
       return profileResponse.data; // Profile exists, no further action needed
     } catch (profileError) {
       // If profile doesn't exist or has issues, try to create/update it
-      if (profileError.response && (profileError.response.status === 404 || profileError.response.status === 400)) {
+      if (
+        profileError.response &&
+        (profileError.response.status === 404 ||
+          profileError.response.status === 400)
+      ) {
         // Create a minimal profile update to trigger user creation
         const response = await axios.patch(
           `${API_URL}/profile/me/update/`,
@@ -334,7 +387,10 @@ export const connectUserProfile = async () => {
       throw profileError; // Re-throw if it's not a 404/400 error
     }
   } catch (error) {
-    console.error("Profile connection error:", error.response?.data || error.message);
+    console.error(
+      "Profile connection error:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };

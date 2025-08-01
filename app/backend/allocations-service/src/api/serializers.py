@@ -80,12 +80,14 @@ class OfferItemSerializer(serializers.ModelSerializer):
     section_number = serializers.SerializerMethodField()
     weekly_hours = serializers.SerializerMethodField()
     time_slot = serializers.SerializerMethodField()
+    all_time_slots = serializers.SerializerMethodField()
     
     class Meta:
         model = OfferItem
         fields = [
             'offer_item_id', 'item_type', 
             'course_number', 'section_number', 'weekly_hours','time_slot'
+            ,'all_time_slots' #return all time slots for the calendar view in the frontend
             # *** REMOVED: course_offering, shared_session, course, term, time_slot_details, required_hours_category
         ]
     
@@ -105,6 +107,14 @@ class OfferItemSerializer(serializers.ModelSerializer):
         # The property returns a list, we want the first (and only) item
         if details:
             return details[0]
+        return None
+    
+    def get_all_time_slots(self, obj):
+        """Get the all time slot details for this offer item."""
+        details = obj.session_time_slot_details
+        # The property returns a list, we want the first (and only) item
+        if details:
+            return details
         return None
 
 class OfferSerializer(serializers.ModelSerializer):
