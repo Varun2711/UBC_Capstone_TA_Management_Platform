@@ -179,7 +179,7 @@ export default function CreateAccount3() {
     } else {
       setError("Network error. Please check your connection and try again.")
     }
-  } finally {
+  } finally { 
     setIsSubmitting(false)
   }
 }

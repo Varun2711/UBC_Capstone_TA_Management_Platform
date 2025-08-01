@@ -6,6 +6,9 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { isAlreadyLoggedIn, navigateToUserDashboard } from "@/logic/auth"
+import axios from "axios"
+
+const API_URL = 'http://localhost:8080';
 
 export default function CreateAccount1() {
   const navigate = useNavigate()
@@ -45,7 +48,7 @@ export default function CreateAccount1() {
     sessionStorage.setItem("createAccount1", JSON.stringify(updated)) // Optional live save
   }
 
-  const handleNext = (e) => {
+  const handleNext = async(e) => {
     e.preventDefault()
 
     //Validate UBC student number is exactly 8 digits
@@ -73,15 +76,39 @@ export default function CreateAccount1() {
     }
     if (!/^[A-Za-z\s'-]+$/.test(lastName.trim())) {
       setError("Last name must only contain letters")
-      return
+    // Duplicate check API call using axios
+    try {
+      const response = await axios.get(`${API_URL}/api/auth/check-student/${studentNumber}`);
+
+      // If backend returns 409 (duplicate student number)
+      if (response.status === 409) {
+        setError("This UBC student number is already registered.");
+        return;
+      }
+    } catch (err) {
+      if (err.response) {
+        if (err.response.status === 409) {
+          setError("This UBC student number is already registered.");
+          return;
+        } else {
+          setError("Failed to validate student number. Please try again.");
+          return;
+        }
+      } else {
+        console.error("Network error:", err);
+        setError("Network error. Please check your connection.");
+        return;
+      }
+      }
+
+      setError("") // Clear error before proceeding
+
+      // Store form data in localStorage or context
+      sessionStorage.setItem("createAccount1", JSON.stringify(formData))
+      navigate("/create-account/step2")
     }
-
-    setError("") // Clear error before proceeding
-
-    // Store form data in localStorage or context
-    sessionStorage.setItem("createAccount1", JSON.stringify(formData))
-    navigate("/create-account/step2")
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
