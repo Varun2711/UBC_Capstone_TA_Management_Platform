@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { fetchCourseOfferingDetails, editOffer, sendOffer } from "@/logic/coordinator-allocations-page";
+import { fetchCourseOfferingDetails, editOffer, sendOffer, deleteOffer } from "@/logic/coordinator-allocations-page";
 
 const AddedOffersTab = ({
   offers,
@@ -17,6 +17,7 @@ const AddedOffersTab = ({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState(null); // { offerId, itemIndex }
   const [courseOfferingDetails, setCourseOfferingDetails] = useState({});
+  const [isDeleting, setIsDeleting] = useState(false); // Add a loading state
 
   // Declare the function inside the component
   const generateResponseDeadline = () => {
@@ -45,65 +46,62 @@ const AddedOffersTab = ({
 
   const confirmDelete = async () => {
     if (!offerToDelete) return;
+    setIsDeleting(true); // Set loading state to true
     const { offerId, itemIndex } = offerToDelete;
 
-    console.log("offerToDelete: ", offerToDelete);
-
-    let modifiedOffer = null;
-
-    const updatedOffers = offers.map((offer) => {
-      if (offer.offer_id !== offerId) return offer;
-
-      const deletedItem = offer.offer_items[itemIndex];
-      const sectionHours = (deletedItem?.slots?.length ?? 0) * 0.5;
-      const studentId = offer.student.id;
-
-      // Update studentCurrentHours
-      setStudentCurrentHours((prevHours) => {
-        const current = prevHours[studentId] || 0;
-        return {
-          ...prevHours,
-          [studentId]: Math.max(0, current - sectionHours),
-        };
-      });
-
-      const newItems = offer.offer_items.filter((_, idx) => idx !== itemIndex);
-      modifiedOffer = { ...offer, offer_items: newItems };
-      return modifiedOffer;
-    });
-
-    // Remove empty offers
-    const cleanedOffers = updatedOffers.filter((offer) => offer.offer_items.length > 0);
-
-    setShowConfirmDialog(false);
-    setOfferToDelete(null);
-
-    console.log("modifiedOffer: ", modifiedOffer);
-
-    // 🔁 Call editOffer if there's still items in the modified offer
-    if (modifiedOffer) {
-      try {
-        console.log("about to call editOffer api endpoint");
-        await editOffer(
-          modifiedOffer.offer_id,
-          { offer_items: modifiedOffer.offer_items }
-        );
-      } catch (err) {
-        console.error("Failed to edit offer:", err);
-      }
+    const offerToModify = offers.find((o) => o.offer_id === offerId);
+    if (!offerToModify) {
+      console.error("Could not find the offer to modify.");
+      setShowConfirmDialog(false);
+      setIsDeleting(false);
+      return;
     }
 
-    // ✅ Fetch offers and update the state
+    const remainingItems = offerToModify.offer_items.filter((_, idx) => idx !== itemIndex);
+
+    const payloadItems = remainingItems.map(item => {
+      const basePayload = {
+        item_type: item.item_type,
+        course_offering_id: item.course_offering_id || null,
+        shared_session_id: item.shared_session_id || null,
+      };
+
+      if (item.time_slot) {
+        const slot = Array.isArray(item.time_slot) ? item.time_slot[0] : item.time_slot;
+        if (slot) {
+          basePayload.time_slot = {
+            day: slot.day_code || (slot.day ? slot.day.toLowerCase() : ''),
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+          };
+        }
+      }
+      return basePayload;
+    });
+
     try {
-      const refreshedOffers = await fetchOffers();
-      console.log("refreshedOffers: ", refreshedOffers);
-      setOffers(refreshedOffers);
+      if (payloadItems.length === 0) {
+        await deleteOffer(offerId);
+      } else {
+        await editOffer(offerId, { offer_items: payloadItems });
+      }
+
+      // This is the crucial step. Calling fetchOffers() will re-fetch the entire
+      // list of offers and update the state in the parent component,
+      // which then re-renders this component with the fresh data.
+      await fetchOffers();
+
     } catch (err) {
-      console.error("Failed to fetch updated offers:", err);
+      console.error("Failed to update offer:", err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setShowConfirmDialog(false);
+      setOfferToDelete(null);
+      setIsDeleting(false); // Reset loading state
     }
   };
 
-  
+
   const transferAddedOffersToActive = () => {
     setActiveOffers((prev) => {
       const merged = [...prev];
@@ -128,7 +126,7 @@ const AddedOffersTab = ({
 
     setOffers([]);
   };
-  
+
   const handleSendOffers = async () => {
     // Filter out offers that have no items
     const offersToSend = offers.filter((offer) => offer.status === "draft" && offer.offer_items.length > 0);
@@ -141,8 +139,8 @@ const AddedOffersTab = ({
     // You might want to get the response deadline from a user input here
     // For this example, we're using a default or a state variable `responseDeadline`.
     if (!responseDeadline) {
-        alert("Please set a response deadline before sending offers.");
-        return;
+      alert("Please set a response deadline before sending offers.");
+      return;
     }
 
     for (const offer of offersToSend) {
@@ -171,17 +169,17 @@ const AddedOffersTab = ({
     }
   };
 
-    const getCourseOfferingDetails = async (courseOfferingId) => {
-        try {
-            const courseOfferingDetails = await fetchCourseOfferingDetails(courseOfferingId);
-            console.log("Course Offering Details in courseOfferingDetails:", courseOfferingDetails);
-            return courseOfferingDetails;
-            
-        } catch (error) {
-            console.error("Error fetching course offering details:", error);
-            return null;
-        }
-    };
+  const getCourseOfferingDetails = async (courseOfferingId) => {
+    try {
+      const courseOfferingDetails = await fetchCourseOfferingDetails(courseOfferingId);
+      console.log("Course Offering Details in courseOfferingDetails:", courseOfferingDetails);
+      return courseOfferingDetails;
+
+    } catch (error) {
+      console.error("Error fetching course offering details:", error);
+      return null;
+    }
+  };
   /*
   return (
     <div className="space-y-4">
@@ -247,7 +245,7 @@ const AddedOffersTab = ({
             );
           })()}
         </CardContent>
-      </Card>   
+      </Card>
       {offers.some((offer) => offer.status === "draft" && offer.offer_items.length > 0) && (
         <div className="flex justify-end p-4">
           <Button onClick={handleSendOffers}>Send Offer</Button>
@@ -262,11 +260,11 @@ const AddedOffersTab = ({
           </DialogHeader>
           <p>Are you sure you want to delete this course offering or shared session?</p>
           <DialogFooter className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+            <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={isDeleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Yes, Delete
+            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Yes, Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

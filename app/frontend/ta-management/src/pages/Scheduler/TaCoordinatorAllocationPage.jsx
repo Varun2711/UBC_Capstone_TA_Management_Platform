@@ -40,7 +40,7 @@ import { AppSidebar } from "../../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer } from "@/logic/coordinator-allocations-page";
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers as apiFetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -670,7 +670,9 @@ export default function TAAllocationPage() {
       for (const item of offer.offer_items) {
         // The offer_item already contains the specific time_slot, so we use that directly.
         if (item.time_slot) {
-          offerSlots.push(...convertTimeSlotsInfoToKeys([item.time_slot]));
+          // Handle both single slot objects (for course offerings) and arrays of slots (for shared sessions)
+          const slotsToConvert = Array.isArray(item.time_slot) ? item.time_slot : [item.time_slot];
+          offerSlots.push(...convertTimeSlotsInfoToKeys(slotsToConvert));
         }
       }
     }
@@ -1012,18 +1014,23 @@ export default function TAAllocationPage() {
     { value: "STAT", label: "STAT" },
   ];
 
-  const getCourseOfferings = async (courseId) => {
-    if (fetchedOfferings[courseId]) return; // already fetched
+  const getCourseData = async (courseId) => {
+    // Avoid re-fetching if both offerings and sessions are already loaded
+    if (courseOfferings[courseId] && sharedSessions[courseId]) return;
 
     try {
-      const data = await fetchOfferingsForCourse(courseId);
-      console.log(`fetchOfferingsforCourse called for course id ${courseId} is having data: `, data);
-      setFetchedOfferings((prev) => ({
-        ...prev,
-        [courseId]: data,
-      }));
+      // Fetch both offerings and shared sessions concurrently
+      const [offerings, sessions] = await Promise.all([
+        fetchOfferingsForCourse(courseId),
+        fetchSharedSessionsForCourse(courseId),
+      ]);
+
+      // Update state for both
+      setCourseOfferings((prev) => ({ ...prev, [courseId]: offerings }));
+      setSharedSessions((prev) => ({ ...prev, [courseId]: sessions }));
+
     } catch (error) {
-      console.error(`Failed to fetch offerings for course ${courseId}:`, error);
+      console.error(`Failed to fetch data for course ${courseId}:`, error);
     }
   };
 
@@ -1033,18 +1040,19 @@ export default function TAAllocationPage() {
   */
   useEffect(() => {
     filteredCourses.forEach((course) => {
-      getCourseOfferings(course.id);
+      getCourseData(course.id); // Use the new consolidated function
     });
   }, [filteredCourses]);
 
+  // Create a function that fetches AND sets the state.
   const fetchAndSetOffers = async () => {
     try {
-      console.log("Refetching offers...");
-      const fetchedOffers = await fetchOffers();
-      console.log("fetchedOffers from backend are: ", fetchedOffers);
-      setOffers(fetchedOffers || []);
+      const fetchedOffers = await apiFetchOffers(); // Call the API function
+      setOffers(fetchedOffers); // Update the state with the new data
     } catch (error) {
-      console.error("Error fetching offers:", error);
+      console.error("Failed to fetch and set offers:", error);
+      // Optionally set offers to an empty array on failure
+      setOffers([]);
     }
   };
 
@@ -1907,22 +1915,26 @@ export default function TAAllocationPage() {
                               const offerItemsPayload = selectedSections.flatMap(section => {
                                 const timeSlots = section.time_slots_info_raw || [];
 
-                                // If it's a shared session, create only ONE offer item for all its slots.
+                                // For a shared session, create ONE item for the whole session.
+                                // The backend validation requires a time_slot object, so we provide the first one.
                                 if (section.item_type === 'shared_session') {
-                                  return timeSlots.map(slot => ({
-                                    item_type: section.item_type,
-                                    course_offering_id: null,
-                                    shared_session_id: section.sectionId,
-                                    time_slot: {
-                                      day: slot.day,
-                                      start_time: slot.start_time,
-                                      end_time: slot.end_time,
-                                    }
-                                  }));
+                                  if (timeSlots.length > 0) {
+                                    const firstSlot = timeSlots[0];
+                                    return [{ // Return an array with a single item
+                                      item_type: 'shared_session',
+                                      course_offering_id: null,
+                                      shared_session_id: section.sectionId,
+                                      time_slot: {
+                                        day: firstSlot.day,
+                                        start_time: firstSlot.start_time,
+                                        end_time: firstSlot.end_time,
+                                      }
+                                    }];
+                                  }
+                                  return []; // Don't create an item if there are no slots
                                 }
 
                                 // For course offerings, create an offer item for EACH selected time slot.
-                                // This maintains the ability to assign different TAs to different slots of the same lecture.
                                 return timeSlots.map(slot => ({
                                   item_type: section.item_type,
                                   course_offering_id: section.sectionId,
@@ -1984,8 +1996,8 @@ export default function TAAllocationPage() {
               <TabsContent value="added-offers">
                 <AddedOffersTab
                   offers={offers}
-                  setOffers={setOffers}
-                  fetchOffers={fetchOffers}
+                  // Pass the new function down as the 'fetchOffers' prop
+                  fetchOffers={fetchAndSetOffers}
                   activeOffers={activeOffers}
                   setActiveOffers={setActiveOffers}
                   studentCurrentHours={studentCurrentHours}
