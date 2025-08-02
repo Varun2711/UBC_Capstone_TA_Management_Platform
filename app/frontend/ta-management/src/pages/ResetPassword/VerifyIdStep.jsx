@@ -67,9 +67,9 @@ export default function VerifyIdStep({ onNext, verifyId, requestSendResetLink })
     let idError = "";
 
     if(!id.trim()) { // id field was left empty
-      idError = "Student/employee id is required"
+      idError = "Student or Employee ID is required"
     } else if(!(/^(?!0{8})\d{8}$/.test(id))) { // id must be non-zero, non-negative, 8 digit number
-      idError = "Student/employee id must be an 8 digit number"
+      idError = "Student or Employee ID must be an 8 digit number"
     }
 
     setError(idError)
@@ -109,7 +109,7 @@ export default function VerifyIdStep({ onNext, verifyId, requestSendResetLink })
                 value={lockedOut ? "" : id}
                 onChange={handleIdChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your student or employee ID"
+                placeholder="Enter your Student or Employee ID"
                 required
                 disabled={lockedOut}
               />
