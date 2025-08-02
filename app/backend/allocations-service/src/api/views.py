@@ -433,7 +433,7 @@ class OfferViewSet(viewsets.ModelViewSet):
                         offer_item = OfferItem.objects.create(
                             item_type='shared_session',
                             shared_session=item_data['object'],
-                            time_slot=item_data['time_slot']
+                            time_slot=None  # ✅ No specific time slot for shared sessions
                         )
                         offer.offer_items.add(offer_item)
             
@@ -759,74 +759,97 @@ class OfferViewSet(viewsets.ModelViewSet):
             
             for item_data in offer_items:
                 item_type = item_data.get('item_type')
-                
+            
                 if item_type == 'course_offering':
                     course_offering_id = item_data.get('course_offering_id')
+                    time_slot_details = item_data.get('time_slot')
+                    
+                    if not course_offering_id:
+                        return Response({'error': 'course_offering_id required for course_offering items'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # ✅ FOR COURSE OFFERINGS: Handle specific time slot
+                    if not time_slot_details or not isinstance(time_slot_details, dict):
+                        return Response({'error': 'time_slot is required for course_offering items'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Validate time slot format
+                    required_time_fields = ['day', 'start_time', 'end_time']
+                    for field in required_time_fields:
+                        if field not in time_slot_details:
+                            return Response({'error': f'time_slot must include {field}'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Get or create time slot
                     try:
-                        course_offering = CourseOffering.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
-                            course_offering_id=course_offering_id
+                        time_slot, created = TimeSlot.objects.get_or_create(
+                            day=time_slot_details['day'],
+                            start_time=time_slot_details['start_time'],
+                            end_time=time_slot_details['end_time']
                         )
+                    except Exception as e:
+                        return Response({'error': f'Invalid time slot data: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    try:
+                        course_offering = CourseOffering.objects.get(course_offering_id=course_offering_id)
+                        course = course_offering.course
+                        term = course_offering.academic_term
                         
-                        temp_offer_item = OfferItem(
-                            item_type='course_offering',
-                            course_offering=course_offering
-                        )
-                        calculated_hours = temp_offer_item.weekly_hours
+                        # Calculate hours for THIS specific time slot only
+                        duration = time_slot.duration
+                        item_hours = duration.total_seconds() / 3600 if duration else 3.0
+                        total_hours += item_hours
                         
                         validated_items.append({
-                            'type': 'course_offering',
-                            'object': course_offering,
-                            'hours': calculated_hours,
-                            'course': course_offering.course,
-                            'term': course_offering.academic_term
+                            'item_type': 'course_offering',
+                            'course_offering': course_offering,
+                            'time_slot': time_slot,
+                            'course': course,
+                            'hours': item_hours
                         })
                         
-                        offer_courses.add(course_offering.course)
-                        offer_terms.add(course_offering.academic_term)
-                        total_hours += calculated_hours
+                        offer_courses.add(course)
+                        offer_terms.add(term)
                         
                     except CourseOffering.DoesNotExist:
-                        return Response(
-                            {'error': f'Course offering {course_offering_id} not found'},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+                        return Response({'error': f'Course offering {course_offering_id} not found'}, status=status.HTTP_400_BAD_REQUEST)
                 
                 elif item_type == 'shared_session':
                     shared_session_id = item_data.get('shared_session_id')
+                    
+                    if not shared_session_id:
+                        return Response({'error': 'shared_session_id required for shared_session items'}, status=status.HTTP_400_BAD_REQUEST)
+                    
                     try:
-                        shared_session = SharedSession.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
-                            shared_session_id=shared_session_id
-                        )
+                        shared_session = SharedSession.objects.get(shared_session_id=shared_session_id)
+                        course = shared_session.course
+                        term = shared_session.academic_term
                         
-                        temp_offer_item = OfferItem(
-                            item_type='shared_session',
-                            shared_session=shared_session
-                        )
-                        calculated_hours = temp_offer_item.weekly_hours
+                        # ✅ FOR SHARED SESSIONS: Use ALL time slots (no specific time slot selection)
+                        # Calculate total hours from all time slots of the shared session
+                        session_time_slots = shared_session.time_slots.all()
+                        session_hours = 0
+                        for slot in session_time_slots:
+                            if slot.duration:
+                                session_hours += slot.duration.total_seconds() / 3600
+                            else:
+                                session_hours += 1.5  # fallback
+                        
+                        total_hours += session_hours
                         
                         validated_items.append({
-                            'type': 'shared_session',
-                            'object': shared_session,
-                            'hours': calculated_hours,
-                            'course': shared_session.course,
-                            'term': shared_session.academic_term
+                            'item_type': 'shared_session',
+                            'shared_session': shared_session,
+                            'time_slot': None,  # ✅ No specific time slot for shared sessions
+                            'course': course,
+                            'hours': session_hours
                         })
                         
-                        offer_courses.add(shared_session.course)
-                        offer_terms.add(shared_session.academic_term)
-                        total_hours += calculated_hours
+                        offer_courses.add(course)
+                        offer_terms.add(term)
                         
                     except SharedSession.DoesNotExist:
-                        return Response(
-                            {'error': f'Shared session {shared_session_id} not found'},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+                        return Response({'error': f'Shared session {shared_session_id} not found'}, status=status.HTTP_400_BAD_REQUEST)
                 
                 else:
-                    return Response(
-                        {'error': f'Invalid item_type: {item_type}. Must be "course_offering" or "shared_session"'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    return Response({'error': f'Invalid item_type: {item_type}'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Check if student would exceed their maximum hours (excluding current offer)
             student = offer.student
@@ -864,15 +887,17 @@ class OfferViewSet(viewsets.ModelViewSet):
                 
                 # Create and add new offer items
                 for item_data in validated_items:
-                    if item_data['type'] == 'course_offering':
+                    if item_data['item_type'] == 'course_offering':
                         offer_item = OfferItem.objects.create(
                             item_type='course_offering',
-                            course_offering=item_data['object']
+                            course_offering=item_data['course_offering'],
+                            time_slot=item_data['time_slot']  # ✅ Add the specific time slot
                         )
                     else:  # shared_session
                         offer_item = OfferItem.objects.create(
                             item_type='shared_session',
-                            shared_session=item_data['object']
+                            shared_session=item_data['shared_session'],
+                            time_slot=None  # ✅ No specific time slot for shared sessions
                         )
                     
                     offer.offer_items.add(offer_item)

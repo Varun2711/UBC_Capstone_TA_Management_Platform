@@ -40,7 +40,7 @@ import { AppSidebar } from "../../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer } from "@/logic/coordinator-allocations-page";
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, editOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -319,61 +319,107 @@ function capitalize(str) {
 }
 
 function convertProfileAvailabilityGridToKeys(availabilityObj) {
+  console.log("=== AVAILABILITY CONVERSION DEBUG ===");
+  console.log("Input availabilityObj:", availabilityObj);
+  
   const result = [];
 
-  if (!availabilityObj) return result;
+  if (!availabilityObj) {
+    console.log("No availability object provided");
+    return result;
+  }
 
-  // Case 1: Already in transformed array format (e.g., ["Monday-8-top"]) which is the case in ProfilePage
+  // Case 1: Already in transformed array format (e.g., ["Monday-8-top"])
   if (Array.isArray(availabilityObj)) {
     const isAlreadyFormatted = availabilityObj.every(
       (key) => typeof key === "string" && /^[A-Z][a-z]+-\d{1,2}-(top|bottom)$/.test(key)
     );
     if (isAlreadyFormatted) {
-      console.log("case 1: already formatted");
+      console.log("Already formatted availability:", availabilityObj);
       return availabilityObj;
     }
+    console.log("Array but not formatted correctly");
     return result;
   }
 
   // Case 2: Check if it's inside an object as `availability_grid`
-  const grid = availabilityObj.availability_grid;
+  const grid = availabilityObj.availability_grid || availabilityObj;
+  console.log("Grid to process:", grid);
+  
   if (!grid) {
-    console.log("case 2: does not have a grid");
+    console.log("No grid found");
     return result;
   }
 
-  const isAlreadyFormatted = Array.isArray(grid) && grid.every(
-    (key) => typeof key === "string" && /^[A-Z][a-z]+-\d{1,2}-(top|bottom)$/.test(key)
-  );
-  if (isAlreadyFormatted) return grid;
+  // Case 2a: Already formatted array inside availability_grid
+  if (Array.isArray(grid)) {
+    const isAlreadyFormatted = grid.every(
+      (key) => typeof key === "string" && /^[A-Z][a-z]+-\d{1,2}-(top|bottom)$/.test(key)
+    );
+    if (isAlreadyFormatted) {
+      console.log("Grid is already formatted:", grid);
+      return grid;
+    }
+  }
 
-  for (const day in grid) {
-    const slots = grid[day];
-    const capitalizedDay = capitalize(day); // e.g., "monday" → "Monday"
+  // Case 2b: Grid is an object with day keys
+  if (typeof grid === 'object' && !Array.isArray(grid)) {
+    console.log("Processing grid object with days...");
+    
+    for (const day in grid) {
+      const slots = grid[day];
+      console.log(`Processing ${day}:`, slots);
+      
+      if (!Array.isArray(slots)) continue;
+      
+      const capitalizedDay = capitalize(day); // e.g., "monday" → "Monday"
 
-    for (const time of slots) {
-      const timeMatch = time.match(/^(\d+):(\d+)(am|pm)$/i);
-      if (!timeMatch) continue;
+      for (const time of slots) {
+        console.log(`Processing time slot: ${time}`);
+        
+        // Handle different time formats
+        let hour, minute;
+        
+        // Format 1: "14:00" (24-hour)
+        if (/^\d{1,2}:\d{2}$/.test(time)) {
+          [hour, minute] = time.split(':').map(Number);
+        }
+        // Format 2: "2:00pm" or "2:00PM"
+        else if (/^\d{1,2}:\d{2}(am|pm)$/i.test(time)) {
+          const timeMatch = time.match(/^(\d+):(\d+)(am|pm)$/i);
+          if (timeMatch) {
+            let [_, hourStr, minuteStr, period] = timeMatch;
+            hour = parseInt(hourStr, 10);
+            minute = parseInt(minuteStr, 10);
 
-      let [_, hourStr, minuteStr, period] = timeMatch;
-      let hour = parseInt(hourStr, 10);
-      const minute = parseInt(minuteStr, 10);
+            if (period.toLowerCase() === "pm" && hour !== 12) {
+              hour += 12;
+            } else if (period.toLowerCase() === "am" && hour === 12) {
+              hour = 0;
+            }
+          }
+        }
+        // Format 3: "14:30:00" (with seconds)
+        else if (/^\d{1,2}:\d{2}:\d{2}$/.test(time)) {
+          [hour, minute] = time.split(':').slice(0, 2).map(Number);
+        }
+        else {
+          console.log(`Unrecognized time format: ${time}`);
+          continue;
+        }
 
-      if (period.toLowerCase() === "pm" && hour !== 12) {
-        hour += 12;
-      } else if (period.toLowerCase() === "am" && hour === 12) {
-        hour = 0;
-      }
-
-      let suffix = "top"; // assume :00 = top, :30 = bottom
-      if (minute === 30) suffix = "bottom";
-
-      if (!isNaN(hour) && (suffix === "top" || suffix === "bottom")) {
-        result.push(`${capitalizedDay}-${hour}-${suffix}`);
+        let suffix = minute === 0 ? "top" : "bottom";
+        
+        if (!isNaN(hour) && (suffix === "top" || suffix === "bottom")) {
+          const slotKey = `${capitalizedDay}-${hour}-${suffix}`;
+          result.push(slotKey);
+          console.log(`Added slot: ${slotKey}`);
+        }
       }
     }
   }
-  //console.log("result from convertProfileAvailabilityGridToKeys is being returned as: ", result);
+
+  console.log("Final result:", result);
   return result;
 }
 
@@ -540,17 +586,21 @@ export default function TAAllocationPage() {
   }
   */
 
-  const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
-    //console.log("Offers in isSectionAlreadyOfferedToTA:", offers);
-    const taOffer = offers.find((o) => o.student.id === taStudentId);
+  const isSectionAlreadyOfferedToTA = (taStudentId, offering) => {
+    const taOffer = offers.find((o) => o.student.id === taStudentId && o.status !== "cancelled");
     if (!taOffer) return false;
 
-    //console.log("taOffer in isSectionAlreadyOfferedToTA: ", taOffer);
-    if (taOffer.status === "cancelled") return false;
-    return taOffer.offer_items.some(
-      (offerItem) =>
-        String(offerItem.course_offering_id ?? offerItem.shared_session_id) === String(sectionId)
-    );
+    // Get all time slots for the given course offering
+    const allOfferingSlots = offering.time_slots_info || [];
+    if (allOfferingSlots.length === 0) return false; // Cannot determine, assume not offered
+
+    // Get the time slots for this offering that are already in the offer
+    const offeredSlotsForThisOffering = taOffer.offer_items
+      .filter(item => item.course_offering_id === offering.course_offering_id && item.time_slot)
+      .map(item => item.time_slot);
+
+    // If the number of offered slots is equal to or greater than all available slots, it's fully offered.
+    return offeredSlotsForThisOffering.length >= allOfferingSlots.length;
   };
 
 
@@ -625,50 +675,114 @@ export default function TAAllocationPage() {
 
     for (const offer of taOffers) {
       for (const item of offer.offer_items) {
-        if (item.course_offering_id) {
-          const details = await fetchCourseOfferingDetails(item.course_offering_id);
-          offerSlots.push(...(details?.time_slots_info ? convertTimeSlotsInfoToKeys(details.time_slots_info) : []));
-        } else if (item.shared_session_id) {
-          const details = await fetchSharedSessionDetails(item.shared_session_id);
-          offerSlots.push(...(details?.time_slots_info ? convertTimeSlotsInfoToKeys(details.time_slots_info) : []));
+        if (item.item_type === 'course_offering') {
+          // ✅ For course offerings: only include the specific assigned time slot
+          if (item.time_slot) {
+            // Convert the specific time slot to the slot key format
+            const slotKey = convertTimeSlotToKey(item.time_slot);
+            if (slotKey) {
+              offerSlots.push(slotKey);
+            }
+          }
+        } else if (item.item_type === 'shared_session') {
+          // ✅ For shared sessions: include all time slots
+          if (item.time_slot && Array.isArray(item.time_slot)) {
+            // time_slot for shared sessions is an array of all time slots
+            const slotKeys = item.time_slot.map(slot => convertTimeSlotToKey(slot)).filter(Boolean);
+            offerSlots.push(...slotKeys);
+          } else if (item.shared_session_id) {
+            // ✅ If time_slot is not provided, fetch from shared session details
+            try {
+              const details = await fetchSharedSessionDetails(item.shared_session_id);
+              if (details?.time_slots_info) {
+                const sessionSlots = convertTimeSlotsInfoToKeys(details.time_slots_info);
+                offerSlots.push(...sessionSlots);
+              }
+            } catch (error) {
+              console.error(`Error fetching shared session details for ${item.shared_session_id}:`, error);
+            }
+          }
         }
       }
     }
+
     // Combine all slots
     return [...assignmentSlots, ...offerSlots];
   }
+
+  // Helper function to convert time slot object to key format
+  function convertTimeSlotToKey(timeSlot) {
+    if (!timeSlot || !timeSlot.day || !timeSlot.start_time) return null;
+
+    const day = capitalize(timeSlot.day);
+    const [hour, minute] = timeSlot.start_time.split(':').map(Number);
+    const half = minute === 0 ? 'top' : 'bottom';
+
+    return `${day}-${hour}-${half}`;
+  }
   // Helper function to check for scheduling conflicts
-  const checkForConflicts = async (availability, courseSlots, taStudentId) => {
-    //console.log("In checkForConflicts, availability_grid: ", availability);
-    //console.log("In checkForConflicts, courseSlots: ", courseSlots);
+  const checkForConflicts = async (availability, courseSlots, taStudentId, itemType = null) => {
+    console.log("In checkForConflicts, availability_grid: ", availability);
+    console.log("In checkForConflicts, courseSlots: ", courseSlots);
+    console.log("In checkForConflicts, itemType: ", itemType);
+
     const availabilitySet = new Set(convertProfileAvailabilityGridToKeys(availability));
 
-    // Check if courseSlots are already in key format
-    const needsConversion = courseSlots.some(slot => slot.includes(":"));
-    //console.log("In checkForConflicts, needsConversion: ", needsConversion);
+    // ✅ Handle different item types
+    let formattedTimeSlotsInfoToKeys = [];
 
-    const formattedTimeSlotsInfoToKeys = needsConversion
-      ? convertTimeSlotsInfoToKeys(courseSlots)
-      : courseSlots;
+    if (itemType === 'course_offering') {
+      // For course offerings: only check the specific slots being assigned
+      const needsConversion = courseSlots.some(slot => slot.includes(":"));
+      formattedTimeSlotsInfoToKeys = needsConversion
+        ? convertTimeSlotsInfoToKeys(courseSlots)
+        : courseSlots;
+    } else if (itemType === 'shared_session') {
+      // For shared sessions: check all time slots of the session
+      const needsConversion = courseSlots.some(slot => slot.includes(":"));
+      formattedTimeSlotsInfoToKeys = needsConversion
+        ? convertTimeSlotsInfoToKeys(courseSlots)
+        : courseSlots;
+    } else {
+      // Legacy handling for backward compatibility
+      const needsConversion = courseSlots.some(slot => slot.includes(":"));
+      formattedTimeSlotsInfoToKeys = needsConversion
+        ? convertTimeSlotsInfoToKeys(courseSlots)
+        : courseSlots;
+    }
 
-    // Get all slots already assigned to this TA
+    // Get all slots already assigned to this TA (these will be highlighted in blue)
     const assignedAndOfferedSlots = new Set(await getAssignedAndOfferedSlotsForTA(taStudentId));
 
-    //console.log("In checkForConflicts, availabilitySet: ", availabilitySet);
-    //console.log("In checkForConflicts, selected courses's formattedTimeSlotsInfoToKeys: ", formattedTimeSlotsInfoToKeys);
+    console.log("availabilitySet (student's declared availability):", Array.from(availabilitySet));
+    console.log("assignedAndOfferedSlots (currently occupied - blue highlighted):", Array.from(assignedAndOfferedSlots));
+    console.log("formattedTimeSlotsInfoToKeys (slots we want to assign):", formattedTimeSlotsInfoToKeys);
 
     for (const slot of formattedTimeSlotsInfoToKeys) {
-      if (availabilitySet.has(slot)) {
-        return { conflict: true, type: "availability", slot }; // ❗️Conflict: TA not available at this time
+      // ✅ CORRECTED: Check if the slot is NOT in the student's availability 
+      // (i.e., student said they're not available during this time)
+      if (!availabilitySet.has(slot)) {
+        console.log("CONFLICT: Slot", slot, "is not in student's declared availability");
+        return {
+          conflict: true,
+          reason: `Time slot ${slot} is not in TA's declared availability`
+        };
       }
 
+      // ✅ CORRECTED: Check if the slot is already occupied 
+      // (i.e., already has an assignment/offer - would be blue highlighted)
       if (assignedAndOfferedSlots.has(slot)) {
-        return { conflict: true, type: "assignment", slot };
+        console.log("CONFLICT: Slot", slot, "is already assigned/offered to this TA");
+        return {
+          conflict: true,
+          reason: `Time slot ${slot} is already assigned to this TA`
+        };
       }
     }
 
-    return { conflict: false }; // ✅ All course slots are within TA availability and assignedAndOfferedSlots
-  }
+    console.log("✅ No conflicts found");
+    return { conflict: false }; // All course slots are available and not already assigned
+  };
 
   const checkForConflictsWithinSelectedSections = (selectedSections) => {
     // For each section, get its slots and check against all other sections' slots
@@ -679,8 +793,8 @@ export default function TAAllocationPage() {
       // Convert current section's slots if needed
       //const needsConversion = currentSlots.some(slot => slot.includes(":"));
       //const currentFormattedSlots = needsConversion
-        //? convertTimeSlotsInfoToKeys(currentSlots)
-        //: currentSlots;
+      //? convertTimeSlotsInfoToKeys(currentSlots)
+      //: currentSlots;
 
       // Convert to Set for O(1) lookup
       const currentSlotsSet = new Set(currentSlots);
@@ -1076,41 +1190,38 @@ export default function TAAllocationPage() {
   console.log("selectedApplication RIGHT BEFORE fetchOfferSlotTimes useEffect is called: ", selectedApplication);
   useEffect(() => {
     const fetchOfferSlotTimes = async () => {
-      console.log("fetchOfferSlotTimes has begun");
-      if (!selectedApplication) {
-        console.log("No selected application to fetch offer slot times for.");
+      if (!selectedTAId) {
+        setOfferSlotTimes([]);
         return;
       }
 
       const relevantOffers = offers.filter(
-        (offer) => offer.student.id === selectedApplication?.application?.student?.id &&
-          offer.status !== "cancelled"
+        (offer) => offer.student.id === selectedTAId && offer.status !== "cancelled"
       );
-      console.log("relevantOffers for TA:", selectedApplication?.application?.student?.id, "are: ", relevantOffers);
-      //console.log("Filtered Offers for TA:", relevantOffers);
 
       if (relevantOffers.length === 0) {
-        setOfferSlotTimes([]); // No offers → clear times
+        setOfferSlotTimes([]);
         return;
       }
 
       const slotPromises = relevantOffers.flatMap((offer) =>
         offer.offer_items.map(async (item) => {
-          console.log("offer item in fetchOfferSlotTimes: ", item);
-          //console.log("item.course_offering_id in fetchOfferSlotTimes: ", item.course_offering_id);
-          //console.log("item.shared_session_id in fetchOfferSlotTimes: ", item.shared_session_id);
           try {
-            if (item.course_offering_id || item.course_offering_id !== null) {
-              const details = await fetchCourseOfferingDetails(item.course_offering_id);
-              return item?.time_slot || [];
-            } else if (item.shared_session_id) {
+            if (item.item_type === 'course_offering') {
+              if (item.time_slot) {
+                // This is a specific slot from a multi-slot offering
+                return convertTimeSlotsInfoToKeys([item.time_slot]);
+              } else if (item.course_offering_id) {
+                // This is a full course offering, fetch all its slots
+                const details = await fetchCourseOfferingDetails(item.course_offering_id);
+                return details?.time_slots_info ? convertTimeSlotsInfoToKeys(details.time_slots_info) : [];
+              }
+            } else if (item.item_type === 'shared_session' && item.shared_session_id) {
               const details = await fetchSharedSessionDetails(item.shared_session_id);
-              return details?.time_slots_info || [];
+              return details?.time_slots_info ? convertTimeSlotsInfoToKeys(details.time_slots_info) : [];
             }
-            return [];
           } catch (error) {
-            console.error("Failed to fetch offer item slot info:", error);
-            return [];
+            console.error(`Error fetching details for offer item ${item.id}:`, error);
           }
         })
       );
@@ -1121,7 +1232,7 @@ export default function TAAllocationPage() {
     };
 
     fetchOfferSlotTimes();
-  }, [selectedTA, selectedApplication, offers]);
+  }, [selectedTAId, offers]);
 
   const application = filteredShortlistedApplicants.find(
     (item) => item.application.student?.id === selectedTA?.id
@@ -1140,28 +1251,26 @@ export default function TAAllocationPage() {
   console.log("assignments before highlightedSlots is updated: ", assignments);
   console.log("activeOffers before highlightedSlots is updated: ", activeOffers);
   const highlightedSlots = selectedTA ? [
-    // Include slots from the currently selected course section (red highlight for potential offer)
+    // ✅ Include slots from the currently selected sections (will show as purple if no conflicts)
     ...(selectedSections.length > 0
-      ? selectedSections.flatMap(course => course.time_slots_info || [])
+      ? selectedSections.flatMap(section => {
+        if (section.item_type === 'course_offering') {
+          return section.selected_time_slots
+            ? convertTimeSlotsInfoToKeys(section.selected_time_slots)
+            : [];
+        } else {
+          return section.time_slots_info
+            ? convertTimeSlotsInfoToKeys(section.time_slots_info)
+            : [];
+        }
+      })
       : []),
-    // Include slots from accepted assignments for this TA (persistent red highlight)
+    // ✅ Include slots from existing assignments and offers (will show as blue - occupied)
     ...assignments
       .filter(a => a.taStudentId === selectedTA.application.student.id)
       .flatMap(a => a.slots || []),
-    // Include slots from added offers for this TA (persistent red highlight)
-    //...addedOffers
-    //.filter(o => o.taStudentId === selectedTA.application.student.id)
-    //.flatMap(o =>
-    //o.offers?.flatMap(offer => offer.slots || []) || []
-    //),
-    //...activeOffers
-    //.filter(o => o.taStudentId === selectedTA.application.student.id)
-    //.flatMap(o =>
-    //o.offers?.flatMap(offer => offer.slots || []) || []
-    //),
     ...offerSlotTimes,
-  ]
-    : [];
+  ] : [];
   console.log("highlightedSlots just now got declared again. it is with selectedTA: ", selectedTA)
   console.log("highlightedSlots: ", highlightedSlots);
 
@@ -1233,15 +1342,15 @@ export default function TAAllocationPage() {
   };
 
   // A helper function to parse the string format into an array of objects
-const parseSlotInfoForModal = (time_slots_info_array) => {
-  const dayMapping = {
-    'M': 'Monday', 'T': 'Tuesday', 'W': 'Wednesday',
-    'R': 'Thursday', 'F': 'Friday'
-  };
+  const parseSlotInfoForModal = (time_slots_info_array) => {
+    const dayMapping = {
+      'M': 'Monday', 'T': 'Tuesday', 'W': 'Wednesday',
+      'R': 'Thursday', 'F': 'Friday'
+    };
 
-  const slotObjects = [];
-  
-  time_slots_info_array.forEach(slotString => {
+    const slotObjects = [];
+
+    time_slots_info_array.forEach(slotString => {
       // Handle the 'Monday-8-top' format
       // You'll need to parse this format into a day, start time, and end time.
       // This is a more complex conversion, but a simplified example is below.
@@ -1251,11 +1360,11 @@ const parseSlotInfoForModal = (time_slots_info_array) => {
         start_time: `${hour}:00`, // Simplified time representation
         end_time: `${half === 'top' ? hour : parseInt(hour) + 1}:00`
       });
-    
-  });
 
-  return slotObjects;
-};
+    });
+
+    return slotObjects;
+  };
 
   return (
     <SidebarProvider>
@@ -1611,53 +1720,76 @@ const parseSlotInfoForModal = (time_slots_info_array) => {
                                           //console.log("studentId in availableOfferings map: ", studentId);
                                           //console.log("about to call isSectionAlreadyOfferedToTA for student: ", studentId);
                                           console.log("studentId is: ", studentId);
-                                          const isOffered = selectedApplication?.application?.student?.id && isSectionAlreadyOfferedToTA(studentId, offering.course_offering_id);
+                                          const isOffered = selectedApplication?.application?.student?.id && isSectionAlreadyOfferedToTA(studentId, offering);
                                           //console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
                                           return (
                                             <div
                                               key={`${course.id}-offering-${offering.course_offering_id}`}
                                               className={`p-3 border rounded-lg transition-colors ${isOffered
-                                                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                                  : isSelected
-                                                    ? "border-blue-500 bg-blue-50 cursor-pointer"
-                                                    : "hover:bg-muted/50 cursor-pointer"
+                                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                                : isSelected
+                                                  ? "border-blue-500 bg-blue-50 cursor-pointer"
+                                                  : "hover:bg-muted/50 cursor-pointer"
                                                 }`}
-                                              onClick={() => {
-                                                console.log("enter after clicking on an offering");
-                                                console.log("clicked on an offering: ", offering);
+                                              onClick={async () => {
                                                 if (isOffered) return;
 
-                                                // Convert the offering's raw slot info into the object format the modal expects
-                                                const slotKeysForModal = offering.time_slots_info;
-                                                console.log("slotKeysForModal which is offering.time_slots_info: ", slotKeysForModal);
-                                                if (slotKeysForModal.length > 1) {
-                                                  setPendingSlotSelection({
-                                                    offering,
-                                                    slotKeys: slotKeysForModal, // Pass the array of objects here
-                                                    course,
-                                                  });
-                                                  setShowSlotSelectionModal(true);
+                                                if (isSelected) {
+                                                  // Remove the selection
+                                                  setSelectedCourseOfferings((prev) =>
+                                                    prev.filter((s) => s.sectionId !== offering.course_offering_id)
+                                                  );
                                                 } else {
-                                                  // Single-day offering, just select it directly
-                                                  console.log("offering.time_slots_info: ", offering.time_slots_info);
-                                                  console.log("offering.time_slots_info converted to keys and stored in selected for Course offering: ", convertTimeSlotsInfoToKeys(offering.time_slots_info));
-                                                  const selected = {
-                                                    ...offering,
-                                                    item_type: "course_offering",
-                                                    course_name: course.course_name,
-                                                    course_number: course.course_number,
-                                                    sectionId: offering.course_offering_id,
-                                                    time_slots_info: convertTimeSlotsInfoToKeys(offering.time_slots_info),
-                                                    time_slots_info_raw: offering.time_slots_info,
-                                                    weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(offering.time_slots_info)),
-                                                  };
+                                                  // Add the selection with conflict checking
+                                                  if (selectedApplication?.application?.student?.id) {
+                                                    // ✅ For course offerings, we need to determine which specific time slots will be assigned
+                                                    // This might require showing a slot selection modal for courses with multiple time slots
+                                                    const availableSlots = offering.time_slots_info || [];
 
-                                                  setSelectedCourseOfferings((prev) => {
-                                                    const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
-                                                    return alreadySelected
-                                                      ? prev.filter((s) => s.sectionId !== selected.sectionId)
-                                                      : [...prev, selected];
-                                                  });
+                                                    if (availableSlots.length > 1) {
+                                                      // Show slot selection modal for multi-slot course offerings
+                                                      setPendingSlotSelection({
+                                                        offering,
+                                                        course,
+                                                        slotKeys: availableSlots,
+                                                        itemType: 'course_offering'
+                                                      });
+                                                      setShowSlotSelectionModal(true);
+                                                      return;
+                                                    } else if (availableSlots.length === 1) {
+                                                      // Single slot - check for conflicts
+                                                      const conflict = await checkForConflicts(
+                                                        selectedTAProfile.availability,
+                                                        availableSlots,
+                                                        selectedApplication.application.student.id,
+                                                        'course_offering'
+                                                      );
+
+                                                      if (conflict.conflict) {
+                                                        alert(`Cannot assign: ${conflict.reason}`);
+                                                        return;
+                                                      }
+                                                    }
+                                                  }
+
+                                                  // Add the selection
+                                                  setSelectedCourseOfferings((prev) => [
+                                                    ...prev,
+                                                    {
+                                                      sectionId: offering.course_offering_id,
+                                                      course_offering_id: offering.course_offering_id,
+                                                      shared_session_id: null,
+                                                      item_type: 'course_offering',
+                                                      course_number: course.course_number,
+                                                      course_name: course.course_name,
+                                                      section_number: offering.section_number,
+                                                      section_type_display: "Lecture",
+                                                      time_slots_info: offering.time_slots_info,
+                                                      // ✅ Store which specific slots are selected (for conflict detection)
+                                                      selected_time_slots: offering.time_slots_info,
+                                                      weekHours: getTotalHoursFromTimeSlotArray(offering.time_slots_info),
+                                                    },
+                                                  ]);
                                                 }
                                               }}
                                             >
@@ -1691,33 +1823,55 @@ const parseSlotInfoForModal = (time_slots_info_array) => {
                                       <div
                                         key={`${course.id}-${section.shared_session_id}`}
                                         className={`p-3 border rounded-lg transition-colors ${isOffered
-                                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                            : isSelected
-                                              ? "border-blue-500 bg-blue-50 cursor-pointer"
-                                              : "hover:bg-muted/50 cursor-pointer"
+                                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                          : isSelected
+                                            ? "border-blue-500 bg-blue-50 cursor-pointer"
+                                            : "hover:bg-muted/50 cursor-pointer"
                                           }`}
-                                        onClick={() => {
+                                        onClick={async () => {
                                           if (isOffered) return;
 
-                                          const selected = {
-                                            ...section,
-                                            item_type: "shared_session",
-                                            course_name: course.course_name,
-                                            course_number: course.course_number,
-                                            sectionId: section.shared_session_id,
-                                            section_type_display: section.session_type_display,
-                                            section_number: section.section_number,
-                                            time_slots_info: convertTimeSlotsInfoToKeys(section.time_slots_info),
-                                            time_slots_info_raw: section.time_slots_info,
-                                            weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(section.time_slots_info)),
-                                          };
-                                          //console.log("selected is having the following after clicking a lab/tutorial: ", selected);
-                                          setSelectedSharedSessions((prev) => {
-                                            const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
-                                            return alreadySelected
-                                              ? prev.filter((s) => s.sectionId !== selected.sectionId)
-                                              : [...prev, selected];
-                                          });
+                                          if (isSelected) {
+                                            // Remove the selection
+                                            setSelectedSharedSessions((prev) =>
+                                              prev.filter((s) => s.sectionId !== section.shared_session_id)
+                                            );
+                                          } else {
+                                            // Add the selection with conflict checking
+                                            if (selectedApplication?.application?.student?.id) {
+                                              // ✅ For shared sessions, check all time slots
+                                              const conflict = await checkForConflicts(
+                                                selectedTAProfile.availability,
+                                                section.time_slots_info || [],
+                                                selectedApplication.application.student.id,
+                                                'shared_session'
+                                              );
+
+                                              if (conflict.conflict) {
+                                                alert(`Cannot assign: ${conflict.reason}`);
+                                                return;
+                                              }
+                                            }
+
+                                            // Add the selection
+                                            setSelectedSharedSessions((prev) => [
+                                              ...prev,
+                                              {
+                                                sectionId: section.shared_session_id,
+                                                course_offering_id: null,
+                                                shared_session_id: section.shared_session_id,
+                                                item_type: 'shared_session',
+                                                course_number: course.course_number,
+                                                course_name: course.course_name,
+                                                section_number: section.section_number,
+                                                section_type_display: section.session_type_display || "Lab",
+                                                time_slots_info: section.time_slots_info,
+                                                // ✅ For shared sessions, all slots are included
+                                                selected_time_slots: section.time_slots_info,
+                                                weekHours: getTotalHoursFromTimeSlotArray(section.time_slots_info),
+                                              },
+                                            ]);
+                                          }
                                         }}
                                       >
                                         <div className="flex items-center justify-between">
@@ -1809,107 +1963,107 @@ const parseSlotInfoForModal = (time_slots_info_array) => {
                               );
 
                               if (existingHours >= maxWorkload) {
-                                alert("Cannot add offer. Student has already reached their maximum workload.");
+                                alert(`Student already has ${existingHours} hours, which meets or exceeds their maximum of ${maxWorkload} hours.`);
                                 return;
                               }
 
                               if (existingHours + addedHours > maxWorkload) {
-                                alert(
-                                  `Cannot add offer. Adding these sections would exceed the student's workload limit of ${maxWorkload} hours.`
-                                );
+                                alert(`Adding ${addedHours} hours would exceed student's maximum. Current: ${existingHours}/${maxWorkload}`);
                                 return;
                               }
 
                               // First check for conflicts between selected sections
                               const sectionConflict = checkForConflictsWithinSelectedSections(selectedSections);
                               if (sectionConflict.conflict) {
-                                alert(
-                                  `Time conflict detected between ${sectionConflict.sections.section1.course_number} ${sectionConflict.sections.section1.section_type_display} ${sectionConflict.sections.section1.section_number} and ${sectionConflict.sections.section2.course_number} ${sectionConflict.sections.section2.section_type_display} ${sectionConflict.sections.section2.section_number}`
-                                );
+                                alert(`Conflict detected between selected sections: ${sectionConflict.reason}`);
                                 return;
                               }
 
+                              // ✅ Check conflicts for each section with improved logic
+                              for (const section of selectedSections) {
+                                let slotsToCheck;
 
-                              for (const course of selectedSections) {
-                                //console.log("course in selectedSections after pressing send offer button: ", course);
-                                const result = await checkForConflicts(
+                                if (section.item_type === 'course_offering') {
+                                  // ✅ For course offerings: use the selected time slots (raw objects)
+                                  slotsToCheck = section.selected_time_slots || section.time_slots_info || [];
+                                } else {
+                                  // ✅ For shared sessions: use all time slots
+                                  slotsToCheck = section.time_slots_info || [];
+                                }
+
+                                const conflict = await checkForConflicts(
                                   selectedTAProfile.availability,
-                                  course.time_slots_info,
-                                  selectedApplication.application.student.id
+                                  slotsToCheck,
+                                  studentId,
+                                  section.item_type
                                 );
-                                if (result.conflict) {
-                                  alert(
-                                    result.type === "availability"
-                                      ? `Conflict with TA's availability in ${course.course_number} ${course.section_number} `
-                                      : `Conflict with previously assigned section in ${course.course_number} ${course.section_number}`
-                                  );
+
+                                if (conflict.conflict) {
+                                  alert(`Cannot assign ${section.course_number} ${section.section_number}: ${conflict.reason}`);
                                   return;
                                 }
                               }
 
-                              const offerItemsPayload = selectedSections.flatMap(section => {
-                                const timeSlots = section.time_slots_info_raw || [];
+                              // Create payload based on item type
+                              const newOfferItemsPayload = selectedSections.map(section => {
+                                if (section.item_type === 'course_offering') {
+                                  // ✅ For course offerings: include specific time slot
+                                  const timeSlots = section.selected_time_slots || section.time_slots_info || [];
+                                  const timeSlot = timeSlots[0]; // Use first selected slot
 
-                                // If it's a shared session, create only ONE offer item for all its slots.
-                                if (section.item_type === 'shared_session') {
-                                  return timeSlots.map(slot => ({
-                                    item_type: section.item_type,
+                                  return {
+                                    item_type: 'course_offering',
+                                    course_offering_id: section.course_offering_id,
+                                    shared_session_id: null,
+                                    time_slot: timeSlot ? {
+                                      day: timeSlot.day.toLowerCase(), // Ensure consistent formatting
+                                      start_time: timeSlot.start_time,
+                                      end_time: timeSlot.end_time
+                                    } : null
+                                  };
+                                } else {
+                                  // ✅ For shared sessions: no specific time slot
+                                  return {
+                                    item_type: 'shared_session',
                                     course_offering_id: null,
-                                    shared_session_id: section.sectionId,
-                                    time_slot: {
-                                      day: slot.day,
-                                      start_time: slot.start_time,
-                                      end_time: slot.end_time,
-                                    }
-                                  }));
+                                    shared_session_id: section.shared_session_id,
+                                    time_slot: null
+                                  };
                                 }
-
-                                // For course offerings, create an offer item for EACH selected time slot.
-                                // This maintains the ability to assign different TAs to different slots of the same lecture.
-                                return timeSlots.map(slot => ({
-                                  item_type: section.item_type,
-                                  course_offering_id: section.sectionId,
-                                  shared_session_id: null,
-                                  time_slot: {
-                                    day: slot.day,
-                                    start_time: slot.start_time,
-                                    end_time: slot.end_time,
-                                  }
-                                }));
                               });
 
-                              if (offerItemsPayload.length === 0) {
-                                alert("No valid time slots found for the selected sections. Cannot create offer.");
-                                return;
-                              }
-
-                              const dataToSend = {
-                                application_id: selectedApplication.application.application_id,
-                                offer_items: offerItemsPayload, // Use the correctly formatted payload
-                                notes: `Draft offer for ${selectedTA.application.student.name}`,
-                              };
-
                               try {
-                                // Send to backend
-                                console.log("in try block of add offer button, selectedApplication is: ", selectedApplication);
-                                await createOffer(dataToSend);
+                                if (existingDraftOffer) {
+                                  // --- EDIT EXISTING DRAFT ---
+                                  // Remap existing items to the format the API expects
+                                  const existingItemsPayload = existingDraftOffer.offer_items.map(item => ({
+                                    item_type: item.item_type,
+                                    course_offering_id: item.course_offering_id,
+                                    shared_session_id: item.shared_session_id,
+                                    time_slot: item.time_slot, // Pass the existing time_slot object
+                                  }));
 
+                                  const combinedItems = [...existingItemsPayload, ...newOfferItemsPayload];
+                                  await editOffer(existingDraftOffer.offer_id, { offer_items: combinedItems });
+                                } else {
+                                  // --- CREATE NEW DRAFT ---
+                                  const dataToSend = {
+                                    application_id: selectedApplication.application.application_id,
+                                    offer_items: newOfferItemsPayload,
+                                  };
+                                  await createOffer(dataToSend);
+                                }
+
+                                // --- COMMON SUCCESS LOGIC ---
                                 await fetchAndSetOffers();
-                                // Update frontend state
-                                handleAddTAtoAddedOfferTab(selectedTA, selectedSections);
-
-                                setStudentCurrentHours((prev) => ({
-                                  ...prev,
-                                  [studentId]: existingHours + addedHours,
-                                }));
-
                                 setSelectedTAId(null);
                                 setSelectedApplication(null);
                                 setSelectedCourseOfferings([]);
                                 setSelectedSharedSessions([]);
+
                               } catch (err) {
-                                console.error("Failed to create offer:", err);
-                                alert("An error occurred while creating the offer.");
+                                console.error("Failed to create or edit offer:", err);
+                                alert(`An error occurred: ${err.message}`);
                               }
                             }}
                           >
@@ -2113,31 +2267,35 @@ const parseSlotInfoForModal = (time_slots_info_array) => {
                     setPendingSlotSelection(null);
                   }}
                   onConfirm={(selectedDaysAndSlots) => {
-                      // --- NEW: Map the objects from the modal back to strings ---
-                      console.log("selectedDaysAndSlots in SlotSelectionModal: ", selectedDaysAndSlots);
-                      const { offering, course } = pendingSlotSelection;
-                      const selected = {
-                          ...offering,
-                          item_type: "course_offering",
-                          course_name: pendingSlotSelection.course.course_name,
-                          course_number: pendingSlotSelection.course.course_number,
-                          sectionId: pendingSlotSelection.offering.course_offering_id,
-                          // --- NEW: Pass the newly formatted array to the conversion function ---
-                          time_slots_info: convertTimeSlotsInfoToKeys(selectedDaysAndSlots),
-                          time_slots_info_raw: selectedDaysAndSlots,
-                          weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(selectedDaysAndSlots)),
-                      };
-                      console.log("selected in SlotSelectionModal: ", selected);
-                      setSelectedCourseOfferings((prev) => {
-                        const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
-                        console.log("alreadySelected in SlotSelectionModal: ", alreadySelected);
-                        return alreadySelected
-                        ? prev.filter((s) => s.sectionId !== selected.sectionId)
-                        : [...prev, selected];
-                      });
+                    const { offering, course } = pendingSlotSelection;
 
-                      setShowSlotSelectionModal(false);
-                      setPendingSlotSelection(null);
+                    // Create a unique identifier for each specific slot selection to avoid duplicates
+                    const newSelections = selectedDaysAndSlots.map(slot => {
+                      const slotIdentifier = `${offering.course_offering_id}-${slot.day}-${slot.start_time}`;
+                      return {
+                        ...offering,
+                        item_type: "course_offering",
+                        course_name: course.course_name,
+                        course_number: course.course_number,
+                        sectionId: offering.course_offering_id,
+                        // Unique ID for this specific selection
+                        selection_id: slotIdentifier,
+                        // Store only the single selected time slot
+                        time_slots_info: convertTimeSlotsInfoToKeys([slot]),
+                        time_slots_info_raw: [slot],
+                        weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys([slot])),
+                      };
+                    });
+
+                    setSelectedCourseOfferings((prev) => {
+                      // Filter out any previous selections for this course offering
+                      const otherSelections = prev.filter(s => s.sectionId !== offering.course_offering_id);
+                      // Add the new, individual selections
+                      return [...otherSelections, ...newSelections];
+                    });
+
+                    setShowSlotSelectionModal(false);
+                    setPendingSlotSelection(null);
                   }}
                   slotKeys={pendingSlotSelection.slotKeys}
                 />

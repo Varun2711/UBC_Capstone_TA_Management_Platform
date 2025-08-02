@@ -84,12 +84,10 @@ const AddedOffersTab = ({
     if (modifiedOffer) {
       try {
         console.log("about to call editOffer api endpoint");
-        const response = await editOffer(
-          modifiedOffer.student.application_id,
-          modifiedOffer.offer_items,
-          modifiedOffer.offer_id
+        await editOffer(
+          modifiedOffer.offer_id,
+          { offer_items: modifiedOffer.offer_items }
         );
-        console.log("response in editOffer: ", response);
       } catch (err) {
         console.error("Failed to edit offer:", err);
       }
