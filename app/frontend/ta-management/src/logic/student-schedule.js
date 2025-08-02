@@ -152,10 +152,10 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
     // Get offer items from the assignment's offer details
     const offerItems = assignment.offer_details?.offer_items || [];
 
-    console.log(
-      "Here's the term id",
-      assignment.course_offering.academic_term.id
-    );
+    // console.log(
+    //   "Here's the term id",
+    //   assignment.course_offering.academic_term.id
+    // );
 
     // Use the termInfo if it's already attached to the assignment, otherwise fetch it
     let termDates;
@@ -175,12 +175,6 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
       // Use all_time_slots instead of just time_slot
 
       const timeSlots = consolidateTimeSlots(offerItem);
-      //const timeSlots = offerItem.all_time_slots || [];
-
-      // If all_time_slots is not available, fall back to single time_slot
-      // if (timeSlots.length === 0 && offerItem.time_slot) {
-      //    timeSlots.push(offerItem.time_slot);
-      //  }
 
       // Process each time slot for this offer item
       timeSlots.forEach((timeSlot, slotIndex) => {
@@ -221,7 +215,9 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
               sessionType = "Course";
             } else if (offerItem.item_type === "shared_session") {
               courseInfo = `${offerItem.course_number} - ${offerItem.section_number}`;
-              sessionType = "Lab";
+              sessionType = offerItem.section_number.startsWith("L")
+                ? "Lab"
+                : "Tutorial";
             }
 
             //console.log("Course info", courseInfo);
@@ -342,10 +338,13 @@ export const formatAssignmentDisplay = (assignment) => {
     sessionType = Array.from(sessionTypes).join(" + ");
   }
 
+  instructor = assignment.course_offering?.instructor || "";
+
   // Fallback to assignment level data if offer items not available
   if (!courseInfo && assignment.course) {
     courseInfo = assignment.course.course_number;
     totalHours = assignment.weekly_hours || 0;
+    //
 
     if (assignment.course_offering) {
       sectionNumber = assignment.course_offering.section_number;
