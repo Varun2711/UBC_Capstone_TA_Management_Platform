@@ -14,7 +14,8 @@ import {
   Users,
   CheckCircle,
   Eye,
-  Filter
+  Filter,
+  Lightbulb, // Import the Lightbulb icon
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -39,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppSidebar } from "../../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert components
 import App from "@/App"
 import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers as apiFetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer } from "@/logic/coordinator-allocations-page";
 
@@ -1326,17 +1328,16 @@ export default function TAAllocationPage() {
           <main className="flex-1 space-y-6 p-6">
             {/* Main Allocation Interface */}
             <Tabs defaultValue="allocate" className="space-y-4">
-              <div className="p-4 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-800">
-                Select an applicant, then select one or more course sections
-                you want to send them an offer for. In the availability calendar,
-                <span className="font-bold text-blue-600"> blue </span>
-                boxes are time slots when the applicant is available. When you select a course section,
-                the slots it takes up will turn
-                <span className="font-bold text-purple-600"> purple </span>
-                if no conflicts with the applicant's availability and
-                <span className="font-bold text-red-600"> red </span>
-                if there are conflicts.
-              </div>
+              <Alert>
+                <Lightbulb className="h-4 w-4" />
+                <AlertTitle>How to Allocate TAs</AlertTitle>
+                <AlertDescription>
+                  Select a shortlisted applicant, then choose one or more course sections to offer. The calendar highlights availability:
+                  <span className="font-semibold text-blue-600"> blue</span> for times not available,
+                  <span className="font-semibold text-purple-600"> purple</span> for selected slots with  conflicts, and
+                  <span className="font-semibold text-red-600"> red</span> for available slots.
+                </AlertDescription>
+              </Alert>
               <TabsList>
                 <TabsTrigger value="allocate">Allocate Shortlisted Applicants</TabsTrigger>
                 <TabsTrigger value="added-offers">Draft Offers</TabsTrigger>
