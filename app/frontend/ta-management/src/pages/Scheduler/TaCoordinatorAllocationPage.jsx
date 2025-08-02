@@ -320,6 +320,23 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
+function formatItemTimeSlot(timeSlot) {
+  if (!timeSlot) return "";
+
+  const dayAbbreviations = {
+    'Monday': 'M', 'Tuesday': 'T', 'Wednesday': 'W', 'Thursday': 'Th', 'Friday': 'F'
+  };
+
+  const day = timeSlot.day || (timeSlot.day_code ? capitalize(timeSlot.day_code) : '');
+  const dayAbbr = dayAbbreviations[day] || (day ? day.slice(0, 2) : '');
+  const startTime = timeSlot.start_time ? timeSlot.start_time.slice(0, 5) : '';
+  const endTime = timeSlot.end_time ? timeSlot.end_time.slice(0, 5) : '';
+
+  if (!dayAbbr || !startTime || !endTime) return "";
+
+  return ` | ${dayAbbr} ${startTime}–${endTime}`;
+}
+
 function convertProfileAvailabilityGridToKeys(availabilityObj) {
   const result = [];
 
@@ -2035,7 +2052,10 @@ export default function TAAllocationPage() {
                               <ul className="ml-4 list-disc text-sm text-muted-foreground">
                                 {pendingOffer.offer_items.map((item, i) => (
                                   <li key={i}>
-                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number} {/* Access correct properties */}
+                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number}
+                                    <span className="text-xs text-gray-500 ml-2">
+                                      {formatItemTimeSlot(item.time_slot)}
+                                    </span>
                                   </li>
                                 ))}
                               </ul>
@@ -2091,7 +2111,10 @@ export default function TAAllocationPage() {
                               <ul className="ml-4 list-disc text-sm text-muted-foreground">
                                 {rejectedOffer.offer_items.map((item, i) => (
                                   <li key={i}>
-                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number} {/* Access correct properties */}
+                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number}
+                                    <span className="text-xs text-gray-500 ml-2">
+                                      {formatItemTimeSlot(item.time_slot)}
+                                    </span>
                                   </li>
                                 ))}
                               </ul>
