@@ -104,19 +104,11 @@ export function LandingPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Header */}
+            {/* Header - Removed login/create account buttons */}
             <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
                 <div className="flex items-center gap-2">
                     <GraduationCap className="h-6 w-6" />
                     <span className="font-semibold">UBC CMPS TA Portal</span>
-                </div>
-                <div className="ml-auto flex items-center space-x-4">
-                    <Button variant="outline" onClick={() => navigate("/login")}>
-                        Login
-                    </Button>
-                    <Button onClick={() => navigate("/create-account/step1")}>
-                        Create Account
-                    </Button>
                 </div>
             </header>
 
@@ -173,7 +165,7 @@ export function LandingPage() {
                         ) : (
                             <>
                                 <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/create-account/step1")}>
-                                    Create Account to Apply
+                                    Create Account
                                     <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
                                 <Button variant="outline" size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/login")}>
