@@ -401,7 +401,6 @@ export default function TAAllocationPage() {
   });
   const [courseOfferings, setCourseOfferings] = useState({});
   const [sharedSessions, setSharedSessions] = useState({});
-  const [fetchedOfferings, setFetchedOfferings] = useState({});
   const [shortlistedApplicants, setShortlistedApplicants] = useState([])
   const [profilesOfShortlistedApplicants, setProfilesOfShortlistedApplicants] = useState([])
 
@@ -969,10 +968,10 @@ export default function TAAllocationPage() {
       : true;
 
     // ✅ Check offerings for matching term
-    const courseOfferings = fetchedOfferings[course.id] || [];
+    const offeringsForFilter = courseOfferings[course.id] || [];
 
     const matchesTerm = filters.term_code
-      ? courseOfferings.some((offering) =>
+      ? offeringsForFilter.some((offering) =>
         offering.term_info.toLowerCase().includes(filters.term_code.toLowerCase())
       )
       : true;
@@ -1635,7 +1634,7 @@ export default function TAAllocationPage() {
                       <div className="flex-grow overflow-y-auto pr-2">
                         <div className="space-y-4">
                           {filteredCourses.map((course) => {
-                            const availableOfferings = fetchedOfferings[course.id] || []
+                            const availableOfferings = courseOfferings[course.id] || []
                             const availableSections = sharedSessions[course.id] || []
                             return (
                               <div key={course.id}>
