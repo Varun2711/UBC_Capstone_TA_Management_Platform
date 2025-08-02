@@ -118,8 +118,8 @@ class OfferItemSerializer(serializers.ModelSerializer):
 
     def get_time_slot(self, obj):
         """Get the specific time slot details for this item."""
+        # For a course offering, there is always one specific time_slot.
         if obj.item_type == 'course_offering' and obj.time_slot:
-            # ✅ For course offerings: return the specific assigned time slot
             return {
                 'slot_id': str(obj.time_slot.slot_id),
                 'day': obj.time_slot.get_day_display(),
@@ -127,19 +127,18 @@ class OfferItemSerializer(serializers.ModelSerializer):
                 'start_time': obj.time_slot.start_time.strftime('%H:%M:%S'),
                 'end_time': obj.time_slot.end_time.strftime('%H:%M:%S'),
             }
-        elif obj.item_type == 'shared_session':
-            # ✅ For shared sessions: return all time slots of the session
-            if obj.shared_session:
-                time_slots_data = []
-                for slot in obj.shared_session.time_slots.all():
-                    time_slots_data.append({
-                        'slot_id': str(slot.slot_id),
-                        'day': slot.get_day_display(),
-                        'day_code': slot.day,
-                        'start_time': slot.start_time.strftime('%H:%M:%S'),
-                        'end_time': slot.end_time.strftime('%H:%M:%S'),
-                    })
-                return time_slots_data
+        # For a shared session, we return all of its associated time slots.
+        elif obj.item_type == 'shared_session' and obj.shared_session:
+            time_slots_data = []
+            for slot in obj.shared_session.time_slots.all():
+                time_slots_data.append({
+                    'slot_id': str(slot.slot_id),
+                    'day': slot.get_day_display(),
+                    'day_code': slot.day,
+                    'start_time': slot.start_time.strftime('%H:%M:%S'),
+                    'end_time': slot.end_time.strftime('%H:%M:%S'),
+                })
+            return time_slots_data
         
         return None
 
