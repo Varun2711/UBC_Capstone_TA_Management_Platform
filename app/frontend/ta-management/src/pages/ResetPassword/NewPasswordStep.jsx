@@ -3,6 +3,10 @@
  * user is navigated here, where they input a new password and then confirm
  * that new password by entering it again. Their password is then updated
  * in the database accordingly
+ * 
+ * Extension: for user who is already signed in and wishes to reset password, 
+ * they will be fast-tracked to this step of the process, and will be asked 
+ * to enter their current password as verification
  */
 "use client"
 
@@ -13,6 +17,7 @@ import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 import { toast } from "sonner"
+import { getDashboardLink } from "@/logic/getDashboardLink"
 
 /* 
   Helper fn: performs input validation on inputted passwords and 
@@ -36,7 +41,7 @@ export function getPasswordValidationErrors(pass, confirmPass) {
     }
 
     if(!confirmPass.trim()) { // confirm password field was left empty
-      validationErrors.confirm = "Confirm password is required"
+      validationErrors.confirm = "Confirm Password is required"
     } else if(confirmPass !== pass) { // password and confirm password don't match
       validationErrors.confirm = "Passwords must match"
     }
@@ -49,9 +54,12 @@ MAIN COMPONENT FOUND HERE!
 */
 export default function NewPasswordStep({ token, accountInfo, onNext, requestPasswordReset }) {
   // state
+  const [current, setCurrent] = useState(""); // current password, required for authenticated user to change password
   const [password, setPassword] = useState(""); // new password
   const [confirm, setConfirm] = useState(""); // confirm new password
   const [errors, setErrors] = useState("");
+
+  const isCurrentlyLoggedIn = accountInfo != null;
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -59,6 +67,14 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
     // have to store errors in another variable to use it immediately, because 
     // react state does not update ASAP, is asynchronous
     const validationErrors = getPasswordValidationErrors(password, confirm);
+
+    // if currently logged in, need to provide existing password
+    if(isCurrentlyLoggedIn) {
+      if(!current.trim()) {
+        validationErrors.current = "Current Password is required";
+      }
+    }
+
     setErrors(validationErrors)
 
     // check if there's at least one error (means invalid input)
@@ -74,8 +90,8 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
         response = await requestPasswordReset(password, token);
 
       // Session-based password reset (logged-in user)
-      } else if(accountInfo) {
-        response = await requestPasswordReset(password, null, accountInfo);
+      } else if(isCurrentlyLoggedIn) {
+        response = await requestPasswordReset(password, null, accountInfo, current);
       }
       
       if(response.success) {
@@ -87,6 +103,11 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
     }
   }
 
+  const handleCurrentPasswordChange = (e) => {
+    setCurrent(e.target.value)
+    delete errors.current
+  }
+  
   const handlePasswordChange = (e) => {
     // set password var as inputted value and clear error msg
     setPassword(e.target.value)
@@ -106,12 +127,12 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
       <div className="flex-grow flex items-center justify-center p-4">      
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Set New Password</h1>
-            <p className="text-gray-600">
-              Enter a new password to be used for your account.
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">{ isCurrentlyLoggedIn ? "Change Password" : "Set New Password" }</h1>
+            <p className={ isCurrentlyLoggedIn ? "text-gray-600 text-left" : "text-gray-600" }>
+              { isCurrentlyLoggedIn ? "Verify your current password, then enter a new password to be used for your account." : "Enter a new password to be used for your account." }
             </p>
             <p className="text-gray-600">
-              <b>Password requirements: </b> 
+              <b>{ isCurrentlyLoggedIn ? "New Password requirements:" : "Password requirements:" } </b> 
             </p>
             <div className="mx-auto w-min">
               <ul className="list-disc pl-5 text-nowrap text-left">
@@ -124,7 +145,28 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
             </div>
           </div>
 
+          {/* input field to enter current password, only rendered for user that is currently logged in */}
           <form className="space-y-6" onSubmit={handleSubmit} role="form" noValidate>
+            {
+              isCurrentlyLoggedIn && 
+              <div className="space-y-2">
+                <Label htmlFor="current-password" className="text-sm font-medium text-gray-700">
+                  Current Password
+                </Label>
+                <Input
+                  id="current-password"
+                  name="current-password"
+                  type="password"
+                  value={current}
+                  onChange={handleCurrentPasswordChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter your current password"
+                  required
+                />
+                {errors.current && <span className="text-red-700" role="alert">{errors.current}</span>}
+              </div>
+            }
+
             <div className="space-y-2">
               <Label htmlFor="new-password" className="text-sm font-medium text-gray-700">
                 New Password
@@ -153,7 +195,7 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
                 value={confirm}
                 onChange={handleConfirmPasswordChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Confirm password"
+                placeholder="Confirm new password"
                 required
               />
               {errors.confirm && <span className="text-red-700" role="alert">{errors.confirm}</span>}
@@ -168,9 +210,20 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
           </form>
 
           <div className="text-center">
-            <Link to="/login" className="text-sm text-gray-600 hover:text-gray-900 underline">
-              Back to Login
-            </Link>
+            {isCurrentlyLoggedIn ? (
+              <>
+                <Link to={getDashboardLink(accountInfo.user_type)} className="text-sm text-gray-600 hover:text-gray-900 underline">
+                  Back to Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm text-gray-600 hover:text-gray-900 underline">
+                  Back to Login
+                </Link>
+              </>
+            )}
+            
           </div>
         </div>
       </div>

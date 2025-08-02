@@ -115,19 +115,20 @@ export function useResetPassword() {
     - The reset-password-complete endpoint handles everything, including getting the notification
     service to verify the token and mark it as used, so just have to make the one request here
     */
-    const requestPasswordReset = async (password, token = null, accountInfo = null) => {
+    const requestPasswordReset = async (newPassword, token = null, accountInfo = null, currPassword = null) => {
         try {
             // build request based on whether or not a token is present
             const responseBody = token
             ? { 
                 token: token, 
-                new_password: password 
+                new_password: newPassword 
             } 
             : {
-                new_password: password,
-                user_id: accountInfo.id,
-                user_type: accountInfo.userType,
-                email: accountInfo.email
+                new_password: newPassword,
+                user_id: accountInfo.user_id,
+                user_type: accountInfo.user_type,
+                email: accountInfo.email,
+                curr_password: currPassword
             }
             
             const response = await axios.post(API_URL + '/auth/reset-password-complete/', 
@@ -150,6 +151,8 @@ export function useResetPassword() {
                 data = "Unable to find your account. Please ensure that your account exists and your email address hasn't changed"
             } else if(errorMsg == "Invalid or expired token") {
                 data = "Email link invalid or expired. Please return to 'Reset Password' to request a new link."
+            } else if(errorMsg == "Incorrect password") {
+                data = "The password you provided does not match our records. Please try again, or if you don't remember your password, you can logout and reset it from the 'Login' page."
             }
 
             return {

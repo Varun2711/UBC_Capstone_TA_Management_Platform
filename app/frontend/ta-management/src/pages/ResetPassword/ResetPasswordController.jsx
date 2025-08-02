@@ -10,7 +10,7 @@ which step user is on, and display correct page
 already authenticated (logged in)
 
 * Detailed Description *
-Our password reset has 5 steps as follows:
+Our password reset has 5 steps as follows (unauthenticated user):
 1. Enter email: user enters email associated with their account and we look it up
 in the db
 2. Verify id: if that email is tied to an account, we ask the user to enter their
@@ -24,6 +24,13 @@ password and then confirm that new password (enter it a second time, passwords
 must match)
 5. Success: new password is hashed and stored in the database, user is informed
 that password reset was successful, and user is prompted to login
+
+For an authenticated user wanting to change password, the process is quicker, as
+they begin at Step 4:
+4. Set new password: User re-enters current password for security purposes, then
+new password and confirm new password. We check that their inputted password
+matches what's on file, then update their password in the db
+5. Success: same as above except user is prompted to go to dashboard
 */
 
 import { useEffect, useState } from "react";
@@ -68,6 +75,7 @@ export default function ResetPasswordController({ initialStep }) {
     // LOGIC -----------------------------------------
 
     // When component is loaded for a user who is already logged in, validate the session
+    // and then begin password reset at NewPasswordStep
     useEffect(() => {
         // Helper function to handle this logic
         async function validateSessionAndStart() {
@@ -81,7 +89,7 @@ export default function ResetPasswordController({ initialStep }) {
                     if (response.valid) {
                         setAccountInfo({
                             email: response.email,
-                            id: response.user_id,
+                            user_id: response.user_id,
                             user_type: response.user_type
                         })
                         
@@ -147,7 +155,7 @@ export default function ResetPasswordController({ initialStep }) {
                     requestPasswordReset={resetPassword.requestPasswordReset} 
                     /> 
             )}
-            { step === RESET_PASSWORD_STEPS.success && <SuccessStep />}
+            { step === RESET_PASSWORD_STEPS.success && <SuccessStep isLoggedIn={accountInfo ? true : false } userType={accountInfo ? accountInfo.user_type : null } />}
         </>
     )
 }

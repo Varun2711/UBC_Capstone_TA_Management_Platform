@@ -6,8 +6,10 @@ user sees this page to confirm
 
 import { Link } from "react-router-dom"
 import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
+import { getDashboardLink } from "@/logic/getDashboardLink"
 
-export default function SuccessStep() {
+export default function SuccessStep({isLoggedIn=null, userType=null}) {
+  {console.log("SuccessStep userType var: " + userType)}
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 p-2">
       <ResetPasswordBreadcrumb />
@@ -17,9 +19,17 @@ export default function SuccessStep() {
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Success!</h1>
             <p className="text-gray-600 mb-8">
-              Your password has been reset and you may now&nbsp;
-              <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 underline">login</Link>
-              .
+              {isLoggedIn ? (
+                <>
+                  Your password has been changed. Return to&nbsp;
+                  <Link to={getDashboardLink(userType)} className="font-medium text-blue-600 hover:text-blue-500 underline">dashboard</Link>.
+                </>
+              ) : (
+                <>
+                  Your password has been reset. Return to&nbsp;
+                  <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 underline">login</Link>.
+                </>
+              )}
             </p>
           </div>
         </div>

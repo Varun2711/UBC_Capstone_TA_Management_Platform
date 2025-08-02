@@ -289,6 +289,7 @@ def reset_password_complete(request):
         user_id = request.data.get('user_id')
         user_type = request.data.get('user_type')
         email = request.data.get('email')
+        curr_password = request.data.get('curr_password') # optional
         
         if not new_password:
             return Response({
@@ -314,10 +315,26 @@ def reset_password_complete(request):
             user_id = token_data['user_id']
         
         # Case 2: reset via session (authenticated user wanting to change password)
-        elif not user_id and not user_type:            
+        elif user_id and user_type and curr_password:
+            # Check that inputted current password matches what's set in DB
+
+            # Reuse the login_view code because it does what i need 
+            serializer = LoginSerializer(data={
+                "email": email,
+                "password": curr_password
+            })
+
+            if serializer.is_valid():
+                email = serializer.validated_data['email']
+                password = serializer.validated_data['password']
+                user, user_type, user_id = find_user_by_email(email, password)
+
+                if not user:
+                    return Response({'error': 'Incorrect password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+                # if no error, password was correct
+        else:        
             return Response({'error': 'Must provide either a token or a user_id and user_type'}, status=400)
-            # if not request.user.is_authenticated:
-            #     return Response({'error': 'Authentication required'}, status=401)
 
         # Hash the new password
         hashed_password = make_password(new_password)
