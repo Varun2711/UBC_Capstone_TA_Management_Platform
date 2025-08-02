@@ -47,7 +47,7 @@ export function getPasswordValidationErrors(pass, confirmPass) {
 /*
 MAIN COMPONENT FOUND HERE!
 */
-export default function NewPasswordStep({ token, onNext, requestPasswordReset }) {
+export default function NewPasswordStep({ token, accountInfo, onNext, requestPasswordReset }) {
   // state
   const [password, setPassword] = useState(""); // new password
   const [confirm, setConfirm] = useState(""); // confirm new password
@@ -66,7 +66,18 @@ export default function NewPasswordStep({ token, onNext, requestPasswordReset })
 
     if(noErrors) {
       // Make request to auth service to perform password reset
-      const response = await requestPasswordReset(password, token);
+      let response;
+
+      // What type of password reset is this?
+      // Token-based password reset (non-logged-in user, via email link)
+      if(token) {
+        response = await requestPasswordReset(password, token);
+
+      // Session-based password reset (logged-in user)
+      } else if(accountInfo) {
+        response = await requestPasswordReset(password, null, accountInfo);
+      }
+      
       if(response.success) {
         toast.success(response.data)
         onNext();

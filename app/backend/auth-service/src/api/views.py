@@ -286,28 +286,39 @@ def reset_password_complete(request):
     try:
         token = request.data.get('token')
         new_password = request.data.get('new_password')
+        user_id = request.data.get('user_id')
+        user_type = request.data.get('user_type')
+        email = request.data.get('email')
         
-        if not token or not new_password:
+        if not new_password:
             return Response({
-                'error': 'Token and new password are required'
+                'error': 'New password is required'
             }, status=400)
         
-        # Verify token with notification service
-        notification_response = requests.get(
-            f'http://notification-service:8006/api/notifications/verify_reset_token/',
-            params={'token': token}
-        )
+        # Case 1: reset via token (unauthenticated user was emailed a password reset link)
+        if token:
+            # Verify token with notification service
+            notification_response = requests.get(
+                f'http://notification-service:8006/api/notifications/verify_reset_token/',
+                params={'token': token}
+            )
+            
+            if notification_response.status_code != 200:
+                return Response({
+                    'error': 'Invalid or expired token'
+                }, status=400)
+            
+            token_data = notification_response.json()
+            email = token_data['email']
+            user_type = token_data['user_type']
+            user_id = token_data['user_id']
         
-        if notification_response.status_code != 200:
-            return Response({
-                'error': 'Invalid or expired token'
-            }, status=400)
-        
-        token_data = notification_response.json()
-        email = token_data['email']
-        user_type = token_data['user_type']
-        user_id = token_data['user_id']
-        
+        # Case 2: reset via session (authenticated user wanting to change password)
+        elif not user_id and not user_type:            
+            return Response({'error': 'Must provide either a token or a user_id and user_type'}, status=400)
+            # if not request.user.is_authenticated:
+            #     return Response({'error': 'Authentication required'}, status=401)
+
         # Hash the new password
         hashed_password = make_password(new_password)
         
@@ -347,11 +358,12 @@ def reset_password_complete(request):
             except Admin.DoesNotExist:
                 return Response({'error': 'Admin not found'}, status=404)
         
-        # Mark token as used
-        requests.post(
-            f'http://notification-service:8006/api/notifications/mark_token_used/',
-            json={'token': token}
-        )
+        # if token-based reset, mark token as used
+        if token:
+            requests.post(
+                f'http://notification-service:8006/api/notifications/mark_token_used/',
+                json={'token': token}
+            )
         
         return Response({
             'message': 'Password reset successfully',

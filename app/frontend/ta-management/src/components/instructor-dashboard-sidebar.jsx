@@ -144,7 +144,7 @@ export function InstructorSidebar({ activePage, ...props }) {
                 <DropdownMenuItem onClick={() => navigate("/instructor-profile")}>
                   My Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/reset-password")}>
+                <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
                   Change Password
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>

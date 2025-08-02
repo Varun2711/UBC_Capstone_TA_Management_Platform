@@ -115,13 +115,23 @@ export function useResetPassword() {
     - The reset-password-complete endpoint handles everything, including getting the notification
     service to verify the token and mark it as used, so just have to make the one request here
     */
-    const requestPasswordReset = async (password, token) => {
+    const requestPasswordReset = async (password, token = null, accountInfo = null) => {
         try {
+            // build request based on whether or not a token is present
+            const responseBody = token
+            ? { 
+                token: token, 
+                new_password: password 
+            } 
+            : {
+                new_password: password,
+                user_id: accountInfo.id,
+                user_type: accountInfo.userType,
+                email: accountInfo.email
+            }
+            
             const response = await axios.post(API_URL + '/auth/reset-password-complete/', 
-                { 
-                    token: token,
-                    new_password: password
-                }
+                responseBody
             );
 
             return {

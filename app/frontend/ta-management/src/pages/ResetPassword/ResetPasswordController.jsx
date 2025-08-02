@@ -6,6 +6,8 @@ which step user is on, and display correct page
 * Params *
 - initialStep: specify what step of the password reset process you want rendered
 (defaults to step 0 (enter email) if none provided)
+- fromSession: specify whether the password reset is initiated by user who is
+already authenticated (logged in)
 
 * Detailed Description *
 Our password reset has 5 steps as follows:
@@ -32,6 +34,8 @@ import SuccessStep from "./SuccessStep";
 import { useResetPassword } from "@/hooks/useResetPassword";
 import LinkSentStep from "./LinkSentStep";
 import { useSearchParams } from "react-router-dom";
+import axios from "axios";
+import { requestTokenValidation } from "@/logic/auth";
 
 // enum to make what step we're on more readable 
 export const RESET_PASSWORD_STEPS = {
@@ -49,15 +53,57 @@ export default function ResetPasswordController({ initialStep }) {
     const [step, setStep] = useState(initialStep ?? RESET_PASSWORD_STEPS.enter_email);
     const [email, setEmail] = useState("")
     const [id, setId] = useState("") // student id or employee id, depending on user_type
+    const [accountInfo, setAccountInfo] = useState(null);
 
     // token data (will be present if user is coming from password reset link that was emailed to them)
     const [searchParams] = useSearchParams();
     const token = searchParams.get("token");
 
+    // if already logged in, we pass fromSession in the url when navigating to reset password
+    const fromSession = searchParams.get("fromSession") == "true";
+
     // reset password hook
     const resetPassword = useResetPassword();
 
     // LOGIC -----------------------------------------
+
+    // When component is loaded for a user who is already logged in, validate the session
+    useEffect(() => {
+        // Helper function to handle this logic
+        async function validateSessionAndStart() {
+            try {
+                const authToken = sessionStorage.getItem("accessToken")
+
+                if(authToken) {
+                    const response = await requestTokenValidation(authToken)
+                    
+                    // session is valid, grab user account data to be used for password reset operation
+                    if (response.valid) {
+                        setAccountInfo({
+                            email: response.email,
+                            id: response.user_id,
+                            user_type: response.user_type
+                        })
+                        
+                        setStep(RESET_PASSWORD_STEPS.set_new_password);
+                    
+                    } else {
+                        console.error("Session is not valid.");
+                    }
+                } else {
+                    console.error("Authorization token could not be found.")
+                }
+
+            } catch (error) {
+                console.error("Error validating the session: ", error);
+            }
+        }
+
+        // Helper function actually called here
+        if(fromSession) {
+            validateSessionAndStart();
+        }
+    }, [fromSession]);
 
     // When component is loaded, check right away if user has a token 
     // (means they are coming from a password reset link that was emailed to them)
@@ -93,7 +139,14 @@ export default function ResetPasswordController({ initialStep }) {
             { step === RESET_PASSWORD_STEPS.enter_email && <EmailStep onNext={handleEmailNext} requestAccountLookup={resetPassword.requestAccountLookup} /> }
             { step === RESET_PASSWORD_STEPS.verify_id && <VerifyIdStep email={email} onNext={handleVerifyNext} verifyId={resetPassword.verifyId} requestSendResetLink={resetPassword.requestSendResetLink}/> }
             { step === RESET_PASSWORD_STEPS.link_sent && <LinkSentStep />}
-            { step === RESET_PASSWORD_STEPS.set_new_password && <NewPasswordStep token={token} onNext={handleNewPasswordNext} requestPasswordReset={resetPassword.requestPasswordReset} /> }
+            { step === RESET_PASSWORD_STEPS.set_new_password && (
+                <NewPasswordStep 
+                    token={token}
+                    accountInfo={accountInfo} 
+                    onNext={handleNewPasswordNext} 
+                    requestPasswordReset={resetPassword.requestPasswordReset} 
+                    /> 
+            )}
             { step === RESET_PASSWORD_STEPS.success && <SuccessStep />}
         </>
     )

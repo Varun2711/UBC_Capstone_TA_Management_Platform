@@ -132,7 +132,7 @@ export function AppSidebar({ name, email, avatar }) {
                   {" "}
                   <button>My Profile</button>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/reset-password")}>
+                <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
                   <button>Change Password</button>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
