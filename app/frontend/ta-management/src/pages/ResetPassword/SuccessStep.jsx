@@ -9,7 +9,6 @@ import ResetPasswordBreadcrumb from "./ResetPasswordBreadcrumb"
 import { getDashboardLink } from "@/logic/getDashboardLink"
 
 export default function SuccessStep({isLoggedIn=null, userType=null}) {
-  {console.log("SuccessStep userType var: " + userType)}
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 p-2">
       <ResetPasswordBreadcrumb />

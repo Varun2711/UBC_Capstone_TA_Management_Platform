@@ -86,7 +86,7 @@ const renderStep3 = () => {
 const renderStep4 = () => {
   return render(
     <MemoryRouter initialEntries={["/forgot-password"]}>
-      <NewPasswordStep />
+      <NewPasswordStep token="123" />
     </MemoryRouter>
   )
 }
@@ -203,7 +203,7 @@ describe('Reset Password', () => {
 
     // confirm password input field
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/confirm password/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/confirm new password/i)).toBeInTheDocument()
 
     // "reset password" button
     expect(screen.getByRole("button", { name: /reset password/i })).toBeInTheDocument()
@@ -226,7 +226,7 @@ describe('Reset Password', () => {
 
     // heading and page description
     expect(screen.getByRole("heading"), { name: /success!/i }).toBeInTheDocument();
-    expect(screen.getByText(/your password has been reset and you may now/i)).toBeInTheDocument();
+    expect(screen.getByText(/your password has been reset. return to/i)).toBeInTheDocument();
     expect(screen.getByRole("link", {name: "login"})).toBeInTheDocument()
   })
 
@@ -431,7 +431,7 @@ describe('Reset Password', () => {
     expect(errorAlerts).toHaveLength(2)
 
     expect(screen.getByText("Password is required")).toBeInTheDocument()
-    expect(screen.getByText("Confirm password is required")).toBeInTheDocument()
+    expect(screen.getByText("Confirm Password is required")).toBeInTheDocument()
   })
 
   it('displays error message when password is not long enough', async () => {
