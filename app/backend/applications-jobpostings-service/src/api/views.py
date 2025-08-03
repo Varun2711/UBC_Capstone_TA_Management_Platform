@@ -32,6 +32,13 @@ IsSchedulerOrAdmin = IsSchedulerUser | IsAdminUser
 IsSchedulerOrStudent = IsStudentUser | IsSchedulerUser
 IsStudentOrSchedulerOrAdmin = IsStudentUser | IsSchedulerUser | IsAdminUser
 
+def debug_host_view(request):
+    return JsonResponse({
+        "host": request.get_host(),
+        "META.HTTP_HOST": request.META.get("HTTP_HOST"),
+        "META.SERVER_NAME": request.META.get("SERVER_NAME"),
+    })
+
 
 #ensure secure document downloads
 def secure_document_download(request):
@@ -83,15 +90,24 @@ class JobPostingViewSet(viewsets.ModelViewSet):
      # Add default ordering - most recent posts first, then by ID for consistency
     ordering = ['-post_date', '-posting_id']
     
-    #override global default to only return non-archived jobs
-    #def get_queryset(self):    
-       # return JobPosting.objects.exclude(status='archived')
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Schedulers/Admins can create, update, and destroy.
+        - Anyone can view postings.
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            #print("DEBUG - We return Scheduler of Admin")
+            return [IsSchedulerOrAdmin()]  
+        #print("DEBUG - We return Any")    
+        return [AllowAny()]
+
     
     def perform_create(self, serializer):       
         if not serializer.validated_data.get('created_by'):
             # Try to get from authenticated user first
-            if hasattr(self.request.user, 'tascheduler'):
-                serializer.save(created_by=self.request.user.tascheduler)
+            if hasattr(self.request.user, 'scheduler'):
+                serializer.save(created_by=self.request.user.scheduler)
             else:                
                 serializer.save(created_by=None)
                 
@@ -101,23 +117,12 @@ class JobPostingViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):       
         serializer.save()
 
-    def get_permissions(self):
-        """
-        Define permissions for different actions.
-        - Schedulers/Admins can create, update, and destroy.
-        - Anyone can view postings.
-        """
-        if self.action in ['create', 'update', 'partial_update']:
-            return [IsSchedulerOrAdmin()]
-        elif self.action == 'destroy':
-            # Prevent deletion, but still require auth
-            return [IsSchedulerOrAdmin()]
-        return [AllowAny()]
-
-    def get_queryset(self):
-        
+    
+    def get_queryset(self):        
         queryset = super().get_queryset()
         user_type, _ = self.get_user_info(self.request)
+
+        #print("DEBUG", self.request.user, user_type)
 
         if not user_type:
             return queryset.filter(status='open')
