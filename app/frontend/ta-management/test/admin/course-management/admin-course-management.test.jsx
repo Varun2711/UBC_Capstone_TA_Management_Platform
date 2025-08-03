@@ -36,7 +36,7 @@ vi.mock('@/logic/courseManagement', () => ({
   createSharedSession: vi.fn(),
   updateSharedSession: vi.fn(),
   deleteSharedSession: vi.fn(),
-  getTerms: vi.fn(),
+  getActiveTerms: vi.fn(), // Changed from getTerms to getActiveTerms
   getDepartments: vi.fn(),
   getInstructors: vi.fn(),
   mapCourseData: vi.fn((course) => course),
@@ -200,7 +200,7 @@ describe('AdminCourseManagement Page', () => {
     // Setup default API responses
     vi.mocked(courseManagementApi.getAllCoursesFullDetails).mockResolvedValue(mockCourses);
     vi.mocked(courseManagementApi.getDepartments).mockResolvedValue(mockDepartments);
-    vi.mocked(courseManagementApi.getTerms).mockResolvedValue(mockTerms);
+    vi.mocked(courseManagementApi.getActiveTerms).mockResolvedValue(mockTerms); // Changed from getTerms to getActiveTerms
     vi.mocked(courseManagementApi.getInstructors).mockResolvedValue(mockInstructors);
     vi.mocked(courseManagementApi.mapCourseData).mockImplementation((course) => course);
     vi.mocked(courseManagementApi.mapTermsForDropdown).mockImplementation((terms) => terms);
@@ -232,7 +232,7 @@ describe('AdminCourseManagement Page', () => {
 
     expect(courseManagementApi.getAllCoursesFullDetails).toHaveBeenCalledTimes(1);
     expect(courseManagementApi.getDepartments).toHaveBeenCalledTimes(1);
-    expect(courseManagementApi.getTerms).toHaveBeenCalledTimes(1);
+    expect(courseManagementApi.getActiveTerms).toHaveBeenCalledTimes(1); // Changed from getTerms to getActiveTerms
     expect(courseManagementApi.getInstructors).toHaveBeenCalledTimes(1);
 
     expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
