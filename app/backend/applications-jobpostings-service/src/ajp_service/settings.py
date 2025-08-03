@@ -146,7 +146,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10MB
 
 # Allowed file types for documents
-ALLOWED_DOCUMENT_TYPES = ['pdf', 'doc', 'docx']
+ALLOWED_DOCUMENT_TYPES = ['pdf', 'doc', 'docx', 'jpeg', 'jpg', 'png']
 
 
 

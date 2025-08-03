@@ -464,16 +464,16 @@ export const fetchApplicationDocuments = async (applicationId) => {
       throw new Error("No authentication token available");
     }
 
-    console.log("fetching documents");
+    //console.log("fetching documents");
 
-    console.log("Auth headers for document fetch:", getAuthHeaders());
+    //console.log("Auth headers for document fetch:", getAuthHeaders());
 
     const response = await instance.get(
       `/ajp/documents/by-application/${applicationId}/`,
       { headers }
     );
 
-    console.log("here's the response", response.data);
+    // console.log("here's the response", response.data);
 
     return response.data;
   } catch (error) {

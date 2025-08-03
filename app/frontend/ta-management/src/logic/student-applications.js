@@ -205,7 +205,7 @@ export const submitApplication = async ({
       status: "submitted",
     };
 
-    console.log("here's application data:", applicationData);
+    //console.log("here's application data:", applicationData);
     // Prepare dynamic responses data
     const responsesData = formatDynamicResponsesForSubmission(
       allResponses,
@@ -401,7 +401,7 @@ export const submitSupportingDocuments = async (applicationId, documents) => {
 
       // Only append the file and application fields
       // The serializer will auto-populate file_name, file_type, and file_size
-      console.log("Is file valid:", doc.file instanceof File); // should be true
+      //console.log("Is file valid:", doc.file instanceof File); // should be true
 
       formData.append("file", doc.file);
       formData.append("application", applicationId);
@@ -409,12 +409,12 @@ export const submitSupportingDocuments = async (applicationId, documents) => {
       // console.log("DOC TYPE CHECK", doc instanceof File); // should be true
 
       // Debug logging
-      console.log("Uploading document:", {
-        name: doc.name,
-        size: doc.size,
-        type: doc.type,
-        applicationId: applicationId,
-      });
+      // console.log("Uploading document:", {
+      //   name: doc.name,
+      //   size: doc.size,
+      //   type: doc.type,
+      //   applicationId: applicationId,
+      // });
 
       return instance.post("/ajp/documents/", formData, {
         headers: uploadHeaders,
@@ -422,10 +422,10 @@ export const submitSupportingDocuments = async (applicationId, documents) => {
     });
 
     const responses = await Promise.all(uploadPromises);
-    console.log(
-      "Documents submitted successfully:",
-      responses.map((r) => r.data)
-    );
+    // console.log(
+    //   "Documents submitted successfully:",
+    //   responses.map((r) => r.data)
+    // );
     return responses.map((r) => r.data);
   } catch (error) {
     console.error(

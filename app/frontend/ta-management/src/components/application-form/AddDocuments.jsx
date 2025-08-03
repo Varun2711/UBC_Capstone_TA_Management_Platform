@@ -50,7 +50,7 @@ export default function AddDocuments({
   documents = [],
   setDocuments,
   maxFiles = 5,
-  acceptedTypes = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx",
+  acceptedTypes = ".pdf, .doc, .docx, .jpg, .jpeg, .png",
   maxFileSize = 10 * 1024 * 1024, // 10MB in bytes
 }) {
   const [dragOver, setDragOver] = useState(false);
@@ -315,12 +315,9 @@ export default function AddDocuments({
 
       {/* Help Text */}
       <div className="text-xs text-gray-500 space-y-1">
-        <p>
-          • Accepted file types: PDF, Word documents, Excel spreadsheets, Images
-        </p>
+        <p>• Accepted file types: PDF, Word documents, JPG, PNG</p>
         <p>• Maximum file size: {formatFileSize(maxFileSize)} per file</p>
         <p>• You can upload up to {maxFiles} documents total</p>
-        <p>• Documents are optional but may strengthen your application</p>
       </div>
     </div>
   );
