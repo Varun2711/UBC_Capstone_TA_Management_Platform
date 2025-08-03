@@ -1,6 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import OfferViewSet, AssignmentViewSet, ShortlistedApplicantViewSet, api_root, CourseAllocationActionsViewSet, SharedSessionAllocationActionsViewSet
+from .views import (
+    api_root,
+    ShortlistedApplicantViewSet,
+    OfferViewSet,
+    AssignmentViewSet,
+    CourseAllocationActionsViewSet,
+    SharedSessionAllocationActionsViewSet
+)
 
 router = DefaultRouter()
 router.register(r'offers', OfferViewSet, basename='offer')

@@ -20,7 +20,7 @@ from .models import (
     Offer, Assignment, Student, TAScheduler, Instructor, Application, ApplicationShortList,
     CourseOffering, SharedSession, Course, OfferItem, AssignmentModification, TimeSlot
 )
-from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer, AssignmentModificationSerializer
+from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer, AssignmentModificationSerializer, StudentSerializer
 
 # Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
@@ -1170,8 +1170,8 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         """
         if self.action in ['list', 'retrieve', 'my_assignments', 'by_instructor', 'tas_by_offering']:
             return [IsAuthenticatedUser()]  # All authenticated users can view (filtered by get_queryset)
-        elif self.action in ['create', 'update', 'partial_update', 'destroy', 'active_assignments']:
-            return [IsSchedulerOrAdmin()]  # Only schedulers/admins can modify
+        elif self.action in ['create', 'update', 'partial_update', 'destroy', 'active_assignments', 'assigned_students', 'by_student']:
+            return [IsSchedulerOrAdmin()]  # Only schedulers/admins can modify or access special views
         return [IsAuthenticatedUser()]
     
     def get_queryset(self):
@@ -1261,6 +1261,52 @@ class AssignmentViewSet(viewsets.ModelViewSet):
             }
         })
     
+    @action(detail=False, methods=['get'], url_path='assigned_students')
+    def assigned_students(self, request):
+        """
+        Get a list of all students with at least one active assignment.
+        Accessible only by Schedulers and Admins.
+        """
+        # Get IDs of students with active assignments
+        assigned_student_ids = Assignment.objects.filter(is_active=True).values_list('student_id', flat=True).distinct()
+
+        # Get student objects
+        students = Student.objects.filter(id__in=assigned_student_ids).order_by('name')
+
+        # Serialize the student data
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='by_student')
+    def by_student(self, request):
+        """
+        Get all assignments for a specific student by their student number.
+        Accessible only by Schedulers and Admins.
+        Usage: /api/allocations/assignments/by_student/?student_number=20241004
+        """
+        student_number = request.query_params.get('student_number')
+
+        if not student_number:
+            return Response(
+                {'error': 'Please provide a student_number.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        assignments = Assignment.objects.filter(
+            student__student_number=student_number
+        ).select_related(
+            'student', 'course', 'course_offering', 'shared_session'
+        )
+
+        if not assignments.exists():
+            return Response(
+                {'message': 'No assignments found for the specified student.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.get_serializer(assignments, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'])
     def by_instructor(self, request):
         """Get assignments for courses taught by the current instructor"""
@@ -1533,8 +1579,10 @@ def api_root(request):
             # Assignments Management
             'assignments': '/api/allocations/assignments/',
             'active_assignments': '/api/allocations/assignments/active_assignments/',
+            'assigned_students': '/api/allocations/assignments/assigned_students/', # For schedulers/admins
             'my_assignments': '/api/allocations/assignments/my_assignments/',  #  For students
             'by_instructor': '/api/allocations/assignments/by_instructor/',  # ← For instructors
+            'by_student': '/api/allocations/assignments/by_student/{student_number}',  # ← For schedulers/admins
             'tas_by_offering': '/api/allocations/assignments/tas_by_offering/',
 
             # Assignment Modifications
@@ -1551,7 +1599,7 @@ def api_root(request):
         },
         'authentication': 'Required for all endpoints except root',
         'permissions': {
-            'schedulers': 'Can create offers, view all offers, manage assignments',
+            'schedulers': 'Can create offers, view all offers, manage assignments, view all student assignments',
             'students': 'Can view own offers, respond to offers, view own assignments',  # ← Updated
             'instructors': 'Can view assignments for their courses',  # ← instructors can view assignments
             'admins': 'Full access to all endpoints'
