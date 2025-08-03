@@ -1728,5 +1728,233 @@
       "created_at": "2024-12-01T10:00:00Z",
       "updated_at": "2024-12-01T10:00:00Z"
     }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 1,
+    "fields": {
+      "offer": 1,
+      "student": 1,
+      "course": 3,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440101",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440003",
+      "role": "ta",
+      "assigned_date": "2024-12-02T09:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Primary assignment for COSC 121 section 001 - Monday 10:00-11:00",
+      "created_at": "2024-12-02T09:00:00Z",
+      "updated_at": "2024-12-02T09:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 2,
+    "fields": {
+      "offer": null,
+      "student": 1,
+      "course": 3,
+      "course_offering": null,
+      "shared_session": "550e8400-e29b-41d4-a716-446655440201",
+      "time_slot": "550e8400-e29b-41d4-a716-446655440001",
+      "role": "ta",
+      "assigned_date": "2024-12-02T09:15:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Lab assignment for COSC 121 L01 - Monday 08:00-09:00",
+      "created_at": "2024-12-02T09:15:00Z",
+      "updated_at": "2024-12-02T09:15:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 3,
+    "fields": {
+      "offer": null,
+      "student": 1,
+      "course": 4,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440102",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440007",
+      "role": "ta",
+      "assigned_date": "2024-12-02T10:30:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Additional assignment for COSC 211 section 001 - Wednesday 08:00-09:00",
+      "created_at": "2024-12-02T10:30:00Z",
+      "updated_at": "2024-12-02T10:30:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 4,
+    "fields": {
+      "offer": null,
+      "student": 1,
+      "course": 9,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440107",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440013",
+      "role": "ta",
+      "assigned_date": "2024-12-02T11:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Cross-department assignment for MATH 100 section 001 - Friday 08:00-09:00",
+      "created_at": "2024-12-02T11:00:00Z",
+      "updated_at": "2024-12-02T11:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 5,
+    "fields": {
+      "offer": null,
+      "student": 2,
+      "course": 5,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440103",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440010",
+      "role": "ta",
+      "assigned_date": "2024-12-03T14:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Software Engineering course assignment - Thursday 08:00-09:00",
+      "created_at": "2024-12-03T14:00:00Z",
+      "updated_at": "2024-12-03T14:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 6,
+    "fields": {
+      "offer": null,
+      "student": 2,
+      "course": 6,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440104",
+      "shared_session": null,
+      "time_slot": null,
+      "role": "ta",
+      "assigned_date": "2024-12-03T14:30:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Data Structures and Algorithms assignment - flexible scheduling",
+      "created_at": "2024-12-03T14:30:00Z",
+      "updated_at": "2024-12-03T14:30:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 7,
+    "fields": {
+      "offer": null,
+      "student": 2,
+      "course": 7,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440105",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440004",
+      "role": "ta",
+      "assigned_date": "2024-12-03T15:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Database Systems course - Tuesday 08:00-09:00",
+      "created_at": "2024-12-03T15:00:00Z",
+      "updated_at": "2024-12-03T15:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 8,
+    "fields": {
+      "offer": null,
+      "student": 3,
+      "course": 1,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440113",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440014",
+      "role": "ta",
+      "assigned_date": "2024-12-04T10:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Introduction to Programming section 002 - Friday 09:00-10:00",
+      "created_at": "2024-12-04T10:00:00Z",
+      "updated_at": "2024-12-04T10:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 9,
+    "fields": {
+      "offer": null,
+      "student": 3,
+      "course": 2,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440114",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440001",
+      "role": "ta",
+      "assigned_date": "2024-12-04T10:30:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Data Structures and Algorithms section 002 - Monday 08:00-09:00",
+      "created_at": "2024-12-04T10:30:00Z",
+      "updated_at": "2024-12-04T10:30:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 10,
+    "fields": {
+      "offer": null,
+      "student": 3,
+      "course": 4,
+      "course_offering": null,
+      "shared_session": "550e8400-e29b-41d4-a716-446655440203",
+      "time_slot": "550e8400-e29b-41d4-a716-446655440007",
+      "role": "ta",
+      "assigned_date": "2024-12-04T11:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Machine Architecture lab L01 - Wednesday 08:00-09:00",
+      "created_at": "2024-12-04T11:00:00Z",
+      "updated_at": "2024-12-04T11:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 11,
+    "fields": {
+      "offer": null,
+      "student": 4,
+      "course": 9,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440107",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440015",
+      "role": "ta",
+      "assigned_date": "2024-12-05T09:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Math 100 Differential Calculus - Friday 10:00-11:00",
+      "created_at": "2024-12-05T09:00:00Z",
+      "updated_at": "2024-12-05T09:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 12,
+    "fields": {
+      "offer": null,
+      "student": 4,
+      "course": 12,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440110",
+      "shared_session": null,
+      "time_slot": "550e8400-e29b-41d4-a716-446655440008",
+      "role": "ta",
+      "assigned_date": "2024-12-05T09:30:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Matrix Algebra course - Wednesday 09:00-10:00",
+      "created_at": "2024-12-05T09:30:00Z",
+      "updated_at": "2024-12-05T09:30:00Z"
+    }
   }
 ]
