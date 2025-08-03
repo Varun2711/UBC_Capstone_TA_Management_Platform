@@ -5,6 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import sys
+from corsheaders.defaults import default_headers
+
 
 load_dotenv('../../.env')
 
@@ -20,7 +22,13 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "nginx",
+    "application-service",    # the internal Docker name for this Django service
+]
 
 # Application definition
 INSTALLED_APPS = [    
@@ -50,8 +58,29 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    'http://localhost',
+    "http://localhost:8080",     
+    "http://127.0.0.1:8080",     
+    'http://nginx',
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+    "http://localhost:8080",   
+    "http://127.0.0.1",
+    "http://127.0.0.1:8080",   
+    "http://nginx",
+] 
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'X-Requested-With',
+    'Content-Type',
+    'Authorization',
+]
+
 
 ROOT_URLCONF = 'ajp_service.urls'
 

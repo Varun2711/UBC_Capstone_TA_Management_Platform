@@ -347,7 +347,7 @@ class Document(models.Model):
     application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True,blank=True, db_constraint=False)
     file_name = models.CharField(max_length=255)
-    file_type = models.CharField(max_length=50)
+    file_type = models.CharField(max_length=150)
     file_size = models.IntegerField()
     file = models.FileField(upload_to='applications/%Y/%m/')     
     uploaded_at = models.DateField(auto_now_add=True)

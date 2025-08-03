@@ -14,6 +14,8 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.views.decorators.csrf import csrf_exempt
+
 # Import shared auth utilities
 from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsStudentUser
 
@@ -276,7 +278,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     
         return Response(serializer.data)
 
-
+    @csrf_exempt
     @action(detail=False, methods=['post'], permission_classes=[IsStudentUser])
     def submit_with_responses(self, request):
         """Submit application with dynamic form responses in one call"""

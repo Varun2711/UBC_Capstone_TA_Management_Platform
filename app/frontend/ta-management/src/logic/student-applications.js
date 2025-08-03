@@ -212,7 +212,7 @@ export const submitApplication = async ({
     if (supportingDocs.length > 0) {
       try {
         await submitSupportingDocuments(
-          applicationResponse.data.id,
+          response.data.application_id,
           supportingDocs
         );
         //  console.log("Supporting documents submitted successfully");
@@ -356,21 +356,42 @@ export const handleFormSubmission = async (submissionData) => {
 export const submitSupportingDocuments = async (applicationId, documents) => {
   try {
     const headers = getAuthHeaders();
-    const documentData = {
-      applicationId,
-      supportingDocuments: documents.map((doc) => ({
+
+    // Remove Content-Type from headers to let browser set it for FormData
+    const uploadHeaders = { ...headers };
+    delete uploadHeaders["Content-Type"];
+
+    const uploadPromises = documents.map(async (doc) => {
+      const formData = new FormData();
+
+      // Only append the file and application fields
+      // The serializer will auto-populate file_name, file_type, and file_size
+      console.log("Is file valid:", doc.file instanceof File); // should be true
+
+      formData.append("file", doc.file);
+      formData.append("application", applicationId);
+
+      // console.log("DOC TYPE CHECK", doc instanceof File); // should be true
+
+      // Debug logging
+      console.log("Uploading document:", {
         name: doc.name,
         size: doc.size,
         type: doc.type,
-        // Add other document properties as needed
-      })),
-    };
+        applicationId: applicationId,
+      });
 
-    const response = await instance.post("/ajp/documents/", documentData, {
-      headers,
+      return instance.post("/ajp/documents/", formData, {
+        headers: uploadHeaders,
+      });
     });
-    // console.log("Documents submitted successfully:", response.data);
-    return response.data;
+
+    const responses = await Promise.all(uploadPromises);
+    console.log(
+      "Documents submitted successfully:",
+      responses.map((r) => r.data)
+    );
+    return responses.map((r) => r.data);
   } catch (error) {
     console.error(
       "Error submitting documents:",

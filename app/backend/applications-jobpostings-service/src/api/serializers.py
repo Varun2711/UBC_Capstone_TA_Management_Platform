@@ -363,7 +363,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             'document_id', 'application', 'student',
             'file_name', 'file_type', 'file_size', 'file', 'uploaded_at'
         ]
-        read_only_fields = ['document_id', 'uploaded_at']
+        read_only_fields = ['document_id', 'uploaded_at', 'file_name', 'file_size', 'file_type']
 
     def validate_file(self, file):
         # File extension check
@@ -384,8 +384,8 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         file = validated_data.get("file")
-        if file:
-            validated_data["file_name"] = file.name
-            validated_data["file_type"] = file.content_type
+        if file:           
+            validated_data["file_name"] = file.name[:255]
+            validated_data["file_type"] = (file.content_type or "unknown")[:100]
             validated_data["file_size"] = file.size
         return super().create(validated_data)
