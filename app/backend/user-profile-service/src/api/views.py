@@ -452,22 +452,23 @@ def find_user(request):
                 "user": serializer.data,
                 "type": found_type
             }))
+        else:
+            # If searching by email and not found, exit immediately
+            return Response(error_response("User not found"), status=status.HTTP_404_NOT_FOUND)
     
     # Search by student number
     if student_number:
-        user = get_user_by_id(student_number, 'student')
-        if user:
-            if user_type and user_type != 'student':
-                return Response(
-                    error_response(f"User found but is student, not {user_type}"),
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
+        try:
+            user = Student.objects.get(student_number=student_number)
+            # ... (rest of the success logic is fine)
             log_user_activity('student', student_number, 'profile_searched')
             return Response(success_response({
                 "user": StudentSerializer(user).data,
                 "type": "student"
             }))
+        except Student.DoesNotExist:
+            # If searching by student_number and not found, exit immediately
+            return Response(error_response("User not found"), status=status.HTTP_404_NOT_FOUND)
     
     # Search by employee number
     if employee_number:
@@ -501,6 +502,7 @@ def find_user(request):
                     "type": "admin"
                 }))
     
+    # If we reach here, it means a specific search was attempted and failed, or no valid param was given.
     # No parameters provided
     if not email and not student_number and not employee_number:
         return Response(
@@ -508,7 +510,7 @@ def find_user(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # User not found
+    # User not found (this is now a fallback)
     return Response(
         error_response("User not found"),
         status=status.HTTP_404_NOT_FOUND

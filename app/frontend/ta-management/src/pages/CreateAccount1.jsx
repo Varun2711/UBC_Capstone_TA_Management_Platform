@@ -79,21 +79,24 @@ export default function CreateAccount1() {
 
   // Check for duplicate student number using find-user endpoint
   try {
-    const response = await axios.get(`${API_URL}/find-user/`, {
+    const response = await axios.get(`${API_URL}/api/profile/find-user/`, {
       params: { student_number: studentNumber },
     });
 
-    // If the request succeeds and returns data, the student number exists
-    if (response.data && response.status === 200) {
-      // The endpoint returned a user, so it's a duplicate
+    // If the request succeeds and the user is found, it's a duplicate
+    if (response.data && response.data.success) {
       setError("This UBC student number is already registered.");
       return;
     }
+    // If response.data.success is false, the user does not exist, so we can proceed.
+
   } catch (err) {
+    // The backend should not return a 404 for a non-existent user, but we handle it just in case.
     if (err.response?.status === 404) {
-      // 404 = No user found, student number is available - this is what we want
-      // Continue with the flow
+      // 404 = No user found, student number is available.
+      // This is a valid state to continue.
     } else {
+      // Handle other potential network or server errors
       console.error("Error checking student number:", err);
       setError("Failed to validate student number. Please try again.");
       return;
