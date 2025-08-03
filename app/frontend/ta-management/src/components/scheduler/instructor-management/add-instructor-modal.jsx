@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,8 +98,11 @@ export function AddInstructorModal({ isOpen, onClose, onDataChange, existingInst
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add New Instructor</DialogTitle>
+          <DialogDescription>
+            Fill in the details for the new instructor.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+        <form onSubmit={handleSubmit} className="space-y-4 py-2" noValidate>
           {error && (
             <div className="flex items-center bg-red-50 border border-red-200 text-red-700 p-3 rounded-md">
               <AlertCircle className="h-5 w-5 mr-2" />
