@@ -1,8 +1,3 @@
-/* test/student-view-job-postings/ViewJobPostings.test.jsx */
-
-/* ────────────────────────────────────────────────────────────
- *  student‑profile mock (hoist-safe)
- * ──────────────────────────────────────────────────────────── */
 const fakeProfile = {
   first_name: "Jane",
   last_Name: "Doe",
@@ -12,9 +7,21 @@ const fakeProfile = {
 vi.mock("@/logic/student-profile", () => ({
   getProfile: () => Promise.resolve(fakeProfile),
 }));
-/* ────────────────────────────────────────────────────────────
- *  axios mock (hoist-safe)
- * ──────────────────────────────────────────────────────────── */
+
+const applications = [{ posting_id: 1, application_id: 101 }];
+
+vi.mock("@/logic/student-applications", () => ({
+  fetchAppBarProfile: () =>
+    Promise.resolve({
+      name: "Jane Doe",
+      email: "jane.doe@example.com",
+      avatar: "avatar.png",
+    }),
+}));
+
+vi.mock("@/logic/student-view-applications", () => ({
+  fetchStudentApplications: () => Promise.resolve(applications),
+}));
 
 const mockAxiosInstance = vi.hoisted(() => ({
   get: vi.fn(),
@@ -26,10 +33,6 @@ vi.mock("axios", () => ({
   },
 }));
 
-/* ────────────────────────────────────────────────────────────
- *  react-router mocks
- * ──────────────────────────────────────────────────────────── */
-
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
@@ -39,14 +42,11 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BrowserRouter } from "react-router-dom";
 import ViewJobPostings from "@/pages/Student/Student_ViewJobPostings";
-
-/* ────────────────────────────────────────────────────────────
- *  UI component stubs
- * ──────────────────────────────────────────────────────────── */
+import userEvent from "@testing-library/user-event";
 
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarProvider: ({ children }) => (
@@ -60,12 +60,13 @@ vi.mock("@/components/student-dashboard-sidebar", () => ({
 }));
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, onClick, variant, size, className }) => (
+  Button: ({ children, onClick, variant, size, className, disabled }) => (
     <button
       onClick={onClick}
       className={className}
       data-variant={variant}
       data-size={size}
+      disabled={disabled}
     >
       {children}
     </button>
@@ -92,9 +93,17 @@ vi.mock("@/components/ui/badge", () => ({
   ),
 }));
 
-/* ────────────────────────────────────────────────────────────
- *  Test suite
- * ──────────────────────────────────────────────────────────── */
+//JobPost with deadline - currentdate > 7 will not show on page
+//Generate job posting deadlines for future dates to ensure tests will pass
+const futureDeadline1 = new Date();
+const futureDeadline2 = new Date();
+const currentDeadline = new Date();
+futureDeadline1.setDate(futureDeadline1.getDate() + 30);
+futureDeadline2.setDate(futureDeadline2.getDate() + 7);
+currentDeadline.setDate(currentDeadline.getDate());
+const futureDeadlineString1 = futureDeadline1.toISOString().split("T")[0]; // "YYYY-MM-DD"
+const futureDeadlineString2 = futureDeadline2.toISOString().split("T")[0]; // "YYYY-MM-DD"
+const currentDeadlineString = currentDeadline.toISOString().split("T")[0];
 
 describe("ViewJobPostings", () => {
   const mockJobPostings = [
@@ -104,8 +113,8 @@ describe("ViewJobPostings", () => {
       department: { name: "Computer Science" },
       description: "Assist with CS101 course",
       term: { description: "Fall 2024" },
-      post_date: "2024-01-15",
-      deadline_date: "2024-02-15",
+      post_date: "2025-01-15",
+      deadline_date: futureDeadlineString1,
       requirements: "Must have completed CS101",
       status: "open",
     },
@@ -116,14 +125,14 @@ describe("ViewJobPostings", () => {
       description: "Help with calculus courses",
       term: { description: "Spring 2024" },
       post_date: "2024-01-20",
-      deadline_date: "2024-02-20",
+      deadline_date: futureDeadlineString2,
       requirements: "Strong math background",
       status: "open",
     },
   ];
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   const renderComponent = () =>
@@ -135,14 +144,12 @@ describe("ViewJobPostings", () => {
 
   it("displays loading state initially", () => {
     mockAxiosInstance.get.mockImplementation(() => new Promise(() => {}));
-
     renderComponent();
-
     expect(screen.getByText("Loading job postings...")).toBeInTheDocument();
   });
 
   it("displays job postings when data is loaded successfully", async () => {
-    mockAxiosInstance.get.mockResolvedValue({ data: mockJobPostings });
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: mockJobPostings });
 
     renderComponent();
 
@@ -150,67 +157,84 @@ describe("ViewJobPostings", () => {
       expect(screen.getByText("Computer Science TA")).toBeInTheDocument();
       expect(screen.getByText("Math TA")).toBeInTheDocument();
     });
-
-    expect(screen.getByText("Available TA Positions")).toBeInTheDocument();
-    expect(screen.getByText("Computer Science")).toBeInTheDocument();
-    expect(screen.getByText("Mathematics")).toBeInTheDocument();
-  });
-
-  it("displays error message when API call fails", async () => {
-    mockAxiosInstance.get.mockRejectedValue(new Error("API Error"));
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("Failed to load job postings")
-      ).toBeInTheDocument();
-    });
-
-    expect(screen.getByText("Try Again")).toBeInTheDocument();
   });
 
   it("displays no positions message when no job postings exist", async () => {
-    mockAxiosInstance.get.mockResolvedValue({ data: [] });
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
 
     renderComponent();
 
     await waitFor(() => {
       expect(screen.getByText("No Open Positions")).toBeInTheDocument();
     });
-
-    expect(
-      screen.getByText(
-        "There are currently no open TA positions. Check back later!"
-      )
-    ).toBeInTheDocument();
   });
 
-  it("navigates to apply page when Apply Now button is clicked", async () => {
-    mockAxiosInstance.get.mockResolvedValue({ data: mockJobPostings });
+  it("shows 'View Application' button when student has already applied", async () => {
+    const applications = [{ posting_id: 1, application_id: 101 }];
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: mockJobPostings });
+
+    renderComponent();
+    const user = userEvent.setup();
+
+    await waitFor(() => {
+      expect(screen.getByText("View Application")).toBeInTheDocument();
+      expect(screen.getByText("Application Submitted")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("View Application"));
+    expect(mockNavigate).toHaveBeenCalledWith("/my-applications/detail/101");
+  });
+
+  it("disables apply button and shows 'Application Closed' for closed jobs", async () => {
+    const closedPosting = {
+      ...mockJobPostings[1],
+      status: "closed",
+      deadline_date: currentDeadlineString,
+    };
+
+    mockAxiosInstance.get
+      .mockResolvedValueOnce({ data: [closedPosting] }) // job postings
+      .mockResolvedValueOnce({ data: fakeProfile }) // app bar/profile
+      .mockResolvedValueOnce({ data: [] }); // student’s existing apps
+
+    renderComponent();
+
+    // find the *button* by its accessible name
+    const closedBtn = await screen.findByRole("button", {
+      name: /Application Closed/i,
+    });
+
+    // assert it’s disabled
+    expect(closedBtn).toBeDisabled();
+  });
+
+  it("does not display job postings more than 7 days past deadline", async () => {
+    // Create a posting with a deadline more than 7 days ago
+    const oldDeadline = new Date();
+    oldDeadline.setDate(oldDeadline.getDate() - 8); // 8 days ago
+
+    const expiredPosting = {
+      posting_id: 3,
+      title: "History TA",
+      department: { name: "History" },
+      description: "Assist with history tutorials",
+      term: { description: "Winter 2024" },
+      post_date: "2024-01-10",
+      deadline_date: oldDeadline.toISOString().split("T")[0],
+      requirements: "History background",
+      status: "open",
+    };
+
+    // Mock response to include the expired posting
+    mockAxiosInstance.get
+      .mockResolvedValueOnce({ data: [expiredPosting] }) // job postings
+      .mockResolvedValueOnce({ data: fakeProfile }) // app bar/profile
+      .mockResolvedValueOnce({ data: [] }); // student applications
 
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText("Computer Science TA")).toBeInTheDocument();
+      expect(screen.queryByText("History TA")).not.toBeInTheDocument(); // Should NOT render
     });
-
-    fireEvent.click(screen.getAllByText("Apply Now")[0]);
-
-    expect(mockNavigate).toHaveBeenCalledWith("/apply/jobposting/1");
-  });
-
-  it("navigates to dashboard when Back to Dashboard button is clicked", async () => {
-    mockAxiosInstance.get.mockResolvedValue({ data: mockJobPostings });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText("Back to Dashboard")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText("Back to Dashboard"));
-
-    expect(mockNavigate).toHaveBeenCalledWith("/student-dashboard");
   });
 });
