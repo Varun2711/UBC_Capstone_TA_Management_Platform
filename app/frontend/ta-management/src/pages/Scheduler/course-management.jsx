@@ -32,6 +32,7 @@ import {
   updateSharedSession,
   deleteSharedSession,
   getTerms,
+  getActiveTerms,
   getDepartments,
   getInstructors,
   mapCourseData,
@@ -78,11 +79,11 @@ export default function CourseManagement() {
         setLoading(true)
         setError(null)
 
-        // Load all required data in parallel
+        // Load all required data in parallel - USE ACTIVE TERMS ONLY
         const [coursesData, departmentsData, termsData, instructorsData] = await Promise.all([
           getAllCoursesFullDetails(),
           getDepartments(),
-          getTerms(),
+          getActiveTerms(), // Changed from getTerms() to getActiveTerms()
           getInstructors()
         ])
 

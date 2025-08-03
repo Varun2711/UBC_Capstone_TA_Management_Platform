@@ -414,7 +414,24 @@ export const handleOfferingSubmission = async (courseId, offeringData, terms, is
       return await createCourseOffering(submitData);
     }
   } catch (error) {
-    console.error("Error handling offering submission:", error);
     throw error;
   }
+};
+
+/**
+ * Fetches only active terms (Updated to use the existing getActiveTerms function)
+ */
+export const getActiveTermsForDropdowns = async () => {
+  const response = await axios.get(`${COURSE_TERM_API_URL}/terms/?is_active=true`, {
+    headers: getAuthHeaders()
+  });
+  return response.data.results || [];
+};
+
+/**
+ * Alternative: Filter terms on frontend if backend doesn't support is_active filter
+ */
+export const getFilteredActiveTerms = async () => {
+  const allTerms = await getTerms();
+  return allTerms.filter(term => term.is_active === true);
 };

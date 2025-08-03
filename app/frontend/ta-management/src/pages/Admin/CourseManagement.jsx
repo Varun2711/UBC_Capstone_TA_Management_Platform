@@ -31,7 +31,7 @@ import {
   createSharedSession,
   updateSharedSession,
   deleteSharedSession,
-  getTerms,
+  getActiveTerms,
   getDepartments,
   getInstructors,
   mapCourseData,
@@ -78,11 +78,11 @@ export default function AdminCourseManagement() {
         setLoading(true)
         setError(null)
 
-        // Load all required data in parallel
+        // Load all required data in parallel - USE ACTIVE TERMS ONLY
         const [coursesData, departmentsData, termsData, instructorsData] = await Promise.all([
           getAllCoursesFullDetails(),
           getDepartments(),
-          getTerms(),
+          getActiveTerms(), // Changed from getTerms() to getActiveTerms()
           getInstructors()
         ])
 
@@ -96,7 +96,6 @@ export default function AdminCourseManagement() {
         setTerms(mappedTerms)
         setInstructors(mappedInstructors)
       } catch (err) {
-        console.error("Failed to load course management data:", err)
         setError("Failed to load data. Please try again.")
       } finally {
         setLoading(false)
