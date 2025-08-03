@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { fetchCourseOfferingDetails, editOffer, sendOffer } from "@/logic/coordinator-allocations-page";
+import { fetchCourseOfferingDetails, editOffer, sendOffer, deleteOffer } from "@/logic/coordinator-allocations-page";
 
 const AddedOffersTab = ({
   offers,
@@ -18,26 +18,28 @@ const AddedOffersTab = ({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState(null); // { offerId, itemIndex }
   const [courseOfferingDetails, setCourseOfferingDetails] = useState({});
+  const [isDeleting, setIsDeleting] = useState(false); // Add a loading state
+  const [responseDeadline, setResponseDeadline] = useState(""); // State for the date input
 
-  // Declare the function inside the component
-  const generateResponseDeadline = () => {
-    const now = new Date();
-    // Add 7 days to the current date
-    now.setDate(now.getDate() + 7);
+  const formatTimeSlots = (timeSlotData) => {
+    if (!timeSlotData) return "";
 
-    // Set the time to 23:59:59 UTC
-    now.setUTCHours(23);
-    now.setUTCMinutes(59);
-    now.setUTCSeconds(59);
-    now.setUTCMilliseconds(0); // Ensure milliseconds are zeroed out
+    const slots = Array.isArray(timeSlotData) ? timeSlotData : [timeSlotData];
+    if (slots.length === 0) return "";
 
-    // Format to ISO string and append 'Z' for UTC
-    return now.toISOString().slice(0, 19) + 'Z';
+    const dayAbbreviations = {
+      'Monday': 'M', 'Tuesday': 'T', 'Wednesday': 'W', 'Thursday': 'Th', 'Friday': 'F'
+    };
+
+    const formattedSlots = slots.map(slot => {
+      const dayAbbr = dayAbbreviations[slot.day] || slot.day.slice(0, 2);
+      const startTime = slot.start_time.slice(0, 5);
+      const endTime = slot.end_time.slice(0, 5);
+      return `${dayAbbr} ${startTime}-${endTime}`;
+    });
+
+    return ` | ${formattedSlots.join(', ')}`;
   };
-
-  // Initialize responseDeadline with the generated value
-  const [responseDeadline, setResponseDeadline] = useState(generateResponseDeadline());
-  console.log("responseDeadline in AddedOffersTab: ", responseDeadline);
 
   const openConfirmDialog = (offerId, itemIndex) => {
     setOfferToDelete({ offerId, itemIndex });
@@ -46,61 +48,61 @@ const AddedOffersTab = ({
 
   const confirmDelete = async () => {
     if (!offerToDelete) return;
+    setIsDeleting(true); // Set loading state to true
     const { offerId, itemIndex } = offerToDelete;
 
-    // Find the specific offer being modified
     const offerToModify = offers.find((o) => o.offer_id === offerId);
     if (!offerToModify) {
       console.error("Could not find the offer to modify.");
       setShowConfirmDialog(false);
-      setOfferToDelete(null);
+      setIsDeleting(false);
       return;
     }
 
-    // Create the updated list of items by filtering out the one to be deleted
-    const updatedOfferItems = offerToModify.offer_items.filter((_, idx) => idx !== itemIndex);
+    const remainingItems = offerToModify.offer_items.filter((_, idx) => idx !== itemIndex);
 
-    // Prepare the data payload for the API
-    const dataToUpdate = {
-      offer_items: updatedOfferItems.map(item => ({
-        // Re-construct the payload to ensure it matches what the backend expects
+    const payloadItems = remainingItems.map(item => {
+      const basePayload = {
         item_type: item.item_type,
-        course_offering_id: item.course_offering_id,
-        shared_session_id: item.shared_session_id,
-        time_slot: item.time_slot, // Ensure this is in the correct format if needed
-      })),
-      notes: offerToModify.notes, // Preserve existing notes
-    };
+        course_offering_id: item.course_offering_id || null,
+        shared_session_id: item.shared_session_id || null,
+      };
 
-    setShowConfirmDialog(false);
-    setOfferToDelete(null);
+      if (item.time_slot) {
+        const slot = Array.isArray(item.time_slot) ? item.time_slot[0] : item.time_slot;
+        if (slot) {
+          basePayload.time_slot = {
+            day: slot.day_code || (slot.day ? slot.day.toLowerCase() : ''),
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+          };
+        }
+      }
+      return basePayload;
+    });
 
     try {
-      // If there are still items left, call editOffer.
-      // If not, the backend should handle deleting the offer if it's empty,
-      // or you could call a deleteOffer function here instead.
-      if (updatedOfferItems.length > 0) {
-        console.log("Calling editOffer to update items...");
-        await editOffer(offerId, dataToUpdate);
+      if (payloadItems.length === 0) {
+        await deleteOffer(offerId);
       } else {
-        // Optional: If the offer is now empty, you might want to delete it entirely.
-        // This depends on your application's logic.
-        // For now, we'll just update it to be empty.
-        console.log("Offer is now empty, updating with no items...");
-        await editOffer(offerId, dataToUpdate);
+        await editOffer(offerId, { offer_items: payloadItems });
       }
 
-      // Refresh the offers from the backend to ensure UI is in sync
-      await fetchAndSetOffers();
+      // This is the crucial step. Calling fetchOffers() will re-fetch the entire
+      // list of offers and update the state in the parent component,
+      // which then re-renders this component with the fresh data.
+      await fetchOffers();
 
     } catch (err) {
-      console.error("Failed to update offer after deleting an item:", err);
-      alert("An error occurred while removing the item. Please refresh and try again.");
-      // Even on error, try to refresh to get the latest state
-      await fetchAndSetOffers();
-      
+      console.error("Failed to update offer:", err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setShowConfirmDialog(false);
+      setOfferToDelete(null);
+      setIsDeleting(false); // Reset loading state
     }
   };
+
 
   const transferAddedOffersToActive = () => {
     setActiveOffers((prev) => {
@@ -128,25 +130,26 @@ const AddedOffersTab = ({
   };
 
   const handleSendOffers = async () => {
-    // Filter out offers that have no items
     const offersToSend = offers.filter((offer) => offer.status === "draft" && offer.offer_items.length > 0);
-    console.log("offersToSend: ", offersToSend);
     if (offersToSend.length === 0) {
       console.warn("No offers with items to send.");
       return;
     }
 
-    // You might want to get the response deadline from a user input here
-    // For this example, we're using a default or a state variable `responseDeadline`.
     if (!responseDeadline) {
       alert("Please set a response deadline before sending offers.");
       return;
     }
 
+    // Convert the selected date (YYYY-MM-DD) to a full ISO string for the backend.
+    // We'll set the deadline to the end of the selected day in UTC.
+    const deadlineISO = new Date(responseDeadline);
+    deadlineISO.setUTCHours(23, 59, 59, 999);
+
     for (const offer of offersToSend) {
       try {
         console.log(`Sending offer for student: ${offer.student.name} (Offer ID: ${offer.offer_id})`);
-        const response = await sendOffer(responseDeadline, offer.offer_id);
+        const response = await sendOffer(deadlineISO.toISOString(), offer.offer_id);
         console.log("Response from sendOffer:", response);
         if (response.status === "pending") {
           setActiveOffers((prev) => [...prev, response]);
@@ -227,6 +230,9 @@ const AddedOffersTab = ({
                             <span>
                               {item.course_number} - {item.course_name} (
                               {item.section_type_display} {item.section_number})
+                              <span className="text-xs text-gray-500 ml-2">
+                                {formatTimeSlots(item.time_slot)}
+                              </span>
                             </span>
                             <button
                               onClick={() => openConfirmDialog(offer.offer_id, idx)}
@@ -247,8 +253,24 @@ const AddedOffersTab = ({
         </CardContent>
       </Card>
       {offers.some((offer) => offer.status === "draft" && offer.offer_items.length > 0) && (
-        <div className="flex justify-end p-4">
-          <Button onClick={handleSendOffers}>Send Offer</Button>
+        <div className="flex justify-end items-center gap-4 p-4 border-t">
+          <div className="flex items-center gap-2">
+            <label htmlFor="deadline-date" className="text-sm font-medium">
+              Response Deadline:
+            </label>
+            <input
+              type="date"
+              id="deadline-date"
+              value={responseDeadline}
+              onChange={(e) => setResponseDeadline(e.target.value)}
+              // Set min date to today to prevent selecting past dates
+              min={new Date().toISOString().split('T')[0]}
+              className="p-2 border rounded-md text-sm"
+            />
+          </div>
+          <Button onClick={handleSendOffers} disabled={!responseDeadline}>
+            Send All Draft Offers
+          </Button>
         </div>
       )}
 
@@ -260,11 +282,11 @@ const AddedOffersTab = ({
           </DialogHeader>
           <p>Are you sure you want to delete this course offering or shared session?</p>
           <DialogFooter className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+            <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={isDeleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Yes, Delete
+            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Yes, Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

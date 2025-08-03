@@ -52,10 +52,10 @@ it("renders tab triggers", () => {
       <TAAllocationPage />
     </MemoryRouter>
   )
-  expect(screen.getByText("Allocate TAs")).toBeInTheDocument()
-  expect(screen.getByText("Added Offers")).toBeInTheDocument()
+  expect(screen.getByText("Allocate Shortlisted Applicants")).toBeInTheDocument()
+  expect(screen.getByText("Draft Offers")).toBeInTheDocument()
   expect(screen.getByText("Pending Offers")).toBeInTheDocument()
-  expect(screen.getByText("Allocated TAs")).toBeInTheDocument()
+  expect(screen.getByText("Rejected Offers")).toBeInTheDocument()
 })
 
 it("shows search input for shortlisted applicants", () => {
@@ -91,9 +91,11 @@ it("switches to the Added Offers tab", async () => {
       <TAAllocationPage />
     </MemoryRouter>
   )
-  fireEvent.click(screen.getByText("Added Offers"))
+  fireEvent.click(screen.getByText("Draft Offers"))
   await waitFor(() =>
-    expect(screen.getByText(/Added Offers/i)).toBeInTheDocument()
+    // This will look for the content inside the "Draft Offers" tab.
+    // Assuming the AddedOffersTab component contains a title or text like "Draft Offers".
+    expect(screen.getByText(/Draft Offers/i)).toBeInTheDocument()
   )
 })
 

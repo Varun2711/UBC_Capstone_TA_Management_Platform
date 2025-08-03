@@ -135,12 +135,7 @@ export const createOffer = async (dataToSend) => {
 };
 
 export const editOffer = async (offer_id, dataToUpdate) => {
-  console.log("Payload being sent to editOffer:", JSON.stringify(dataToUpdate, null, 2));
-  console.log("Offer ID in editOffer:", offer_id);
-
-  if (!dataToUpdate || !Array.isArray(dataToUpdate.offer_items)) {
-    throw new Error("Invalid payload: dataToUpdate.offer_items must be an array.");
-  }
+  console.log(`Payload being sent to editOffer for offer_id ${offer_id}:`, JSON.stringify(dataToUpdate, null, 2));
 
   const response = await fetch(`${API_URL}/allocations/offers/${offer_id}/edit_offer/`, {
     method: "PUT",
@@ -152,9 +147,9 @@ export const editOffer = async (offer_id, dataToUpdate) => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: "Failed to edit offer" }));
+    const errorData = await response.json().catch(() => response.text());
     console.error("Error from backend on editOffer:", errorData);
-    throw new Error(errorData.detail || "Failed to edit offer");
+    throw new Error(errorData?.detail || "Failed to edit offer");
   }
 
   return await response.json();

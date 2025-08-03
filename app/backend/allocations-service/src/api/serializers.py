@@ -118,11 +118,28 @@ class OfferItemSerializer(serializers.ModelSerializer):
 
     def get_time_slot(self, obj):
         """Get the specific time slot details for this item."""
-        details = obj.time_slot_details
-        # The property returns a list, we want the first (and only) item
-        if details:
-            return details[0]
-
+        # For a course offering, there is always one specific time_slot.
+        if obj.item_type == 'course_offering' and obj.time_slot:
+            return {
+                'slot_id': str(obj.time_slot.slot_id),
+                'day': obj.time_slot.get_day_display(),
+                'day_code': obj.time_slot.day,
+                'start_time': obj.time_slot.start_time.strftime('%H:%M:%S'),
+                'end_time': obj.time_slot.end_time.strftime('%H:%M:%S'),
+            }
+        # For a shared session, we return all of its associated time slots.
+        elif obj.item_type == 'shared_session' and obj.shared_session:
+            time_slots_data = []
+            for slot in obj.shared_session.time_slots.all():
+                time_slots_data.append({
+                    'slot_id': str(slot.slot_id),
+                    'day': slot.get_day_display(),
+                    'day_code': slot.day,
+                    'start_time': slot.start_time.strftime('%H:%M:%S'),
+                    'end_time': slot.end_time.strftime('%H:%M:%S'),
+                })
+            return time_slots_data
+        
         return None
 
 class OfferSerializer(serializers.ModelSerializer):

@@ -14,7 +14,8 @@ import {
   Users,
   CheckCircle,
   Eye,
-  Filter
+  Filter,
+  Lightbulb, // Import the Lightbulb icon
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -39,8 +40,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppSidebar } from "../../components/scheduler-sidebar"
 import WeeklyAvailabilityCalendar from "@/components/WeeklyAvailabilityCalendar"
 import AddedOffersTab from "@/components/scheduler/allocation-page/AddedOffersTab"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert components
 import App from "@/App"
-import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer, editOffer } from "@/logic/coordinator-allocations-page";
+import { fetchCourses, fetchOfferingsForCourse, fetchSharedSessionsForCourse, fetchShortlistedApplicants, fetchProfilesOfShortlistedApplicants, fetchOffers as apiFetchOffers, createOffer, fetchCourseOfferingDetails, fetchSharedSessionDetails, deleteOffer } from "@/logic/coordinator-allocations-page";
 
 // Mock data for TAs
 let availableTAs = [
@@ -318,6 +320,23 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
+function formatItemTimeSlot(timeSlot) {
+  if (!timeSlot) return "";
+
+  const dayAbbreviations = {
+    'Monday': 'M', 'Tuesday': 'T', 'Wednesday': 'W', 'Thursday': 'Th', 'Friday': 'F'
+  };
+
+  const day = timeSlot.day || (timeSlot.day_code ? capitalize(timeSlot.day_code) : '');
+  const dayAbbr = dayAbbreviations[day] || (day ? day.slice(0, 2) : '');
+  const startTime = timeSlot.start_time ? timeSlot.start_time.slice(0, 5) : '';
+  const endTime = timeSlot.end_time ? timeSlot.end_time.slice(0, 5) : '';
+
+  if (!dayAbbr || !startTime || !endTime) return "";
+
+  return ` | ${dayAbbr} ${startTime}–${endTime}`;
+}
+
 function convertProfileAvailabilityGridToKeys(availabilityObj) {
   const result = [];
 
@@ -401,7 +420,6 @@ export default function TAAllocationPage() {
   });
   const [courseOfferings, setCourseOfferings] = useState({});
   const [sharedSessions, setSharedSessions] = useState({});
-  const [fetchedOfferings, setFetchedOfferings] = useState({});
   const [shortlistedApplicants, setShortlistedApplicants] = useState([])
   const [profilesOfShortlistedApplicants, setProfilesOfShortlistedApplicants] = useState([])
 
@@ -411,6 +429,10 @@ export default function TAAllocationPage() {
   const [selectedApplication, setSelectedApplication] = useState([]);
   const [selectedTAProfile, setSelectedTAProfile] = useState([]);
   const [studentCurrentHours, setStudentCurrentHours] = useState({});
+
+  const [showSlotSelectionModal, setShowSlotSelectionModal] = useState(false);
+  const [pendingSlotSelection, setPendingSlotSelection] = useState(null);
+  const [selectedSlotsBySectionId, setSelectedSlotsBySectionId] = useState({});
 
 
   const selectedTA = shortlistedApplicants.find((item) => item.application.student.id === selectedTAId)
@@ -526,27 +548,70 @@ export default function TAAllocationPage() {
     }
   }
 
-  /*
-  const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
-    const taOffer = addedOffers.find((o) => o.taStudentId === taStudentId)
-    //const taOffer = offers.find((o) => o.taStudentId === taStudentId)
-    if (!taOffer) return false
-
-    return taOffer.offers.some((offer) => String(offer.sectionId) === String(sectionId))
-  }
-  */
-
-  const isSectionAlreadyOfferedToTA = (taStudentId, sectionId) => {
-    //console.log("Offers in isSectionAlreadyOfferedToTA:", offers);
-    const taOffer = offers.find((o) => o.student.id === taStudentId);
+  const isSectionAlreadyOfferedToTA = (taStudentId, section) => {
+    const taOffer = offers.find((o) => o.student.id === taStudentId && o.status !== "cancelled");
     if (!taOffer) return false;
 
-    //console.log("taOffer in isSectionAlreadyOfferedToTA: ", taOffer);
-    if (taOffer.status === "cancelled") return false;
-    return taOffer.offer_items.some(
-      (offerItem) =>
-        String(offerItem.course_offering_id ?? offerItem.shared_session_id) === String(sectionId)
+    // Check if it's a course offering or a shared session
+    const isCourseOffering = section.hasOwnProperty('course_offering_id');
+    const sectionId = isCourseOffering ? section.course_offering_id : section.shared_session_id;
+
+    // Get all slots offered to this TA for this specific section
+    const offeredSlotsForThisSection = taOffer.offer_items
+      .filter(item => {
+        const itemId = isCourseOffering ? item.course_offering_id : item.shared_session_id;
+        return String(itemId) === String(sectionId);
+      })
+      .map(item => item.time_slot);
+
+    if (offeredSlotsForThisSection.length === 0) return false;
+
+    // For a shared session, if there's any offer item, it's considered offered.
+    if (!isCourseOffering) {
+      return offeredSlotsForThisSection.length > 0;
+    }
+
+    // For a course offering, check if ALL of its time slots have been offered to this TA.
+    const allOfferingSlots = section.time_slots_info || [];
+    return allOfferingSlots.every(slot =>
+      offeredSlotsForThisSection.some(offeredSlot =>
+        offeredSlot.day === slot.day &&
+        offeredSlot.start_time === slot.start_time &&
+        offeredSlot.end_time === slot.end_time
+      )
     );
+  };
+
+  const isSharedSessionAssigned = (sharedSessionId) => {
+    const blockingStatuses = ['draft', 'pending', 'accepted'];
+    return offers.some(offer =>
+      blockingStatuses.includes(offer.status) &&
+      offer.offer_items.some(item =>
+        String(item.shared_session_id) === String(sharedSessionId)
+      )
+    );
+  };
+
+  const getAssignedSlotsForOffering = (offeringId) => {
+    const assignedSlots = new Set();
+    const blockingStatuses = ['draft', 'pending', 'accepted'];
+    offers.forEach(offer => {
+      if (blockingStatuses.includes(offer.status)) {
+        offer.offer_items.forEach(item => {
+          if (String(item.course_offering_id) === String(offeringId) && item.time_slot) {
+            // The time_slot for a course_offering item is an object, not an array.
+            const slot = item.time_slot;
+            // Ensure day_code exists and is lowercase for consistency.
+            const day = slot.day_code ? slot.day_code.toLowerCase() : (slot.day ? slot.day.toLowerCase() : null);
+            if (day) {
+              const slotKey = `${day}-${slot.start_time}-${slot.end_time}`;
+              assignedSlots.add(slotKey);
+            }
+          }
+        });
+      }
+    });
+    return assignedSlots;
   };
 
 
@@ -621,12 +686,11 @@ export default function TAAllocationPage() {
 
     for (const offer of taOffers) {
       for (const item of offer.offer_items) {
-        if (item.course_offering_id) {
-          const details = await fetchCourseOfferingDetails(item.course_offering_id);
-          offerSlots.push(...(details?.time_slots_info ? convertTimeSlotsInfoToKeys(details.time_slots_info) : []));
-        } else if (item.shared_session_id) {
-          const details = await fetchSharedSessionDetails(item.shared_session_id);
-          offerSlots.push(...(details?.time_slots_info ? convertTimeSlotsInfoToKeys(details.time_slots_info) : []));
+        // The offer_item already contains the specific time_slot, so we use that directly.
+        if (item.time_slot) {
+          // Handle both single slot objects (for course offerings) and arrays of slots (for shared sessions)
+          const slotsToConvert = Array.isArray(item.time_slot) ? item.time_slot : [item.time_slot];
+          offerSlots.push(...convertTimeSlotsInfoToKeys(slotsToConvert));
         }
       }
     }
@@ -673,13 +737,13 @@ export default function TAAllocationPage() {
       const currentSlots = currentSection.time_slots_info || [];
 
       // Convert current section's slots if needed
-      const needsConversion = currentSlots.some(slot => slot.includes(":"));
-      const currentFormattedSlots = needsConversion
-        ? convertTimeSlotsInfoToKeys(currentSlots)
-        : currentSlots;
+      //const needsConversion = currentSlots.some(slot => slot.includes(":"));
+      //const currentFormattedSlots = needsConversion
+      //? convertTimeSlotsInfoToKeys(currentSlots)
+      //: currentSlots;
 
       // Convert to Set for O(1) lookup
-      const currentSlotsSet = new Set(currentFormattedSlots);
+      const currentSlotsSet = new Set(currentSlots);
 
       // Check against all other sections
       for (let j = i + 1; j < selectedSections.length; j++) {
@@ -923,10 +987,10 @@ export default function TAAllocationPage() {
       : true;
 
     // ✅ Check offerings for matching term
-    const courseOfferings = fetchedOfferings[course.id] || [];
+    const offeringsForFilter = courseOfferings[course.id] || [];
 
     const matchesTerm = filters.term_code
-      ? courseOfferings.some((offering) =>
+      ? offeringsForFilter.some((offering) =>
         offering.term_info.toLowerCase().includes(filters.term_code.toLowerCase())
       )
       : true;
@@ -968,18 +1032,23 @@ export default function TAAllocationPage() {
     { value: "STAT", label: "STAT" },
   ];
 
-  const getCourseOfferings = async (courseId) => {
-    if (fetchedOfferings[courseId]) return; // already fetched
+  const getCourseData = async (courseId) => {
+    // Avoid re-fetching if both offerings and sessions are already loaded
+    if (courseOfferings[courseId] && sharedSessions[courseId]) return;
 
     try {
-      const data = await fetchOfferingsForCourse(courseId);
-      console.log(`fetchOfferingsforCourse called for course id ${courseId} is having data: `, data);
-      setFetchedOfferings((prev) => ({
-        ...prev,
-        [courseId]: data,
-      }));
+      // Fetch both offerings and shared sessions concurrently
+      const [offerings, sessions] = await Promise.all([
+        fetchOfferingsForCourse(courseId),
+        fetchSharedSessionsForCourse(courseId),
+      ]);
+
+      // Update state for both
+      setCourseOfferings((prev) => ({ ...prev, [courseId]: offerings }));
+      setSharedSessions((prev) => ({ ...prev, [courseId]: sessions }));
+
     } catch (error) {
-      console.error(`Failed to fetch offerings for course ${courseId}:`, error);
+      console.error(`Failed to fetch data for course ${courseId}:`, error);
     }
   };
 
@@ -989,18 +1058,19 @@ export default function TAAllocationPage() {
   */
   useEffect(() => {
     filteredCourses.forEach((course) => {
-      getCourseOfferings(course.id);
+      getCourseData(course.id); // Use the new consolidated function
     });
   }, [filteredCourses]);
 
+  // Create a function that fetches AND sets the state.
   const fetchAndSetOffers = async () => {
     try {
-      console.log("Refetching offers...");
-      const fetchedOffers = await fetchOffers();
-      console.log("fetchedOffers from backend are: ", fetchedOffers);
-      setOffers(fetchedOffers || []);
+      const fetchedOffers = await apiFetchOffers(); // Call the API function
+      setOffers(fetchedOffers); // Update the state with the new data
     } catch (error) {
-      console.error("Error fetching offers:", error);
+      console.error("Failed to fetch and set offers:", error);
+      // Optionally set offers to an empty array on failure
+      setOffers([]);
     }
   };
 
@@ -1092,13 +1162,13 @@ export default function TAAllocationPage() {
 
       const slotPromises = relevantOffers.flatMap((offer) =>
         offer.offer_items.map(async (item) => {
-          //console.log("offer item in fetchOfferSlotTimes: ", item);
+          console.log("offer item in fetchOfferSlotTimes: ", item);
           //console.log("item.course_offering_id in fetchOfferSlotTimes: ", item.course_offering_id);
           //console.log("item.shared_session_id in fetchOfferSlotTimes: ", item.shared_session_id);
           try {
             if (item.course_offering_id || item.course_offering_id !== null) {
               const details = await fetchCourseOfferingDetails(item.course_offering_id);
-              return details?.time_slots_info || [];
+              return item?.time_slot || [];
             } else if (item.shared_session_id) {
               const details = await fetchSharedSessionDetails(item.shared_session_id);
               return details?.time_slots_info || [];
@@ -1176,6 +1246,83 @@ export default function TAAllocationPage() {
     );
   })() : 0;
 
+  const SlotSelectionModal = ({ slotKeys, onConfirm, onClose }) => {
+    const [selectedSlots, setSelectedSlots] = useState([]);
+
+    const toggleSlot = (slot) => {
+      const exists = selectedSlots.some(
+        s => s.day === slot.day && s.start_time === slot.start_time
+      );
+      setSelectedSlots(prev =>
+        exists
+          ? prev.filter(s => !(s.day === slot.day && s.start_time === slot.start_time))
+          : [...prev, slot]
+      );
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full space-y-4">
+          <h2 className="text-lg font-semibold">Select Days & Time Slots</h2>
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {slotKeys.map((slot, idx) => (
+              <label key={idx} className="block">
+                <input
+                  type="checkbox"
+                  checked={selectedSlots.some(
+                    s => s.day === slot.day && s.start_time === slot.start_time
+                  )}
+                  onChange={() => toggleSlot(slot)}
+                />
+                <span className="ml-2">
+                  {slot.day}, {slot.start_time} - {slot.end_time}
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <button onClick={onClose} className="text-gray-600 hover:underline">Cancel</button>
+            <button
+              onClick={() => {
+                console.log("selectedSlots in return statement of SlotSelectionModal: ", selectedSlots);
+                console.log("calling onConfirm with selectedSlots in return statement of SlotSelectionModal: ", selectedSlots);
+                onConfirm(selectedSlots)
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // A helper function to parse the string format into an array of objects
+  const parseSlotInfoForModal = (time_slots_info_array) => {
+    const dayMapping = {
+      'M': 'Monday', 'T': 'Tuesday', 'W': 'Wednesday',
+      'R': 'Thursday', 'F': 'Friday'
+    };
+
+    const slotObjects = [];
+
+    time_slots_info_array.forEach(slotString => {
+      // Handle the 'Monday-8-top' format
+      // You'll need to parse this format into a day, start time, and end time.
+      // This is a more complex conversion, but a simplified example is below.
+      const [day, hour, half] = slotString.split('-');
+      slotObjects.push({
+        day: day,
+        start_time: `${hour}:00`, // Simplified time representation
+        end_time: `${half === 'top' ? hour : parseInt(hour) + 1}:00`
+      });
+
+    });
+
+    return slotObjects;
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -1198,17 +1345,16 @@ export default function TAAllocationPage() {
           <main className="flex-1 space-y-6 p-6">
             {/* Main Allocation Interface */}
             <Tabs defaultValue="allocate" className="space-y-4">
-              <div className="p-4 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-800">
-                Select an applicant, then select one or more course sections
-                you want to send them an offer for. In the availability calendar,
-                <span className="font-bold text-blue-600"> blue </span>
-                boxes are time slots when the applicant is available. When you select a course section,
-                the slots it takes up will turn
-                <span className="font-bold text-purple-600"> purple </span>
-                if no conflicts with the applicant's availability and
-                <span className="font-bold text-red-600"> red </span>
-                if there are conflicts.
-              </div>
+              <Alert>
+                <Lightbulb className="h-4 w-4" />
+                <AlertTitle>How to Allocate TAs</AlertTitle>
+                <AlertDescription>
+                  Select a shortlisted applicant, then choose one or more course sections to offer. The calendar highlights availability:
+                  <span className="font-semibold text-blue-600"> blue</span> for times not available,
+                  <span className="font-semibold text-purple-600"> purple</span> for selected slots with  conflicts, and
+                  <span className="font-semibold text-red-600"> red</span> for available slots.
+                </AlertDescription>
+              </Alert>
               <TabsList>
                 <TabsTrigger value="allocate">Allocate Shortlisted Applicants</TabsTrigger>
                 <TabsTrigger value="added-offers">Draft Offers</TabsTrigger>
@@ -1506,7 +1652,7 @@ export default function TAAllocationPage() {
                       <div className="flex-grow overflow-y-auto pr-2">
                         <div className="space-y-4">
                           {filteredCourses.map((course) => {
-                            const availableOfferings = fetchedOfferings[course.id] || []
+                            const availableOfferings = courseOfferings[course.id] || []
                             const availableSections = sharedSessions[course.id] || []
                             return (
                               <div key={course.id}>
@@ -1530,37 +1676,69 @@ export default function TAAllocationPage() {
                                           //console.log("studentId in availableOfferings map: ", studentId);
                                           //console.log("about to call isSectionAlreadyOfferedToTA for student: ", studentId);
                                           console.log("studentId is: ", studentId);
-                                          const isOffered = selectedApplication?.application?.student?.id && isSectionAlreadyOfferedToTA(studentId, offering.course_offering_id);
+                                          const isOfferedToCurrentTA = selectedApplication?.application?.student?.id && isSectionAlreadyOfferedToTA(studentId, offering);
+
+                                          const assignedSlots = getAssignedSlotsForOffering(offering.course_offering_id);
+                                          const allSlotsInOffering = offering.time_slots_info || [];
+                                          const allSlotsAssigned = allSlotsInOffering.length > 0 && allSlotsInOffering.every(slot => {
+                                            const slotKey = `${slot.day}-${slot.start_time}-${slot.end_time}`;
+                                            return assignedSlots.has(slotKey);
+                                          });
+
+                                          const isDisabled = isOfferedToCurrentTA || allSlotsAssigned;
                                           //console.log(`current offering in availableOfferings in course with course id ${course.id} is: ${offering}`);
                                           return (
                                             <div
                                               key={`${course.id}-offering-${offering.course_offering_id}`}
-                                              className={`p-3 border rounded-lg transition-colors ${isOffered
+                                              className={`p-3 border rounded-lg transition-colors ${isDisabled
                                                 ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                                                 : isSelected
                                                   ? "border-blue-500 bg-blue-50 cursor-pointer"
                                                   : "hover:bg-muted/50 cursor-pointer"
                                                 }`}
                                               onClick={() => {
-                                                if (isOffered) return;
+                                                console.log("enter after clicking on an offering");
+                                                console.log("clicked on an offering: ", offering);
+                                                if (isDisabled) return;
 
-                                                const selected = {
-                                                  ...offering,
-                                                  item_type: "course_offering",
-                                                  course_name: course.course_name,
-                                                  course_number: course.course_number,
-                                                  sectionId: offering.course_offering_id,
-                                                  time_slots_info: convertTimeSlotsInfoToKeys(offering.time_slots_info),
-                                                  time_slots_info_raw: offering.time_slots_info,
-                                                  weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(offering.time_slots_info)),
-                                                };
-
-                                                setSelectedCourseOfferings((prev) => {
-                                                  const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
-                                                  return alreadySelected
-                                                    ? prev.filter((s) => s.sectionId !== selected.sectionId)
-                                                    : [...prev, selected];
+                                                const assignedSlotsForThisOffering = getAssignedSlotsForOffering(offering.course_offering_id);
+                                                const availableSlotsForModal = offering.time_slots_info.filter(slot => {
+                                                  const slotKey = `${slot.day}-${slot.start_time}-${slot.end_time}`;
+                                                  return !assignedSlotsForThisOffering.has(slotKey);
                                                 });
+
+                                                // Convert the offering's raw slot info into the object format the modal expects
+                                                const slotKeysForModal = offering.time_slots_info;
+                                                console.log("slotKeysForModal which is offering.time_slots_info: ", slotKeysForModal);
+                                                if (availableSlotsForModal.length > 1) {
+                                                  setPendingSlotSelection({
+                                                    offering,
+                                                    slotKeys: availableSlotsForModal, // Pass only available slots
+                                                    course,
+                                                  });
+                                                  setShowSlotSelectionModal(true);
+                                                } else if (availableSlotsForModal.length === 1) {
+                                                  // Single-day offering, just select it directly
+                                                  console.log("offering.time_slots_info: ", offering.time_slots_info);
+                                                  console.log("offering.time_slots_info converted to keys and stored in selected for Course offering: ", convertTimeSlotsInfoToKeys(availableSlotsForModal));
+                                                  const selected = {
+                                                    ...offering,
+                                                    item_type: "course_offering",
+                                                    course_name: course.course_name,
+                                                    course_number: course.course_number,
+                                                    sectionId: offering.course_offering_id,
+                                                    time_slots_info: convertTimeSlotsInfoToKeys(availableSlotsForModal),
+                                                    time_slots_info_raw: availableSlotsForModal,
+                                                    weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(availableSlotsForModal)),
+                                                  };
+
+                                                  setSelectedCourseOfferings((prev) => {
+                                                    const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
+                                                    return alreadySelected
+                                                      ? prev.filter((s) => s.sectionId !== selected.sectionId)
+                                                      : [...prev, selected];
+                                                  });
+                                                }
                                               }}
                                             >
                                               <div className="flex items-center justify-between">
@@ -1584,7 +1762,9 @@ export default function TAAllocationPage() {
                                   {availableSections.map((section) => {
                                     const isSelected = selectedSections.some((s) => s.sectionId === section.shared_session_id);
                                     const studentId = selectedApplication?.application?.student?.id;
-                                    const isOffered = selectedApplication?.application?.student?.id && isSectionAlreadyOfferedToTA(studentId, section.shared_session_id);
+                                    const isOfferedToCurrentTA = studentId && isSectionAlreadyOfferedToTA(studentId, section);
+                                    const isAssignedToAnyone = isSharedSessionAssigned(section.shared_session_id);
+                                    const isDisabled = isOfferedToCurrentTA || isAssignedToAnyone;
                                     //console.log("Checking section ID:", section.id)
                                     //console.log("selectedCourses:", selectedCourses.map(s => s.sectionId))
                                     //console.log("activeOffers:", activeOffers)
@@ -1592,14 +1772,14 @@ export default function TAAllocationPage() {
                                     return (
                                       <div
                                         key={`${course.id}-${section.shared_session_id}`}
-                                        className={`p-3 border rounded-lg transition-colors ${isOffered
+                                        className={`p-3 border rounded-lg transition-colors ${isDisabled
                                           ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                                           : isSelected
                                             ? "border-blue-500 bg-blue-50 cursor-pointer"
                                             : "hover:bg-muted/50 cursor-pointer"
                                           }`}
                                         onClick={() => {
-                                          if (isOffered) return;
+                                          if (isDisabled) return;
 
                                           const selected = {
                                             ...section,
@@ -1749,31 +1929,39 @@ export default function TAAllocationPage() {
                                 }
                               }
 
-                              // Find if a draft offer already exists for this student
-                              const existingDraftOffer = offers.find(
-                                (o) => o.student.id === studentId && o.status === "draft"
-                              );
+                              const offerItemsPayload = selectedSections.flatMap(section => {
+                                const timeSlots = section.time_slots_info_raw || [];
 
-                              // Create a payload for the NEWLY selected sections, ensuring one item per shared session
-                              const newOfferItemsPayload = selectedSections.flatMap(section => {
-                                if (section.item_type === 'course_offering') {
-                                  const timeSlots = section.time_slots_info_raw || [];
-                                  return timeSlots.map(slot => ({
-                                    item_type: section.item_type,
-                                    course_offering_id: section.sectionId,
-                                    shared_session_id: null,
-                                    time_slot: { day: slot.day, start_time: slot.start_time, end_time: slot.end_time }
-                                  }));
-                                }
+                                // For a shared session, create ONE item for the whole session.
+                                // The backend validation requires a time_slot object, so we provide the first one.
                                 if (section.item_type === 'shared_session') {
-                                  return [{
-                                    item_type: section.item_type,
-                                    course_offering_id: null,
-                                    shared_session_id: section.sectionId,
-                                    time_slot: null // Indicates the entire session
-                                  }];
+                                  if (timeSlots.length > 0) {
+                                    const firstSlot = timeSlots[0];
+                                    return [{ // Return an array with a single item
+                                      item_type: 'shared_session',
+                                      course_offering_id: null,
+                                      shared_session_id: section.sectionId,
+                                      time_slot: {
+                                        day: firstSlot.day,
+                                        start_time: firstSlot.start_time,
+                                        end_time: firstSlot.end_time,
+                                      }
+                                    }];
+                                  }
+                                  return []; // Don't create an item if there are no slots
                                 }
-                                return [];
+
+                                // For course offerings, create an offer item for EACH selected time slot.
+                                return timeSlots.map(slot => ({
+                                  item_type: section.item_type,
+                                  course_offering_id: section.sectionId,
+                                  shared_session_id: null,
+                                  time_slot: {
+                                    day: slot.day,
+                                    start_time: slot.start_time,
+                                    end_time: slot.end_time,
+                                  }
+                                }));
                               });
 
                               if (newOfferItemsPayload.length === 0) {
@@ -1781,59 +1969,17 @@ export default function TAAllocationPage() {
                                 return;
                               }
 
+                              const dataToSend = {
+                                application_id: selectedApplication.application.application_id,
+                                offer_items: offerItemsPayload, // Use the correctly formatted payload
+                                notes: `Draft offer for ${selectedTA.application.student.name}`,
+
+                              };
+
                               try {
-                                if (existingDraftOffer) {
-                                  // UPDATE existing draft offer
-                                  // 1. Re-format existing items to match the backend's expected input format
-                                  const formattedExistingItems = (existingDraftOffer.offer_items || []).map(item => ({
-                                    item_type: item.item_type,
-                                    course_offering_id: item.course_offering_id,
-                                    shared_session_id: item.shared_session_id,
-                                    time_slot: item.time_slot,
-                                  }));
-
-                                  // 2. Combine old and new items
-                                  const combinedItems = [...formattedExistingItems, ...newOfferItemsPayload];
-
-                                  // 3. De-duplicate the combined list with nuanced logic
-                                  const uniqueItems = [];
-                                  const seenKeys = new Set();
-                                  for (const item of combinedItems) {
-                                    let key;
-                                    if (item.item_type === 'shared_session') {
-                                      // For shared sessions, the session ID is the unique key.
-                                      // This prevents adding the same lab/tutorial multiple times.
-                                      key = `shared-${item.shared_session_id}`;
-                                    } else if (item.item_type === 'course_offering') {
-                                      // For course offerings, the combination of the offering ID and the specific time slot is the unique key.
-                                      // This allows adding multiple items for the same lecture if they occur at different times.
-                                      const ts = item.time_slot;
-                                      key = `course-${item.course_offering_id}-${ts.day}-${ts.start_time}`;
-                                    } else {
-                                      // Should not happen, but skip if it does
-                                      continue;
-                                    }
-
-                                    if (!seenKeys.has(key)) {
-                                      uniqueItems.push(item);
-                                      seenKeys.add(key);
-                                    }
-                                  }
-
-                                  const dataToUpdate = {
-                                    offer_items: uniqueItems,
-                                    notes: `Updated draft offer for ${selectedTA.application.student.name}`,
-                                  };
-                                  await editOffer(existingDraftOffer.offer_id, dataToUpdate);
-                                } else {
-                                  // CREATE new draft offer
-                                  const dataToSend = {
-                                    application_id: selectedApplication.application.application_id,
-                                    offer_items: newOfferItemsPayload,
-                                    notes: `Draft offer for ${selectedTA.application.student.name}`,
-                                  };
-                                  await createOffer(dataToSend);
-                                }
+                                // Send to backend
+                                console.log("in try block of add offer button, selectedApplication is: ", selectedApplication);
+                                await createOffer(dataToSend);
 
                                 // ... (rest of the function: refresh offers, reset UI state, etc.) ...
                                 await fetchAndSetOffers();
@@ -1865,8 +2011,8 @@ export default function TAAllocationPage() {
               <TabsContent value="added-offers">
                 <AddedOffersTab
                   offers={offers}
-                  setOffers={setOffers}
-                  fetchOffers={fetchOffers}
+                  // Pass the new function down as the 'fetchOffers' prop
+                  fetchOffers={fetchAndSetOffers}
                   activeOffers={activeOffers}
                   setActiveOffers={setActiveOffers}
                   studentCurrentHours={studentCurrentHours}
@@ -1905,7 +2051,10 @@ export default function TAAllocationPage() {
                               <ul className="ml-4 list-disc text-sm text-muted-foreground">
                                 {pendingOffer.offer_items.map((item, i) => (
                                   <li key={i}>
-                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number} {/* Access correct properties */}
+                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number}
+                                    <span className="text-xs text-gray-500 ml-2">
+                                      {formatItemTimeSlot(item.time_slot)}
+                                    </span>
                                   </li>
                                 ))}
                               </ul>
@@ -1961,7 +2110,10 @@ export default function TAAllocationPage() {
                               <ul className="ml-4 list-disc text-sm text-muted-foreground">
                                 {rejectedOffer.offer_items.map((item, i) => (
                                   <li key={i}>
-                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number} {/* Access correct properties */}
+                                    {item.course_number} - {item.course_name} - {item.section_type_display} Section {item.section_number}
+                                    <span className="text-xs text-gray-500 ml-2">
+                                      {formatItemTimeSlot(item.time_slot)}
+                                    </span>
                                   </li>
                                 ))}
                               </ul>
@@ -2044,6 +2196,43 @@ export default function TAAllocationPage() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {showSlotSelectionModal && pendingSlotSelection && (
+                <SlotSelectionModal
+                  onClose={() => {
+                    setShowSlotSelectionModal(false);
+                    setPendingSlotSelection(null);
+                  }}
+                  onConfirm={(selectedDaysAndSlots) => {
+                    // --- NEW: Map the objects from the modal back to strings ---
+                    console.log("selectedDaysAndSlots in SlotSelectionModal: ", selectedDaysAndSlots);
+                    const { offering, course } = pendingSlotSelection;
+                    const selected = {
+                      ...offering,
+                      item_type: "course_offering",
+                      course_name: pendingSlotSelection.course.course_name,
+                      course_number: pendingSlotSelection.course.course_number,
+                      sectionId: pendingSlotSelection.offering.course_offering_id,
+                      // --- NEW: Pass the newly formatted array to the conversion function ---
+                      time_slots_info: convertTimeSlotsInfoToKeys(selectedDaysAndSlots),
+                      time_slots_info_raw: selectedDaysAndSlots,
+                      weeklyDuration: getTotalHoursFromSlotArray(convertTimeSlotsInfoToKeys(selectedDaysAndSlots)),
+                    };
+                    console.log("selected in SlotSelectionModal: ", selected);
+                    setSelectedCourseOfferings((prev) => {
+                      const alreadySelected = prev.some((s) => s.sectionId === selected.sectionId);
+                      console.log("alreadySelected in SlotSelectionModal: ", alreadySelected);
+                      return alreadySelected
+                        ? prev.filter((s) => s.sectionId !== selected.sectionId)
+                        : [...prev, selected];
+                    });
+
+                    setShowSlotSelectionModal(false);
+                    setPendingSlotSelection(null);
+                  }}
+                  slotKeys={pendingSlotSelection.slotKeys}
+                />
               )}
             </Tabs>
           </main>
