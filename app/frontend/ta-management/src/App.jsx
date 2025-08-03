@@ -29,6 +29,7 @@ import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-manag
 import MyCourses from "./pages/Instructor_MyCourses";
 import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
+import AdminCourseManagement from "./pages/Admin/CourseManagement";
 
 
 function App() {
@@ -211,6 +212,15 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin-course-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <AdminCourseManagement />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/manage-templates"
         element={
