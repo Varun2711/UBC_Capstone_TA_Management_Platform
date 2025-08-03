@@ -30,7 +30,8 @@ import MyCourses from "./pages/Instructor_MyCourses";
 import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
 import AdminCourseManagement from "./pages/Admin/CourseManagement";
-
+import MyApplications from "./pages/Student/MyApplications";
+import ApplicationDetail from "./pages/Student/ApplicationDetail";
 
 function App() {
   return (
@@ -112,7 +113,7 @@ function App() {
         }
       />
 
-<Route
+      <Route
         path="/ta-requirements"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
@@ -129,7 +130,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
 
       {/* Accessible to: scheduler --------------- */}
       <Route
@@ -226,6 +226,24 @@ function App() {
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
             <JobPostingManagerPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-applications"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <MyApplications />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-applications/detail/:applicationId"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ApplicationDetail />
           </ProtectedRoute>
         }
       />
