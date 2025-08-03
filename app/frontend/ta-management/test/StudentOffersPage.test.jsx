@@ -75,6 +75,18 @@ describe('OffersPage', () => {
       expect(screen.getByText(/Term A/i)).toBeInTheDocument()
     })
 
+  it('displays "No instructor found" when instructor details are missing', async () => {
+    const courseOfferingDetailsNoInstructor = { instructor_info: null, term_info: 'Term A' };
+    vi.spyOn(offersApi, 'getCourseOfferingDetails').mockResolvedValue(courseOfferingDetailsNoInstructor);
+    renderWithRouter(<OffersPage />);
+    
+    // Now look for the full text "Instructor: No instructor assigned"
+    await waitFor(() => screen.getByText(/Instructor: No instructor assigned/));
+
+    // This assertion can be removed if the one above is successful
+    // expect(screen.getByText(/No instructor assigned/)).toBeInTheDocument();
+  });
+
   it('renders an offer with shared session details', async () => {
     const oneSharedSession = [{
       ...onePending[0],
@@ -107,15 +119,7 @@ describe('OffersPage', () => {
     expect(screen.getByText(/Term B/)).toBeInTheDocument()
     expect(screen.getByText('Wednesday 14:00 - 15:30')).toBeInTheDocument()
   })
-
-  it('displays "No instructor found" when instructor details are missing', async () => {
-    const courseOfferingDetailsNoInstructor = { instructor_info: null, term_info: 'Term A' };
-    vi.spyOn(offersApi, 'getCourseOfferingDetails').mockResolvedValue(courseOfferingDetailsNoInstructor);
-    renderWithRouter(<OffersPage />);
-    await waitFor(() => screen.getByText(/Instructor:/));
-    expect(screen.getByText(/No instructor assigned/)).toBeInTheDocument();
-  });
-
+  
   it('formats offer and deadline dates correctly', async () => {
     renderWithRouter(<OffersPage />)
     await waitFor(() => screen.getByText(/Offer Received/))

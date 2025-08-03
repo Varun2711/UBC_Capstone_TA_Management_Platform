@@ -744,32 +744,19 @@ export default function OffersPage() {
                     <div className="text-2xl font-bold text-green-600">
                       {acceptedOffers.filter((offer) => offer.status === "accepted").length}
                     </div>
-                    <p className="text-xs text-muted-foreground">Active positions</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Response Needed</CardTitle>
-                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-orange-600">
-                      {pendingOffers.filter((offer) => offer.daysLeft <= 7).length}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Urgent responses</p>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Tabs */}
-              <Tabs defaultValue="current" className="space-y-4">
+              <Tabs defaultValue="pending" className="space-y-4">
                 <TabsList>
-                  <TabsTrigger value="current">Current Offers ({pendingOffers.length})</TabsTrigger>
+                  <TabsTrigger value="pending">Pending Offers ({pendingOffers.length})</TabsTrigger>
                   <TabsTrigger value="past">Past Offers ({pastOffers.length})</TabsTrigger>
                 </TabsList>
 
-                {/* Current Offers Tab */}
-                <TabsContent value="current" className="space-y-4">
+                {/* Pending Offers Tab */}
+                <TabsContent value="pending" className="space-y-4">
                   {pendingOffers.length === 0 ? (
                     <Card>
                       <CardContent className="flex flex-col items-center justify-center py-12">
@@ -832,15 +819,22 @@ export default function OffersPage() {
                               {/* Timeline */}
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                 <div>
-                                  <p className="font-medium">Offer Received</p>
-                                  <p className="text-red-600 font-medium">
+                                  <p className="font-semibold text-lg">Weekly Hours</p>
+                                  <p className="font-semibold text-base text-red-600">
+                                    {offer.total_weekly_hours}
+                                  </p>
+                                </div>
+                                
+                                <div>
+                                  <p className="font-semibold text-lg">Offer Received</p>
+                                  <p className="font-semibold text-base text-red-600">
                                     {formatDateTime(offer.offer_date, "offer_date")}
                                   </p>
                                 </div>
 
                                 <div>
-                                  <p className="font-medium">Response Deadline</p>
-                                  <p className="text-red-600 font-medium">
+                                  <p className="font-semibold text-lg">Response Deadline</p>
+                                  <p className="font-semibold text-base text-red-600">
                                     {formatDateTime(offer.response_deadline, "response_deadline")}
                                   </p>
                                 </div>
@@ -928,17 +922,24 @@ export default function OffersPage() {
                             {/* Timeline */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                               <div>
-                                <p className="font-medium">Offer Received</p>
-                                <p className="text-red-600 font-medium">
+                                  <p className="font-semibold text-lg">Weekly Hours</p>
+                                  <p className="font-semibold text-base text-red-600">
+                                    {offer.total_weekly_hours}
+                                  </p>
+                                </div>
+                              
+                              <div>
+                                <p className="font-semibold text-lg">Offer Received</p>
+                                <p className="font-semibold text-base text-red-600">
                                   {formatDateTime(offer.offer_date, "offer_date")}
                                 </p>
                               </div>
 
                               <div>
-                                <p className="font-medium" data-testid="responded-text-based-on-status">
+                                <p className="font-semibold text-lg" data-testid="responded-text-based-on-status">
                                   {offer.status === "expired" ? "Response Deadline" : "Responded on"}
                                 </p>
-                                <p className="text-red-600 font-medium">
+                                <p className="font-semibold text-base text-red-600">
                                   {formatDateTime(
                                     offer.status === "expired" ? offer.response_deadline : offer.responded_at,
                                     "past_response_deadline"
