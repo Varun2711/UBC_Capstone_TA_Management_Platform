@@ -304,7 +304,7 @@ const mockPastOffers = [
 ];
 
 
-function getStatusBadge(status) {
+export function getStatusBadge(status) {
   switch (status) {
     case "pending":
       return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending Response</Badge>
@@ -319,7 +319,7 @@ function getStatusBadge(status) {
   }
 }
 
-function getPriorityBadge(priority) {
+export function getPriorityBadge(priority) {
   switch (priority) {
     case "High":
       return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">High Priority</Badge>
@@ -332,22 +332,9 @@ function getPriorityBadge(priority) {
   }
 }
 
-function getStatusIcon(status) {
-  switch (status) {
-    case "Pending":
-      return <AlertCircle className="h-4 w-4 text-yellow-600" />
-    case "Accepted":
-      return <CheckCircle className="h-4 w-4 text-green-600" />
-    case "Rejected":
-      return <XCircle className="h-4 w-4 text-red-600" />
-    case "Expired":
-      return <Clock className="h-4 w-4 text-gray-600" />
-    default:
-      return <AlertCircle className="h-4 w-4 text-gray-600" />
-  }
-}
-
 function formatDateTime(isoString, responseType) {
+  if (!isoString || typeof isoString !== 'string') return '';
+  
   // Remove the last 5 characters
   const trimmed = isoString.slice(0, -5); // removes .999Z
 
@@ -383,7 +370,7 @@ function formatDateTime(isoString, responseType) {
   return `${formattedDate}`;
 }
 
-function formatSharedSessionTime(time_slots_info) {
+export function formatSharedSessionTime(time_slots_info) {
   if (!Array.isArray(time_slots_info) || time_slots_info.length === 0) return "";
 
   // Get the day (assuming all are same for shared session)
@@ -865,7 +852,7 @@ export default function OffersPage() {
                                   <Check className="h-4 w-4 mr-2" />
                                   Accept Offer
                                 </Button>
-                                <Button variant="outline" onClick={() => handleRejectOffer(offer.offer_id)} className="flex-1">
+                                <Button variant="outline" data-testid="decline-offer" onClick={() => handleRejectOffer(offer.offer_id)} className="flex-1">
                                   <X className="h-4 w-4 mr-2" />
                                   Decline Offer
                                 </Button>
@@ -948,7 +935,7 @@ export default function OffersPage() {
                               </div>
 
                               <div>
-                                <p className="font-medium">
+                                <p className="font-medium" data-testid="responded-text-based-on-status">
                                   {offer.status === "expired" ? "Response Deadline" : "Responded on"}
                                 </p>
                                 <p className="text-red-600 font-medium">
