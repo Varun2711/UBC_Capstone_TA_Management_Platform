@@ -199,12 +199,12 @@ export const fetchCourseDetailsData = async (courseId, term) => {
       })
     );
 
-    // Fetch TA assignments for shared sessions
+    // Fetch TA assignments for shared sessions - Add safety checks
     const allSharedSessions = [
-      ...sharedSessions.labs.map(session => ({ ...session, type: 'lab' })),
-      ...sharedSessions.tutorials.map(session => ({ ...session, type: 'tutorial' })),
-      ...sharedSessions.seminars.map(session => ({ ...session, type: 'seminar' })),
-      ...sharedSessions.workshops.map(session => ({ ...session, type: 'workshop' }))
+      ...(sharedSessions.labs || []).map(session => ({ ...session, type: 'lab' })),
+      ...(sharedSessions.tutorials || []).map(session => ({ ...session, type: 'tutorial' })),
+      ...(sharedSessions.seminars || []).map(session => ({ ...session, type: 'seminar' })),
+      ...(sharedSessions.workshops || []).map(session => ({ ...session, type: 'workshop' }))
     ];
 
     const sharedSessionsWithTAs = await Promise.all(

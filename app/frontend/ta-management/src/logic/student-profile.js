@@ -28,10 +28,7 @@ export const getProfile = async () => {
     //console.log("API response:", response.data); // Debugging log
     return response.data;
   } catch (error) {
-    console.error(
-      "Error fetching profile:",
-      error.response?.data || error.message
-    );
+    // console.error("Error fetching profile:", error.response?.data || error.message);
     throw error;
   }
 };

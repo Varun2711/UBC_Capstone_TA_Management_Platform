@@ -50,6 +50,11 @@ const navigationItems = [
     url: "/apply",
   },
   {
+    title: "My Applications",
+    icon: PlusCircle,
+    url: "/my-applications",
+  },
+  {
     title: "Schedule",
     icon: Calendar,
     url: "/schedule",
