@@ -51,8 +51,13 @@ import LinkSentStep from "@/pages/ResetPassword/LinkSentStep";
 // master page that /forgot-password routes to in the actual application
 // added initialStep prop so you can specify which step of the process you wish to start on
 const renderResetPassword = (initialStep=RESET_PASSWORD_STEPS.enter_email) => {
+
+  const initialEntries = initialStep === RESET_PASSWORD_STEPS.set_new_password
+    ? ["/forgot-password?token=test-token"]
+    : ["/forgot-password"];
+
   return render(
-    <MemoryRouter initialEntries={["/forgot-password"]}>
+    <MemoryRouter initialEntries={initialEntries}>
       <ResetPasswordController initialStep={initialStep} />
     </MemoryRouter>
   )

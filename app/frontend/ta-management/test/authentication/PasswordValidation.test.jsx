@@ -10,7 +10,7 @@ describe('Password Validation', () => {
     it('fails if password/confirm password is empty', () => {
         const errors = getPasswordValidationErrors("", "");
         expect(errors.password).toBe("Password is required");
-        expect(errors.confirm).toBe("Confirm password is required");
+        expect(errors.confirm).toBe("Confirm Password is required");
     });
 
     it('fails if password is too short', () => {
