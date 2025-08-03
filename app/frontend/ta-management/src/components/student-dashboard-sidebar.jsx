@@ -64,12 +64,7 @@ const navigationItems = [
     icon: User,
     url: "/profile",
   },
-  {
-    title: "Settings",
-    icon: Settings,
-    url: "#",
-  },
-];
+]
 
 export function AppSidebar({ name, email, avatar }) {
   // Using useNavigate from react-router-dom to handle navigation
@@ -149,6 +144,9 @@ export function AppSidebar({ name, email, avatar }) {
                 <DropdownMenuItem>
                   {" "}
                   <button>My Profile</button>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
+                  <button>Change Password</button>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
                   <button>Logout </button>

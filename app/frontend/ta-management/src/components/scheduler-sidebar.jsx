@@ -184,6 +184,9 @@ export function AppSidebar({ activePage, ...props }) {
                 >
                   <button>My Profile</button>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
+                  <button>Change Password</button>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
                   <button>Logout</button>
                 </DropdownMenuItem>
