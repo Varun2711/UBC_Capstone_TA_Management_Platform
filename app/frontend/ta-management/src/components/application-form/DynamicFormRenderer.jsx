@@ -49,7 +49,7 @@ const DynamicFormRenderer = ({
         const newResponses = { ...localResponses, [fieldName]: value };
         setLocalResponses(newResponses);
         setResponses?.(newResponses);
-        console.log("Updated default resp", newResponses);
+        // console.log("Updated default resp", newResponses);
       } else {
         // Store in dynamic responses
         const newDynamicResponses = {
@@ -82,8 +82,6 @@ const DynamicFormRenderer = ({
       validation_rules = {},
     } = question;
 
-    //if field_name == termSelection, use the term details from the parent component
-
     // Transform options to consistent array format
     let normalizedOptions = [];
 
@@ -112,14 +110,6 @@ const DynamicFormRenderer = ({
     const value = shouldUseDefaultResponses
       ? localResponses[field_name] || ""
       : localDynamicResponses[field_name] || "";
-
-    // Debug value retrieval
-    // console.log(`Getting value for ${field_name}:`, {
-    //   shouldUseDefaultResponses,
-    //   valueFromDefault: localResponses[field_name],
-    //   valueFromDynamic: localDynamicResponses[field_name],
-    //   finalValue: value,
-    // });
 
     const error = errors[field_name];
 
