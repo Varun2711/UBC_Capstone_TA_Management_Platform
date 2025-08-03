@@ -315,8 +315,7 @@ class ApplicationShortListSerializer(serializers.ModelSerializer):
     )
     created_by_id = serializers.PrimaryKeyRelatedField(
         queryset=TAScheduler.objects.all(),
-        source='created_by',
-        write_only=True,
+        source='created_by',       
         required=False,  # Can be set automatically from request user,
         allow_null= True
     )
@@ -333,6 +332,28 @@ class ApplicationShortListSerializer(serializers.ModelSerializer):
             'created_by_id', 'created_at', 'notes'  # Include the new fields
         ]
         read_only_fields = ['id', 'created_at']
+
+class ApplicationShortSerializer(serializers.ModelSerializer):
+    """Condensed serializer for application listings"""
+    # Read-only nested fields for display
+    posting_id = serializers.CharField(source='posting.posting_id', read_only=True)
+    title = serializers.CharField(source='posting.title', read_only=True)
+    department = serializers.CharField(source='posting.department.name', read_only=True)
+    termSelection = serializers.CharField(source='posting.term.description', read_only=True)
+    
+    class Meta:
+        model = Application
+        fields = [
+            'application_id',
+            'posting_id', 
+            'title',
+            'department',
+            'applied_at',
+            'status',
+            'termSelection'
+        ]
+        read_only_fields = fields  # All fields are read-only for this serializer
+
 
 
 class DocumentSerializer(serializers.ModelSerializer):
