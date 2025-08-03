@@ -33,6 +33,46 @@ export const getPendingOffers = async () => {
   return response.data;
 };
 
+export const getAcceptedOffers = async () => {
+  const response = await axios.get(`${API_URL}/allocations/offers/accepted_offers/`, {
+    headers: getAuthHeaders()
+  });
+  console.log("Accepted offers response: ", response.data);
+  return response.data;
+};
+
+export const getRejectedOffers = async () => {
+  const response = await axios.get(`${API_URL}/allocations/offers/rejected_offers/`, {
+    headers: getAuthHeaders()
+  });
+  console.log("Rejected offers response: ", response.data);
+  return response.data;
+};
+
+export const getExpiredOffers = async () => {
+  const response = await axios.get(`${API_URL}/allocations/offers/expired_offers/`, {
+    headers: getAuthHeaders()
+  });
+  console.log("Expired offers response: ", response.data);
+  return response.data;
+};
+
+export const respondToOffer = async (offer_id, responseToOffer) => {
+  const response = await axios.post(
+    `${API_URL}/allocations/offers/${offer_id}/respond_to_offer/`,
+    { status: responseToOffer },
+    { 
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      } 
+    }
+  );
+  console.log("accepted or rejected offers response:", response.data);
+  return response.data;
+};
+
+
 /**
  * Fetches the current user's pending offers from the backend.
  * Corresponds to: GET /api/allocations/offers/pending_offers/
@@ -45,7 +85,7 @@ export const getCourseOfferingDetails = async (course_offering_id) => {
 };
 
 /**
- * Fetches the current user's pending offers from the backend.
+ * Fetches the shared session details based on shared session id from the backend.
  * Corresponds to: GET /api/allocations/offers/pending_offers/
  */
 export const getSharedSessionDetails = async (shared_session_id) => {

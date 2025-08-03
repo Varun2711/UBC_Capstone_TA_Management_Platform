@@ -41,7 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NavigationHeader } from "@/components/ui/navigation-header"
 import { AppSidebar } from "../components/student-dashboard-sidebar"
 import { getProfile } from "@/logic/student-profile"
-import { getPendingOffers, getCourseOfferingDetails, getSharedSessionDetails } from "@/logic/student-offers-page"
+import { getPendingOffers, getAcceptedOffers, getRejectedOffers, getExpiredOffers, getCourseOfferingDetails, respondToOffer, getSharedSessionDetails } from "@/logic/student-offers-page"
 
 import axios from "axios"
 
@@ -202,7 +202,7 @@ const currentOffers = [
   },
 ];
 
-const pastOffers = [
+const mockPastOffers = [
   {
     id: 3,
     courses: [
@@ -347,6 +347,35 @@ function getStatusIcon(status) {
   }
 }
 
+function formatDateTime(isoString) {
+  // Remove the last 5 characters
+  const trimmed = isoString.slice(0, -5); // removes .999Z
+
+  // Split into date and time
+  const [datePart, timePart] = trimmed.split("T");
+
+  // Parse date
+  const date = new Date(datePart + "T00:00:00"); // ensure it's treated as a date
+  const day = date.getUTCDate();
+  const month = date.toLocaleString("default", { month: "long" });
+  const year = date.getUTCFullYear();
+
+  // Add ordinal suffix to day
+  const ordinalSuffix = (d) => {
+    if (d > 3 && d < 21) return `${d}th`;
+    switch (d % 10) {
+      case 1: return `${d}st`;
+      case 2: return `${d}nd`;
+      case 3: return `${d}rd`;
+      default: return `${d}th`;
+    }
+  };
+
+  const formattedDate = `${ordinalSuffix(day)} ${month} ${year}`;
+
+  return `${timePart} ${formattedDate}`;
+}
+
 
 export default function OffersPage() {
   const [selectedOffer, setSelectedOffer] = useState(null)
@@ -354,18 +383,82 @@ export default function OffersPage() {
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingOffers, setPendingOffers] = useState([]);
+  const [acceptedOffers, setAcceptedOffers] = useState([]);
+  const [rejectedOffers, setRejectedOffers] = useState([]);
+  const [expiredOffers, setExpiredOffers] = useState([]);
+  const [pastOffers, setPastOffers] = useState([]);
   const [isLoadingPendingOffers, setIsLoadingPendingOffers] = useState(true);
-  const [isLoadingOfferItemsDetails, setIsLoadingOfferItemsDetails] = useState(true);
+  const [isLoadingAcceptedOffers, setIsLoadingAcceptedOffers] = useState(true);
+  const [isLoadingRejectedOffers, setIsLoadingRejectedOffers] = useState(true);
+  const [isLoadingExpiredOffers, setIsLoadingExpiredOffers] = useState(true);
+  const [isLoadingPendingOfferItemsDetails, setIsLoadingPendingOfferItemsDetails] = useState(true);
+  const [isLoadingAcceptedOfferItemsDetails, setIsLoadingAcceptedOfferItemsDetails] = useState(true);
+  const [isLoadingRejectedOfferItemsDetails, setIsLoadingRejectedOfferItemsDetails] = useState(true);
+  const [isLoadingExpiredOfferItemsDetails, setIsLoadingExpiredOfferItemsDetails] = useState(true);
+  const [instructorInfo, setInstructorInfo] = useState({});
+  const [termInfo, setTermInfo] = useState({});
+
   const [error, setError] = useState(null);
 
-  const handleAcceptOffer = (offerId) => {
-    console.log("Accepting offer:", offerId)
-    // Handle accept logic here
+  const [instructorMap, setInstructorMap] = useState({});
+
+  useEffect(() => {
+    const loadInstructors = async () => {
+      const allOffers = [
+        ...pendingOffers,
+        ...pastOffers,
+        ...acceptedOffers,
+        ...rejectedOffers,
+        ...expiredOffers,
+      ];
+
+      const instructorMap = {};
+      const termInfoMap = {};
+
+      for (const offer of allOffers) {
+        for (const item of offer.offer_items) {
+          const id = item.course_offering_id || item.shared_session_id;
+
+          if (!id) continue;
+
+          // Avoid duplicate fetches
+          if (instructorMap[id]) continue;
+
+          try {
+            let res;
+            if (item.course_offering_id) {
+              res = await getCourseOfferingDetails(item.course_offering_id);
+              console.log("res from courseofferingdetails: ", res);
+            } else if (item.shared_session_id) {
+              res = await getSharedSessionDetails(item.shared_session_id);
+              console.log("res from sharedsessiondetails: ", res);
+            }
+
+            instructorMap[id] = res?.instructor_info || "No instructor assigned";
+            console.log("instructorMap[id]: ", instructorMap[id]);
+            termInfoMap[id] = res?.term_info || "No term information available";
+            console.log("termInfoMap[id]: ", termInfoMap[id]);
+          } catch (error) {
+            console.error(`Failed to fetch instructor info for id: ${id}`, error);
+            instructorMap[id] = null;
+          }
+        }
+      }
+
+      setInstructorInfo(instructorMap);
+      setTermInfo(termInfoMap);
+    };
+    loadInstructors();
+  }, [pendingOffers]);
+
+  const handleAcceptOffer = async (offer_id) => {
+    console.log("Accepting offer:", offer_id)
+    await respondToOffer(offer_id, "accepted");
   }
 
-  const handleRejectOffer = (offerId) => {
-    console.log("Rejecting offer:", offerId)
-    // Handle reject logic here
+  const handleRejectOffer = async (offer_id) => {
+    console.log("Rejecting offer:", offer_id)
+    await respondToOffer(offer_id, "rejected");
   }
 
   const transformBackendDataToFrontend = (data) => {
@@ -410,6 +503,7 @@ export default function OffersPage() {
     };
   };
 
+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -426,7 +520,7 @@ export default function OffersPage() {
         
         // Only fetch details if we have pending offers
         if (pendingOffersData.length > 0) {
-          setIsLoadingOfferItemsDetails(true);
+          setIsLoadingPendingOfferItemsDetails(true);
           const offersWithDetails = await Promise.all(
             pendingOffersData.map(async (offer) => {
               const detailedItems = await Promise.all(
@@ -446,20 +540,112 @@ export default function OffersPage() {
           );
           setPendingOffers(offersWithDetails);
         }
+
+        // Then fetch accepted offers
+        setIsLoadingAcceptedOffers(true);
+        const acceptedOffersData = await getAcceptedOffers();
+        setAcceptedOffers(acceptedOffersData);
+
+        if (acceptedOffersData.length > 0) {
+          setIsLoadingAcceptedOfferItemsDetails(true);
+          const acceptedOffersWithDetails = await Promise.all(
+            acceptedOffersData.map(async (offer) => {
+              const detailedItems = await Promise.all(
+                offer.offer_items.map(async (item) => {
+                  if (item.item_type === "course_offering") {
+                    const details = await getCourseOfferingDetails(item.course_offering_id);
+                    return { ...item, details };
+                  } else if (item.item_type === "shared_session") {
+                    const details = await getSharedSessionDetails(item.shared_session_id);
+                    return { ...item, details };
+                  }
+                  return item; //if item_type is not recognized, then return the item as is
+                })
+              );
+              return { ...offer, offer_items: detailedItems };
+            })
+          );
+          setAcceptedOffers(offersWithDetails);
+        }
+
+        setIsLoadingRejectedOffers(true);
+        const rejectedOffersData = await getRejectedOffers();
+        setRejectedOffers(rejectedOffersData);
+
+        if (rejectedOffersData.length > 0) {
+          setIsLoadingRejectedOfferItemsDetails(true);
+          const rejectedOffersWithDetails = await Promise.all(
+            rejectedOffersData.map(async (offer) => {
+              const detailedItems = await Promise.all(
+                offer.offer_items.map(async (item) => {
+                  if (item.item_type === "course_offering") {
+                    const details = await getCourseOfferingDetails(item.course_offering_id);
+                    return { ...item, details };
+                  } else if (item.item_type === "shared_session") {
+                    const details = await getSharedSessionDetails(item.shared_session_id);
+                    return { ...item, details };
+                  }
+                  return item; //if item_type is not recognized, then return the item as is
+                })
+              );
+              return { ...offer, offer_items: detailedItems };
+            })
+          );
+          setRejectedOffers(offersWithDetails);
+        }
+
+        setIsLoadingExpiredOffers(true);
+        const expiredOffersData = await getExpiredOffers();
+        setExpiredOffers(expiredOffersData);
+
+        if (expiredOffersData.length > 0) {
+          setIsLoadingExpiredOfferItemsDetails(true);
+          const expiredOffersWithDetails = await Promise.all(
+            expiredOffersData.map(async (offer) => {
+              const detailedItems = await Promise.all(
+                offer.offer_items.map(async (item) => {
+                  if (item.item_type === "course_offering") {
+                    const details = await getCourseOfferingDetails(item.course_offering_id);
+                    return { ...item, details };
+                  } else if (item.item_type === "shared_session") {
+                    const details = await getSharedSessionDetails(item.shared_session_id);
+                    return { ...item, details };
+                  }
+                  return item; //if item_type is not recognized, then return the item as is
+                })
+              );
+              return { ...offer, offer_items: detailedItems };
+            })
+          );
+          setExpiredOffers(expiredOffersWithDetails);
+        }
+
       } catch (error) {
         setError("Failed to load data");
         console.error("Fetch error:", error);
       } finally {
+        console.log("finally block is reached");
         setIsLoading(false);
         setIsLoadingPendingOffers(false);
-        setIsLoadingOfferItemsDetails(false);
+        setIsLoadingPendingOfferItemsDetails(false);
+        setIsLoadingAcceptedOffers(false);
+        setIsLoadingAcceptedOfferItemsDetails(false);
+        setIsLoadingRejectedOffers(false);
+        setIsLoadingRejectedOfferItemsDetails(false);
+        setIsLoadingExpiredOffers(false);
+        setIsLoadingExpiredOfferItemsDetails(false);
       }
     };
-
+    
     fetchAllData();
   }, []); // Only runs once on mount
 
-  if (isLoading && isLoadingPendingOffers && isLoadingOfferItemsDetails) {
+  useEffect(() => {
+    const combined = [...acceptedOffers, ...rejectedOffers, ...expiredOffers];
+    setPastOffers(combined);
+  }, [acceptedOffers, rejectedOffers, expiredOffers])
+
+  if (isLoading || isLoadingPendingOffers || isLoadingPendingOfferItemsDetails || isLoadingAcceptedOffers || isLoadingAcceptedOfferItemsDetails || isLoadingRejectedOffers || isLoadingRejectedOfferItemsDetails || isLoadingExpiredOffers || isLoadingExpiredOfferItemsDetails) {
     return <div className="flex justify-center items-center h-screen">Loading student offers...</div>;
   }
 
@@ -468,9 +654,9 @@ export default function OffersPage() {
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
           <AppSidebar
-            name={`${userData.firstName} ${userData.lastName}`}
-            email={userData.email}
-            avatar={userData.avatar}
+            name={`${userData?.firstName} ${userData?.lastName}`}
+            email={userData?.email}
+            avatar={userData?.avatar}
           />
           <div className="flex-1">
             {/* Header */}
@@ -519,7 +705,7 @@ export default function OffersPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">
-                      {pastOffers.filter((offer) => offer.status === "Accepted").length}
+                      {acceptedOffers.filter((offer) => offer.status === "accepted").length}
                     </div>
                     <p className="text-xs text-muted-foreground">Active positions</p>
                   </CardContent>
@@ -531,7 +717,7 @@ export default function OffersPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-orange-600">
-                      {currentOffers.filter((offer) => offer.daysLeft <= 7).length}
+                      {pendingOffers.filter((offer) => offer.daysLeft <= 7).length}
                     </div>
                     <p className="text-xs text-muted-foreground">Urgent responses</p>
                   </CardContent>
@@ -541,7 +727,7 @@ export default function OffersPage() {
               {/* Tabs */}
               <Tabs defaultValue="current" className="space-y-4">
                 <TabsList>
-                  <TabsTrigger value="current">Current Offers ({currentOffers.length})</TabsTrigger>
+                  <TabsTrigger value="current">Current Offers ({pendingOffers.length})</TabsTrigger>
                   <TabsTrigger value="past">Past Offers ({pastOffers.length})</TabsTrigger>
                 </TabsList>
 
@@ -560,85 +746,82 @@ export default function OffersPage() {
                     </Card>
                   ) : (
                     <div className="space-y-4">
-                      {pendingOffers.map((offer) => (
-                        <Card key={offer.offer_id} className="overflow-hidden">
-                          <CardHeader>
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <CardTitle className="text-lg">{"offer.session"} Offer</CardTitle>
-                                </div>
-                                <CardDescription>
-                                  {/*offer.courses.map(course = course.instructor).join(", ")*/}
-                                  course instructor
-                                </CardDescription>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {getStatusBadge(offer.status)}
-                              </div>
-                            </div>
-                          </CardHeader>
-
-                          <CardContent className="space-y-4">
-                            {/* Course Details */}
-                            <div className="space-y-3">
-                              {offer.offer_items.map((course, idx) => (
-                                <div key={idx} className="p-4 bg-muted/50 rounded-lg space-y-2">
-                                  <div className="font-semibold text-base">{course.course}</div>
-                                  <div className="text-sm text-muted-foreground">Instructor: {course.instructor}</div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {course.courseOfferings.map((section, i) => (
-                                      <div key={`offer-${i}`} className="text-sm">
-                                        📘 {section.type} - {section.section} • {section.time}
-                                      </div>
-                                    ))}
-                                    {course.sharedSessions.map((session, i) => (
-                                      <div key={`session-${i}`} className="text-sm">
-                                        🧪 {session.type} - {session.section} • {session.time}
-                                      </div>
-                                    ))}
+                      {pendingOffers.map((offer) => {
+                        console.log("offer: ", offer);
+                        return (
+                          <Card key={offer.offer_id} className="overflow-hidden">
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <CardTitle className="text-lg"> Offer </CardTitle>
                                   </div>
+                                  <CardDescription>
+                                    These are the offers that you have received and need to respond to.
+                                  </CardDescription>
                                 </div>
-                              ))}
-                            </div>
-
-                            {/* Offer Metadata */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-                              <div>
-                                <p className="text-sm font-medium">Hours/Week</p>
-                                <p className="text-lg font-bold">{offer.hoursPerWeek}</p>
+                                <div className="flex items-center gap-2">
+                                  {getStatusBadge(offer.status)}
+                                </div>
                               </div>
-                            </div>
+                            </CardHeader>
 
-                            {/* Timeline */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <p className="font-medium">Offer Received</p>
-                                <p className="text-muted-foreground">{offer.offerDate}</p>
+                            <CardContent className="space-y-4">
+                              {/* Course Details */}
+                              <div className="space-y-3">
+                                {offer.offer_items.map((item, idx) => (
+                                  <div key={idx} className="p-4 bg-muted/50 rounded-lg space-y-2">
+                                    <div className="font-semibold text-base">{item.course_number} {item.course_name}</div>
+                                    <div className="text-sm text-muted-foreground">{item.section_type_display} {item.section_number}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Instructor: {
+                                        instructorInfo[item.course_offering_id || item.shared_session_id] || "No instructor found"
+                                      }
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Term: {
+                                        termInfo[item.course_offering_id || item.shared_session_id] || "No term info found"
+                                      }
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                      {item.time_slot.day} {item.time_slot.start_time} - {item.time_slot.end_time}     
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                              <div>
-                                <p className="font-medium">Response Deadline</p>
-                                <p className={offer.daysLeft <= 7 ? "text-red-600 font-medium" : "text-muted-foreground"}>
-                                  {offer.responseDeadline}
-                                </p>
-                              </div>
-                            </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex gap-3 pt-4 border-t">
-                              <Button onClick={() => handleAcceptOffer(offer.id)} className="flex-1">
-                                <Check className="h-4 w-4 mr-2" />
-                                Accept Offer
-                              </Button>
-                              <Button variant="outline" onClick={() => handleRejectOffer(offer.id)} className="flex-1">
-                                <X className="h-4 w-4 mr-2" />
-                                Decline Offer
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                              {/* Timeline */}
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                  <p className="font-medium">Offer Received</p>
+                                  <p className="text-red-600 font-medium">
+                                    {formatDateTime(offer.offer_date)}
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <p className="font-medium">Response Deadline</p>
+                                  <p className="text-red-600 font-medium">
+                                    {formatDateTime(offer.response_deadline)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex gap-3 pt-4 border-t">
+                                <Button onClick={() => handleAcceptOffer(offer.offer_id)} className="flex-1">
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Accept Offer
+                                </Button>
+                                <Button variant="outline" onClick={() => handleRejectOffer(offer.offer_id)} className="flex-1">
+                                  <X className="h-4 w-4 mr-2" />
+                                  Decline Offer
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
 
                   )}
@@ -659,15 +842,15 @@ export default function OffersPage() {
                   ) : (
                     <div className="space-y-4">
                       {pastOffers.map((offer) => (
-                        <Card key={offer.id} className="overflow-hidden">
+                        <Card key={offer.offer_id} className="overflow-hidden">
                           <CardHeader>
                             <div className="flex items-start justify-between">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                  <CardTitle className="text-lg">{offer.session} Offer</CardTitle>
+                                  <CardTitle className="text-lg"> Past Offers</CardTitle>
                                 </div>
                                 <CardDescription>
-                                  {offer.courses.map(course => course.instructor).join(", ")}
+                                  These are the past offers that are either accepted, rejected, or expired.
                                 </CardDescription>
                               </div>
                             </div>
@@ -676,57 +859,45 @@ export default function OffersPage() {
                           <CardContent className="space-y-4">
                             {/* Course Details */}
                             <div className="space-y-3">
-                              {offer.courses.map((course, idx) => (
-                                <div key={idx} className="p-4 bg-muted/50 rounded-lg space-y-2">
-                                  <div className="font-semibold text-base">{course.course}</div>
-                                  <div className="text-sm text-muted-foreground">Instructor: {course.instructor}</div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {course.courseOfferings.map((section, i) => (
-                                      <div key={`offer-${i}`} className="text-sm">
-                                        📘 {section.type} - {section.section} • {section.time}
-                                      </div>
-                                    ))}
-                                    {course.sharedSessions.map((session, i) => (
-                                      <div key={`session-${i}`} className="text-sm">
-                                        🧪 {session.type} - {session.section} • {session.time}
-                                      </div>
-                                    ))}
+                              {offer.offer_items.map((item, idx) => (
+                                  <div key={idx} className="p-4 bg-muted/50 rounded-lg space-y-2">
+                                    <div className="font-semibold text-base">{item.course_number} {item.course_name}</div>
+                                    <div className="text-sm text-muted-foreground">{item.section_type_display} {item.section_number}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Instructor: {
+                                        instructorMap[item.course_offering_id || item.shared_session_id] || "No instructor found"
+                                      }
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                      {item.time_slot.day} {item.time_slot.start_time} - {item.time_slot.end_time}     
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Offer Metadata */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-                              <div>
-                                <p className="text-sm font-medium">Hours/Week</p>
-                                <p className="text-lg font-bold">{offer.hoursPerWeek}</p>
-                              </div>
+                                ))}
                             </div>
 
                             {/* Timeline */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                               <div>
                                 <p className="font-medium">Offer Received</p>
-                                <p className="text-muted-foreground">{offer.offerDate}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium">Response Deadline</p>
-                                <p className={offer.daysLeft <= 7 ? "text-red-600 font-medium" : "text-muted-foreground"}>
-                                  {offer.responseDeadline}
+                                <p className="text-red-600 font-medium">
+                                  {formatDateTime(offer.offer_date)}
                                 </p>
                               </div>
+
                               <div>
-                                <p className="font-medium">Status:</p>
-                                <p className={offer.status === "Accepted" ? "text-green-600 font-medium" : "text-red-600 font-medium"}>{offer.status}</p>
+                                <p className="font-medium">
+                                  {offer.status === "expired" ? "Response Deadline" : "Responded At"}
+                                </p>
+                                <p className="text-red-600 font-medium">
+                                  {formatDateTime(
+                                    offer.status === "expired" ? offer.response_deadline : offer.responded_at
+                                  )}
+                                </p>
                               </div>
                             </div>
-
                           </CardContent>
                         </Card>
                       ))}
-
                     </div>
                   )}
                 </TabsContent>
