@@ -35,8 +35,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { logout } from "@/logic/auth"
+} from "@/components/ui/dropdown-menu";
+import { logout } from "@/logic/auth";
 
 const navigationItems = [
   {
@@ -48,6 +48,11 @@ const navigationItems = [
     title: "Apply",
     icon: PlusCircle,
     url: "/apply",
+  },
+  {
+    title: "My Applications",
+    icon: PlusCircle,
+    url: "/my-applications",
   },
   {
     title: "Schedule",
@@ -64,7 +69,7 @@ const navigationItems = [
     icon: Settings,
     url: "#",
   },
-]
+];
 
 export function AppSidebar({ name, email, avatar }) {
   // Using useNavigate from react-router-dom to handle navigation
@@ -115,14 +120,22 @@ export function AppSidebar({ name, email, avatar }) {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="h-10">
-                <SidebarMenuButton className="bg-background text-foreground hover:bg-muted" aria-label="account menu">
+                <SidebarMenuButton
+                  className="bg-background text-foreground hover:bg-muted"
+                  aria-label="account menu"
+                >
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={avatar || "/placeholder.svg"} alt={name}/>
+                    <AvatarImage
+                      src={avatar || "/placeholder.svg"}
+                      alt={name}
+                    />
                     <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{name}</span>
-                    <span className="truncate text-xs text-muted-foreground">{email}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {email}
+                    </span>
                   </div>
                   <MoreVerticalIcon className="ml-auto size-4" />
                 </SidebarMenuButton>
