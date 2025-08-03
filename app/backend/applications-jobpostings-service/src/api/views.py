@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import JsonResponse, HttpRequest
+from django.http import JsonResponse, HttpRequest, HttpResponseForbidden, HttpResponse
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework import viewsets, status, serializers
 from rest_framework.response import Response
@@ -15,13 +15,45 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from django.utils.crypto import salted_hmac, constant_time_compare
+import os
+from datetime import datetime
 
 # Import shared auth utilities
 from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsStudentUser
 
+#Import the download utility
+from .utils.download_links import generate_signed_url
+
+
 # Define a combined permission for schedulers or admins
 IsSchedulerOrAdmin = IsSchedulerUser | IsAdminUser
 IsSchedulerOrStudent = IsStudentUser | IsSchedulerUser
+IsStudentOrSchedulerOrAdmin = IsStudentUser | IsSchedulerUser | IsAdminUser
+
+
+#ensure secure document downloads
+def secure_document_download(request):
+    path = request.GET.get("path")
+    exp = request.GET.get("exp")
+    sig = request.GET.get("sig")
+
+    if not (path and exp and sig):
+        return HttpResponseForbidden("Missing parameters.")
+
+    expected = salted_hmac("nginx-download", f"{path}:{exp}", secret=settings.SECRET_KEY).hexdigest()
+    if not constant_time_compare(sig, expected):
+        return HttpResponseForbidden("Invalid signature.")
+
+    if int(exp) < int(datetime.utcnow().timestamp()):
+        return HttpResponseForbidden("URL expired.")
+
+    response = HttpResponse()
+    response["Content-Type"] = "application/octet-stream"
+    response["Content-Disposition"] = f'attachment; filename="{os.path.basename(path)}"'
+    response["X-Accel-Redirect"] = f"/protected-documents/{path}"
+    return response
 
 class JobPostingFilter(django_filters.FilterSet):
     term = django_filters.NumberFilter()
@@ -198,8 +230,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         elif self.action == 'by_id':
             return [IsSchedulerOrStudent()]
         elif self.action in ['list', 'retrieve', 'by_posting', 'count_by_posting']:
-            return [IsSchedulerOrAdmin()]
-        
+            return [IsSchedulerOrAdmin()]        
         return [IsAuthenticated() ]
 
     def get_queryset(self):
@@ -813,15 +844,18 @@ class ApplicationShortListViewSet(viewsets.ModelViewSet):
 
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
-    serializer_class = DocumentSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class = DocumentSerializer   
 
     def get_permissions(self):
-        """Apply custom permission logic."""
-        if self.action in ['list', 'retrieve']: 
-            return [IsAuthenticated()] #get_queryset finetunes this further
+        """Apply custom permission logic."""        
+        print(f"DEBUG: get_permissions called for action: {self.action}")
+        if self.action in ['list', 'retrieve', 'by_application']: 
+            print("DEBUG: Returning AllowAny permission for testing")
+            return [IsStudentOrSchedulerOrAdmin()] #get_queryset finetunes this further
         elif self.action in ['create','destroy', 'update', 'partial_update']:
+            print("DEBUG: Returning IsStudentUser permission")
             return [IsStudentUser()]       #only student users can create application documents or remove them 
+        print("DEBUG: Returning default permissions")
         return super().get_permissions()
 
     def get_queryset(self):
@@ -876,6 +910,47 @@ class DocumentViewSet(viewsets.ModelViewSet):
             return student.id
         except (User.DoesNotExist, Student.DoesNotExist):
             return None
+        
+    @action(detail=True, methods=['get'])
+    def signed_download_url(self, request, pk=None):
+        document = self.get_object()
+        path = document.file.name
+        signed_url = generate_signed_url(path)  # signed url to return to nginx
+        return Response({'url': signed_url})
+    
+    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)')
+    def by_application(self, request, application_id=None):        
+        user_type, user_id = self.get_user_info(request)
+
+        # Get the base queryset (already filtered by permissions)
+        queryset = self.get_queryset()
+
+        # Filter by application ID
+        documents = queryset.filter(application_id=application_id)
+
+        # Additional security check for students - ensure they can only see documents from their own applications
+        if user_type == 'student' and user_id:
+            student_model_id = self.get_student_model_id(user_id)
+            if student_model_id:
+                # Verify the application belongs to this student
+                print(f"Authenticated student_model_id: {student_model_id}")
+                try:
+                    from .models import Application
+                    application = Application.objects.get(
+                        application_id=application_id,
+                        student_id=student_model_id
+                    )
+                    print("Application is owned by this student.")
+                except Application.DoesNotExist:
+                    print("Application does not belong to this student.")
+                    return Response(
+                        {"detail": "Application not found or you do not have permission to view its documents."},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+        serializer = self.get_serializer(documents, many=True)
+        return Response(serializer.data)
+
 
         
 @api_view(['GET'])
@@ -906,7 +981,8 @@ def api_root(request):
             'submit_with_responses': '/api/ajp/applications/submit_with_responses/',
             'update_application_status': '/api/ajp/applications/{id}/',  # PATCH only
             'my_applications_by_id': '/api/ajp/applications/by-student/{student_id}/',
-            'my_applications_short': '/api/ajp/applications/myapplications-short/',  
+            'my_applications_short': '/api/ajp/applications/myapplications-short/', 
+            'application_documents': '/api/ajp/documents/by-application/{application_id}/' 
         },
         
         'scheduler_endpoints': {

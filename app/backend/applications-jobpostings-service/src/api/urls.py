@@ -2,7 +2,7 @@ from django.urls import path, include
 from . import views
 from rest_framework.routers import DefaultRouter
 from .views import  ( JobPostingViewSet, ApplicationViewSet, FormTemplateViewSet, FormSectionViewSet, 
-FormQuestionViewSet, ApplicationResponseViewSet, ApplicationShortListViewSet, DocumentViewSet)
+FormQuestionViewSet, ApplicationResponseViewSet, ApplicationShortListViewSet, DocumentViewSet, secure_document_download)
 
 router = DefaultRouter()
 router.register(r'jobpostings', JobPostingViewSet, basename='jobposting')
@@ -14,9 +14,9 @@ router.register(r'application-responses', ApplicationResponseViewSet, basename='
 router.register(r'application-shortlists', ApplicationShortListViewSet, basename='applicationshortlist')  
 router.register(r'documents', DocumentViewSet, basename='documents')
 
-urlpatterns = router.urls
 
 urlpatterns = [
     path('', views.api_root, name='api-root'),
     path('', include(router.urls)),
+    path("download", secure_document_download, name="secure_document_download"),
 ]

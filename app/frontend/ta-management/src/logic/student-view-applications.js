@@ -451,6 +451,92 @@ export const fetchJobPostingDetails = async (postingId) => {
   }
 };
 
+/**
+ * Fetches documents associated with a specific application
+ * @param {string|number} applicationId - Application ID
+ * @returns {Promise<Array>} Array of document objects
+ */
+export const fetchApplicationDocuments = async (applicationId) => {
+  try {
+    const headers = getAuthHeaders();
+    // Check if we have a valid token
+    if (!headers.Authorization) {
+      throw new Error("No authentication token available");
+    }
+
+    console.log("fetching documents");
+
+    console.log("Auth headers for document fetch:", getAuthHeaders());
+
+    const response = await instance.get(
+      `/ajp/documents/by-application/${applicationId}/`,
+      { headers }
+    );
+
+    console.log("here's the response", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching application documents:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+/**
+ * Gets a signed download URL for a document
+ * @param {string|number} documentId - Document ID
+ * @returns {Promise<string>} Signed download URL
+ */
+export const getDocumentDownloadUrl = async (documentId) => {
+  try {
+    const headers = getAuthHeaders();
+
+    if (!headers.Authorization) {
+      throw new Error("No authentication token available");
+    }
+
+    const response = await instance.get(
+      `/ajp/documents/${documentId}/signed_download_url/`,
+      {
+        headers,
+      }
+    );
+
+    return response.data.url;
+  } catch (error) {
+    console.error(
+      "Error getting document download URL:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+/**
+ * Downloads a document by opening the signed URL
+ * @param {string|number} documentId - Document ID
+ * @param {string} fileName - Original file name for download
+ */
+export const downloadDocument = async (documentId, fileName) => {
+  try {
+    const downloadUrl = await getDocumentDownloadUrl(documentId);
+
+    // Create a temporary link to trigger download
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = fileName || "document";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Error downloading document:", error);
+    throw error;
+  }
+};
+
 // Also update your default export to include the new function:
 export default {
   fetchApplicationDetail,
@@ -463,5 +549,8 @@ export default {
   organizeSectionData,
   formatResponseForDisplay,
   getStatusDisplayInfo,
-  fetchStudentApplications, // Add this if it's missing
+  fetchStudentApplications,
+  fetchApplicationDocuments,
+  getDocumentDownloadUrl,
+  downloadDocument,
 };
