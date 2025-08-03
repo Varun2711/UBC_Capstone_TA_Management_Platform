@@ -671,6 +671,73 @@ class ApplicationShortListViewSet(viewsets.ModelViewSet):
         return Response({'shortlisted': exists})
 
 
+
+class DocumentViewSet(viewsets.ModelViewSet):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        """Apply custom permission logic."""
+        if self.action in ['list', 'retrieve']: 
+            return [IsAuthenticated()] #get_queryset finetunes this further
+        elif self.action in ['create','destroy', 'update', 'partial_update']:
+            return [IsStudentUser()]       #only student users can create application documents or remove them 
+        return super().get_permissions()
+
+    def get_queryset(self):
+        """Restrict access based on user role."""
+        user_type, user_id = self.get_user_info(self.request)
+
+        if user_type in ['scheduler', 'admin']:
+            return Document.objects.all()
+
+        if user_type == 'student' and user_id:
+            student_model_id = self.get_student_model_id(user_id)
+            return Document.objects.filter(student_id=student_model_id)
+
+        return Document.objects.none()
+
+    def perform_create(self, serializer):
+        """Auto-attach the student to the uploaded document if applicable."""
+        user_type, user_id = self.get_user_info(self.request)
+
+        if user_type == 'student' and user_id:
+            student_model_id = self.get_student_model_id(user_id)
+            if student_model_id:
+                serializer.save(student_id=student_model_id)
+            else:
+                raise serializers.ValidationError("No matching student record found.")
+        else:
+            serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        """Ensure students can only delete their own documents."""
+        instance = self.get_object()
+        user_type, user_id = self.get_user_info(request)
+
+        if user_type == 'student':
+            student_model_id = self.get_student_model_id(user_id)
+            if instance.student_id != student_model_id:
+                return Response(
+                    {"detail": "You are not authorized to delete this document."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        return super().destroy(request, *args, **kwargs)
+
+    def get_user_info(self, request):
+        user_type = getattr(request, 'user_type', None)
+        user_id = getattr(request, 'user_id', None)
+        return user_type, user_id
+
+    def get_student_model_id(self, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            student = Student.objects.get(email=user.email)
+            return student.id
+        except (User.DoesNotExist, Student.DoesNotExist):
+            return None
+
         
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -690,5 +757,7 @@ def api_root(request):
             'apps_by_student': '/api/ajp/applications/by-student/{student_id}/',
             'apps_by_posting': '/api/ajp/applications/by-posting/{posting_id}/',
             'app_by_id': '/api/ajp/applications/by-id/{application_id}/',
+            'documents' : '/api/ajp/documents/',
         }
     })
+

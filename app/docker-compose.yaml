@@ -90,6 +90,7 @@ services:
     volumes:
       - ./backend/applications-jobpostings-service:/app
       - ./shared-utils:/app/shared-utils
+      - ./documents:/app/documents # for documents
     depends_on:
       db:
         condition: service_healthy
@@ -117,7 +118,7 @@ services:
       - app-networks
 
   courses-terms-service:
-    container_name: 'courses-terms-service'
+    container_name: "courses-terms-service"
     build:
       context: ./backend/course-service
     ports:
@@ -149,7 +150,7 @@ services:
     # set app-networks as the current network
     networks:
       - app-networks
-  
+
   allocations-service:
     container_name: allocations-service
     build:
@@ -252,7 +253,7 @@ services:
       context: ./backend/notification-service
     command: celery -A notification_service worker -Q notifications --loglevel=info
     environment:
-    - PYTHONPATH=/app/src 
+      - PYTHONPATH=/app/src
     env_file:
       - .env
     volumes:
@@ -350,6 +351,8 @@ services:
       - application-service
       - courses-terms-service
       - allocations-service
+    volumes:
+      - ./documents:/app/documents:ro # read-only access as nginx will serve documents.
 
 volumes:
   db_data:

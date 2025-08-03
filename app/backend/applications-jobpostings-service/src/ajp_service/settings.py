@@ -111,3 +111,19 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Media files (user uploads including PDFs and Word docs)
+MEDIA_ROOT = '/app/documents'
+MEDIA_URL = '/media/'
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10MB
+
+# Allowed file types for documents
+ALLOWED_DOCUMENT_TYPES = ['pdf', 'doc', 'docx']
+
+
+
+import os
+os.makedirs(MEDIA_ROOT, exist_ok=True)

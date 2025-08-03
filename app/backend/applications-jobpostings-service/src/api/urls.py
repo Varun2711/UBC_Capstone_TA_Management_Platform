@@ -2,7 +2,7 @@ from django.urls import path, include
 from . import views
 from rest_framework.routers import DefaultRouter
 from .views import  ( JobPostingViewSet, ApplicationViewSet, FormTemplateViewSet, FormSectionViewSet, 
-FormQuestionViewSet, ApplicationResponseViewSet, ApplicationShortListViewSet)
+FormQuestionViewSet, ApplicationResponseViewSet, ApplicationShortListViewSet, DocumentViewSet)
 
 router = DefaultRouter()
 router.register(r'jobpostings', JobPostingViewSet, basename='jobposting')
@@ -12,6 +12,8 @@ router.register(r'form-sections', FormSectionViewSet, basename='formsection')
 router.register(r'form-questions', FormQuestionViewSet, basename='formquestion')
 router.register(r'application-responses', ApplicationResponseViewSet, basename='applicationresponse')
 router.register(r'application-shortlists', ApplicationShortListViewSet, basename='applicationshortlist')  
+router.register(r'documents', DocumentViewSet, basename='documents')
+
 urlpatterns = router.urls
 
 urlpatterns = [
