@@ -347,12 +347,16 @@ function getStatusIcon(status) {
   }
 }
 
-function formatDateTime(isoString) {
+function formatDateTime(isoString, responseType) {
   // Remove the last 5 characters
   const trimmed = isoString.slice(0, -5); // removes .999Z
 
   // Split into date and time
   const [datePart, timePart] = trimmed.split("T");
+
+  // Keep only hours and minutes
+  const [hours, minutes] = timePart.split(":");
+  const time = `${hours}:${minutes}`; // e.g. 18:45
 
   // Parse date
   const date = new Date(datePart + "T00:00:00"); // ensure it's treated as a date
@@ -373,7 +377,31 @@ function formatDateTime(isoString) {
 
   const formattedDate = `${ordinalSuffix(day)} ${month} ${year}`;
 
-  return `${timePart} ${formattedDate}`;
+  if(responseType === "response_deadline") {
+    return `End of Day  ${formattedDate}`;
+  }
+  return `${formattedDate}`;
+}
+
+function formatSharedSessionTime(time_slots_info) {
+  if (!Array.isArray(time_slots_info) || time_slots_info.length === 0) return "";
+
+  // Get the day (assuming all are same for shared session)
+  const day = time_slots_info[0].day_display;
+
+  // Extract all start and end times
+  const startTimes = time_slots_info.map(slot => slot.start_time);
+  const endTimes = time_slots_info.map(slot => slot.end_time);
+
+  // Find earliest start time and latest end time
+  const minStart = startTimes.reduce((min, current) =>
+    current < min ? current : min
+  );
+  const maxEnd = endTimes.reduce((max, current) =>
+    current > max ? current : max
+  );
+
+  return `${day} ${minStart} - ${maxEnd}`;
 }
 
 
@@ -397,16 +425,16 @@ export default function OffersPage() {
   const [isLoadingExpiredOfferItemsDetails, setIsLoadingExpiredOfferItemsDetails] = useState(true);
   const [instructorInfo, setInstructorInfo] = useState({});
   const [termInfo, setTermInfo] = useState({});
+  const [sharedSessionTimeInfo, setSharedSessionTimeInfo] = useState({});
 
   const [error, setError] = useState(null);
 
   const [instructorMap, setInstructorMap] = useState({});
 
   useEffect(() => {
-    const loadInstructors = async () => {
+    const loadDataOfOffers = async () => {
       const allOffers = [
         ...pendingOffers,
-        ...pastOffers,
         ...acceptedOffers,
         ...rejectedOffers,
         ...expiredOffers,
@@ -414,8 +442,15 @@ export default function OffersPage() {
 
       const instructorMap = {};
       const termInfoMap = {};
+      const sharedSessionTimeMap = {};
 
+      console.log("allOffers: ", allOffers);
+      console.log("acceptedOffers: ", acceptedOffers);
+      console.log("rejectedOffers: ", rejectedOffers);
+      console.log("expiredOffers: ", expiredOffers);
+      console.log("pendingOffers: ", pendingOffers);
       for (const offer of allOffers) {
+        console.log("offer in for loop: ", offer);
         for (const item of offer.offer_items) {
           const id = item.course_offering_id || item.shared_session_id;
 
@@ -436,8 +471,16 @@ export default function OffersPage() {
 
             instructorMap[id] = res?.instructor_info || "No instructor assigned";
             console.log("instructorMap[id]: ", instructorMap[id]);
-            termInfoMap[id] = res?.term_info || "No term information available";
-            console.log("termInfoMap[id]: ", termInfoMap[id]);
+            if(item.shared_session_id){
+              termInfoMap[id] = res?.academic_term_info || "No term information available";
+              console.log("termInfoMap[id]: ", termInfoMap[id]);
+              sharedSessionTimeMap[id] = formatSharedSessionTime(res?.time_slots_info) || "No time slots available";
+              console.log("sharedSessionTimeMap[id]: ", sharedSessionTimeMap[id]);
+            }
+            else if (item.course_offering_id) {
+              termInfoMap[id] = res?.term_info || "No term information available";
+              console.log("termInfoMap[id]: ", termInfoMap[id]);
+            }
           } catch (error) {
             console.error(`Failed to fetch instructor info for id: ${id}`, error);
             instructorMap[id] = null;
@@ -447,18 +490,29 @@ export default function OffersPage() {
 
       setInstructorInfo(instructorMap);
       setTermInfo(termInfoMap);
+      setSharedSessionTimeInfo(sharedSessionTimeMap);
     };
-    loadInstructors();
+    loadDataOfOffers();
   }, [pendingOffers]);
+
+  const findOfferById = (id) => pendingOffers.find((o) => o.offer_id === id);
 
   const handleAcceptOffer = async (offer_id) => {
     console.log("Accepting offer:", offer_id)
     await respondToOffer(offer_id, "accepted");
+    const tempPendingOffers = await getPendingOffers(); // Refresh offers
+    const tempAcceptedOffers = await getAcceptedOffers();
+    setPendingOffers(tempPendingOffers);
+    setAcceptedOffers(tempAcceptedOffers);
   }
 
   const handleRejectOffer = async (offer_id) => {
     console.log("Rejecting offer:", offer_id)
     await respondToOffer(offer_id, "rejected");
+    const tempPendingOffers = await getPendingOffers();
+    const tempRejectedOffers = await getRejectedOffers();
+    setPendingOffers(tempPendingOffers);
+    setRejectedOffers(tempRejectedOffers);
   }
 
   const transformBackendDataToFrontend = (data) => {
@@ -565,7 +619,7 @@ export default function OffersPage() {
               return { ...offer, offer_items: detailedItems };
             })
           );
-          setAcceptedOffers(offersWithDetails);
+          setAcceptedOffers(acceptedOffersWithDetails);
         }
 
         setIsLoadingRejectedOffers(true);
@@ -591,7 +645,7 @@ export default function OffersPage() {
               return { ...offer, offer_items: detailedItems };
             })
           );
-          setRejectedOffers(offersWithDetails);
+          setRejectedOffers(rejectedOffersWithDetails);
         }
 
         setIsLoadingExpiredOffers(true);
@@ -669,10 +723,6 @@ export default function OffersPage() {
                 <Button variant="ghost" size="icon">
                   <Bell className="h-4 w-4" />
                 </Button>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={studentProfile.avatar || "/placeholder.svg"} alt={studentProfile.name} />
-                  <AvatarFallback>SJ</AvatarFallback>
-                </Avatar>
               </div>
             </header>
 
@@ -784,7 +834,9 @@ export default function OffersPage() {
                                       }
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                      {item.time_slot.day} {item.time_slot.start_time} - {item.time_slot.end_time}     
+                                      {item.shared_session_id
+                                        ? sharedSessionTimeInfo[item.shared_session_id]
+                                        : `${item.time_slot.day} ${item.time_slot.start_time} - ${item.time_slot.end_time}`}
                                     </div>
                                   </div>
                                 ))}
@@ -795,14 +847,14 @@ export default function OffersPage() {
                                 <div>
                                   <p className="font-medium">Offer Received</p>
                                   <p className="text-red-600 font-medium">
-                                    {formatDateTime(offer.offer_date)}
+                                    {formatDateTime(offer.offer_date, "offer_date")}
                                   </p>
                                 </div>
 
                                 <div>
                                   <p className="font-medium">Response Deadline</p>
                                   <p className="text-red-600 font-medium">
-                                    {formatDateTime(offer.response_deadline)}
+                                    {formatDateTime(offer.response_deadline, "response_deadline")}
                                   </p>
                                 </div>
                               </div>
@@ -852,6 +904,9 @@ export default function OffersPage() {
                                 <CardDescription>
                                   These are the past offers that are either accepted, rejected, or expired.
                                 </CardDescription>
+                                <div className="flex items-center gap-2">
+                                  {getStatusBadge(offer.status)}
+                                </div>
                               </div>
                             </div>
                           </CardHeader>
@@ -859,17 +914,25 @@ export default function OffersPage() {
                           <CardContent className="space-y-4">
                             {/* Course Details */}
                             <div className="space-y-3">
+                              {console.log("offer.offer_items: ", offer.offer_items)}
                               {offer.offer_items.map((item, idx) => (
                                   <div key={idx} className="p-4 bg-muted/50 rounded-lg space-y-2">
                                     <div className="font-semibold text-base">{item.course_number} {item.course_name}</div>
                                     <div className="text-sm text-muted-foreground">{item.section_type_display} {item.section_number}</div>
                                     <div className="text-sm text-muted-foreground">
                                       Instructor: {
-                                        instructorMap[item.course_offering_id || item.shared_session_id] || "No instructor found"
+                                        instructorInfo[item.course_offering_id || item.shared_session_id] || "No instructor found"
+                                      }
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Term: {
+                                        termInfo[item.course_offering_id || item.shared_session_id] || "No term info found"
                                       }
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                      {item.time_slot.day} {item.time_slot.start_time} - {item.time_slot.end_time}     
+                                      {item.shared_session_id
+                                        ? sharedSessionTimeInfo[item.shared_session_id]
+                                        : `${item.time_slot.day} ${item.time_slot.start_time} - ${item.time_slot.end_time}`}
                                     </div>
                                   </div>
                                 ))}
@@ -880,17 +943,18 @@ export default function OffersPage() {
                               <div>
                                 <p className="font-medium">Offer Received</p>
                                 <p className="text-red-600 font-medium">
-                                  {formatDateTime(offer.offer_date)}
+                                  {formatDateTime(offer.offer_date, "offer_date")}
                                 </p>
                               </div>
 
                               <div>
                                 <p className="font-medium">
-                                  {offer.status === "expired" ? "Response Deadline" : "Responded At"}
+                                  {offer.status === "expired" ? "Response Deadline" : "Responded on"}
                                 </p>
                                 <p className="text-red-600 font-medium">
                                   {formatDateTime(
-                                    offer.status === "expired" ? offer.response_deadline : offer.responded_at
+                                    offer.status === "expired" ? offer.response_deadline : offer.responded_at,
+                                    "past_response_deadline"
                                   )}
                                 </p>
                               </div>

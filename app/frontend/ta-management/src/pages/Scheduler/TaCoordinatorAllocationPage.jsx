@@ -1964,7 +1964,7 @@ export default function TAAllocationPage() {
                                 }));
                               });
 
-                              if (newOfferItemsPayload.length === 0) {
+                              if (offerItemsPayload.length === 0) {
                                 alert("No valid time slots found for the selected sections. Cannot create offer.");
                                 return;
                               }

@@ -89,7 +89,7 @@ export const getCourseOfferingDetails = async (course_offering_id) => {
  * Corresponds to: GET /api/allocations/offers/pending_offers/
  */
 export const getSharedSessionDetails = async (shared_session_id) => {
-  const response = await axios.get(`${API_URL}/course-term-service/sharedsessions/${shared_session_id}`, {
+  const response = await axios.get(`${API_URL}/course-term-service/shared-sessions/${shared_session_id}`, {
     headers: getAuthHeaders()
   });
   return response.data;
