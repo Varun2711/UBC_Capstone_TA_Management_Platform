@@ -20,6 +20,7 @@ export default function ReviewSection({
   confirmation,
   setConfirmation,
   documents,
+  termDetails,
   errors = {},
 }) {
   // Helper function to get the display value for a response
@@ -27,16 +28,26 @@ export default function ReviewSection({
     if (!response && response !== 0) return "NA";
 
     const { question_type, options = [] } = question;
-
-    // Normalize options to array format
     let normalizedOptions = [];
-    if (Array.isArray(options)) {
-      normalizedOptions = options;
-    } else if (typeof options === "object" && options !== null) {
-      normalizedOptions = Object.entries(options).map(([key, value]) => ({
-        value: key,
-        label: value,
-      }));
+
+    if (
+      question.field_name === "termSelection" &&
+      termDetails &&
+      Array.isArray(termDetails) &&
+      termDetails.length > 0
+    ) {
+      normalizedOptions = termDetails;
+    } else {
+      // Normalize options to array format
+
+      if (Array.isArray(options)) {
+        normalizedOptions = options;
+      } else if (typeof options === "object" && options !== null) {
+        normalizedOptions = Object.entries(options).map(([key, value]) => ({
+          value: key,
+          label: value,
+        }));
+      }
     }
 
     switch (question_type) {
@@ -132,15 +143,6 @@ export default function ReviewSection({
             Note: You must submit a valid study permit when requested.
           </span>
         )}
-
-        {/* {field_name === "hasOtherPositions" && response === "yes" && (
-          <div className="ml-4 mt-1 text-gray-600">
-            Hours per week for other positions:
-            <span className="font-bold ml-2">
-              {getResponseValue("otherPositionHours") || "Not specified"}
-            </span>
-          </div>
-        )} */}
       </li>
     );
   };
@@ -178,133 +180,13 @@ export default function ReviewSection({
           Review Your Application Responses
         </h2>
 
-        {/* Dynamic Sections Review */}
+        {/* Dynamic Sections Review. Render the dynamic responses to questions */}
         <div className="space-y-6">
-          {dynamicSections && dynamicSections.length > 0 ? (
-            dynamicSections.sort((a, b) => a.order - b.order).map(renderSection)
-          ) : (
-            <section>
-              <Label className="text-lg font-medium text-gray-900 mb-3 block">
-                Application Responses
-              </Label>
-              <ul className="list-disc list-inside ml-4 space-y-2">
-                {/* Fallback to static questions if no dynamic sections */}
-                {selections.citizenshipStatus && (
-                  <li>
-                    Are you a Canadian citizen or permanent resident?
-                    <span className="font-bold ml-2">
-                      {getCitizenshipLabel(selections.citizenshipStatus)}
-                    </span>
-                    {selections.citizenshipStatus === "international" && (
-                      <span className="text-red-500 ml-2 block mt-1">
-                        Note: You must submit a valid study permit when
-                        requested.
-                      </span>
-                    )}
-                  </li>
-                )}
-
-                {selections.residingInKelowna && (
-                  <li>
-                    Will you be residing in Kelowna during the terms in which
-                    you are applying for a TA position?
-                    <span className="font-bold ml-2">
-                      {getYesNoLabel(selections.residingInKelowna)}
-                    </span>
-                  </li>
-                )}
-
-                {selections.fullTimeEnrollment && (
-                  <li>
-                    Will you be enrolled as a full-time student in the terms you
-                    are applying for?
-                    <span className="font-bold ml-2">
-                      {getYesNoLabel(selections.fullTimeEnrollment)}
-                    </span>
-                  </li>
-                )}
-
-                {selections.hasOtherPositions && (
-                  <li>
-                    Have you applied, or accepted offers, for other student
-                    positions?
-                    <span className="font-bold ml-2">
-                      {getYesNoLabel(selections.hasOtherPositions)}
-                    </span>
-                    {selections.hasOtherPositions === "yes" && (
-                      <div className="ml-4 mt-1">
-                        The number of hours per week for other positions:{" "}
-                        <span className="font-bold ml-2">
-                          {selections.otherPositionHours}
-                        </span>
-                      </div>
-                    )}
-                  </li>
-                )}
-
-                {selections.positionType && (
-                  <li>
-                    Which position are you applying for?
-                    <span className="font-bold ml-2">
-                      {getPositionTypeLabel(selections.positionType)}
-                    </span>
-                  </li>
-                )}
-
-                {selections.winterTerm && (
-                  <li>
-                    For W2025 applications, which of the following terms are you
-                    applying to TA for?
-                    <span className="font-bold ml-2">
-                      {selections.winterTerm}
-                    </span>
-                  </li>
-                )}
-
-                {selections.workload && (
-                  <li>
-                    Please indicate your preferred maximum average hourly
-                    workload:
-                    <span className="font-bold ml-2">
-                      {getWorkloadLabel(selections.workload)}
-                    </span>
-                  </li>
-                )}
-
-                {selections.disciplineRanking && (
-                  <li>
-                    Rank your top 3 preferred disciplines:
-                    <ul className="list-inside list-disc ml-6 mt-1 space-y-1">
-                      {selections.disciplineRanking.rank1 && (
-                        <li>
-                          1st Discipline:
-                          <span className="font-bold ml-2">
-                            {selections.disciplineRanking.rank1}
-                          </span>
-                        </li>
-                      )}
-                      {selections.disciplineRanking.rank2 && (
-                        <li>
-                          2nd Discipline:
-                          <span className="font-bold ml-2">
-                            {selections.disciplineRanking.rank2}
-                          </span>
-                        </li>
-                      )}
-                      {selections.disciplineRanking.rank3 && (
-                        <li>
-                          3rd Discipline:
-                          <span className="font-bold ml-2">
-                            {selections.disciplineRanking.rank3}
-                          </span>
-                        </li>
-                      )}
-                    </ul>
-                  </li>
-                )}
-              </ul>
-            </section>
-          )}
+          {dynamicSections &&
+            dynamicSections.length > 0 &&
+            dynamicSections
+              .sort((a, b) => a.order - b.order)
+              .map(renderSection)}
         </div>
 
         {/* Supporting Documents */}
