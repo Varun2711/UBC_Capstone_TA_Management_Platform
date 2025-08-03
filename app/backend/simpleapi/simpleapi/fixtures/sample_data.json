@@ -1956,5 +1956,62 @@
       "created_at": "2024-12-05T09:30:00Z",
       "updated_at": "2024-12-05T09:30:00Z"
     }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 13,
+    "fields": {
+      "offer": null,
+      "student": 5,
+      "course": 13,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440111",
+      "shared_session": null,
+      "time_slot": null,
+      "role": "ta",
+      "assigned_date": "2024-12-05T10:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Assignment for PHYS 111 for Lisa Chen",
+      "created_at": "2024-12-05T10:00:00Z",
+      "updated_at": "2024-12-05T10:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 14,
+    "fields": {
+      "offer": null,
+      "student": 6,
+      "course": 7,
+      "course_offering": null,
+      "shared_session": "550e8400-e29b-41d4-a716-446655440206",
+      "time_slot": "550e8400-e29b-41d4-a716-446655440016",
+      "role": "ta",
+      "assigned_date": "2024-12-05T11:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Tutorial TA for COSC 404 for Michael Rodriguez",
+      "created_at": "2024-12-05T11:00:00Z",
+      "updated_at": "2024-12-05T11:00:00Z"
+    }
+  },
+  {
+    "model": "myapp.assignment",
+    "pk": 15,
+    "fields": {
+      "offer": null,
+      "student": 3,
+      "course": 8,
+      "course_offering": "550e8400-e29b-41d4-a716-446655440106",
+      "shared_session": null,
+      "time_slot": null,
+      "role": "ta",
+      "assigned_date": "2024-12-06T10:00:00Z",
+      "assigned_by": 3,
+      "is_active": true,
+      "notes": "Assignment for COSC 499 for Emily Wilson",
+      "created_at": "2024-12-06T10:00:00Z",
+      "updated_at": "2024-12-06T10:00:00Z"
+    }
   }
 ]
