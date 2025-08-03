@@ -24,6 +24,19 @@ vi.mock("@/logic/student-applications", () => ({
       name: "John Doe",
       email: "john@example.com",
       avatar: "avatar.png",
+      studentId: "12345678",
+      major: "Computer Science",
+      year: "Undergraduate",
+      academicInfo: {
+        expectedGraduation: "May 2025",
+        degreeStart: "2021",
+        yearStanding: "4",
+      },
+      experience: [],
+      technicalSkills: [],
+      softSkills: [],
+      coursePreference: [],
+      availability: [],
     })
   ),
   fetchJobPostingDetails: vi.fn(() =>

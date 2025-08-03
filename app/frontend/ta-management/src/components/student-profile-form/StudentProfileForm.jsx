@@ -298,8 +298,8 @@ export default function StudentProfileForm({
   // State for skills editing
   const [skillsEdit, setSkillsEdit] = useState(false);
   const [editedSkills, setEditedSkills] = useState({
-    technicalSkills: [...profile.technicalSkills],
-    softSkills: [...profile.softSkills],
+    technicalSkills: [...(profile.technicalSkills || [])],
+    softSkills: [...(profile.softSkills || [])],
   });
 
   const handleAcademicInputChange = (field, value) => {
