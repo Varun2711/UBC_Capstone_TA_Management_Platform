@@ -158,9 +158,7 @@ export default function AdminCourseManagement() {
       ])
       setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
 
-      console.log("Course added:", createdCourse)
     } catch (error) {
-      console.error("Error adding course:", error)
       setError("Failed to add course. Please try again.")
     }
   }
@@ -185,9 +183,7 @@ export default function AdminCourseManagement() {
       ])
       setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
 
-      console.log("Course updated:", updatedCourseData)
     } catch (error) {
-      console.error("Error updating course:", error)
       setError("Failed to update course. Please try again.")
     }
   }
@@ -205,8 +201,6 @@ export default function AdminCourseManagement() {
 
   const handleAddOfferingSubmit = async (courseId, newOfferingData) => {
     try {
-      console.log("Adding offering with data:", newOfferingData)
-
       await createCourseOffering(newOfferingData)
 
       // Reload the courses to get the updated data
@@ -216,9 +210,7 @@ export default function AdminCourseManagement() {
       ])
       setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
 
-      console.log("Offering added successfully")
     } catch (error) {
-      console.error("Error adding offering:", error)
       setError("Failed to add offering. Please try again.")
     }
   }
@@ -230,26 +222,20 @@ export default function AdminCourseManagement() {
 
   const handleEditOffering = (offering) => {
     try {
-      console.log("Edit offering clicked:", offering)
-      
       // Find the course that contains this offering
       const parentCourse = courses.find((course) => 
         course.offerings && course.offerings.some((o) => o.id === offering.id)
       )
       
       if (!parentCourse) {
-        console.error("Could not find parent course for offering:", offering)
         setError("Could not find the course for this offering.")
         return
       }
-      
-      console.log("Found parent course:", parentCourse)
       
       setSelectedOffering(offering)
       setSelectedCourse(parentCourse)
       setIsEditOfferingModalOpen(true)
     } catch (error) {
-      console.error("Error in handleEditOffering:", error)
       setError("Failed to open edit offering dialog.")
     }
   }
@@ -266,9 +252,7 @@ export default function AdminCourseManagement() {
         ])
         setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
 
-        console.log("Offering deleted successfully")
       } catch (error) {
-        console.error("Error deleting offering:", error)
         setError("Failed to delete offering. Please try again.")
       }
     }
@@ -276,8 +260,6 @@ export default function AdminCourseManagement() {
 
   const handleEditOfferingSubmit = async (courseId, updatedOfferingData) => {
     try {
-      console.log("Updating offering with data:", updatedOfferingData)
-
       await updateCourseOffering(updatedOfferingData.id, updatedOfferingData)
 
       // Reload the courses to get the updated data
@@ -287,14 +269,11 @@ export default function AdminCourseManagement() {
       ])
       setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
 
-      console.log("Offering updated successfully")
-      
       // Close the modal and clear selections
       setIsEditOfferingModalOpen(false)
       setSelectedOffering(null)
       setSelectedCourse(null)
     } catch (error) {
-      console.error("Error updating offering:", error)
       setError("Failed to update offering. Please try again.")
     }
   }
@@ -316,15 +295,6 @@ export default function AdminCourseManagement() {
     try {
       // Find the term ID from the term code FIRST
       const selectedTerm = terms.find(t => t.value === term && t.year.toString() === year)
-      
-      console.log("=== ADDING SHARED SESSION DEBUG ===");
-      console.log("Session data being sent:", {
-        sessionType: sessionType,
-        courseId: courseId,
-        section: newSessionData.section,
-        termId: selectedTerm?.id || newSessionData.termId,
-        timeSlots: newSessionData.timeSlots || []
-      });
 
       const sessionData = {
         sessionType: sessionType,
@@ -336,7 +306,6 @@ export default function AdminCourseManagement() {
       }
 
       const createdSession = await createSharedSession(sessionData)
-      console.log("Created session response:", createdSession);
 
       // Reload the courses to get the updated data
       const [updatedCourses, instructorsData] = await Promise.all([
@@ -344,20 +313,13 @@ export default function AdminCourseManagement() {
         getInstructors()
       ])
       
-      console.log("Raw backend response after creation:", updatedCourses);
-      
       // Find the specific course that was updated
       const updatedCourse = updatedCourses.find(course => course.id === courseId);
-      console.log("Updated course:", updatedCourse);
-      console.log("Updated course shared sessions:", updatedCourse?.sharedSessions);
       
       const mappedCourses = updatedCourses.map(course => mapCourseData(course, instructorsData))
       setCourses(mappedCourses)
 
-      console.log("=== END DEBUG ===");
-      console.log("Lab/Tutorial session added:", newSessionData)
     } catch (error) {
-      console.error("Error adding lab/tutorial session:", error)
       setError("Failed to add session. Please try again.")
     }
   }
@@ -380,9 +342,7 @@ export default function AdminCourseManagement() {
         ])
         setCourses(updatedCourses.map(course => mapCourseData(course, instructorsData)))
 
-        console.log("Course deleted successfully")
       } catch (error) {
-        console.error("Error deleting course:", error)
         setError("Failed to delete course. Please try again.")
       }
     }
@@ -390,11 +350,6 @@ export default function AdminCourseManagement() {
 
   // Add edit shared session handler
   const handleEditSharedSession = (session, sessionType, termKey) => {
-    console.log("=== MAIN HANDLER: handleEditSharedSession called ===")
-    console.log("Session:", session)
-    console.log("Session Type:", sessionType)
-    console.log("Term Key:", termKey)
-    
     setSelectedSharedSession(session)
     setSelectedSessionType(sessionType)
     setSelectedTermKey(termKey)
@@ -412,7 +367,6 @@ export default function AdminCourseManagement() {
       return false
     })
     
-    console.log("Found course:", foundCourse)
     setSelectedCourse(foundCourse)
     setIsEditSharedSessionModalOpen(true)
   }
@@ -420,10 +374,6 @@ export default function AdminCourseManagement() {
   // Add edit shared session submit handler
   const handleEditSharedSessionSubmit = async (sessionId, updatedSessionData) => {
     try {
-      console.log("=== UPDATING SHARED SESSION DEBUG ===")
-      console.log("Session ID:", sessionId)
-      console.log("Updated data:", updatedSessionData)
-
       await updateSharedSession(sessionId, updatedSessionData)
 
       // Reload courses
@@ -435,20 +385,13 @@ export default function AdminCourseManagement() {
       const mappedCourses = updatedCourses.map(course => mapCourseData(course, instructorsData))
       setCourses(mappedCourses)
 
-      console.log("=== SHARED SESSION UPDATED SUCCESSFULLY ===")
     } catch (error) {
-      console.error("Error updating shared session:", error)
       setError("Failed to update session. Please try again.")
     }
   }
 
   // Add delete shared session handler
   const handleDeleteSharedSession = async (session, sessionType, termKey) => {
-    console.log("=== MAIN HANDLER: handleDeleteSharedSession called ===")
-    console.log("Session:", session)
-    console.log("Session Type:", sessionType)
-    console.log("Term Key:", termKey)
-    
     const sessionTypeLabel = sessionType === 'lab' ? 'laboratory' : 'tutorial'
     
     if (window.confirm(`Are you sure you want to delete ${sessionTypeLabel} section ${session.section}? This action cannot be undone.`)) {
@@ -464,9 +407,7 @@ export default function AdminCourseManagement() {
         const mappedCourses = updatedCourses.map(course => mapCourseData(course, instructorsData))
         setCourses(mappedCourses)
 
-        console.log("=== SHARED SESSION DELETED SUCCESSFULLY ===")
       } catch (error) {
-        console.error("Error deleting shared session:", error)
         setError("Failed to delete session. Please try again.")
       }
     }
@@ -511,15 +452,10 @@ export default function AdminCourseManagement() {
 
     // Term filter - FIXED using parseTermCode
     const matchesTerm = selectedTerm === "all" || (() => {
-      console.log("=== TERM FILTER DEBUG ===")
-      console.log("Selected term:", selectedTerm)
-      console.log("Course:", course.code)
-      
       // Helper function to format term for comparison using parseTermCode
       const formatTermForComparison = (termCode) => {
         const parsedTerm = parseTermCode(termCode)
         if (!parsedTerm) {
-          console.log(`  Could not parse term: ${termCode}`)
           return null
         }
         
@@ -530,7 +466,6 @@ export default function AdminCourseManagement() {
           formattedTerm = `${parsedTerm.season} Term ${parsedTerm.term}`
         }
         
-        console.log(`  Formatted ${termCode} -> ${formattedTerm}`)
         return formattedTerm
       }
 
@@ -538,7 +473,6 @@ export default function AdminCourseManagement() {
       const hasOfferingForTerm = course.offerings?.some(offering => {
         const formattedOfferingTerm = formatTermForComparison(offering.term)
         const matches = formattedOfferingTerm === selectedTerm
-        console.log(`  Offering ${offering.id}: ${offering.term} -> ${formattedOfferingTerm} matches ${selectedTerm}? ${matches}`)
         return matches
       }) || false
 
@@ -546,23 +480,15 @@ export default function AdminCourseManagement() {
       const hasSharedSessionForTerm = Object.keys(course.sharedSessions || {}).some(termKey => {
         const formattedSessionTerm = formatTermForComparison(termKey)
         const matches = formattedSessionTerm === selectedTerm
-        console.log(`  Shared session term: ${termKey} -> ${formattedSessionTerm} matches ${selectedTerm}? ${matches}`)
         return matches
       }) || false
     
       const finalResult = hasOfferingForTerm || hasSharedSessionForTerm
-      console.log(`  Final term match result: ${finalResult}`)
-      console.log("=== END TERM FILTER DEBUG ===")
       
       return finalResult
     })()
 
     const finalResult = matchesSearch && matchesDepartment && matchesYear && matchesTerm
-    
-    // Debug the overall filtering
-    if (selectedTerm !== "all") {
-      console.log(`Course ${course.code}: search(${matchesSearch}) dept(${matchesDepartment}) year(${matchesYear}) term(${matchesTerm}) = ${finalResult}`)
-    }
 
     return finalResult
   }).map((course) => {
@@ -629,13 +555,6 @@ export default function AdminCourseManagement() {
       filteredCourse.sharedSessions = filteredSharedSessions
     }
 
-    console.log(`Filtered course ${course.code}:`, {
-      originalOfferings: course.offerings?.length || 0,
-      filteredOfferings: filteredCourse.offerings?.length || 0,
-      originalSharedSessions: Object.keys(course.sharedSessions || {}).length,
-      filteredSharedSessions: Object.keys(filteredCourse.sharedSessions || {}).length
-    })
-
     return filteredCourse
   })
 
@@ -646,16 +565,11 @@ export default function AdminCourseManagement() {
   const years = (() => {
     const yearSet = new Set()
     
-    console.log("=== YEARS CALCULATION DEBUG ===")
-    
     // Add years from offerings
     courses.forEach(course => {
-      console.log(`Processing course: ${course.code}`)
-      
       course.offerings?.forEach(offering => {
         if (offering.year) {
           yearSet.add(String(offering.year))
-          console.log(`  Added year from offering: ${offering.year}`)
         }
       })
       
@@ -665,15 +579,12 @@ export default function AdminCourseManagement() {
           const parsedTerm = parseTermCode(termKey)
           if (parsedTerm && parsedTerm.year) {
             yearSet.add(String(parsedTerm.year))
-            console.log(`  Added year from shared session: ${parsedTerm.year} (from ${termKey})`)
           }
         })
       }
     })
     
     const finalYears = Array.from(yearSet).sort((a, b) => parseInt(a) - parseInt(b))
-    console.log("Final years array:", finalYears)
-    console.log("=== END YEARS DEBUG ===")
     
     return finalYears
   })()
@@ -682,13 +593,10 @@ export default function AdminCourseManagement() {
   const uniqueTerms = useMemo(() => {
     const termSet = new Set()
     
-    console.log("=== UNIQUE TERMS EXTRACTION DEBUG ===")
-    
     // Helper function to format terms consistently using parseTermCode
     const formatTermForDisplay = (termCode) => {
       const parsedTerm = parseTermCode(termCode)
       if (!parsedTerm) {
-        console.log(`  Could not parse term: ${termCode}`)
         return null
       }
       
@@ -700,19 +608,15 @@ export default function AdminCourseManagement() {
         formattedTerm = `${parsedTerm.season} Term ${parsedTerm.term}`
       }
       
-      console.log(`  Formatted ${termCode} -> ${formattedTerm}`)
       return formattedTerm
     }
     
     courses.forEach(course => {
-      console.log(`Processing course: ${course.code}`)
-      
       // Add terms from offerings
       course.offerings?.forEach(offering => {
         const formattedTerm = formatTermForDisplay(offering.term)
         if (formattedTerm) {
           termSet.add(formattedTerm)
-          console.log(`  Added term from offering: ${formattedTerm}`)
         }
       })
       
@@ -721,15 +625,11 @@ export default function AdminCourseManagement() {
         const formattedTerm = formatTermForDisplay(termKey)
         if (formattedTerm) {
           termSet.add(formattedTerm)
-          console.log(`  Added term from shared session: ${formattedTerm}`)
         }
       })
     })
     
     const sortedTerms = Array.from(termSet).sort()
-    console.log("Final unique terms:", sortedTerms)
-    console.log("=== END UNIQUE TERMS EXTRACTION DEBUG ===")
-    
     return sortedTerms
   }, [courses])
 
