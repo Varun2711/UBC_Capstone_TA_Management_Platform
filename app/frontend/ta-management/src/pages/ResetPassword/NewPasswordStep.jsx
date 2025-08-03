@@ -122,7 +122,13 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 p-2">
-      <ResetPasswordBreadcrumb />
+      {
+        isCurrentlyLoggedIn ? (
+          <ResetPasswordBreadcrumb isLoggedIn={true} userType={accountInfo.user_type}/>
+        ) : (
+          <ResetPasswordBreadcrumb />
+        )
+      }
         
       <div className="flex-grow flex items-center justify-center p-4">      
         <div className="w-full max-w-md space-y-8">
@@ -201,12 +207,22 @@ export default function NewPasswordStep({ token, accountInfo, onNext, requestPas
               {errors.confirm && <span className="text-red-700" role="alert">{errors.confirm}</span>}
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition duration-200"
-            >
-              Reset Password
-            </Button>
+            {isCurrentlyLoggedIn ? (
+              <Button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition duration-200"
+              >
+                Change Password
+              </Button>
+            ):
+              <Button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition duration-200"
+              >
+                Reset Password
+              </Button>
+            }
+            
           </form>
 
           <div className="text-center">
