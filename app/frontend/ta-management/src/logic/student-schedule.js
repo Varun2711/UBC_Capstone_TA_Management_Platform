@@ -59,7 +59,7 @@ export const fetchStudentAssignments = async () => {
         headers,
       }
     );
-    console.log("Student assignments response:", response.data);
+    //console.log("Student assignments response:", response.data);
 
     // The assignments now come with assignment_term included, so we don't need to fetch it separately
     if (response.data && response.data.assignments) {
@@ -83,6 +83,8 @@ export const fetchStudentAssignments = async () => {
 
 // Group assignments that have the same course_offering_id, OR same course + same term
 const groupAssignmentsByCourseOffering = (assignments) => {
+  //console.log("Starting grouping process with assignments:", assignments);
+
   const grouped = {};
   const result = [];
 
@@ -107,6 +109,7 @@ const groupAssignmentsByCourseOffering = (assignments) => {
         total_weekly_hours: assignment.weekly_hours || 0,
         all_time_slots: assignment.time_slots || [],
       };
+      //console.log("Created new group for key:", groupKey);
     } else {
       // Merge time slots and update hours
       grouped[groupKey].grouped_assignments.push(assignment);
@@ -118,6 +121,8 @@ const groupAssignmentsByCourseOffering = (assignments) => {
     }
   });
 
+  //console.log("After first grouping pass:", Object.keys(grouped));
+
   // Now do a second pass to group by course + term for better UX
   const regrouped = {};
 
@@ -127,6 +132,8 @@ const groupAssignmentsByCourseOffering = (assignments) => {
     const termId = group.assignment_term?.id || "unknown_term";
     const finalGroupKey = `final_${courseId}_${termId}`;
 
+    //console.log("Second pass: group gets final key:", finalGroupKey);
+
     if (!regrouped[finalGroupKey]) {
       regrouped[finalGroupKey] = {
         ...group,
@@ -134,6 +141,7 @@ const groupAssignmentsByCourseOffering = (assignments) => {
         total_weekly_hours: group.total_weekly_hours,
         all_time_slots: [...group.all_time_slots],
       };
+      //console.log("Created final group for key:", finalGroupKey);
     } else {
       // Merge multiple groups that share the same course + term
       regrouped[finalGroupKey].grouped_assignments.push(
@@ -144,11 +152,14 @@ const groupAssignmentsByCourseOffering = (assignments) => {
     }
   });
 
+  // console.log("After second grouping pass:", Object.keys(regrouped));
+
   // Convert back to array
   Object.values(regrouped).forEach((group) => {
     result.push(group);
   });
 
+  //console.log("Final result:", result.length, "groups");
   return result;
 };
 
@@ -170,29 +181,42 @@ const getTermDatesFromAssignment = async (assignment) => {
     if (assignment.assignment_term.id) {
       try {
         const termDates = await fetchTermDates(assignment.assignment_term.id);
+        //console.log("Fetched term dates:", termDates);
         return termDates;
       } catch (error) {
         console.error("Error fetching term dates:", error);
       }
     }
 
+    // Fallback: create a reasonable academic term range (4 months)
+    console.warn("No term dates available, using fallback range");
+    const fallbackStart = new Date();
+    const fallbackEnd = new Date();
+    fallbackEnd.setMonth(fallbackEnd.getMonth() + 4); // 4-month academic term
+
     return {
-      termStartDate: new Date(),
-      termEndDate: new Date(),
+      termStartDate: fallbackStart,
+      termEndDate: fallbackEnd,
       termDescription:
         assignment.assignment_term.description ||
         assignment.assignment_term.code,
     };
   }
 
+  // Final fallback: create a reasonable academic term range
+  console.warn("No assignment_term available, using default fallback range");
+  const fallbackStart = new Date();
+  const fallbackEnd = new Date();
+  fallbackEnd.setMonth(fallbackEnd.getMonth() + 4); // 4-month academic term
+
   return {
-    termStartDate: new Date(),
-    termEndDate: new Date(),
+    termStartDate: fallbackStart,
+    termEndDate: fallbackEnd,
     termDescription: "Unknown Term",
   };
 };
 
-// Updated consolidateTimeSlots to work with assignment time_slots and handle contiguous slots
+// Updated consolidateTimeSlots to work with assignment time_slots and handle both consecutive AND non-consecutive slots
 export const consolidateTimeSlots = (assignment) => {
   const timeSlots = assignment.all_time_slots || assignment.time_slots || [];
 
@@ -250,7 +274,7 @@ export const consolidateTimeSlots = (assignment) => {
       // Create consolidated slots for each group
       consecutiveGroups.forEach((group) => {
         if (group.length === 1) {
-          // Single slot in group
+          // Single slot in group - keep as is
           consolidatedSlots.push(group[0]);
         } else {
           // Multiple consecutive slots - consolidate them
@@ -282,6 +306,8 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
   const events = [];
 
   for (const assignment of assignments) {
+    // console.log("Processing assignment:", assignment.assignment_id);
+
     // Get term dates from assignment_term (now async)
     const termDates = await getTermDatesFromAssignment(assignment);
 
@@ -296,22 +322,19 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
       assignment.grouped_assignments.forEach((groupedAssignment) => {
         // Use consolidateTimeSlots to merge consecutive slots for each assignment
         const consolidatedSlots = consolidateTimeSlots(groupedAssignment);
+
         timeSlots.push(...consolidatedSlots);
       });
     } else {
       // For single assignments, consolidate their time slots
       timeSlots = consolidateTimeSlots(assignment);
+      //console.log("Consolidated slots for single assignment:", timeSlots);
     }
-
-    console.log(
-      "Processing assignment:",
-      assignment.assignment_id,
-      "Consolidated time slots:",
-      timeSlots
-    );
 
     // Process each consolidated time slot for this assignment
     timeSlots.forEach((timeSlot, slotIndex) => {
+      //console.log("Processing time slot:", timeSlot);
+
       if (
         timeSlot &&
         (timeSlot.day || timeSlot.day_code) &&
@@ -331,15 +354,6 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
 
         const dayCode = (timeSlot.day_code || timeSlot.day || "").toLowerCase();
         const dayNumber = dayMap[dayCode];
-
-        console.log(
-          "Processing time slot:",
-          timeSlot,
-          "Day code:",
-          dayCode,
-          "Day number:",
-          dayNumber
-        );
 
         if (dayNumber !== undefined) {
           // Parse start and end times - handle both HH:MM and HH:MM:SS formats
@@ -365,13 +379,19 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
             )
               ? "Lab"
               : "Tutorial";
+          } else {
+            // For grouped assignments, use the course info from the main assignment
+            courseInfo = `${assignment.course.course_number}`;
+            sessionType = "Mixed";
           }
+
+          //console.log("Course info:", courseInfo, "Session type:", sessionType);
 
           // Use proper term start and end dates for event generation
           const startRange = new Date(termDates.termStartDate);
           const endRange = new Date(termDates.termEndDate);
 
-          console.log("Term range:", startRange, "to", endRange);
+          //console.log("Term range:", startRange, "to", endRange);
 
           // Generate events for each week in the range
           let currentDate = new Date(startRange);
@@ -384,10 +404,8 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
             currentDate.setDate(currentDate.getDate() + 1);
           }
 
-          console.log("First occurrence of", dayCode, "is:", currentDate);
-
           let weekCount = 0;
-          const maxWeeks = 26; // Academic term is typically ~16-20 weeks, 26 is safe upper bound
+          const maxWeeks = 42; // Academic term is typically ~16-20 weeks, 26 is safe upper bound
 
           while (currentDate <= endRange && weekCount < maxWeeks) {
             const eventDate = new Date(currentDate);
@@ -409,7 +427,7 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
                     assignment.assignment_id
                   }-${slotIndex}-${eventDate.getTime()}`;
 
-              events.push({
+              const event = {
                 id: eventId,
                 title: `${courseInfo}`,
                 sessionType: `${sessionType}`,
@@ -425,7 +443,10 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
                   isConsolidated: timeSlot._consolidated || false,
                   originalSlotCount: timeSlot._originalSlotCount || 1,
                 },
-              });
+              };
+
+              // console.log("Created event:", event);
+              events.push(event);
             }
 
             // Move to next week
@@ -446,7 +467,7 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
     });
   }
 
-  console.log("Generated", events.length, "calendar events");
+  //console.log("Generated", events.length, "calendar events total");
   return events;
 };
 
@@ -460,7 +481,7 @@ export const getAssignmentStatus = (assignment) => {
 };
 
 // Updated format assignment display to use assignment data directly
-export const formatAssignmentDisplay = (assignment) => {
+export const formatAssignmentDisplay = async (assignment) => {
   let courseInfo = "";
   let sessionType = "";
   let sectionNumber = "";
@@ -520,8 +541,18 @@ export const formatAssignmentDisplay = (assignment) => {
 
   instructor = Array.from(instructors).join(", ");
 
-  // Get term information from assignment_term
-  const termInfo = assignment.assignment_term || {};
+  // Get term information - try to fetch actual term dates
+  let termInfo = assignment.assignment_term || {};
+  let termStartDate = new Date();
+  let termEndDate = new Date();
+
+  try {
+    const termDates = await getTermDatesFromAssignment(assignment);
+    termStartDate = termDates.termStartDate;
+    termEndDate = termDates.termEndDate;
+  } catch (error) {
+    console.error("Error getting term dates for display:", error);
+  }
 
   return {
     courseCode: courseInfo,
@@ -532,8 +563,8 @@ export const formatAssignmentDisplay = (assignment) => {
     instructor,
     weeklyHours: totalHours,
     term: termInfo.description || termInfo.code || "Unknown Term",
-    term_start: termInfo.start || new Date(),
-    term_end: termInfo.end || new Date(),
+    term_start: termStartDate,
+    term_end: termEndDate,
     role: assignment.role,
     assignedDate: assignment.assigned_date,
     isActive: assignment.is_active,

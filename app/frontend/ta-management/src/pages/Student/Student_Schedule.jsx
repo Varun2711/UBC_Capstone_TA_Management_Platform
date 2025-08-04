@@ -47,6 +47,7 @@ const localizer = momentLocalizer(moment);
 export default function ViewStudentSchedule() {
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
+  const [formattedAssignments, setFormattedAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userData, setUserData] = useState({});
@@ -71,15 +72,24 @@ export default function ViewStudentSchedule() {
         const assignmentsData = await fetchStudentAssignments();
 
         if (assignmentsData && assignmentsData.assignments) {
-          console.log("Loaded assignments:", assignmentsData.assignments);
+          //console.log("Loaded assignments:", assignmentsData.assignments);
           setAssignments(assignmentsData.assignments);
           setAssignmentsSummary(assignmentsData.summary || {});
+
+          // Format assignments for display (now async to fix term dates)
+          const formatted = await Promise.all(
+            assignmentsData.assignments.map(async (assignment) => ({
+              assignment,
+              formatted: await formatAssignmentDisplay(assignment),
+            }))
+          );
+          setFormattedAssignments(formatted);
 
           // Transform assignments to calendar events (this is now async and handles term dates properly)
           const events = await transformAssignmentsToCalendarEvents(
             assignmentsData.assignments
           );
-          console.log("Generated calendar events:", events);
+          //  console.log("Generated calendar events:", events);
           setCalendarEvents(events);
         }
       } catch (err) {
@@ -153,7 +163,7 @@ export default function ViewStudentSchedule() {
     setIsModalOpen(true);
   };
 
-  // Updated event details modal to work with assignment data
+  // Updated event details modal to work with assignment data (removed notes)
   const EventDetailsModal = () => {
     if (!selectedEvent) return null;
 
@@ -257,9 +267,9 @@ export default function ViewStudentSchedule() {
     );
   };
 
-  // Updated AssignmentCard component to show grouped assignments in one card
-  const AssignmentCard = ({ assignment }) => {
-    const formatted = formatAssignmentDisplay(assignment);
+  // Updated AssignmentCard component with your styling preferences
+  const AssignmentCard = ({ assignment, formattedData }) => {
+    const formatted = formattedData; // Use pre-computed async formatted data
     const statusInfo = getAssignmentStatus(assignment);
 
     return (
@@ -290,7 +300,7 @@ export default function ViewStudentSchedule() {
                 )}
               </div>
 
-              {/* Role and Hours Row */}
+              {/* Role and Hours Row (removed instructor from here) */}
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
@@ -303,13 +313,6 @@ export default function ViewStudentSchedule() {
                     <span>{formatted.weeklyHours} hours/week</span>
                   </div>
                 )}
-
-                {/* {formatted.instructor && (
-                  <div className="flex items-center gap-1">
-                    <BookOpen className="h-4 w-4" />
-                    <span>Instructor: {formatted.instructor}</span>
-                  </div>
-                )} */}
               </div>
             </div>
 
@@ -350,7 +353,6 @@ export default function ViewStudentSchedule() {
 
                     const courseCode =
                       groupedAssignment.course?.course_number || "Unknown";
-                    const timeSlots = groupedAssignment.time_slots || [];
 
                     return (
                       <div
@@ -370,46 +372,53 @@ export default function ViewStudentSchedule() {
                         </div>
 
                         <div className="space-y-1">
-                          {timeSlots.length > 0 ? (
-                            // Use consolidateTimeSlots to merge consecutive time slots
-                            consolidateTimeSlots(groupedAssignment).map(
-                              (timeSlot, slotIndex) => (
-                                <div
-                                  key={`${index}-${slotIndex}`}
-                                  className="flex items-center gap-2 text-sm text-gray-600"
-                                >
-                                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                                  <span className="font-medium capitalize">
-                                    {timeSlot.day || timeSlot.day_code}
-                                  </span>
-                                  <span>
-                                    {timeSlot.start_time} - {timeSlot.end_time}
-                                  </span>
+                          {/* Use consolidateTimeSlots to merge consecutive time slots */}
+                          {consolidateTimeSlots(groupedAssignment).map(
+                            (timeSlot, slotIndex) => (
+                              <div
+                                key={`${index}-${slotIndex}`}
+                                className="flex items-center gap-2 text-sm text-gray-600"
+                              >
+                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                <span className="font-medium capitalize">
+                                  {timeSlot.day || timeSlot.day_code}
+                                </span>
+                                <span>
+                                  {timeSlot.start_time} - {timeSlot.end_time}
+                                </span>
 
-                                  {timeSlot.location && (
-                                    <span className="text-gray-500">
-                                      • {timeSlot.location}
-                                    </span>
+                                {timeSlot._consolidated && (
+                                  <span className="text-xs text-blue-600 bg-blue-100 px-1 rounded">
+                                    {timeSlot._originalSlotCount} slots
+                                  </span>
+                                )}
+
+                                {timeSlot.location && (
+                                  <span className="text-gray-500">
+                                    • {timeSlot.location}
+                                  </span>
+                                )}
+
+                                {/* Show instructor inline with course offerings only */}
+                                {!sectionNumber.startsWith("T") &&
+                                  !sectionNumber.startsWith("L") &&
+                                  (groupedAssignment.course_offering
+                                    ?.instructor ||
+                                    groupedAssignment.shared_session
+                                      ?.instructor) && (
+                                    <div className="flex items-center gap-1">
+                                      • <BookOpen className="h-4 w-4" />
+                                      <span>
+                                        Instructor:{" "}
+                                        {groupedAssignment.course_offering
+                                          ?.instructor ||
+                                          groupedAssignment.shared_session
+                                            ?.instructor}
+                                      </span>
+                                    </div>
                                   )}
-
-                                  {!sectionNumber.startsWith("T") &&
-                                    !sectionNumber.startsWith("L") &&
-                                    formatted.instructor && (
-                                      <div className="flex items-center gap-1">
-                                        • <BookOpen className="h-4 w-4" />
-                                        <span>
-                                          Instructor: {formatted.instructor}
-                                        </span>
-                                      </div>
-                                    )}
-                                </div>
-                              )
+                              </div>
                             )
-                          ) : (
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                              <span>Time and location TBD</span>
-                            </div>
                           )}
                         </div>
                       </div>
@@ -499,7 +508,7 @@ export default function ViewStudentSchedule() {
 
                   {/* List View Tab */}
                   <TabsContent value="list" className="space-y-4">
-                    {assignments.length === 0 ? (
+                    {formattedAssignments.length === 0 ? (
                       <Card>
                         <CardContent className="p-8 text-center">
                           <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -514,12 +523,15 @@ export default function ViewStudentSchedule() {
                       </Card>
                     ) : (
                       <div className="space-y-4">
-                        {assignments.map((assignment) => (
-                          <AssignmentCard
-                            key={assignment.assignment_id}
-                            assignment={assignment}
-                          />
-                        ))}
+                        {formattedAssignments.map(
+                          ({ assignment, formatted }) => (
+                            <AssignmentCard
+                              key={assignment.assignment_id}
+                              assignment={assignment}
+                              formattedData={formatted}
+                            />
+                          )
+                        )}
                       </div>
                     )}
                   </TabsContent>
