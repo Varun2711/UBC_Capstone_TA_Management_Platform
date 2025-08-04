@@ -40,6 +40,7 @@ import {
   updateAvailability,
   updateCoursePreferences
 } from "@/logic/student-profile";
+import { toast } from "sonner";
 
 // Add this helper function at the top of StudentProfileForm.jsx
 // Replace the extractSemesterFromDate function in StudentProfileForm.jsx:
@@ -107,18 +108,18 @@ export default function StudentProfileForm({
   mode = "profile", //default is profile // "profile" or "application",
   // Display control props
 }) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(mode === "application");
   const [editedProfile, setEditedProfile] = useState({ ...profile });
 
   // State for skills editing
-  const [skillsEdit, setSkillsEdit] = useState(false);
+  const [skillsEdit, setSkillsEdit] = useState(mode === "application");
   const [editedSkills, setEditedSkills] = useState({
     technicalSkills: [...profile.technicalSkills],
     softSkills: [...profile.softSkills],
   });
 
   // State for academic information editing
-  const [isEditingAcademic, setIsEditingAcademic] = useState(false);
+  const [isEditingAcademic, setIsEditingAcademic] = useState(mode === "application");
   const [editedAcademicInfo, setEditedAcademicInfo] = useState({
     major: profile.major,
     minor: profile.minor,
@@ -128,7 +129,7 @@ export default function StudentProfileForm({
   });
 
   // Update the state initialization for experience
-  const [isEditingExperience, setIsEditingExperience] = useState(false);
+  const [isEditingExperience, setIsEditingExperience] = useState(mode === "application");
   const [editedExperience, setEditedExperience] = useState(
     profile.experience?.map(exp => ({
       ...exp,
@@ -136,13 +137,12 @@ export default function StudentProfileForm({
     })) || []
   );
 
-
   // State for availability editing
-  const [isEditingAvailability, setIsEditingAvailability] = useState(false);
+  const [isEditingAvailability, setIsEditingAvailability] = useState(mode === "application");
   const [availabilityData, setAvailabilityData] = useState([]); // Initialize as needed
 
   // State for course preference editing
-  const [isEditingCourses, setIsEditingCourses] = useState(false);
+  const [isEditingCourses, setIsEditingCourses] = useState(mode === "application");
   const [coursePreference, setCoursePreference] = useState(
     Array.isArray(profile.coursePreference) ? [...profile.coursePreference] : []
   );
@@ -457,10 +457,12 @@ export default function StudentProfileForm({
           {mode === "application" && (
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Confirm Your Student Profile
+                Confirm Your Profile
               </h2>
               <h2 className="text-base font-medium text-gray-900 mb-4">
-                Please review and update your information if necessary.
+                <b><i>Returning</i> applicants</b>: Please review and update your information as necessary.<br />
+                <b><i>New</i> applicants</b>: Please fill out the remaining sections of your profile to ensure that your experience and preferences are accurately represented.<br />
+                Remember to <b>SAVE</b> each section before hitting "Next" to proceed.
               </h2>
             </div>
           )}
