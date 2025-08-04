@@ -43,45 +43,66 @@ import { getCourseOfferings } from "@/logic/instructorManagement";
 async function calculateAvailableTimeSlots() {
 
   try {
-    // Fetch all the data concurrently for efficiency
+    // Fetch all necessary data concurrently for better performance
     const [courseOfferings, sharedSessions, assignments] = await Promise.all([
       getCourseOfferings(),
       getSharedSessions(),
       getAssignments(),
     ]);
 
-    // 1. Get all unique time slot IDs from course offerings and shared sessions
-    const allCourseTimeSlotIds = new Set();
+    // 1. Get all unique time slot IDs from all available course offerings and shared sessions
+    const allAvailableTimeSlotIds = new Set();
+    
     courseOfferings.forEach(offering => {
-      offering.time_slots_info.forEach(timeSlot => allCourseTimeSlotIds.add(timeSlot.slot_id));
+      offering.time_slots.forEach(slot => allAvailableTimeSlotIds.add(slot.slot_id));
     });
+    
     sharedSessions.forEach(session => {
-      session.time_slots_info.forEach(timeSlot => allCourseTimeSlotIds.add(timeSlot.slot_id));
+      session.time_slots.forEach(slot => allAvailableTimeSlotIds.add(slot.slot_id));
     });
 
-    let totalHours = allCourseTimeSlotIds.size;
-    let counter = totalHours;
+    let counter = allAvailableTimeSlotIds.size;
 
-    // 2. Create an array of unique time slot IDs from assignments
-    const assignmentTimeSlotIds = new Set();
+    // 2. Create a set of unique time slot IDs that are assigned
+    const assignedTimeSlotIds = new Set();
+    
     assignments.forEach(assignment => {
-      assignmentTimeSlotIds.add(assignment.time_slots_info.slot_id);
+      // Determine which ID to use for matching (course offering or shared session)
+      const idToMatch = assignment.course_offering?.course_offering_id || assignment.shared_session?.shared_session_id;
+
+      if (idToMatch && assignment.offer_details && assignment.offer_details.offer_items) {
+        // Find the matching offer item in the list
+        const matchingOfferItem = assignment.offer_details.offer_items.find(
+          item => item.course_offering_id === idToMatch || item.shared_session_id === idToMatch
+        );
+
+        if (matchingOfferItem && matchingOfferItem.time_slot) {
+          // Handle both single time_slot object and array of time_slot objects
+          if (Array.isArray(matchingOfferItem.time_slot)) {
+            matchingOfferItem.time_slot.forEach(slot => assignedTimeSlotIds.add(slot.slot_id));
+          } else {
+            assignedTimeSlotIds.add(matchingOfferItem.time_slot.slot_id);
+          }
+        }
+      }
     });
 
-    // 3. Subtract from the counter if a time slot is in both sets
-    allCourseTimeSlotIds.forEach(slotId => {
-      if (assignmentTimeSlotIds.has(slotId)) {
+    // 3. Subtract from the counter for each assigned time slot that exists in the total hours set
+    assignedTimeSlotIds.forEach(slotId => {
+      if (allAvailableTimeSlotIds.has(slotId)) {
         counter--;
       }
     });
 
     return counter;
+
   } catch (error) {
     console.error("An error occurred:", error);
-    // You might want to handle this error in a more specific way in a real application
+    // Depending on your application, you might throw the error, return a specific value, or show a user message.
     throw error;
   }
 }
+
 
 // Example usage:
 calculateAvailableTimeSlots().then(availableHours => {
