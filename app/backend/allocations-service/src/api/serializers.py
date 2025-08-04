@@ -243,6 +243,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
     weekly_hours = serializers.SerializerMethodField()
     required_hours_category = serializers.SerializerMethodField()
     time_slots = serializers.SerializerMethodField() 
+    assignment_term = serializers.SerializerMethodField()
     
     class Meta:
         model = Assignment
@@ -254,7 +255,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             'role', 'assigned_date', 'assigned_by', 'is_active',
             'notes', 'offer_details', 'created_at', 'updated_at',
             'weekly_hours', 'required_hours_category'  # ← Add computed fields
-            ,'time_slots'  
+            ,'time_slots', 'assignment_term' 
         ]
         read_only_fields = ['assignment_id', 'assigned_date']
     
@@ -268,17 +269,24 @@ class AssignmentSerializer(serializers.ModelSerializer):
     
     def get_time_slots(self,obj):
         """Get all relevant time slots for this assignment"""
-        time_slots = obj.get_all_time_slots  # Fixed: added parentheses
+        time_slots = obj.all_time_slots  # Fixed: added parentheses
         # Return basic time slot info - adjust fields as needed
         return [
             {
                 'slot_id': str(slot.slot_id) if hasattr(slot, 'slot_id') else None,
                 'day': slot.get_day_display() if hasattr(slot, 'get_day_display') else None,
+                'day_code': slot.day,
                 'start_time': slot.start_time.strftime('%H:%M') if hasattr(slot, 'start_time') and slot.start_time else None,
                 'end_time': slot.end_time.strftime('%H:%M') if hasattr(slot, 'end_time') and slot.end_time else None,
             }
             for slot in time_slots
-        ]    
+        ]  
+    
+    def get_assignment_term (self, obj):
+        term = obj.assignment_term
+        return TermSerializer(term).data if term else None
+
+      
     
 class AssignmentModificationSerializer(serializers.ModelSerializer):
     """Serializer for assignment modifications that appear in student's offers"""

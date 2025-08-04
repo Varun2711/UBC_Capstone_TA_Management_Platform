@@ -67,17 +67,19 @@ export default function ViewStudentSchedule() {
         const profile = await getProfile();
         setUserData(profile);
 
-        // Load assignments (now includes term information)
+        // Load assignments (now grouped and with assignment data)
         const assignmentsData = await fetchStudentAssignments();
 
         if (assignmentsData && assignmentsData.assignments) {
+          console.log("Loaded assignments:", assignmentsData.assignments);
           setAssignments(assignmentsData.assignments);
           setAssignmentsSummary(assignmentsData.summary || {});
 
-          // Transform assignments to calendar events (now async)
+          // Transform assignments to calendar events (this is now async and handles term dates properly)
           const events = await transformAssignmentsToCalendarEvents(
             assignmentsData.assignments
           );
+          console.log("Generated calendar events:", events);
           setCalendarEvents(events);
         }
       } catch (err) {
@@ -151,7 +153,7 @@ export default function ViewStudentSchedule() {
     setIsModalOpen(true);
   };
 
-  //what the user sees when they click on the event
+  // Updated event details modal to work with assignment data
   const EventDetailsModal = () => {
     if (!selectedEvent) return null;
 
@@ -182,7 +184,9 @@ export default function ViewStudentSchedule() {
             {/* Time and Date */}
             <div className="bg-blue-50 rounded-lg p-3">
               <div className="text-sm text-dark-800">
-                <div className="font-medium capitalize">{timeSlot.day}</div>
+                <div className="font-medium capitalize">
+                  {timeSlot.day || timeSlot.day_code}
+                </div>
                 <div>{moment(selectedEvent.start).format("MMMM Do, YYYY")}</div>
                 <div>
                   {moment(selectedEvent.start).format("h:mm A")} -{" "}
@@ -226,24 +230,15 @@ export default function ViewStudentSchedule() {
                     <span className="font-medium">Course:</span>{" "}
                     {assignment.course.course_name}
                   </div>
-                  {assignment.course_offering?.instructor && (
+                  {(assignment.course_offering?.instructor ||
+                    assignment.shared_session?.instructor) && (
                     <div>
                       <span className="font-medium">Instructor:</span>{" "}
-                      {assignment.course_offering.instructor}
+                      {assignment.course_offering?.instructor ||
+                        assignment.shared_session?.instructor}
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Notes */}
-            {assignment.notes && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  <span className="font-medium text-amber-900">Notes</span>
-                </div>
-                <p className="text-sm text-amber-800">{assignment.notes}</p>
               </div>
             )}
           </div>
@@ -262,7 +257,7 @@ export default function ViewStudentSchedule() {
     );
   };
 
-  // AssignmentCard component that shows TA assignments as list
+  // Updated AssignmentCard component to show grouped assignments in one card
   const AssignmentCard = ({ assignment }) => {
     const formatted = formatAssignmentDisplay(assignment);
     const statusInfo = getAssignmentStatus(assignment);
@@ -309,12 +304,12 @@ export default function ViewStudentSchedule() {
                   </div>
                 )}
 
-                {formatted.instructor && (
+                {/* {formatted.instructor && (
                   <div className="flex items-center gap-1">
                     <BookOpen className="h-4 w-4" />
                     <span>Instructor: {formatted.instructor}</span>
                   </div>
-                )}
+                )} */}
               </div>
             </div>
 
@@ -330,67 +325,97 @@ export default function ViewStudentSchedule() {
               Schedule Details
             </h4>
 
-            {formatted.offerItems && formatted.offerItems.length > 0 ? (
+            {/* Show grouped assignments */}
+            {formatted.groupedAssignments &&
+            formatted.groupedAssignments.length > 0 ? (
               <div className="space-y-3">
-                {formatted.offerItems.map((item, index) => {
-                  const sectionNumber = item.section_number;
-                  const sessionType =
-                    item.item_type === "course_offering"
-                      ? "Course"
-                      : sectionNumber.startsWith("L")
-                      ? "Lab"
-                      : "Tutorial";
-                  const courseCode = item.course_number;
-                  const timeSlots = consolidateTimeSlots(item);
+                {formatted.groupedAssignments.map(
+                  (groupedAssignment, index) => {
+                    const sectionNumber =
+                      groupedAssignment.course_offering?.section_number ||
+                      groupedAssignment.shared_session?.section_number ||
+                      "Unknown";
 
-                  return (
-                    <div
-                      key={index}
-                      className="border-l-4 border-blue-200 pl-4 py-2 bg-gray-50 rounded-r-md"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium text-gray-900">
-                          {courseCode} {sectionNumber}
-                        </span>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                          {sessionType}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {item.weekly_hours}h/week
-                        </span>
-                      </div>
+                    let sessionType = "Unknown";
+                    if (groupedAssignment.course_offering) {
+                      sessionType = "Course";
+                    } else if (groupedAssignment.shared_session) {
+                      sessionType =
+                        groupedAssignment.shared_session.section_number?.startsWith(
+                          "L"
+                        )
+                          ? "Lab"
+                          : "Tutorial";
+                    }
 
-                      <div className="space-y-1">
-                        {timeSlots.length > 0 ? (
-                          timeSlots.map((timeSlot, slotIndex) => (
-                            <div
-                              key={`${index}-${slotIndex}`}
-                              className="flex items-center gap-2 text-sm text-gray-600"
-                            >
-                              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                              <span className="font-medium capitalize">
-                                {timeSlot.day}
-                              </span>
-                              <span>
-                                {timeSlot.start_time} - {timeSlot.end_time}
-                              </span>
-                              {timeSlot.location && (
-                                <span className="text-gray-500">
-                                  • {timeSlot.location}
-                                </span>
-                              )}
+                    const courseCode =
+                      groupedAssignment.course?.course_number || "Unknown";
+                    const timeSlots = groupedAssignment.time_slots || [];
+
+                    return (
+                      <div
+                        key={`${groupedAssignment.assignment_id}-${index}`}
+                        className="border-l-4 border-blue-200 pl-4 py-2 bg-gray-50 rounded-r-md"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium text-gray-900">
+                            {courseCode} {sectionNumber}
+                          </span>
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                            {sessionType}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {groupedAssignment.weekly_hours}h/week
+                          </span>
+                        </div>
+
+                        <div className="space-y-1">
+                          {timeSlots.length > 0 ? (
+                            // Use consolidateTimeSlots to merge consecutive time slots
+                            consolidateTimeSlots(groupedAssignment).map(
+                              (timeSlot, slotIndex) => (
+                                <div
+                                  key={`${index}-${slotIndex}`}
+                                  className="flex items-center gap-2 text-sm text-gray-600"
+                                >
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                  <span className="font-medium capitalize">
+                                    {timeSlot.day || timeSlot.day_code}
+                                  </span>
+                                  <span>
+                                    {timeSlot.start_time} - {timeSlot.end_time}
+                                  </span>
+
+                                  {timeSlot.location && (
+                                    <span className="text-gray-500">
+                                      • {timeSlot.location}
+                                    </span>
+                                  )}
+
+                                  {!sectionNumber.startsWith("T") &&
+                                    !sectionNumber.startsWith("L") &&
+                                    formatted.instructor && (
+                                      <div className="flex items-center gap-1">
+                                        • <BookOpen className="h-4 w-4" />
+                                        <span>
+                                          Instructor: {formatted.instructor}
+                                        </span>
+                                      </div>
+                                    )}
+                                </div>
+                              )
+                            )
+                          ) : (
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                              <span>Time and location TBD</span>
                             </div>
-                          ))
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                            <span>Time and location TBD</span>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  }
+                )}
               </div>
             ) : (
               <div className="text-center py-4 text-gray-500">

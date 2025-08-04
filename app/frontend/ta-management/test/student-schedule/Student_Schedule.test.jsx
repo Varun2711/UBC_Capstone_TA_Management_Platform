@@ -373,12 +373,6 @@ describe("ViewStudentSchedule Component", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Dr. Jane Smith")).toBeInTheDocument();
 
-    // Check notes
-    expect(screen.getByText("Notes")).toBeInTheDocument();
-    expect(
-      screen.getByText(/Remember to review sorting algorithms/i)
-    ).toBeInTheDocument();
-
     // Check close button
     const closeButton = screen.getByTestId("dialog-close");
     expect(closeButton).toBeInTheDocument();

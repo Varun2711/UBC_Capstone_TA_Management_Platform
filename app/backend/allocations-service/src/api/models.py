@@ -739,7 +739,7 @@ class Assignment(models.Model):
             return '12'
     
     @property
-    def get_all_time_slots(self):
+    def all_time_slots(self):
         """
         Get all time slots for this assignment.
         Priority: course_offering time slots -> shared_session time slots -> direct time_slot
