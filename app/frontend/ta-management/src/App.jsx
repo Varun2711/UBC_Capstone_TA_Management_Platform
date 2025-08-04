@@ -30,6 +30,7 @@ import MyCourses from "./pages/Instructor_MyCourses";
 import StudentOffers from "./pages/StudentOffersPage";
 import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
+import AdminCourseManagement from "./pages/Admin/CourseManagement";
 import MyApplications from "./pages/Student/MyApplications";
 import ApplicationDetail from "./pages/Student/ApplicationDetail";
 
@@ -221,6 +222,15 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin-course-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <AdminCourseManagement />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/manage-templates"
         element={

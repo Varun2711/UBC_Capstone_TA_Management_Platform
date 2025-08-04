@@ -1094,6 +1094,7 @@ export default function ProfilePage() {
     }
   };
 
+  // handleSave for Availability
   const handleSaveAvailability = async (availabilityData) => {
     console.log("=== DEBUG AVAILABILITY SAVE ===");
     console.log("availabilityData:", availabilityData);
