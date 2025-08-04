@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import CourseManagement from '@/pages/Scheduler/course-management';
+import AdminCourseManagement from '@/pages/Admin/CourseManagement';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 // Mock lucide-react icons
@@ -45,11 +45,12 @@ vi.mock('@/logic/courseManagement', () => ({
   parseTermCode: vi.fn((code) => ({ season: 'Fall', term: '1', year: 2024 })),
 }));
 
-// Mock all child components
-vi.mock('@/components/scheduler-sidebar', () => ({
-  AppSidebar: ({ activePage }) => <div data-testid="app-sidebar">Sidebar: {activePage}</div>,
+// Mock admin sidebar
+vi.mock('@/components/admin-dashboard-sidebar', () => ({
+  AdminSidebar: ({ activePage }) => <div data-testid="admin-sidebar">Admin Sidebar: {activePage}</div>,
 }));
 
+// Mock all child components
 vi.mock('@/components/scheduler/course_management/course-filters', () => ({
   CourseFilters: ({ searchQuery, onSearchChange }) => (
     <div data-testid="course-filters">
@@ -63,12 +64,14 @@ vi.mock('@/components/scheduler/course_management/course-filters', () => ({
   ),
 }));
 
+// FIXED: Update CourseCard mock to NOT include delete functionality for admin
 vi.mock('@/components/scheduler/course_management/course-card', () => ({
   CourseCard: ({ course, onEdit, onEditOffering, onAddLabTutorial }) => (
     <div data-testid={`course-card-${course.id}`}>
       <h3>{course.code} - {course.title}</h3>
       <button onClick={() => onEdit(course)}>Edit Course</button>
       <button onClick={() => onAddLabTutorial(course)}>Add Lab/Tutorial</button>
+      {/* Admin version does NOT have delete functionality */}
       {course.offerings?.map(offering => (
         <div key={offering.id} data-testid={`offering-${offering.id}`}>
           <button onClick={() => onEditOffering(offering)}>Edit Offering: {offering.section}</button>
@@ -151,7 +154,7 @@ vi.mock('@/components/scheduler/course_management/edit-session-modal', () => ({
 // Import the mocked API functions
 import * as courseManagementApi from '@/logic/courseManagement';
 
-describe('CourseManagement Page', () => {
+describe('AdminCourseManagement Page', () => {
   const mockCourses = [
     {
       id: 'cs101',
@@ -214,7 +217,7 @@ describe('CourseManagement Page', () => {
     return render(
       <MemoryRouter>
         <SidebarProvider>
-          <CourseManagement />
+          <AdminCourseManagement />
         </SidebarProvider>
       </MemoryRouter>
     );
@@ -248,13 +251,15 @@ describe('CourseManagement Page', () => {
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 
-  it('renders header with navigation and add button', async () => {
+  it('renders header with admin sidebar and add button', async () => {
     renderComponent();
 
     await waitFor(() => {
       expect(screen.getByRole('navigation')).toHaveTextContent('Course Management');
     });
 
+    expect(screen.getByTestId('admin-sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-sidebar')).toHaveTextContent('Admin Sidebar: Course Management');
     expect(screen.getByRole('button', { name: /toggle sidebar/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add Course' })).toBeInTheDocument();
   });
@@ -268,7 +273,7 @@ describe('CourseManagement Page', () => {
 
     expect(screen.getByText('Manage courses, offerings, and associated lab/tutorial sessions')).toBeInTheDocument();
     expect(screen.getByTestId('course-filters')).toBeInTheDocument();
-    expect(screen.getByTestId('app-sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-sidebar')).toBeInTheDocument();
   });
 
   it('filters courses based on search query', async () => {
@@ -347,6 +352,24 @@ describe('CourseManagement Page', () => {
     });
   });
 
+  // FIXED: Test that admin doesn't have delete functionality
+  it('verifies admin does not have course deletion functionality', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
+    });
+
+    const cs101Card = screen.getByTestId('course-card-cs101');
+    
+    // Admin should NOT have delete functionality
+    expect(within(cs101Card).queryByText('Delete Course')).not.toBeInTheDocument();
+    
+    // But should have edit functionality
+    expect(within(cs101Card).getByText('Edit Course')).toBeInTheDocument();
+    expect(within(cs101Card).getByText('Add Lab/Tutorial')).toBeInTheDocument();
+  });
+
   it('opens edit offering modal with correct data', async () => {
     const user = userEvent.setup();
     renderComponent();
@@ -407,30 +430,6 @@ describe('CourseManagement Page', () => {
     });
   });
 
-  it('handles offering updates', async () => {
-    const user = userEvent.setup();
-    vi.mocked(courseManagementApi.updateCourseOffering).mockResolvedValue({});
-    
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByTestId('offering-1')).toBeInTheDocument();
-    });
-
-    const offering1 = screen.getByTestId('offering-1');
-    const editButton = within(offering1).getByText('Edit Offering: 001');
-    
-    await user.click(editButton);
-    await user.click(screen.getByText('Update'));
-    
-    await waitFor(() => {
-      expect(courseManagementApi.updateCourseOffering).toHaveBeenCalledWith('1', expect.objectContaining({
-        id: '1',
-        section: 'Updated'
-      }));
-    });
-  });
-
   it('handles modal close actions', async () => {
     const user = userEvent.setup();
     renderComponent();
@@ -465,6 +464,30 @@ describe('CourseManagement Page', () => {
     });
   });
 
+  it('handles offering updates', async () => {
+    const user = userEvent.setup();
+    vi.mocked(courseManagementApi.updateCourseOffering).mockResolvedValue({});
+    
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('offering-1')).toBeInTheDocument();
+    });
+
+    const offering1 = screen.getByTestId('offering-1');
+    const editButton = within(offering1).getByText('Edit Offering: 001');
+    
+    await user.click(editButton);
+    await user.click(screen.getByText('Update'));
+    
+    await waitFor(() => {
+      expect(courseManagementApi.updateCourseOffering).toHaveBeenCalledWith('1', expect.objectContaining({
+        id: '1',
+        section: 'Updated'
+      }));
+    });
+  });
+
   it('displays loading state correctly', () => {
     // Make the API call hang to test loading state
     vi.mocked(courseManagementApi.getAllCoursesFullDetails).mockImplementation(
@@ -475,7 +498,7 @@ describe('CourseManagement Page', () => {
 
     // Check that loading state is shown
     expect(screen.getByText('Loading courses...')).toBeInTheDocument();
-    expect(screen.getByTestId('app-sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-sidebar')).toBeInTheDocument();
   });
 
   it('handles API errors gracefully', async () => {
