@@ -12,6 +12,7 @@ import {
   User,
   MoreVerticalIcon,
   GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -35,8 +36,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { logout } from "@/logic/auth"
+} from "@/components/ui/dropdown-menu";
+import { logout } from "@/logic/auth";
 
 const navigationItems = [
   {
@@ -50,21 +51,21 @@ const navigationItems = [
     url: "/apply",
   },
   {
+    title: "My Applications",
+    icon: PlusCircle,
+    url: "/my-applications",
+  },
+  {
     title: "Schedule",
     icon: Calendar,
     url: "#",
   },
   {
-    title: "Profile",
-    icon: User,
-    url: "/profile",
+    title: "Offers",
+    icon: Briefcase,
+    url: "/student-offers",
   },
-  {
-    title: "Settings",
-    icon: Settings,
-    url: "#",
-  },
-]
+];
 
 export function AppSidebar({ name, email, avatar }) {
   // Using useNavigate from react-router-dom to handle navigation
@@ -115,14 +116,22 @@ export function AppSidebar({ name, email, avatar }) {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="h-10">
-                <SidebarMenuButton className="bg-background text-foreground hover:bg-muted" aria-label="account menu">
+                <SidebarMenuButton
+                  className="bg-background text-foreground hover:bg-muted"
+                  aria-label="account menu"
+                >
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={avatar || "/placeholder.svg"} alt={name}/>
+                    <AvatarImage
+                      src={avatar || "/placeholder.svg"}
+                      alt={name}
+                    />
                     <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{name}</span>
-                    <span className="truncate text-xs text-muted-foreground">{email}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {email}
+                    </span>
                   </div>
                   <MoreVerticalIcon className="ml-auto size-4" />
                 </SidebarMenuButton>
@@ -133,12 +142,14 @@ export function AppSidebar({ name, email, avatar }) {
               >
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  {" "}
-                  <button>My Profile</button>
+                <DropdownMenuItem onClick={() => handleNav("/profile")}>
+                  My Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
+                  <button>Change Password</button>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
-                  <button>Logout </button>
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
