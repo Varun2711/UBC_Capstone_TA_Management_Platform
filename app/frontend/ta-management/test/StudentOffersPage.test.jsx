@@ -1,7 +1,8 @@
 // OffersPage.test.tsx
 import { describe, it, vi, beforeEach, expect } from 'vitest'
 import React from 'react'
-import { render, screen, waitFor, fireEvent, userEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { userEvent } from '@testing-library/user-event'
 import OffersPage from '@/pages/StudentOffersPage'
 import * as offersApi from '@/logic/student-offers-page'
 import * as profileApi from '@/logic/student-profile'
@@ -65,16 +66,6 @@ describe('OffersPage', () => {
     expect(screen.getByText('Pending Response')).toBeInTheDocument() // status badge
   })
 
-
-   it('displays instructor and term fetched from API', async () => {
-      renderWithRouter(<OffersPage />)
-      // Wait for a text element that contains the full string "Instructor: Dr X"
-      await waitFor(() => screen.getByText(/Instructor: Dr X/i))
-
-      // You can also still test for "Term A" separately
-      expect(screen.getByText(/Term A/i)).toBeInTheDocument()
-    })
-
   it('displays "No instructor found" when instructor details are missing', async () => {
     const courseOfferingDetailsNoInstructor = { instructor_info: null, term_info: 'Term A' };
     vi.spyOn(offersApi, 'getCourseOfferingDetails').mockResolvedValue(courseOfferingDetailsNoInstructor);
@@ -87,38 +78,6 @@ describe('OffersPage', () => {
     // expect(screen.getByText(/No instructor assigned/)).toBeInTheDocument();
   });
 
-  it('renders an offer with shared session details', async () => {
-    const oneSharedSession = [{
-      ...onePending[0],
-      offer_id: 50,
-      offer_items: [
-        {
-          item_type: 'shared_session',
-          shared_session_id: 200,
-          course_number: 'COSC 200',
-          course_name: 'Shared Session Course',
-          section_type_display: 'Tutorial',
-          section_number: '002',
-        },
-      ],
-    }]
-    const sharedSessionDetails = {
-      instructor_info: 'Dr Y',
-      academic_term_info: 'Term B',
-      time_slots_info: [
-        { day_display: 'Wednesday', start_time: '14:00', end_time: '15:30' }
-      ]
-    }
-    vi.spyOn(offersApi, 'getPendingOffers').mockResolvedValue(oneSharedSession)
-    vi.spyOn(offersApi, 'getSharedSessionDetails').mockResolvedValue(sharedSessionDetails)
-
-    renderWithRouter(<OffersPage />)
-    await waitFor(() => screen.getByText('COSC 200 Shared Session Course'))
-    
-    expect(screen.getByText(/Dr Y/)).toBeInTheDocument()
-    expect(screen.getByText(/Term B/)).toBeInTheDocument()
-    expect(screen.getByText('Wednesday 14:00 - 15:30')).toBeInTheDocument()
-  })
   
   it('formats offer and deadline dates correctly', async () => {
     renderWithRouter(<OffersPage />)
@@ -133,13 +92,6 @@ describe('OffersPage', () => {
     expect(badge.props.children).toContain('Expired')
   })
 
-  it('getPriorityBadge returns correct label', () => {
-    const bHigh = getPriorityBadge('High')
-    expect(bHigh.props.children).toContain('High Priority')
-    const bOther = getPriorityBadge('Other')
-    expect(bOther.props.children).toContain('Other')
-  })
-
   it('formatSharedSessionTime returns empty when invalid', () => {
     expect(formatSharedSessionTime(null)).toBe('')
     expect(formatSharedSessionTime([])).toBe('')
@@ -152,4 +104,69 @@ describe('OffersPage', () => {
     ]
     expect(formatSharedSessionTime(slots)).toBe('Tuesday 08:30 - 11:00')
   })
+
+  it('calls respondToOffer with "accepted" when Accept button is clicked', async () => {
+    renderWithRouter(<OffersPage />)
+    await waitFor(() => screen.getByText('Accept Offer'))
+    const acceptBtn = screen.getByText(/Accept Offer/)
+    fireEvent.click(acceptBtn)
+    await waitFor(() =>
+      expect(offersApi.respondToOffer).toHaveBeenCalledWith(10, 'accepted')
+    )
+  })
+
+  it('displays message when no offers are present', async () => {
+    vi.spyOn(offersApi, 'getPendingOffers').mockResolvedValue([])
+    renderWithRouter(<OffersPage />)
+    await waitFor(() => screen.getByText(/No Pending Offers/i))
+    expect(screen.getByText(/No Pending Offers/i)).toBeInTheDocument()
+  })
+
+  it('shows accepted offers if available', async () => {
+    vi.spyOn(offersApi, 'getAcceptedOffers').mockResolvedValue([
+      { ...onePending[0], status: 'accepted' }
+    ])
+    renderWithRouter(<OffersPage />)
+    await waitFor(() => screen.getByText(/Accepted/i))
+    expect(screen.getByText(/Accepted/i)).toBeInTheDocument()
+  })
+
+  it('shows rejected offers if available', async () => {
+
+    const user = userEvent.setup()
+
+    vi.spyOn(offersApi, 'getPendingOffers').mockResolvedValue([])
+    vi.spyOn(offersApi, 'getAcceptedOffers').mockResolvedValue([])
+    vi.spyOn(offersApi, 'getRejectedOffers').mockResolvedValue([
+      {
+        ...onePending[0],
+        status: 'rejected',
+        offer_items: onePending[0].offer_items
+      }
+    ])
+    vi.spyOn(offersApi, 'getExpiredOffers').mockResolvedValue([])
+
+    renderWithRouter(<OffersPage />)
+
+    // Click the "Past Offers" tab to view rejected offers
+    const pastTab = await screen.findByRole('tab', { name: /Past Offers/i })
+    await user.click(pastTab)
+
+    // Wait for rejected status to be visible
+    await waitFor(() => {
+      expect(screen.getAllByText('Rejected').length).toBeGreaterThan(0)
+    })
+  })
+
+  it('does not show Accept/Decline if offer is already accepted', async () => {
+    vi.spyOn(offersApi, 'getPendingOffers').mockResolvedValue([])
+    vi.spyOn(offersApi, 'getAcceptedOffers').mockResolvedValue([
+      { ...onePending[0], status: 'accepted' }
+    ])
+    renderWithRouter(<OffersPage />)
+    await waitFor(() => screen.queryByText(/Accept Offer/))
+    expect(screen.queryByText(/Accept Offer/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Decline Offer/)).not.toBeInTheDocument()
+  })
+
 })

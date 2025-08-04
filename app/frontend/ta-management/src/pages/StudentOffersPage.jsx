@@ -319,19 +319,6 @@ export function getStatusBadge(status) {
   }
 }
 
-export function getPriorityBadge(priority) {
-  switch (priority) {
-    case "High":
-      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">High Priority</Badge>
-    case "Medium":
-      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium Priority</Badge>
-    case "Low":
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Low Priority</Badge>
-    default:
-      return <Badge variant="secondary">{priority}</Badge>
-  }
-}
-
 function formatDateTime(isoString, responseType) {
   if (!isoString || typeof isoString !== 'string') return '';
   
