@@ -4,6 +4,23 @@ import TAAllocationPage from "@/pages/Scheduler/TaCoordinatorAllocationPage"
 import { vi } from "vitest"
 import { MemoryRouter } from "react-router-dom"
 
+beforeEach(() => {
+  const sessionStore = {}
+
+  vi.stubGlobal("sessionStorage", {
+    getItem: vi.fn((key) => sessionStore[key] || null),
+    setItem: vi.fn((key, value) => {
+      sessionStore[key] = value.toString()
+    }),
+    removeItem: vi.fn((key) => {
+      delete sessionStore[key]
+    }),
+    clear: vi.fn(() => {
+      Object.keys(sessionStore).forEach((key) => delete sessionStore[key])
+    }),
+  })
+})
+
 
 // Optional: mock fetch functions if you want to control data
 vi.mock("@/logic/coordinator-allocations-page", () => ({
