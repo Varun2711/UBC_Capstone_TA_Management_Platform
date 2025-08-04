@@ -19,17 +19,15 @@ const getAuthHeaders = () => {
 };
 
 /**
- * Get current date in PST timezone in YYYY-MM-DD format
+ * Get current date in UTC timezone in YYYY-MM-DD format
  */
-const getCurrentDateInPST = () => {
+const getCurrentDateInUTC = () => {
   const now = new Date();
-  // Convert to PST (UTC-8) or PDT (UTC-7) depending on daylight saving time
-  const pstDate = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
   
-  // Format as YYYY-MM-DD
-  const year = pstDate.getFullYear();
-  const month = String(pstDate.getMonth() + 1).padStart(2, '0');
-  const day = String(pstDate.getDate()).padStart(2, '0');
+  // Format as YYYY-MM-DD in UTC
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(now.getUTCDate()).padStart(2, '0');
   
   return `${year}-${month}-${day}`;
 };
@@ -183,7 +181,7 @@ export const submitTARequirements = async (courseOfferingId, requirements) => {
     const requestData = {
       instructor_id: instructorId,
       course_offering_id: courseOfferingId,
-      request_date: getCurrentDateInPST(), // Current date in PST timezone
+      request_date: getCurrentDateInUTC(), // Current date in UTC timezone
       request_description: requirements
     };
     
@@ -210,7 +208,7 @@ export const updateTARequirements = async (requestId, courseOfferingId, requirem
     const requestData = {
       instructor_id: instructorId,
       course_offering_id: courseOfferingId,
-      request_date: getCurrentDateInPST(), // Current date in PST timezone
+      request_date: getCurrentDateInUTC(), // Current date in UTC timezone
       request_description: requirements
     };
     
