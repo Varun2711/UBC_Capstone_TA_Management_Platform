@@ -287,6 +287,7 @@ class CourseOffering(models.Model):
         db_constraint=False,  # ← No foreign key constraints across services
         help_text="Time slots when this course offering meets"
     )
+    final_notification_sent_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the final allocation notice was sent to the instructor")
 
     class Meta:
         managed = False
@@ -317,6 +318,7 @@ class SharedSession(models.Model):
         db_constraint=False,  # ← No foreign key constraints across services
         help_text="Time slots when this lab section meets"
     )
+    final_notification_sent_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the final allocation notice was sent to the instructor")
 
     class Meta:
         managed = False

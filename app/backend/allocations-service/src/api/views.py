@@ -1459,137 +1459,228 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         })
 
 class CourseAllocationActionsViewSet(viewsets.ViewSet):
-    """
-    Actions related to finalizing allocations for a course.
-    """
-    @action(detail=True, methods=['post'], url_path='finalize-allocations', permission_classes=[IsSchedulerOrAdmin])
-    def finalize_allocations(self, request, pk=None):
-        """
-        Finalizes all allocations for a course offering and sends a 
-        consolidated notification to the instructor.
-        """
-        try:
-            course_offering = CourseOffering.objects.get(pk=pk)
-        except CourseOffering.DoesNotExist:
-            return Response({'error': 'Course offering not found'}, status=status.HTTP_404_NOT_FOUND)
+    permission_classes = [IsSchedulerOrAdmin]
 
-        # 1. Gather all active assignments for this course offering
-        active_assignments = Assignment.objects.filter(
-            course_offering=course_offering, 
-            is_active=True
-        ).select_related('student', 'course', 'course_offering__academic_term')
+    @action(detail=True, methods=['post'], url_path='finalize-allocations')
+    def finalize_allocations(self, request, pk=None):
+        course_offering = get_object_or_404(CourseOffering, pk=pk)
+        active_assignments = Assignment.objects.filter(course_offering=course_offering, is_active=True)
 
         if not active_assignments.exists():
-            return Response({'message': 'No active assignments to notify for.'}, status=status.HTTP_200_OK)
+            return Response({'error': 'No active assignments for this course offering.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Prepare the allocation details for the notification
-        allocation_details = []
-        for assignment in active_assignments:
-            allocation_details.append({
-                'ta_name': assignment.student.name,
-                'student_number': assignment.student.student_number,
-                'hours': assignment.weekly_hours
-            })
-            
-        # 3. Get instructor and course details
-        instructor = course_offering.instructor
-        if not instructor or not instructor.email:
-            return Response({'error': 'Instructor email not found for this course.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not course_offering.instructor or not course_offering.instructor.email:
+            return Response({'error': 'Instructor not assigned or instructor email is missing.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 4. Construct the payload for the notification service
         notification_payload = {
-            'instructor_email': instructor.email,
-            'instructor_name': instructor.name,
+            'instructor_email': course_offering.instructor.email,
+            'instructor_name': course_offering.instructor.name,
             'course_code': course_offering.course.course_number,
             'course_name': course_offering.course.course_name,
-            'term': course_offering.academic_term.term_type, 
-            'allocations': allocation_details
+            'term': course_offering.academic_term.code,
+            'allocations': [{
+                'ta_name': a.student.name,
+                'student_number': a.student.student_number,
+                'hours': a.weekly_hours
+            } for a in active_assignments]
         }
 
-        # 5. Call the existing notification service endpoint
         try:
             notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
             response = requests.post(notification_url, json=notification_payload, timeout=15)
             
-            if response.status_code != 200:
-                logger.error(f"Failed to send final allocation notice. Status: {response.status_code}, Body: {response.text}")
-                return Response({'error': 'Failed to trigger notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            if response.status_code == 200:
+                course_offering.final_notification_sent_at = timezone.now()
+                course_offering.save(update_fields=['final_notification_sent_at'])
+                return Response({'message': 'Final allocations notification sent successfully.'}, status=status.HTTP_200_OK)
+            else:
+                logger.error(f"Notification service failed for course offering {pk}: {response.text}")
+                return Response({'error': 'Failed to send notification.', 'details': response.text}, status=response.status_code)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error calling notification service for final allocation: {e}")
-            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error calling notification service for course offering {pk}: {e}")
+            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        return Response({
-            'message': 'Final allocation notice has been sent to the instructor.',
-            'instructor': instructor.name,
-            'assignments_count': len(active_assignments)
-        })
 
 class SharedSessionAllocationActionsViewSet(viewsets.ViewSet):
-    """
-    Actions related to finalizing allocations for a shared session.
-    """
-    @action(detail=True, methods=['post'], url_path='finalize-allocations', permission_classes=[IsSchedulerOrAdmin])
-    def finalize_allocations(self, request, pk=None):
-        """
-        Finalizes all allocations for a shared session and sends a 
-        consolidated notification to the instructor.
-        """
-        try:
-            shared_session = SharedSession.objects.get(pk=pk)
-        except SharedSession.DoesNotExist:
-            return Response({'error': 'Shared session not found'}, status=status.HTTP_404_NOT_FOUND)
+    permission_classes = [IsSchedulerOrAdmin]
 
-        # 1. Gather all active assignments for this shared session
-        active_assignments = Assignment.objects.filter(
-            shared_session=shared_session, 
-            is_active=True
-        ).select_related('student', 'course', 'shared_session__academic_term')
+    @action(detail=True, methods=['post'], url_path='finalize-allocations')
+    def finalize_allocations(self, request, pk=None):
+        shared_session = get_object_or_404(SharedSession, pk=pk)
+        active_assignments = Assignment.objects.filter(shared_session=shared_session, is_active=True)
 
         if not active_assignments.exists():
-            return Response({'message': 'No active assignments to notify for.'}, status=status.HTTP_200_OK)
+            return Response({'error': 'No active assignments for this shared session.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Prepare the allocation details for the notification
-        allocation_details = []
-        for assignment in active_assignments:
-            allocation_details.append({
-                'ta_name': assignment.student.name,
-                'student_number': assignment.student.student_number,
-                'hours': assignment.weekly_hours
-            })
-            
-        # 3. Get instructor and course details
-        instructor = shared_session.instructor
-        if not instructor or not instructor.email:
-            return Response({'error': 'Instructor email not found for this shared session.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Find instructors from parent course offerings
+        instructors = Instructor.objects.filter(
+            course_offerings__course=shared_session.course,
+            course_offerings__academic_term=shared_session.academic_term
+        ).distinct()
 
-        # 4. Construct the payload for the notification service
-        notification_payload = {
-            'instructor_email': instructor.email,
-            'instructor_name': instructor.name,
-            'course_code': f"{shared_session.course.course_number} ({shared_session.session_type})",
+        if not instructors.exists():
+            return Response({'error': 'No instructors found for the parent course in this term.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payload_template = {
+            'course_code': f"{shared_session.course.course_number} ({shared_session.get_session_type_display()})",
             'course_name': shared_session.course.course_name,
-            'term': shared_session.academic_term.term_type, 
-            'allocations': allocation_details
+            'term': shared_session.academic_term.code,
+            'allocations': [{
+                'ta_name': a.student.name,
+                'student_number': a.student.student_number,
+                'hours': a.weekly_hours
+            } for a in active_assignments]
         }
 
-        # 5. Call the existing notification service endpoint
+        errors = []
+        success_count = 0
+        for instructor in instructors:
+            if not instructor.email:
+                continue
+            
+            payload = payload_template.copy()
+            payload['instructor_email'] = instructor.email
+            payload['instructor_name'] = instructor.name
+
+            try:
+                notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
+                response = requests.post(notification_url, json=payload, timeout=15)
+                if response.status_code == 200:
+                    success_count += 1
+                else:
+                    errors.append(f"Failed for {instructor.name}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                errors.append(f"Failed for {instructor.name}: {str(e)}")
+
+        if success_count > 0:
+            shared_session.final_notification_sent_at = timezone.now()
+            shared_session.save(update_fields=['final_notification_sent_at'])
+            return Response({
+                'message': f'{success_count} notifications sent successfully.',
+                'errors': errors
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Failed to send any notifications.', 'details': errors}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# --- ADD THIS NEW VIEWSET ---
+class GlobalAllocationActionsViewSet(viewsets.ViewSet):
+    """
+    Actions for finalizing all allocations across the system.
+    """
+    permission_classes = [IsSchedulerOrAdmin]
+
+    def _send_notification(self, payload):
+        """Helper to call the notification service."""
         try:
             notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
-            response = requests.post(notification_url, json=notification_payload, timeout=15)
-            
+            response = requests.post(notification_url, json=payload, timeout=15)
             if response.status_code != 200:
-                logger.error(f"Failed to send final allocation notice. Status: {response.status_code}, Body: {response.text}")
-                return Response({'error': 'Failed to trigger notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+                logger.error(f"Notification service failed for instructor {payload.get('instructor_email')}: {response.text}")
+                return False
+            return True
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error calling notification service for final allocation: {e}")
-            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error calling notification service: {e}")
+            return False
+
+    @action(detail=False, methods=['post'], url_path='finalize-all')
+    def finalize_all_allocations(self, request):
+        """
+        Finds all course offerings and shared sessions with active, un-notified
+        assignments and sends a final notification to each instructor.
+        """
+        notifications_sent = 0
+        errors = []
+
+        # --- Process Course Offerings ---
+        unnotified_offerings = CourseOffering.objects.filter(
+            final_notification_sent_at__isnull=True,
+            assignment__is_active=True
+        ).distinct()
+
+        for offering in unnotified_offerings:
+            if not offering.instructor or not offering.instructor.email:
+                continue
+            
+            active_assignments = Assignment.objects.filter(course_offering=offering, is_active=True)
+            if not active_assignments.exists():
+                continue
+
+            payload = {
+                'instructor_email': offering.instructor.email,
+                'instructor_name': offering.instructor.name,
+                'course_code': offering.course.course_number,
+                'course_name': offering.course.course_name,
+                'term': offering.academic_term.code,
+                'allocations': [{
+                    'ta_name': a.student.name,
+                    'student_number': a.student.student_number,
+                    'hours': a.weekly_hours
+                } for a in active_assignments]
+            }
+
+            if self._send_notification(payload):
+                offering.final_notification_sent_at = timezone.now()
+                offering.save(update_fields=['final_notification_sent_at'])
+                notifications_sent += 1
+            else:
+                errors.append(f"Course Offering: {offering.course.course_number}")
+
+        # --- Process Shared Sessions ---
+        unnotified_sessions = SharedSession.objects.filter(
+            final_notification_sent_at__isnull=True,
+            assignment__is_active=True
+        ).select_related('course', 'academic_term').distinct()
+
+        for session in unnotified_sessions:
+            active_assignments = Assignment.objects.filter(shared_session=session, is_active=True)
+            if not active_assignments.exists():
+                continue
+
+            instructors = Instructor.objects.filter(
+                course_offerings__course=session.course,
+                course_offerings__academic_term=session.academic_term
+            ).distinct()
+
+            if not instructors.exists():
+                errors.append(f"Shared Session: {session.course.course_number} {session.section_number} - No instructor found.")
+                continue
+
+            payload_template = {
+                'course_code': f"{session.course.course_number} ({session.get_session_type_display()})",
+                'course_name': session.course.course_name,
+                'term': session.academic_term.code,
+                'allocations': [{
+                    'ta_name': a.student.name,
+                    'student_number': a.student.student_number,
+                    'hours': a.weekly_hours
+                } for a in active_assignments]
+            }
+
+            all_sent = True
+            sent_to_instructors = 0
+            for instructor in instructors:
+                if not instructor.email:
+                    continue
+                
+                payload = payload_template.copy()
+                payload['instructor_email'] = instructor.email
+                payload['instructor_name'] = instructor.name
+                
+                if self._send_notification(payload):
+                    sent_to_instructors += 1
+                else:
+                    all_sent = False
+                    errors.append(f"Shared Session: {session.course.course_number} {session.section_number} - Failed for {instructor.name}")
+
+            if all_sent and sent_to_instructors > 0:
+                session.final_notification_sent_at = timezone.now()
+                session.save(update_fields=['final_notification_sent_at'])
+                notifications_sent += sent_to_instructors
 
         return Response({
-            'message': 'Final allocation notice has been sent to the instructor.',
-            'instructor': instructor.name,
-            'assignments_count': len(active_assignments)
+            'message': f'Finalization process completed. {notifications_sent} new notifications sent.',
+            'notifications_sent': notifications_sent,
+            'errors': errors
         })
     
 # Root API View

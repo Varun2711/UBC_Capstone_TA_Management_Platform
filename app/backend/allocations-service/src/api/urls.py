@@ -6,7 +6,8 @@ from .views import (
     OfferViewSet,
     AssignmentViewSet,
     CourseAllocationActionsViewSet,
-    SharedSessionAllocationActionsViewSet
+    SharedSessionAllocationActionsViewSet,
+    GlobalAllocationActionsViewSet
 )
 
 router = DefaultRouter()
@@ -15,6 +16,7 @@ router.register(r'assignments', AssignmentViewSet, basename='assignment')
 router.register(r'shortlisted-applicants', ShortlistedApplicantViewSet, basename='shortlisted-applicant')
 router.register(r'course-offerings', CourseAllocationActionsViewSet, basename='course-offering-actions')
 router.register(r'shared-sessions', SharedSessionAllocationActionsViewSet, basename='shared-session-actions')
+router.register(r'allocations-actions', GlobalAllocationActionsViewSet, basename='global-allocation-actions')
 
 urlpatterns = [
     # Root API endpoint
