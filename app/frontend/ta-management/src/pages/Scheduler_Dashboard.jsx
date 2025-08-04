@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BookOpen,
   UserCheck,
@@ -31,15 +31,76 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "../components/scheduler-sidebar";
+import { getApplications, getCourses } from "@/logic/scheduler-dashboard"
+import { getCourseOfferings } from "@/logic/instructorManagement";
+
+/**
+ * Fetches course offerings, shared sessions, and assignments, then calculates
+ * the total time slots available and subtracts those used in assignments.
+ *
+ * @returns {Promise<number>} The number of available time slots.
+ */
+async function calculateAvailableTimeSlots() {
+
+  try {
+    // Fetch all the data concurrently for efficiency
+    const [courseOfferings, sharedSessions, assignments] = await Promise.all([
+      getCourseOfferings(),
+      getSharedSessions(),
+      getAssignments(),
+    ]);
+
+    // 1. Get all unique time slot IDs from course offerings and shared sessions
+    const allCourseTimeSlotIds = new Set();
+    courseOfferings.forEach(offering => {
+      offering.time_slots_info.forEach(timeSlot => allCourseTimeSlotIds.add(timeSlot.slot_id));
+    });
+    sharedSessions.forEach(session => {
+      session.time_slots_info.forEach(timeSlot => allCourseTimeSlotIds.add(timeSlot.slot_id));
+    });
+
+    let totalHours = allCourseTimeSlotIds.size;
+    let counter = totalHours;
+
+    // 2. Create an array of unique time slot IDs from assignments
+    const assignmentTimeSlotIds = new Set();
+    assignments.forEach(assignment => {
+      assignmentTimeSlotIds.add(assignment.time_slots_info.slot_id);
+    });
+
+    // 3. Subtract from the counter if a time slot is in both sets
+    allCourseTimeSlotIds.forEach(slotId => {
+      if (assignmentTimeSlotIds.has(slotId)) {
+        counter--;
+      }
+    });
+
+    return counter;
+  } catch (error) {
+    console.error("An error occurred:", error);
+    // You might want to handle this error in a more specific way in a real application
+    throw error;
+  }
+}
+
+// Example usage:
+calculateAvailableTimeSlots().then(availableHours => {
+  console.log('Total hours available:', availableHours); // Expected output: 6
+});
 
 export default function TASchedulerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCourseCount, setActiveCourseCount] = useState(0);
+  const [applicationCount, setApplicationCount] = useState(0);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [loadingApplications, setLoadingApplications] = useState(true);
+  const [error, setError] = useState(null);
 
   // Mock data for demonstration
   const stats = [
     {
       title: "Active Courses",
-      value: "24",
+      value: activeCourseCount,
       change: "+3 from last term",
       icon: BookOpen,
       color: "text-blue-600",
@@ -53,7 +114,7 @@ export default function TASchedulerDashboard() {
     },
     {
       title: "Applications",
-      value: "156",
+      value: applicationCount,
       change: "+23 this week",
       icon: FileText,
       color: "text-purple-600",
@@ -87,6 +148,44 @@ export default function TASchedulerDashboard() {
       dueDate: "Next week",
     },
   ];
+
+  useEffect(() => {
+    const fetchAndCountCourses = async () => {
+      try {
+        setLoadingCourses(true);
+        const courses = await getCourses();
+        const activeCourses = courses.results.filter(course => course.is_active);
+        setActiveCourseCount(activeCourses.length);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+
+    const fetchAndCountApplications = async () => {
+      try {
+        setLoadingApplications(true);
+        const data = await getApplications();
+        setApplicationCount(data.length);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoadingApplications(false);
+      }
+    };
+
+    fetchAndCountCourses();
+    fetchAndCountApplications();
+  }, []); 
+  
+  if (loadingCourses || loadingApplications) {
+    return <div>Loading data...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
 
   return (
     <SidebarProvider>
@@ -128,7 +227,7 @@ export default function TASchedulerDashboard() {
           {/* Welcome Section */}
           <div className="flex flex-col space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-              Welcome back, Admin
+              Welcome back, TA Coordinator
             </h1>
             <p className="text-muted-foreground">
               Here's what's happening with your TA scheduling system today.
@@ -147,7 +246,6 @@ export default function TASchedulerDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground">{stat.change}</p>
                 </CardContent>
               </Card>
             ))}
