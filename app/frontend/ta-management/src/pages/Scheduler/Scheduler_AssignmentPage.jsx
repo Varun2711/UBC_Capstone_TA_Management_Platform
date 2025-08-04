@@ -4,6 +4,7 @@ import {
   Search,
   Users,
   BookOpen,
+  Calendar, // Add Calendar icon
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,12 +38,10 @@ import { AlertCircle } from "lucide-react";
 // Import components
 import { StudentCard } from "@/components/scheduler/assignment/StudentCard";
 import { CourseCard } from "@/components/scheduler/assignment/CourseCard";
+import { CalendarTab } from "@/components/scheduler/assignment/CalendarTab"; // Add CalendarTab import
 
 // Import API functions
 import { fetchAssignmentData, parseTermCode } from "@/logic/assignmentManagement";
-
-// Keep mock data for students (since we're starting with courses)
-import { mockAssignments } from "@/data/mockData";
 
 export default function SchedulerAssignmentPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,6 +53,7 @@ export default function SchedulerAssignmentPage() {
 
   // Backend data state
   const [courses, setCourses] = useState([]);
+  const [students, setStudents] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +70,7 @@ export default function SchedulerAssignmentPage() {
         const data = await fetchAssignmentData();
         
         setCourses(data.courses);
+        setStudents(data.students);
         setDepartments(data.departments);
         setInstructors(data.instructors);
         
@@ -85,9 +86,9 @@ export default function SchedulerAssignmentPage() {
     loadData();
   }, []);
 
-  // Filter assignments based on search and filters (using mock data for now)
-  const filteredAssignments = useMemo(() => {
-    return mockAssignments.filter((student) => {
+  // Filter students based on search and filters
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
       const matchesSearch =
         student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,8 +102,17 @@ export default function SchedulerAssignmentPage() {
           
           return Object.entries(yearData).some(([termKey, assignments]) => {
             if (selectedTerm !== "all") {
-              const termPart = termKey.split(' ').slice(-2).join(' ');
-              if (termPart !== selectedTerm) return false;
+              const parsedTerm = parseTermCode(termKey);
+              if (!parsedTerm) return false;
+              
+              let formattedTerm = "";
+              if (parsedTerm.term === 'Both') {
+                formattedTerm = `${parsedTerm.season} Both Terms`;
+              } else {
+                formattedTerm = `${parsedTerm.season} Term ${parsedTerm.term}`;
+              }
+              
+              if (formattedTerm !== selectedTerm) return false;
             }
             return assignments.length > 0;
           });
@@ -113,9 +123,9 @@ export default function SchedulerAssignmentPage() {
 
       return true;
     });
-  }, [searchTerm, selectedTerm, selectedYear]);
+  }, [students, searchTerm, selectedTerm, selectedYear]);
 
-  // Filter courses based on filters (now using backend data)
+  // Filter courses based on filters
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
       const matchesSearch =
@@ -156,19 +166,31 @@ export default function SchedulerAssignmentPage() {
     });
   }, [courses, searchTerm, selectedDepartment, selectedYear, selectedTerm]);
 
-  // Get unique years and terms from backend data
+  // Get unique years and terms from both students and courses
   const availableYears = useMemo(() => {
     const yearSet = new Set();
+    
+    // Add years from courses
     courses.forEach(course => {
       Object.keys(course.yearlyOfferings || {}).forEach(year => {
         yearSet.add(year);
       });
     });
+    
+    // Add years from students
+    students.forEach(student => {
+      Object.keys(student.yearlyAssignments || {}).forEach(year => {
+        yearSet.add(year);
+      });
+    });
+    
     return Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a));
-  }, [courses]);
+  }, [courses, students]);
 
   const availableTerms = useMemo(() => {
     const termSet = new Set();
+    
+    // Add terms from courses
     courses.forEach(course => {
       Object.values(course.yearlyOfferings || {}).forEach(yearData => {
         Object.keys(yearData).forEach(termKey => {
@@ -185,8 +207,27 @@ export default function SchedulerAssignmentPage() {
         });
       });
     });
+    
+    // Add terms from students
+    students.forEach(student => {
+      Object.values(student.yearlyAssignments || {}).forEach(yearData => {
+        Object.keys(yearData).forEach(termKey => {
+          const parsedTerm = parseTermCode(termKey);
+          if (parsedTerm) {
+            let formattedTerm = "";
+            if (parsedTerm.term === 'Both') {
+              formattedTerm = `${parsedTerm.season} Both Terms`;
+            } else {
+              formattedTerm = `${parsedTerm.season} Term ${parsedTerm.term}`;
+            }
+            termSet.add(formattedTerm);
+          }
+        });
+      });
+    });
+    
     return Array.from(termSet).sort();
-  }, [courses]);
+  }, [courses, students]);
 
   const availableDepartments = useMemo(() => {
     const deptSet = new Set();
@@ -293,84 +334,89 @@ export default function SchedulerAssignmentPage() {
                 View and manage TA assignments across courses and students
               </p>
             </div>
+            <div className="text-right text-sm text-muted-foreground">
+              <p>{students.length} assigned student{students.length !== 1 ? 's' : ''}</p>
+              <p>{courses.length} course{courses.length !== 1 ? 's' : ''} with assignments</p>
+            </div>
           </div>
-
-          {/* Filters */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label>Search</Label>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search students, courses..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Year</Label>
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Years</SelectItem>
-                      {availableYears.map(year => (
-                        <SelectItem key={year} value={year}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Term</Label>
-                  <Select value={selectedTerm} onValueChange={setSelectedTerm}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select term" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Terms</SelectItem>
-                      {availableTerms.map(term => (
-                        <SelectItem key={term} value={term}>{term}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Departments</SelectItem>
-                      {availableDepartments.map(dept => (
-                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Main Tabs */}
           <Tabs defaultValue="students" className="space-y-4">
             <TabsList>
               <TabsTrigger value="students">By Students</TabsTrigger>
               <TabsTrigger value="courses">By Courses</TabsTrigger>
+              <TabsTrigger value="calendar">Calendar View</TabsTrigger> {/* Add Calendar tab */}
             </TabsList>
 
             {/* Students Tab */}
             <TabsContent value="students" className="space-y-4">
+              {/* Filters */}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Search</Label>
+                      <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search students, courses..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-8"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Year</Label>
+                      <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Years</SelectItem>
+                          {availableYears.map(year => (
+                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Term</Label>
+                      <Select value={selectedTerm} onValueChange={setSelectedTerm}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select term" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Terms</SelectItem>
+                          {availableTerms.map(term => (
+                            <SelectItem key={term} value={term}>{term}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Departments</SelectItem>
+                          {availableDepartments.map(dept => (
+                            <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="grid gap-6">
-                {filteredAssignments.map((student) => (
+                {filteredStudents.map((student) => (
                   <StudentCard
                     key={student.id}
                     student={student}
@@ -380,7 +426,7 @@ export default function SchedulerAssignmentPage() {
                 ))}
               </div>
 
-              {filteredAssignments.length === 0 && (
+              {filteredStudents.length === 0 && (
                 <Card>
                   <CardContent className="flex items-center justify-center py-12">
                     <div className="text-center">
@@ -399,6 +445,71 @@ export default function SchedulerAssignmentPage() {
 
             {/* Courses Tab */}
             <TabsContent value="courses" className="space-y-4">
+              {/* Filters */}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Search</Label>
+                      <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search students, courses..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-8"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Year</Label>
+                      <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Years</SelectItem>
+                          {availableYears.map(year => (
+                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Term</Label>
+                      <Select value={selectedTerm} onValueChange={setSelectedTerm}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select term" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Terms</SelectItem>
+                          {availableTerms.map(term => (
+                            <SelectItem key={term} value={term}>{term}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Departments</SelectItem>
+                          {availableDepartments.map(dept => (
+                            <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="grid gap-6">
                 {filteredCourses.map((course) => (
                   <CourseCard
@@ -425,6 +536,11 @@ export default function SchedulerAssignmentPage() {
                   </CardContent>
                 </Card>
               )}
+            </TabsContent>
+
+            {/* Calendar Tab */}
+            <TabsContent value="calendar">
+              <CalendarTab students={students} courses={courses} />
             </TabsContent>
           </Tabs>
         </main>
