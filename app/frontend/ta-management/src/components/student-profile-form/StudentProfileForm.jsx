@@ -41,6 +41,7 @@ import {
   updateCoursePreferences
 } from "@/logic/student-profile";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "../ui/alert";
 
 // Add this helper function at the top of StudentProfileForm.jsx
 // Replace the extractSemesterFromDate function in StudentProfileForm.jsx:
@@ -459,11 +460,23 @@ export default function StudentProfileForm({
               <h2 className="text-xl font-bold text-gray-900 mb-2">
                 Confirm Your Profile
               </h2>
-              <h2 className="text-base font-medium text-gray-900 mb-4">
-                <b><i>Returning</i> applicants</b>: Please review and update your information as necessary.<br />
-                <b><i>New</i> applicants</b>: Please fill out the remaining sections of your profile to ensure that your experience and preferences are accurately represented.<br />
-                Remember to <b>SAVE</b> each section before hitting "Next" to proceed.
-              </h2>
+              {/* Important info on how to use this page */}
+              <Alert className="w-full mx-auto border-blue-200 bg-blue-50 mb-4" >
+                <AlertDescription>
+                  <h2 className="text-base font-medium text-blue-900">
+                    <b><i>Returning</i> applicants:</b><br /> Please review and update your information as necessary.<br />
+                    <b><i>New</i> applicants:</b> <br /> Please fill out the remaining sections of your profile to ensure that your experience and preferences are accurately represented.<br />
+                  </h2>
+                </AlertDescription>
+              </Alert>
+
+              <Alert className="w-full mx-auto border-orange-200 bg-orange-50" >
+                <AlertDescription>
+                  <h2 className="text-base font-medium text-orange-900">
+                    <b>Remember to save</b> each section before hitting "Next" to proceed.
+                  </h2>
+                </AlertDescription>
+              </Alert>
             </div>
           )}
           {mode !== "application" && (
