@@ -1725,6 +1725,7 @@ def api_root(request):
             # Allocation Finalization
             'finalize_course_allocations': '/api/allocations/course-offerings/{course_offering_id}/finalize-allocations/', # this is the button scheduler or admin can click to send notif to instructor
             'finalize_session_allocations': '/api/allocations/shared-sessions/{shared_session_id}/finalize-allocations/',
+            'finalize_all_allocations': '/api/allocations/allocations-actions/finalize-all/',
                 
             # Service Info
             'service_info': '/api/allocations/',
