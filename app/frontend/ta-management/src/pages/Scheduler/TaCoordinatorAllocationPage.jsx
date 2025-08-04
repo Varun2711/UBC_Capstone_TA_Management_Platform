@@ -434,6 +434,7 @@ export default function TAAllocationPage() {
   const [pendingSlotSelection, setPendingSlotSelection] = useState(null);
   const [selectedSlotsBySectionId, setSelectedSlotsBySectionId] = useState({});
 
+  const [lastUpdate, setLastUpdate] = useState(Date.now());
 
   const selectedTA = shortlistedApplicants.find((item) => item.application.student.id === selectedTAId)
   //console.log("selectedTA main variable is: ", selectedTA);
@@ -549,7 +550,7 @@ export default function TAAllocationPage() {
   }
 
   const isSectionAlreadyOfferedToTA = (taStudentId, section) => {
-    const taOffer = offers.find((o) => o.student.id === taStudentId && o.status !== "cancelled");
+    const taOffer = offers.find((o) => o.student.id === taStudentId && o.status !== "cancelled" && o.status !== "rejected" );
     if (!taOffer) return false;
 
     // Check if it's a course offering or a shared session
@@ -681,7 +682,7 @@ export default function TAAllocationPage() {
       .flatMap(a => a.slots || []);
 
     // Collect slots from offers (fetch details for each offer item)
-    const taOffers = offers.filter(o => o.student.id === taStudentId && o.status !== "cancelled");
+    const taOffers = offers.filter(o => o.student.id === taStudentId && o.status !== "cancelled" && o.status !== "rejected");
     let offerSlots = [];
 
     for (const offer of taOffers) {
@@ -1138,6 +1139,24 @@ export default function TAAllocationPage() {
     setSelectedSharedSessions([]);
   }, [selectedTA]);
 
+  // Add this useEffect for polling
+  useEffect(() => {
+    // Poll every 5 seconds
+    const pollInterval = setInterval(async () => {
+      try {
+        const fetchedOffers = await apiFetchOffers();
+        setOffers(fetchedOffers);
+        setLastUpdate(Date.now());
+      } catch (error) {
+        console.error("Polling error:", error);
+      }
+    }, 5000); // 5000ms = 5 seconds
+
+    // Cleanup on unmount
+    return () => clearInterval(pollInterval);
+  }, []); // Empty dependency array means this only sets up once
+
+
   console.log("offers state variable RIGHT BEFORE fetchOfferSlotTimes useEffect is called: ", offers);
   console.log("selectedApplication RIGHT BEFORE fetchOfferSlotTimes useEffect is called: ", selectedApplication);
   useEffect(() => {
@@ -1150,7 +1169,7 @@ export default function TAAllocationPage() {
 
       const relevantOffers = offers.filter(
         (offer) => offer.student.id === selectedApplication?.application?.student?.id &&
-          offer.status !== "cancelled"
+          offer.status !== "cancelled" && offer.status !== "rejected" 
       );
       console.log("relevantOffers for TA:", selectedApplication?.application?.student?.id, "are: ", relevantOffers);
       //console.log("Filtered Offers for TA:", relevantOffers);
@@ -1187,7 +1206,7 @@ export default function TAAllocationPage() {
     };
 
     fetchOfferSlotTimes();
-  }, [selectedTA, selectedApplication, offers]);
+  }, [selectedTA, selectedApplication, offers, lastUpdate]);
 
   const application = filteredShortlistedApplicants.find(
     (item) => item.application.student?.id === selectedTA?.id
@@ -1235,7 +1254,7 @@ export default function TAAllocationPage() {
 
   const totalWeeklyHoursForSelectedTA = selectedTA ? (() => {
     const taOffers = offers.filter(
-      offer => offer.student.id === selectedTA.application.student.id && offer.status !== "cancelled"
+      offer => offer.student.id === selectedTA.application.student.id && offer.status !== "cancelled" && offer.status !== "rejected"
     );
 
     if (taOffers.length === 0) return 0;
@@ -1981,22 +2000,20 @@ export default function TAAllocationPage() {
                                 console.log("in try block of add offer button, selectedApplication is: ", selectedApplication);
                                 await createOffer(dataToSend);
 
+                                // ... (rest of the function: refresh offers, reset UI state, etc.) ...
                                 await fetchAndSetOffers();
-                                // Update frontend state
-                                handleAddTAtoAddedOfferTab(selectedTA, selectedSections);
-
                                 setStudentCurrentHours((prev) => ({
                                   ...prev,
                                   [studentId]: existingHours + addedHours,
                                 }));
-
                                 setSelectedTAId(null);
                                 setSelectedApplication(null);
                                 setSelectedCourseOfferings([]);
                                 setSelectedSharedSessions([]);
+
                               } catch (err) {
-                                console.error("Failed to create offer:", err);
-                                alert("An error occurred while creating the offer.");
+                                console.error("Failed to create or update offer:", err);
+                                alert("An error occurred while creating or updating the offer.");
                               }
                             }}
                           >
@@ -2019,6 +2036,7 @@ export default function TAAllocationPage() {
                   setActiveOffers={setActiveOffers}
                   studentCurrentHours={studentCurrentHours}
                   setStudentCurrentHours={setStudentCurrentHours}
+                  fetchAndSetOffers={fetchAndSetOffers}
                 />
               </TabsContent>
 

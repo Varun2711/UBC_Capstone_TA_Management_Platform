@@ -474,18 +474,184 @@ export default function ProfilePage() {
     setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
+  // Update the validation functions
   const validateField = (field, value) => {
     let error = null;
+
     if (field === "firstName" || field === "lastName") {
       if (!value || value.trim().length < 2) {
         error = "Name must be at least 2 characters";
+      } else if (value.trim().length > 50) {
+        error = "Name must be less than 50 characters";
+      } else if (!/^[a-zA-Z\s\-']+$/.test(value.trim())) {
+        error = "Name can only contain letters, spaces, hyphens, and apostrophes";
       }
     } else if (field === "email") {
       if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
-        error = "Invalid email address";
+        error = "Please enter a valid email address";
+      }
+    } else if (field === "studentId") {
+      if (!value || value.trim() === "") {
+        error = "Student ID is required";
+      } else if (!/^\d{8}$/.test(value.trim())) {
+        error = "Student ID must be exactly 8 digits";
+      }
+    } else if (field === "employeeNumber") {
+      if (value && value.trim() !== "") {
+        if (!/^\d+$/.test(value.trim())) {
+          error = "UBC Employee ID must contain only numbers";
+        } else if (value.trim().length > 10) {
+          error = "UBC Employee ID must be maximum 10 digits";
+        }
+      }
+    } else if (field === "phone") {
+      if (value && value.trim() !== "") {
+        // Remove all non-digit characters for validation
+        const digitsOnly = value.replace(/\D/g, '');
+        if (digitsOnly.length < 10) {
+          error = "Phone number must have at least 10 digits";
+        } else if (digitsOnly.length > 15) {
+          error = "Phone number must be maximum 15 digits";
+        } else if (!/^[\+]?[\d\s\-\(\)\.]{10,20}$/.test(value.trim())) {
+          error = "Please enter a valid phone number format (e.g., +1-234-567-8900)";
+        }
       }
     }
+
     return error;
+  };
+
+  // Update skills validation to only allow letters
+  const validateSkillField = (value) => {
+    if (!value || value.trim() === "") {
+      return "Skill cannot be empty";
+    } else if (value.trim().length < 2) {
+      return "Skill must be at least 2 characters";
+    } else if (value.trim().length > 50) {
+      return "Skill must be 50 characters or less";
+    } else if (!/^[a-zA-Z\s\+\#\.\-\/\(\)]+$/.test(value.trim())) {
+      return "Skills can only contain letters, spaces, and common symbols (+, #, -, /, etc.)";
+    }
+    return null;
+  };
+
+  // Update academic validation for expected graduation
+  const validateAcademicField = (field, value) => {
+    let error = null;
+
+    if (field === "major" || field === "minor") {
+      if (field === "major" && (!value || value.trim().length < 2)) {
+        error = "Major is required (minimum 2 characters)";
+      } else if (value && value.trim() !== "") {
+        if (value.trim().length > 100) {
+          error = `${field === "major" ? "Major" : "Minor"} must be less than 100 characters`;
+        } else if (!/^[a-zA-Z\s\-&]+$/.test(value.trim())) {
+          error = `${field === "major" ? "Major" : "Minor"} can only contain letters, spaces, hyphens, and ampersands`;
+        }
+      }
+    } else if (field === "year") {
+      if (!value || value.trim() === "") {
+        error = "Academic level is required";
+      }
+    } else if (field === "gpa") {
+      if (value && value.trim() !== "") {
+        const gpaValue = parseFloat(value);
+        if (isNaN(gpaValue)) {
+          error = "GPA must be a number";
+        } else if (gpaValue < 0 || gpaValue > 4.33) {
+          error = "GPA must be between 0.00 and 4.33 (UBC scale)";
+        } else if (!/^\d+(\.\d{1,2})?$/.test(value.trim())) {
+          error = "GPA can have maximum 2 decimal places";
+        }
+      }
+    } else if (field === "academicInfo.expectedGraduation") {
+      if (!value || value.trim() === "") {
+        error = "Expected graduation date is required";
+      } else if (value.trim().length > 20) {
+        error = "Expected graduation must be 20 characters or less";
+      }
+    } else if (field === "academicInfo.degreeStart") {
+      if (!value || value.trim() === "") {
+        error = "Degree start year is required";
+      } else if (!/^\d{4}$/.test(value.trim())) {
+        error = "Degree start must be a 4-digit year (e.g., 2021)";
+      } else {
+        const year = parseInt(value.trim());
+        const currentYear = new Date().getFullYear();
+        if (year < 1900 || year > currentYear + 10) {
+          error = `Degree start year must be between 1900 and ${currentYear + 10}`;
+        }
+      }
+    } else if (field === "academicInfo.yearStanding") {
+      if (!value || value.trim() === "") {
+        error = "Year standing is required";
+      } else if (!/^\d+$/.test(value.trim())) {
+        error = "Year standing must be a whole number";
+      } else {
+        const standing = parseInt(value.trim());
+        if (standing < 1 || standing > 8) {
+          error = "Year standing must be between 1 and 8";
+        }
+      }
+    }
+
+    return error;
+  };
+
+  
+
+  // Add experience validation function
+  const validateExperienceField = (field, value, context = {}) => {
+    let error = null;
+
+    if (field === "course") {
+      if (!value || value.trim() === "") {
+        error = "Course is required";
+      } else if (!/^[A-Z]{2,4}\s*\d{3}[A-Z]?$/i.test(value.trim())) {
+        error = "Enter course code like 'COSC 499' or 'MATH 100A'";
+      } else if (value.trim().length > 100) {
+        error = "Course name must be 100 characters or less";
+      }
+    } else if (field === "semester") {
+      if (!value || value.trim() === "") {
+        error = "Semester is required";
+      } else {
+        const semesterRegex = /^(Fall|Winter|Summer)\s+\d{4}$/i;
+        if (!semesterRegex.test(value.trim())) {
+          error = "Enter semester as 'Fall 2023', 'Winter 2024', or 'Summer 2023'";
+        } else {
+          const year = parseInt(value.trim().split(' ')[1]);
+          const currentYear = new Date().getFullYear();
+          if (year < 1990 || year > currentYear + 2) {
+            error = `Year must be between 1990 and ${currentYear + 2}`;
+          }
+        }
+      }
+    } else if (field === "professor") {
+      if (!value || value.trim() === "") {
+        error = "Professor name is required";
+      } else if (value.trim().length < 2) {
+        error = "Professor name must be at least 2 characters";
+      } else if (value.trim().length > 100) {
+        error = "Professor name must be 100 characters or less";
+      } else if (!/^[a-zA-Z\s\.\-']+$/.test(value.trim())) {
+        error = "Professor name can only contain letters, spaces, periods, hyphens, and apostrophes";
+      }
+    }
+
+    return error;
+  };
+
+  // Add course preference validation function
+  const validateCoursePreference = (value) => {
+    if (!value || value.trim() === "") {
+      return "Course preference cannot be empty";
+    } else if (value.trim().length > 20) {
+      return "Course code must be 20 characters or less";
+    } else if (!/^[A-Z]{2,4}\s*\d{3}[A-Z]?$/i.test(value.trim())) {
+      return "Enter course code like 'COSC 499' or 'MATH 100A'";
+    }
+    return null;
   };
 
   const validateForm = () => {
@@ -554,9 +720,12 @@ export default function ProfilePage() {
   const validateAcademicForm = () => {
     const newErrors = {};
 
-    // Validate required fields
+    // Validate required fields and their formats
     if (!userData.major?.trim()) {
       newErrors.major = "Major is required";
+    } else {
+      const majorError = validateAcademicField("major", userData.major);
+      if (majorError) newErrors.major = majorError;
     }
 
     if (!userData.year?.trim()) {
@@ -565,49 +734,132 @@ export default function ProfilePage() {
 
     if (!userData.academicInfo?.degreeStart?.trim()) {
       newErrors.degreeStart = "Degree start year is required";
+    } else {
+      const degreeStartError = validateAcademicField("academicInfo.degreeStart", userData.academicInfo.degreeStart);
+      if (degreeStartError) newErrors.degreeStart = degreeStartError;
     }
 
     if (!userData.academicInfo?.yearStanding?.trim()) {
       newErrors.yearStanding = "Year standing is required";
+    } else {
+      const yearStandingError = validateAcademicField("academicInfo.yearStanding", userData.academicInfo.yearStanding);
+      if (yearStandingError) newErrors.yearStanding = yearStandingError;
     }
 
     if (!userData.academicInfo?.expectedGraduation?.trim()) {
       newErrors.expectedGraduation = "Expected graduation is required";
     }
 
+    // Validate optional fields if they have values
+    if (userData.gpa && userData.gpa.trim() !== "") {
+      const gpaError = validateAcademicField("gpa", userData.gpa);
+      if (gpaError) newErrors.gpa = gpaError;
+    }
+
+    if (userData.minor && userData.minor.trim() !== "") {
+      const minorError = validateAcademicField("minor", userData.minor);
+      if (minorError) newErrors.minor = minorError;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateExperienceForm = (editedExperience) => {
+    const newErrors = {};
+    let hasErrors = false;
+    editedExperience.forEach((exp, index) => {
+      const courseError = validateExperienceField("course", exp.course);
+      if (courseError) {
+        newErrors[`course_${index}`] = courseError;
+        hasErrors = true;
+      }
+      const semesterError = validateExperienceField("semester", exp.semester);
+      if (semesterError) {
+        newErrors[`semester_${index}`] = semesterError;
+        hasErrors = true;
+      }
+      const professorError = validateExperienceField("professor", exp.professor);
+      if (professorError) {
+        newErrors[`professor_${index}`] = professorError;
+        hasErrors = true;
+      }
+    });
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors, experience: "Please fix the validation errors before saving." }));
+    }
+    return !hasErrors;
+  };
+
+  const validateSkillsForm = (editedSkills) => {
+    const newErrors = {};
+    let hasErrors = false;
+    editedSkills.technicalSkills.forEach((skill, index) => {
+      const error = validateSkillField(skill);
+      if (error) {
+        newErrors[`technical_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+    editedSkills.softSkills.forEach((skill, index) => {
+      const error = validateSkillField(skill);
+      if (error) {
+        newErrors[`soft_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors, skills: "Please fix the validation errors before saving." }));
+    }
+    return !hasErrors;
+  };
+
+  // Add validation function for the entire course preferences form
+  const validateCoursePreferencesForm = (coursePreference) => {
+    const newErrors = {};
+    let hasErrors = false;
+    coursePreference.forEach((course, index) => {
+      const error = validateCoursePreference(course);
+      if (error) {
+        newErrors[`course_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors }));
+    }
+    return !hasErrors;
+  };
+
+  // Fix the handleSaveAcademicInfo function to match your working original
   const handleSaveAcademicInfo = async (userData) => {
     if (!validateAcademicForm()) return;
-    setIsSavingAcademic(true);
-    setAcademicErrors({});
+    setIsSaving(true);
+    setErrors({});
 
     try {
-      // Send data in the format your backend expects
-      const academicData = {
-        // Student model fields (sent at top level)
+      // Use the EXACT same structure as your working original file
+      const updatedData = {
+        // Top-level fields for Student model
         program: userData.major,  // Major -> program
         study_level: userData.year,  // Academic Level -> study_level
-        year_standing: userData.academicInfo.yearStanding ? parseInt(userData.academicInfo.yearStanding) : null,
-        expected_graduation: userData.academicInfo.expectedGraduation || '',  // ✅ Add this line
+        year_standing: parseInt(userData.academicInfo?.yearStanding || 0),
+        expected_graduation: userData.academicInfo?.expectedGraduation,  // This was working in original
 
-        // StudentProfile fields (sent nested)
+        // Nested StudentProfile fields
         student_profile: {
-          gpa: userData.gpa || null,
-          minor: userData.minor || '',
-          year_degree_start: userData.academicInfo.degreeStart ? parseInt(userData.academicInfo.degreeStart) : null,
+          gpa: userData.gpa ? parseFloat(userData.gpa) : null,
+          minor: userData.minor,
+          year_degree_start: parseInt(userData.academicInfo?.degreeStart || new Date().getFullYear())
         }
       };
 
-      console.log("=== ACADEMIC SAVE DEBUG ===");
-      console.log("Academic data to save:", academicData);
+      console.log("Saving academic data:", updatedData);
 
-      const response = await updateProfile(academicData); // Use updateProfile, not updateAcademicInfo
-      console.log("Academic update response:", response);
+      const response = await updateProfile(updatedData);
+      console.log("Academic save response:", response);
 
-      // Refresh profile data
+      // Refresh the profile data
       const refreshedData = await getProfile();
       const transformedData = transformBackendDataToFrontend(refreshedData);
 
@@ -617,28 +869,13 @@ export default function ProfilePage() {
       setIsEditingAcademic(false);
       showSuccessMessage("Academic information updated successfully");
     } catch (error) {
-      console.error("Save academic info error:", error);
-      if (error.response && error.response.status === 400 && error.response.data) {
-        const backendErrors = error.response.data;
-        const formattedErrors = {};
-
-        for (const field in backendErrors) {
-          if (Array.isArray(backendErrors[field])) {
-            formattedErrors[field] = backendErrors[field][0];
-          } else {
-            formattedErrors[field] = backendErrors[field];
-          }
-        }
-        setAcademicErrors(formattedErrors);
-      } else {
-        setAcademicErrors({ api: "Failed to save academic information. Please try again." });
-      }
+      handleApiError(error, "Failed to save academic information. Please try again.");
     } finally {
-      setIsSavingAcademic(false);
+      setIsSaving(false);
     }
   };
 
-  // Add this function to handle academic info changes
+  // Add this function to handle academic input changes
   const handleAcademicInputChange = (field, value) => {
     console.log(`Academic input change: ${field} = "${value}"`);
 
@@ -669,7 +906,6 @@ export default function ProfilePage() {
     setErrors(newErrors);
   };
 
-  // handleCancel for Academic Information
   const handleCancelAcademicInfo = () => {
     // Reset userData to original values instead of editedAcademicInfo
     setUserData({ ...originalUserData });
@@ -677,7 +913,7 @@ export default function ProfilePage() {
     setErrors({});
   };
 
-  // Replace your existing handleSaveExperience function with this:
+  // Add the missing functions for experience, skills, and courses
   const handleSaveExperience = async (editedExperience) => {
     // Validate experience data
     const hasEmptyFields = editedExperience.some(exp =>
@@ -717,7 +953,7 @@ export default function ProfilePage() {
         };
       });
 
-      console.log("Experiences data being sent:", formattedExperiences); // Debug log
+      console.log("Experiences data being sent:", formattedExperiences);
 
       // Use the specialized experience update function
       await updateExperience(formattedExperiences);
@@ -747,8 +983,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Add this function with your other handle functions
-  // Update the handleSaveSkills function
   const handleSaveSkills = async (editedSkills) => {
     // Validate skills data
     const hasEmptyTechnicalSkills = editedSkills.technicalSkills.some(skill => skill.trim() === "");
@@ -809,7 +1043,6 @@ export default function ProfilePage() {
     }
   }
 
-  // handleSave for Course Preferences
   const handleSaveCourses = async (coursePreference) => {
     const hasEmptyCoursePreference = coursePreference.some(course => course.trim() === "");
     if (hasEmptyCoursePreference) {
@@ -902,6 +1135,18 @@ export default function ProfilePage() {
       setIsSaving(false);
     }
   };
+
+  // Add the majors array
+  const majors = [
+    "Computer Science",
+    "Mathematics", 
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Economics",
+    "Psychology",
+    "Other (please specify)",
+  ];
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading profile...</div>;
@@ -1039,11 +1284,18 @@ export default function ProfilePage() {
                         <Input
                           id="studentId"
                           value={userData.studentId}
-                          onChange={(e) => handleInputChange("studentId", e.target.value)}
+                          onChange={(e) => {
+                            // Only allow digits and limit to 8 characters
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 8);
+                            handleInputChange("studentId", value);
+                          }}
+                          placeholder="12345678 (8 digits)"
+                          maxLength="8"
                         />
                       ) : (
                         <p className="text-sm">{userData.studentId}</p>
                       )}
+                      {errors.studentId && <p className="text-red-500 text-xs">{errors.studentId}</p>}
                       {errors.student_number && <p className="text-red-500 text-xs">{errors.student_number}</p>}
                     </div>
                     <div className="space-y-2">
@@ -1052,11 +1304,18 @@ export default function ProfilePage() {
                         <Input
                           id="UBCEmployeeId"
                           value={userData.employeeNumber}
-                          onChange={(e) => handleInputChange("employeeNumber", e.target.value)}
+                          onChange={(e) => {
+                            // Only allow digits and limit to 10 characters
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                            handleInputChange("employeeNumber", value);
+                          }}
+                          placeholder="1234567890 (max 10 digits)"
+                          maxLength="10"
                         />
                       ) : (
                         <p className="text-sm">{userData.employeeNumber}</p>
                       )}
+                      {errors.employeeNumber && <p className="text-red-500 text-xs">{errors.employeeNumber}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">
@@ -1111,10 +1370,21 @@ export default function ProfilePage() {
                         <Input
                           id="phone"
                           value={userData.phone}
-                          onChange={(e) => handleInputChange("phone", e.target.value)}
+                          onChange={(e) => {
+                            // Allow common phone formats
+                            const value = e.target.value.replace(/[^\d\s\-\(\)\.\+]/g, '');
+                            handleInputChange("phone", value);
+                          }}
+                          placeholder="+1-234-567-8900 or (234) 567-8900"
                         />
                       ) : (
                         <p className="text-sm">{userData.phone}</p>
+                      )}
+                      {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
+                      {isEditing && (
+                        <p className="text-xs text-muted-foreground">
+                          Format: +1-234-567-8900, (234) 567-8900, or 234.567.8900
+                        </p>
                       )}
                     </div>
                   </div>
@@ -1158,15 +1428,62 @@ export default function ProfilePage() {
               </CardHeader>
 
               <CardContent>
-                {errors.major && <p className="text-red-500 text-xs mb-2">{errors.major}</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label>Major<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
-                      <Input
-                        value={userData.major || ''}
-                        onChange={(e) => handleAcademicInputChange("major", e.target.value)}
-                      />
+                      <div className="space-y-2">
+                        {/* Always show dropdown first, but handle custom values better */}
+                        {(userData.major === "" || userData.major === "Other (please specify)" || majors.includes(userData.major || '')) && (
+                          <select
+                            value={userData.major === "Other (please specify)" ? "Other (please specify)" : userData.major || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              console.log("Major dropdown changed to:", value);
+                              if (value === "Other (please specify)") {
+                                // Set to empty string to trigger input field
+                                handleAcademicInputChange("major", "");
+                              } else {
+                                handleAcademicInputChange("major", value);
+                              }
+                            }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">Select Major</option>
+                            {majors.map((major) => (
+                              <option key={major} value={major}>
+                                {major}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        
+                        {/* Show input field for custom major or when "Other" is selected */}
+                        {((userData.major && !majors.includes(userData.major) && userData.major !== "Other (please specify)") || userData.major === "") && (
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Please specify your major"
+                              value={userData.major === "Other (please specify)" ? "" : userData.major || ''}
+                              onChange={(e) => {
+                                console.log("Major input changed to:", e.target.value);
+                                handleAcademicInputChange("major", e.target.value);
+                              }}
+                              autoFocus
+                            />
+                            {/* Show button to go back to dropdown if they want */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                console.log("Switching back to dropdown");
+                                handleAcademicInputChange("major", "");
+                              }}
+                            >
+                              Choose from predefined majors
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <p className="text-sm">{userData.major}</p>
                     )}
@@ -1176,45 +1493,15 @@ export default function ProfilePage() {
                   <div className="space-y-2">
                     <Label>Academic Level<span className="text-red-500">*</span></Label>
                     {isEditingAcademic ? (
-                      <Select.Root
+                      <select
                         value={userData.year || ''}
-                        onValueChange={(value) => handleAcademicInputChange("year", value)}
+                        onChange={(e) => handleAcademicInputChange("year", e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Select.Trigger className="flex items-center justify-between w-full border rounded px-3 py-2 text-sm">
-                          <Select.Value placeholder="Select Academic Level" />
-                          <Select.Icon>
-                            <ChevronDown className="h-4 w-4" />
-                          </Select.Icon>
-                        </Select.Trigger>
-                        <Select.Content className="border rounded shadow bg-white">
-                          <Select.ScrollUpButton className="flex items-center justify-center">
-                            <ChevronUp className="h-4 w-4" />
-                          </Select.ScrollUpButton>
-                          <Select.Viewport className="p-1">
-                            <Select.Item
-                              value="undergraduate"
-                              className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
-                            >
-                              <Select.ItemText>Undergraduate</Select.ItemText>
-                              <Select.ItemIndicator>
-                                <Check className="h-4 w-4" />
-                              </Select.ItemIndicator>
-                            </Select.Item>
-                            <Select.Item
-                              value="graduate"
-                              className="px-3 py-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between"
-                            >
-                              <Select.ItemText>Graduate</Select.ItemText>
-                              <Select.ItemIndicator>
-                                <Check className="h-4 w-4" />
-                              </Select.ItemIndicator>
-                            </Select.Item>
-                          </Select.Viewport>
-                          <Select.ScrollDownButton className="flex items-center justify-center">
-                            <ChevronDown className="h-4 w-4" />
-                          </Select.ScrollDownButton>
-                        </Select.Content>
-                      </Select.Root>
+                        <option value="">Select Academic Level</option>
+                        <option value="undergraduate">Undergraduate</option>
+                        <option value="graduate">Graduate</option>
+                      </select>
                     ) : (
                       <p className="text-sm">{userData.year}</p>
                     )}
@@ -1227,10 +1514,12 @@ export default function ProfilePage() {
                       <Input
                         value={userData.gpa || ''}
                         onChange={(e) => handleAcademicInputChange("gpa", e.target.value)}
+                        placeholder="e.g., 3.85 (0.00-4.33)"
                       />
                     ) : (
                       <p className="text-sm">{userData.gpa}</p>
                     )}
+                    {errors.gpa && <p className="text-red-500 text-xs">{errors.gpa}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -1239,11 +1528,17 @@ export default function ProfilePage() {
                       <Input
                         value={userData.academicInfo?.expectedGraduation || ''}
                         onChange={(e) => handleAcademicInputChange("academicInfo.expectedGraduation", e.target.value)}
+                        placeholder="e.g., May 2025, 2025-05, Spring 2025"
                       />
                     ) : (
                       <p className="text-sm">{userData.academicInfo?.expectedGraduation}</p>
                     )}
                     {errors.expectedGraduation && <p className="text-red-500 text-xs">{errors.expectedGraduation}</p>}
+                    {isEditingAcademic && (
+                      <p className="text-xs text-muted-foreground">
+                        Enter any format: "May 2025", "2025-05", "Spring 2025", etc.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -1251,7 +1546,20 @@ export default function ProfilePage() {
                     {isEditingAcademic ? (
                       <Input
                         value={userData.academicInfo?.degreeStart || ''}
-                        onChange={(e) => handleAcademicInputChange("academicInfo.degreeStart", e.target.value)}
+                        onChange={(e) => {
+                          // Only allow 4 digits for year
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                          handleAcademicInputChange("academicInfo.degreeStart", value);
+                          
+                          // Real-time validation
+                          const error = validateAcademicField("academicInfo.degreeStart", value);
+                          setErrors(prev => ({
+                            ...prev,
+                            degreeStart: error
+                          }));
+                        }}
+                        placeholder="e.g., 2021"
+                        maxLength="4"
                       />
                     ) : (
                       <p className="text-sm">{userData.academicInfo?.degreeStart}</p>
@@ -1264,7 +1572,20 @@ export default function ProfilePage() {
                     {isEditingAcademic ? (
                       <Input
                         value={userData.academicInfo?.yearStanding || ''}
-                        onChange={(e) => handleAcademicInputChange("academicInfo.yearStanding", e.target.value)}
+                        onChange={(e) => {
+                          // Only allow digits, max 1 character for standing
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 1);
+                          handleAcademicInputChange("academicInfo.yearStanding", value);
+                          
+                          // Real-time validation
+                          const error = validateAcademicField("academicInfo.yearStanding", value);
+                          setErrors(prev => ({
+                            ...prev,
+                            yearStanding: error
+                          }));
+                        }}
+                        placeholder="e.g., 3 (1-8)"
+                        maxLength="1"
                       />
                     ) : (
                       <p className="text-sm">{userData.academicInfo?.yearStanding}</p>
@@ -1275,13 +1596,60 @@ export default function ProfilePage() {
                   <div className="space-y-2">
                     <Label>Minor (Optional)</Label>
                     {isEditingAcademic ? (
-                      <Input
-                        value={userData.minor || ''}
-                        onChange={(e) => handleAcademicInputChange("minor", e.target.value)}
-                      />
+                      <div className="space-y-2">
+                        {/* Always show dropdown first for minor too */}
+                        {(userData.minor === "" || userData.minor === "Other (please specify)" || majors.includes(userData.minor || '') || !userData.minor) && (
+                          <select
+                            value={userData.minor === "Other (please specify)" ? "Other (please specify)" : userData.minor || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              console.log("Minor dropdown changed to:", value);
+                              if (value === "Other (please specify)") {
+                                handleAcademicInputChange("minor", "");
+                              } else {
+                                handleAcademicInputChange("minor", value);
+                              }
+                            }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">No Minor</option>
+                            {majors.map((major) => (
+                              <option key={major} value={major}>
+                                {major}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        
+                        {/* Show input field for custom minor */}
+                        {((userData.minor && !majors.includes(userData.minor) && userData.minor !== "Other (please specify)") || userData.minor === "") && userData.minor !== null && (
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Please specify your minor"
+                              value={userData.minor === "Other (please specify)" ? "" : userData.minor || ''}
+                              onChange={(e) => {
+                                console.log("Minor input changed to:", e.target.value);
+                                handleAcademicInputChange("minor", e.target.value);
+                              }}
+                              autoFocus
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                console.log("Switching minor back to dropdown");
+                                handleAcademicInputChange("minor", "");
+                              }}
+                            >
+                              Choose from predefined minors
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <p className="text-sm">{userData.minor}</p>
                     )}
+                    {errors.minor && <p className="text-red-500 text-xs">{errors.minor}</p>}
                   </div>
                 </div>
               </CardContent>
@@ -1358,14 +1726,27 @@ export default function ProfilePage() {
                       <div className="space-y-1">
                         <Label>Course<span className="text-red-500">*</span></Label>
                         {isEditingExperience ? (
-                          <Input
-                            value={exp.course || ''}
-                            onChange={(e) => {
-                              const newExp = [...editedExperience];
-                              newExp[index].course = e.target.value;
-                              setEditedExperience(newExp);
-                            }}
-                          />
+                          <div className="space-y-1">
+                            <Input
+                              value={exp.course || ''}
+                              onChange={(e) => {
+                                const newExp = [...editedExperience];
+                                newExp[index].course = e.target.value;
+                                setEditedExperience(newExp);
+
+                                // Real-time validation
+                                const error = validateExperienceField("course", e.target.value);
+                                setErrors(prev => ({
+                                  ...prev,
+                                  [`course_${index}`]: error
+                                }));
+                              }}
+                              placeholder="e.g., COSC 499"
+                            />
+                            {errors[`course_${index}`] && (
+                              <p className="text-red-500 text-xs">{errors[`course_${index}`]}</p>
+                            )}
+                          </div>
                         ) : (
                           <p className="text-sm">{exp.course}</p>
                         )}
@@ -1374,14 +1755,28 @@ export default function ProfilePage() {
                       <div className="space-y-1">
                         <Label>Semester<span className="text-red-500">*</span></Label>
                         {isEditingExperience ? (
-                          <Input
-                            value={exp.semester || ''}
-                            onChange={(e) => {
-                              const newExp = [...editedExperience];
-                              newExp[index].semester = e.target.value;
-                              setEditedExperience(newExp);
-                            }}
-                          />
+                          <div className="space-y-1">
+                            <Input
+                              value={exp.semester || ''}
+                              onChange={(e) => {
+                                const newExp = [...editedExperience];
+                                newExp[index].semester = e.target.value;
+                                setEditedExperience(newExp);
+
+                                // Real-time validation
+                                const error = validateExperienceField("semester", e.target.value);
+                                setErrors(prev => ({
+                                  ...prev,
+                                  [`semester_${index}`]: error
+                                }));
+                              }}
+                              placeholder="e.g., Fall 2023"
+                            />
+                            {errors[`semester_${index}`] && (
+                              <p className="text-red-500 text-xs">{errors[`semester_${index}`]}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground">Format: Fall/Winter/Summer YYYY</p>
+                          </div>
                         ) : (
                           <p className="text-sm">{exp.semester}</p>
                         )}
@@ -1393,14 +1788,27 @@ export default function ProfilePage() {
                       <div className="space-y-1">
                         <Label>Professor<span className="text-red-500">*</span></Label>
                         {isEditingExperience ? (
-                          <Input
-                            value={exp.professor || ''}
-                            onChange={(e) => {
-                              const newExp = [...editedExperience];
-                              newExp[index].professor = e.target.value;
-                              setEditedExperience(newExp);
-                            }}
-                          />
+                          <div className="space-y-1">
+                            <Input
+                              value={exp.professor || ''}
+                              onChange={(e) => {
+                                const newExp = [...editedExperience];
+                                newExp[index].professor = e.target.value;
+                                setEditedExperience(newExp);
+
+                                // Real-time validation
+                                const error = validateExperienceField("professor", e.target.value);
+                                setErrors(prev => ({
+                                  ...prev,
+                                  [`professor_${index}`]: error
+                                }));
+                              }}
+                              placeholder="Professor's name"
+                            />
+                            {errors[`professor_${index}`] && (
+                              <p className="text-red-500 text-xs">{errors[`professor_${index}`]}</p>
+                            )}
+                          </div>
                         ) : (
                           <p className="text-sm">{exp.professor}</p>
                         )}
@@ -1417,6 +1825,7 @@ export default function ProfilePage() {
                             newExp[index].description = e.target.value;
                             setEditedExperience(newExp);
                           }}
+                          placeholder="Describe your TA responsibilities..."
                         />
                       ) : (
                         <p className="text-sm mt-2">{exp.description}</p>
@@ -1511,21 +1920,42 @@ export default function ProfilePage() {
 
                                 {editedSkills.technicalSkills.map((skill, index) => (
                                   <div key={index} className="flex items-center gap-2">
-                                    <Input
-                                      value={skill}
-                                      className="w-full"
-                                      onChange={(e) => {
-                                        const newSkills = [...editedSkills.technicalSkills]
-                                        newSkills[index] = e.target.value
-                                        setEditedSkills({ ...editedSkills, technicalSkills: newSkills })
-                                      }}
-                                    />
+                                    <div className="flex-1">
+                                      <Input
+                                        value={skill}
+                                        className="w-full"
+                                        onChange={(e) => {
+                                          // Filter out numbers and restrict to letters/symbols only
+                                          const value = e.target.value.replace(/[0-9]/g, '');
+                                          const newSkills = [...editedSkills.technicalSkills]
+                                          newSkills[index] = value
+                                          setEditedSkills({ ...editedSkills, technicalSkills: newSkills })
+
+                                          // Real-time validation
+                                          const error = validateSkillField(value);
+                                          setErrors(prev => ({
+                                            ...prev,
+                                            [`technical_${index}`]: error
+                                          }));
+                                        }}
+                                        placeholder="e.g., JavaScript, Python, React"
+                                      />
+                                      {errors[`technical_${index}`] && (
+                                        <p className="text-red-500 text-xs mt-1">{errors[`technical_${index}`]}</p>
+                                      )}
+                                    </div>
                                     <Button
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => {
                                         const updated = editedSkills.technicalSkills.filter((_, i) => i !== index)
                                         setEditedSkills({ ...editedSkills, technicalSkills: updated })
+                                        // Clear error
+                                        setErrors(prev => {
+                                          const newErrors = { ...prev };
+                                          delete newErrors[`technical_${index}`];
+                                          return newErrors;
+                                        });
                                       }}
                                     >
                                       <X className="h-4 w-4" />
@@ -1588,21 +2018,42 @@ export default function ProfilePage() {
 
                                 {editedSkills.softSkills.map((skill, index) => (
                                   <div key={index} className="flex items-center gap-2">
-                                    <Input
-                                      value={skill}
-                                      className="w-full"
-                                      onChange={(e) => {
-                                        const newSkills = [...editedSkills.softSkills]
-                                        newSkills[index] = e.target.value
-                                        setEditedSkills({ ...editedSkills, softSkills: newSkills })
-                                      }}
-                                    />
+                                    <div className="flex-1">
+                                      <Input
+                                        value={skill}
+                                        className="w-full"
+                                        onChange={(e) => {
+                                          // Filter out numbers and restrict to letters/symbols only
+                                          const value = e.target.value.replace(/[0-9]/g, '');
+                                          const newSkills = [...editedSkills.softSkills]
+                                          newSkills[index] = value
+                                          setEditedSkills({ ...editedSkills, softSkills: newSkills })
+
+                                          // Real-time validation
+                                          const error = validateSkillField(value);
+                                          setErrors(prev => ({
+                                            ...prev,
+                                            [`soft_${index}`]: error
+                                          }));
+                                        }}
+                                        placeholder="e.g., Communication, Leadership"
+                                      />
+                                      {errors[`soft_${index}`] && (
+                                        <p className="text-red-500 text-xs mt-1">{errors[`soft_${index}`]}</p>
+                                      )}
+                                    </div>
                                     <Button
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => {
                                         const updated = editedSkills.softSkills.filter((_, i) => i !== index)
                                         setEditedSkills({ ...editedSkills, softSkills: updated })
+                                        // Clear error
+                                        setErrors(prev => {
+                                          const newErrors = { ...prev };
+                                          delete newErrors[`soft_${index}`];
+                                          return newErrors;
+                                        });
                                       }}
                                     >
                                       <X className="h-4 w-4" />
@@ -1693,8 +2144,6 @@ export default function ProfilePage() {
                       </CardHeader>
 
                       <CardContent>
-                        {errors.courses && <p className="text-red-500 text-xs mb-2">{errors.courses}</p>}
-
                         {isEditingCourses ? (
                           <div className="space-y-4">
                             {coursePreference.length === 0 && (
@@ -1702,33 +2151,59 @@ export default function ProfilePage() {
                             )}
 
                             {coursePreference.map((course, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <Input
-                                  value={course}
-                                  onChange={(e) => {
-                                    const updated = [...coursePreference]
-                                    updated[index] = e.target.value
-                                    setCoursePreference(updated)
-                                  }}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const updated = coursePreference.filter((_, i) => i !== index)
-                                    setCoursePreference(updated)
-                                  }}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
+                              <div key={index} className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    value={course}
+                                    onChange={(e) => {
+                                      const updated = [...coursePreference]
+                                      updated[index] = e.target.value
+                                      setCoursePreference(updated)
+
+                                      // Real-time validation
+                                      const error = validateCoursePreference(e.target.value);
+                                      setErrors(prev => ({
+                                        ...prev,
+                                        [`course_${index}`]: error
+                                      }));
+                                    }}
+                                    placeholder="e.g., COSC 499, MATH 100A"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      const updated = coursePreference.filter((_, i) => i !== index)
+                                      setCoursePreference(updated)
+                                      // Clear error for this field
+                                      setErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors[`course_${index}`];
+                                        return newErrors;
+                                      });
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                {/* Show validation error for this specific course */}
+                                {errors[`course_${index}`] && (
+                                  <p className="text-red-500 text-xs">{errors[`course_${index}`]}</p>
+                                )}
                               </div>
                             ))}
+
                             <Button
                               onClick={() => setCoursePreference([...coursePreference, ""])}
                               variant="outline"
                             >
                               + Add Course
                             </Button>
+
+                            {/* General help text */}
+                            <p className="text-xs text-muted-foreground">
+                              Format: Department code + space + course number (e.g., COSC 499, MATH 100A)
+                            </p>
                           </div>
                         ) : (
                           <>

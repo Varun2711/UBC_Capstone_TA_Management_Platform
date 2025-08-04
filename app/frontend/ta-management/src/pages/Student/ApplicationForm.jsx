@@ -257,10 +257,10 @@ export default function ApplicationForm() {
   // Helper functions to determine current section type
   const isDynamicSection = () => currentStep <= dynamicSections.length;
 
-  const isSupportingDocsSection = () =>
+  const isPersonalDetailsSection = () =>
     currentStep === dynamicSections.length + 1;
 
-  const isPersonalDetailsSection = () =>
+  const isSupportingDocsSection = () =>
     currentStep === dynamicSections.length + 2;
   const isReviewSection = () => currentStep === dynamicSections.length + 3;
 
