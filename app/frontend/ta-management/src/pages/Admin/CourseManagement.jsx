@@ -8,7 +8,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { Separator } from "@/components/ui/separator"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 
-import { AppSidebar } from "@/components/scheduler-sidebar"
+import { AdminSidebar } from "@/components/admin-dashboard-sidebar"
 import { CourseFilters } from "@/components/scheduler/course_management/course-filters"
 import { CourseCard } from "@/components/scheduler/course_management/course-card"
 import { EmptyState } from "@/components/scheduler/course_management/empty-state"
@@ -31,7 +31,6 @@ import {
   createSharedSession,
   updateSharedSession,
   deleteSharedSession,
-  getTerms,
   getActiveTerms,
   getDepartments,
   getInstructors,
@@ -41,7 +40,7 @@ import {
   parseTermCode
 } from "@/logic/courseManagement"
 
-export default function CourseManagement() {
+export default function AdminCourseManagement() {
   // State for courses and UI
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState("all")
@@ -637,7 +636,7 @@ export default function CourseManagement() {
   if (loading) {
     return (
       <SidebarProvider>
-        <AppSidebar />
+        <AdminSidebar />
         <SidebarInset>
           <div className="flex items-center justify-center h-screen">
             <div className="text-center">
@@ -653,7 +652,7 @@ export default function CourseManagement() {
   if (error) {
     return (
       <SidebarProvider>
-        <AppSidebar />
+        <AdminSidebar activePage={"Course Management"} />
         <SidebarInset>
           <div className="flex items-center justify-center h-screen">
             <div className="text-center">
@@ -670,7 +669,7 @@ export default function CourseManagement() {
 
   return (
     <SidebarProvider>
-      <AppSidebar activePage={"Course Management"}/>
+      <AdminSidebar activePage={"Course Management"}/>
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
