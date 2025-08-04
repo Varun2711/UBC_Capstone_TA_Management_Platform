@@ -65,6 +65,7 @@ vi.mock("@/logic/student-applications", () => {
         title: "TA Position",
         form_template_id: null,
         term_id: null,
+        status: "open",
       })
     ),
     fetchTemplateDetails: vi.fn(() => Promise.resolve({ sections: [] })),
@@ -73,6 +74,11 @@ vi.mock("@/logic/student-applications", () => {
     handleNextStep: vi.fn(),
     handlePreviousStep: vi.fn(),
     handleFormSubmission: vi.fn(() => Promise.resolve()),
+    validateApplicationFormAccess: vi.fn(() =>
+      Promise.resolve({
+        canAccess: true,
+      })
+    ),
   };
 });
 
