@@ -403,15 +403,20 @@ class OfferItem(models.Model):
         
         try:
             if self.item_type == 'course_offering' and self.course_offering:
-                time_slots = self.course_offering.time_slots.all()
+                # ✅ FOR COURSE OFFERINGS: Use only the specific assigned time slot
+                if self.time_slot:
+                    time_slots = [self.time_slot]  # Only the specific assigned slot
+                else:
+                    time_slots = []  # No time slot assigned
+                    
             elif self.item_type == 'shared_session' and self.shared_session:
+                # ✅ FOR SHARED SESSIONS: Use all time slots (entire session)
                 time_slots = self.shared_session.time_slots.all()
             else:
                 return 0.0
             
             for slot in time_slots:
                 # Calculate duration directly from start_time and end_time
-                # No dependency on course service having duration_hours property
                 if hasattr(slot, 'start_time') and hasattr(slot, 'end_time') and slot.start_time and slot.end_time:
                     try:
                         from datetime import datetime, timedelta
@@ -430,14 +435,14 @@ class OfferItem(models.Model):
                         logger.error(f"Error calculating slot duration for {slot}: {e}")
                         # Fallback based on item type
                         if self.item_type == 'course_offering':
-                            total_hours += 3.0  # Standard lecture hours
+                            total_hours += 1.0  # 1 hour per time slot for course offering
                         else:  # shared_session
                             total_hours += 1.5  # Standard lab/tutorial hours
                 else:
                     # Fallback when time slot data is missing/invalid
                     logger.warning(f"Missing or invalid time data for slot {slot}")
                     if self.item_type == 'course_offering':
-                        total_hours += 3.0  # Standard lecture hours
+                        total_hours += 1.0  # 1 hour per time slot
                     else:  # shared_session
                         total_hours += 1.5  # Standard lab/tutorial hours
                 
@@ -446,9 +451,8 @@ class OfferItem(models.Model):
         except Exception as e:
             logger.error(f"Error calculating weekly hours for {self}: {e}")
             # Final fallback
-            return 3.0 if self.item_type == 'course_offering' else 1.5
-        
-            
+            return 1.0 if self.item_type == 'course_offering' else 1.5
+    
     @property
     def course(self):
         """Get the course associated with this offer item"""
@@ -569,8 +573,8 @@ class Offer(models.Model):
         super().clean()
         
         # Must have at least one offer item
-        if self.pk and self.offer_items.count() == 0:
-            raise ValidationError("Offer must contain at least one item")
+        # if self.pk and self.offer_items.count() == 0:
+        #     raise ValidationError("Offer must contain at least one item")
     
     @property
     def courses(self):

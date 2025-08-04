@@ -17,9 +17,11 @@ import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
-import ForgotPassword from "./pages/ForgotPassword";
+import ResetPasswordController, {
+  RESET_PASSWORD_STEPS,
+} from "./pages/ResetPassword/ResetPasswordController";
 import UserProfile from "./pages/profile-page-scheduler";
-import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
+import TaCoordinatorAllocationPage from "./pages/Scheduler/TaCoordinatorAllocationPage";
 import ViewJobPostings from "./pages/Student/Student_ViewJobPostings";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Scheduler/Scheduler_ManageApplications";
@@ -29,6 +31,7 @@ import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-manag
 import MyCourses from "./pages/Instructor_MyCourses";
 import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
+import AdminCourseManagement from "./pages/Admin/CourseManagement";
 import ViewStudentSchedule from "./pages/Student/Student_Schedule";
 import MyApplications from "./pages/Student/MyApplications";
 import ApplicationDetail from "./pages/Student/ApplicationDetail";
@@ -46,7 +49,7 @@ function App() {
       <Route path="/create-account/step1" element={<CreateAccount1 />} />
       <Route path="/create-account/step2" element={<CreateAccount2 />} />
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPasswordController />} />
 
       {/* Accessible to: student ---------------- */}
       <Route
@@ -221,6 +224,15 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin-course-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <AdminCourseManagement />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/manage-templates"
         element={

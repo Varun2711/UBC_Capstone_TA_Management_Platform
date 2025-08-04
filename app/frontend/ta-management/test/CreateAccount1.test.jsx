@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import CreateAccount1 from "../src/pages/CreateAccount1"
+import axios from "axios"
+
+// Mock axios to control API responses in tests
+vi.mock("axios")
 
 // Mock navigate function to test navigation without actually changing routes
 const mockNavigate = vi.fn()
@@ -73,7 +77,10 @@ describe("CreateAccount1", () => {
   })
 
   // Test form submission: data saved to localStorage and navigation occurs
-  it("saves data to localStorage and navigates to step 2 on form submission", async () => {
+  it("saves data to sessionStorage and navigates to step 2 on form submission", async () => {
+    // Mock the API to simulate that the student number is available (404)
+    axios.get.mockRejectedValue({ response: { status: 404 } })
+
     renderStep1()
     const user = userEvent.setup()
 
@@ -90,16 +97,19 @@ describe("CreateAccount1", () => {
     // Click the "Next" button to submit
     await user.click(nextButton)
 
-    // Verify localStorage has the expected saved data
-    const savedData = JSON.parse(sessionStorage.getItem("createAccount1"))
-    expect(savedData).toEqual({
-      firstName: "John",
-      lastName: "Doe",
-      ubcStudentNumber: "12345678",
-    })
+    // Wait for the navigation to be called, as the check is async
+    await waitFor(() => {
+      // Verify sessionStorage has the expected saved data
+      const savedData = JSON.parse(sessionStorage.getItem("createAccount1"))
+      expect(savedData).toEqual({
+        firstName: "John",
+        lastName: "Doe",
+        ubcStudentNumber: "12345678",
+      })
 
-    // Verify navigation to step 2 was triggered
-    expect(mockNavigate).toHaveBeenCalledWith("/create-account/step2")
+      // Verify navigation to step 2 was triggered
+      expect(mockNavigate).toHaveBeenCalledWith("/create-account/step2")
+    })
   })
 
   // Test that all form inputs have the 'required' attribute set
