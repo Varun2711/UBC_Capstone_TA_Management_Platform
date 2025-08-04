@@ -6,7 +6,29 @@ import { MemoryRouter } from "react-router-dom";
 import { AppSidebar } from "@/components/scheduler-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
-// --- MOCKS ---
+// --- BROWSER ENVIRONMENT MOCKS ---
+// Mock browser APIs that might be accessed
+Object.defineProperty(window, 'sessionStorage', {
+  value: {
+    getItem: vi.fn(() => 'mock-token'),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  },
+  writable: true,
+});
+
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  },
+  writable: true,
+});
+
+// --- COMPONENT MOCKS ---
 
 // Mock the profile logic module
 vi.mock("@/logic/scheduler-profile", () => ({
@@ -65,6 +87,10 @@ describe("AppSidebar", () => {
   beforeEach(() => {
     // Reset mocks before each test to ensure isolation
     vi.clearAllMocks();
+    
+    // Reset window mocks
+    window.sessionStorage.getItem.mockReturnValue('mock-token');
+    
     // Default mock implementation for a successful data fetch
     getProfile.mockResolvedValue(mockUser);
   });
@@ -73,6 +99,7 @@ describe("AppSidebar", () => {
     // Clean up after each test
     cleanup();
     vi.clearAllTimers();
+    vi.clearAllMocks();
   });
 
   // --- TESTS ---
