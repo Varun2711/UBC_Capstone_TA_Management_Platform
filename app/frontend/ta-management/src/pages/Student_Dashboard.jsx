@@ -233,17 +233,7 @@ export default function StudentDashboard() {
     return 100;
   };
 
-  if (isLoadingProfile || !userData) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Check for an error state first. This is the most critical state.
   if (error) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -253,6 +243,18 @@ export default function StudentDashboard() {
           <Button onClick={() => window.location.reload()} variant="outline">
             Try Again
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // If there's no error, then check if we are still loading the initial data.
+  if (isLoadingProfile || !userData) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
