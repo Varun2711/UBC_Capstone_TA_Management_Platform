@@ -693,3 +693,18 @@ export const fetchAssignmentData = async () => {
     throw error;
   }
 };
+
+/**
+ * Finalizes all allocations and sends notifications to instructors
+ */
+export const finalizeAllAllocations = async () => {
+  try {
+    const response = await axios.post(`${ALLOCATIONS_API_URL}/allocations-actions/finalize-all/`, {}, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error finalizing allocations:', error);
+    throw error;
+  }
+};

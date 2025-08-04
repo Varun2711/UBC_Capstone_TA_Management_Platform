@@ -4,7 +4,8 @@ import {
   Search,
   Users,
   BookOpen,
-  Calendar, // Add Calendar icon
+  Calendar,
+  Send, // Add Send icon for the finalize button
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,15 +34,16 @@ import {
 import { AppSidebar } from "@/components/scheduler-sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react"; // Add CheckCircle for success
+import { toast } from "sonner"; // Use sonner instead of useToast
 
 // Import components
 import { StudentCard } from "@/components/scheduler/assignment/StudentCard";
 import { CourseCard } from "@/components/scheduler/assignment/CourseCard";
-import { CalendarTab } from "@/components/scheduler/assignment/CalendarTab"; // Add CalendarTab import
+import { CalendarTab } from "@/components/scheduler/assignment/CalendarTab";
 
 // Import API functions
-import { fetchAssignmentData, parseTermCode } from "@/logic/assignmentManagement";
+import { fetchAssignmentData, parseTermCode, finalizeAllAllocations } from "@/logic/assignmentManagement";
 
 export default function SchedulerAssignmentPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,6 +60,9 @@ export default function SchedulerAssignmentPage() {
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [finalizing, setFinalizing] = useState(false); // Add state for finalize button
+
+  // Remove the useToast hook since we're using sonner
 
   // Load data from backend
   useEffect(() => {
@@ -85,6 +90,28 @@ export default function SchedulerAssignmentPage() {
 
     loadData();
   }, []);
+
+  // Update finalize allocations handler to use sonner
+  const handleFinalizeAllocations = async () => {
+    try {
+      setFinalizing(true);
+      
+      await finalizeAllAllocations();
+      
+      toast.success("Allocations Finalized", {
+        description: "All instructors have been notified of their course allocations.",
+      });
+      
+    } catch (error) {
+      console.error("Failed to finalize allocations:", error);
+      
+      toast.error("Failed to finalize allocations", {
+        description: "Please try again.",
+      });
+    } finally {
+      setFinalizing(false);
+    }
+  };
 
   // Filter students based on search and filters
   const filteredStudents = useMemo(() => {
@@ -318,6 +345,24 @@ export default function SchedulerAssignmentPage() {
             </BreadcrumbList>
           </Breadcrumb>
           <div className="ml-auto flex items-center space-x-4">
+            {/* Add Finalize Allocations button */}
+            <Button 
+              onClick={handleFinalizeAllocations}
+              disabled={finalizing || students.length === 0}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {finalizing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Sending Notifications...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Final Assignment Notification
+                </>
+              )}
+            </Button>
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>
