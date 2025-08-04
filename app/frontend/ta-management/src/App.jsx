@@ -19,7 +19,7 @@ import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
 import ResetPasswordController, { RESET_PASSWORD_STEPS } from "./pages/ResetPassword/ResetPasswordController";
 import UserProfile from "./pages/profile-page-scheduler";
-import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
+import TaCoordinatorAllocationPage from "./pages/Scheduler/TaCoordinatorAllocationPage";
 import ViewJobPostings from "./pages/Student/Student_ViewJobPostings";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Scheduler/Scheduler_ManageApplications";

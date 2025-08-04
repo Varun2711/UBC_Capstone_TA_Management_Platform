@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
 import uuid
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.auth.models import User
 
 
 class Term(models.Model):
@@ -265,11 +266,12 @@ class Student(models.Model):
     program = models.CharField(max_length=100, null=True, blank=True)
     year_standing = models.IntegerField(null=True, blank=True)
     study_level = models.CharField(max_length=20)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, db_constraint=False)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     sin = models.CharField(max_length=11, null=True, blank=True)
     password = models.CharField(max_length=255)
     email = models.EmailField()
     is_active = models.BooleanField(default=True)
+    expected_graduation = models.CharField(max_length=20, null=True, blank=True)  # Add this line
 
     class Meta:
         managed = False
@@ -278,6 +280,87 @@ class Student(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+class StudentProfile(models.Model):
+    """ Extended profile for students """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
+    gpa = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
+    year_degree_start = models.IntegerField(null=True, blank=True)
+    minor = models.CharField(max_length=100, null=True, blank=True)
+    ubc_employee_id = models.CharField(max_length=20, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        db_table = 'profiles_studentprofile'
+        
+class StudentExperience(models.Model):
+    EXPERIENCE_TYPES = [
+        ('teaching', 'Teaching Assistant'),
+        ('work', 'Work Experience'),
+        ('other', 'Other'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='experiences')
+    experience_type = models.CharField(max_length=20, choices=EXPERIENCE_TYPES)
+    position_title = models.CharField(max_length=100)
+    organization = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = False
+        ordering = ['-start_date']
+        db_table = 'profiles_studentexperience'
+        
+class StudentSkill(models.Model):
+    SKILL_TYPES = [
+        ('technical', 'Technical'),
+        ('soft', 'Soft Skills'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills')
+    skill_type = models.CharField(max_length=20, choices=SKILL_TYPES)
+    name = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        unique_together = ['user', 'name']
+        ordering = ['skill_type', 'name']
+        db_table = 'profiles_studentskill'
+        
+class StudentAvailability(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='availability')
+    availability_grid = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        db_table = 'profiles_studentavailability'
+        
+class StudentCoursePreference(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_preferences')
+    course_code = models.CharField(max_length=20)
+    preference_rank = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = False
+        unique_together = ['user', 'course_code']
+        ordering = ['preference_rank']
+        db_table = 'profiles_studentcoursepreference'
 
 #added admin based on new requirements.
 class Admin(models.Model):
