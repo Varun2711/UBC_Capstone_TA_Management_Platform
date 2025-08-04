@@ -13,6 +13,7 @@ const AddedOffersTab = ({
   setActiveOffers,
   studentCurrentHours,
   setStudentCurrentHours,
+  fetchAndSetOffers,
 }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState(null); // { offerId, itemIndex }

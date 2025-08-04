@@ -2,6 +2,7 @@
 
 import axios from "axios";
 
+
 const API_URL = 'http://localhost:8080/api';
 
 // Helper function to get the auth token from session storage
@@ -153,6 +154,7 @@ export const editOffer = async (offer_id, dataToUpdate) => {
 
   return await response.json();
 };
+
 
 export const sendOffer = async (response_deadline, offer_id) => {
 

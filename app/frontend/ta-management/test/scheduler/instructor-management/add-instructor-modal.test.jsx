@@ -19,6 +19,8 @@ vi.mock('lucide-react', () => ({
   X: () => <div data-testid="x-icon" />,
   ChevronDown: () => <div data-testid="chevron-down-icon" />,
   ChevronUp: () => <div data-testid="chevron-up-icon" />,
+  Loader2: () => <div data-testid="loader-icon" />,
+  CheckCircle: () => <div data-testid="check-circle-icon" />,
 }));
 
 // Mock browser APIs
@@ -40,6 +42,7 @@ Object.assign(navigator, {
 });
 
 import { addInstructor } from '@/logic/instructorManagement';
+import { CheckCircle, Loader2 } from 'lucide-react';
 
 describe('AddInstructorModal', () => {
   const user = userEvent.setup();
@@ -93,39 +96,45 @@ describe('AddInstructorModal', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('shows validation errors for empty fields', async () => {
+  it('shows a validation error for empty fields', async () => {
     renderModal();
     
     await user.click(screen.getByRole('button', { name: /add instructor/i }));
     
-    expect(screen.getByText('Instructor name is required')).toBeInTheDocument();
-    expect(screen.getByText('Employee number is required')).toBeInTheDocument();
-    expect(screen.getByText('Email address is required')).toBeInTheDocument();
-    expect(screen.getByText('Department is required')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Please fill in all required fields.')).toBeInTheDocument();
+    });
   });
 
-  it('validates email format', async () => {
-    renderModal();
+  it('shows an error for a duplicate email', async () => {
+    renderModal({ 
+      existingInstructors: [{ email: 'john@test.com', employeeNumber: '11111111' }] 
+    });
     
-    const emailInput = screen.getByLabelText(/email address/i);
-    await user.type(emailInput, 'invalid-email');
-    await user.tab();
-    
-    expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
+    await fillValidForm();
+    await user.click(screen.getByRole('button', { name: /add instructor/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('An instructor with this email already exists.')).toBeInTheDocument();
+    });
   });
 
-  it('validates employee number format', async () => {
-    renderModal();
+  it('shows an error for a duplicate employee number', async () => {
+    renderModal({ 
+      existingInstructors: [{ email: 'jane@test.com', employeeNumber: '12345678' }] 
+    });
     
-    const employeeInput = screen.getByLabelText(/employee number/i);
-    await user.type(employeeInput, '123');
-    await user.tab();
-    
-    expect(screen.getByText('Employee number must be exactly 8 digits')).toBeInTheDocument();
+    await fillValidForm();
+    await user.click(screen.getByRole('button', { name: /add instructor/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('An instructor with this employee number already exists.')).toBeInTheDocument();
+    });
   });
 
-  it('submits form successfully', async () => {
-    addInstructor.mockResolvedValue({ temporary_password: 'TempPass123!' });
+  it('submits form successfully and shows success message', async () => {
+    const newInstructor = { name: 'John Doe', email: 'john@test.com' };
+    addInstructor.mockResolvedValue(newInstructor);
     renderModal();
     
     await fillValidForm();
@@ -141,6 +150,11 @@ describe('AddInstructorModal', () => {
     await waitFor(() => {
       expect(screen.getByText('Instructor Added')).toBeInTheDocument();
     });
+
+    expect(screen.getByText(/John Doe/)).toBeInTheDocument();
+    expect(screen.getByText(/has been successfully added/)).toBeInTheDocument();
+    expect(screen.getByText(/An email with their account details and a temporary password has been sent to/)).toBeInTheDocument();
+    expect(screen.getByText(/john@test.com/)).toBeInTheDocument();
   });
 
   it('displays API errors', async () => {
@@ -157,22 +171,10 @@ describe('AddInstructorModal', () => {
     });
   });
 
-  it('shows password in success modal', async () => {
-    addInstructor.mockResolvedValue({ temporary_password: 'TempPass123!' });
-    renderModal();
-    
-    await fillValidForm();
-    await user.click(screen.getByRole('button', { name: /add instructor/i }));
-    
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('TempPass123!')).toBeInTheDocument();
-    });
-  });
-
   it('calls callbacks when done', async () => {
     const onClose = vi.fn();
     const onDataChange = vi.fn();
-    addInstructor.mockResolvedValue({ temporary_password: 'TempPass123!' });
+    addInstructor.mockResolvedValue({ name: 'John Doe', email: 'john@test.com' });
     renderModal({ onClose, onDataChange });
     
     await fillValidForm();
