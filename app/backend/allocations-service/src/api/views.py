@@ -611,15 +611,23 @@ class OfferViewSet(viewsets.ModelViewSet):
     def _create_assignments_from_offer(self, offer, assigned_by):
         """Helper method to create assignments from offer items"""
         for offer_item in offer.offer_items.all():
+            # For shared sessions, the assignment is for the whole session, not a single time slot.
+            # The weekly_hours property on Assignment will calculate from the shared_session's time_slots.
+            # For course offerings, we assign the specific time slot.
+            assignment_time_slot = None
+            if offer_item.item_type == 'course_offering':
+                assignment_time_slot = offer_item.time_slot
+
             Assignment.objects.create(
                 offer=offer,
                 student=offer.student,
                 course=offer_item.course,
                 course_offering=offer_item.course_offering,
                 shared_session=offer_item.shared_session,
+                time_slot=assignment_time_slot, # <-- Add this line
                 role='ta',
                 assigned_by=assigned_by,
-                notes=f"Created from offer {offer.offer_id}"
+                notes=f"Auto-assigned from accepted offer {offer.offer_id} - {offer_item.item_type} ({offer_item.weekly_hours}h/week)"
             )
 
     def get_scheduler_from_jwt(self, user_type, user_id):

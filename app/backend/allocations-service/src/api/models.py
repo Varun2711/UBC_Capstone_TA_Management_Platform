@@ -674,16 +674,24 @@ class Assignment(models.Model):
     
     @property
     def time_slots(self):
-        """Get the specific time slot assigned"""
-        if self.time_slot:
+        """
+        Get the specific time slot(s) assigned.
+        For a course offering, it's a single slot.
+        For a shared session, it's all slots of that session.
+        """
+        if self.course_offering and self.time_slot:
             return [self.time_slot]
+        if self.shared_session:
+            return self.shared_session.time_slots.all()
         return []
     
     @property
     def weekly_hours(self):
         """Calculate weekly hours from the time slots of the assigned course/session"""
-        total_hours = 0
-        for slot in self.time_slots:
+        total_hours = 0.0
+        slots_to_calculate = self.time_slots # Use the updated time_slots property
+        
+        for slot in slots_to_calculate:
             if hasattr(slot, 'duration') and slot.duration:
                 hours = slot.duration.total_seconds() / 3600
                 total_hours += hours
