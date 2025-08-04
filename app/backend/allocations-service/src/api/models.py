@@ -499,8 +499,7 @@ class OfferItem(models.Model):
         if self.item_type == 'course_offering' and self.course_offering:
             time_slots = self.course_offering.time_slots.all()
         elif self.item_type == 'shared_session' and self.shared_session:
-            time_slots = self.shared_session.time_slots.all()
-        
+            time_slots = self.shared_session.time_slots.all()        
     
         for slot in time_slots:
             slots.append({
@@ -663,7 +662,7 @@ class Offer(models.Model):
 class Assignment(models.Model):
     """Final assignment after offer acceptance"""
     assignment_id = models.AutoField(primary_key=True)
-    offer = models.OneToOneField('Offer', on_delete=models.CASCADE, related_name='assignment', null=True, blank=True)
+    offer = models.ForeignKey('Offer', on_delete=models.CASCADE, related_name='assignment', null=True, blank=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
@@ -695,14 +694,31 @@ class Assignment(models.Model):
             return [self.time_slot]
         return []
     
+    
     @property
     def weekly_hours(self):
-        """Calculate weekly hours from the time slots of the assigned course/session"""
+        """Updated! Calculate weekly hours from the time slots of the assigned course/session"""
         total_hours = 0
-        for slot in self.time_slots:
-            if hasattr(slot, 'duration') and slot.duration:
-                hours = slot.duration.total_seconds() / 3600
+    
+    # If course_offering exists, use assignment.time_slot
+        if self.course_offering:
+            if self.time_slot and hasattr(self.time_slot, 'duration') and self.time_slot.duration:
+                hours = self.time_slot.duration.total_seconds() / 3600
                 total_hours += hours
+
+        # If no course_offering but shared_session exists, use shared_session time slots
+        elif self.shared_session:
+            if hasattr(self.shared_session, 'time_slots'):
+                for slot in self.shared_session.time_slots.all():
+                    if hasattr(slot, 'duration') and slot.duration:
+                        hours = slot.duration.total_seconds() / 3600
+                        total_hours += hours
+
+        # Final fallback: use direct time_slot
+        elif self.time_slot and hasattr(self.time_slot, 'duration') and self.time_slot.duration:
+            hours = self.time_slot.duration.total_seconds() / 3600
+            total_hours += hours
+
         return round(total_hours, 1)
     
     @property
@@ -718,9 +734,47 @@ class Assignment(models.Model):
         else:
             return '12'
     
+    @property
+    def get_all_time_slots(self):
+        """
+        Get all time slots for this assignment.
+        Priority: course_offering time slots -> shared_session time slots -> direct time_slot
+        """
+        time_slots = []
+        
+        # If course_offering exists and is not null, return its time slots
+        if self.course_offering:   
+            if self.time_slot:
+                time_slots = [self.time_slot]              
+        
+        # If course_offering is null but shared_session exists, get time slots from shared_session
+        elif self.shared_session:
+            if hasattr(self.shared_session, 'time_slots'):
+                time_slots = list(self.shared_session.time_slots.all())
+            elif self.time_slot:                
+                time_slots = []
+        
+        # Final fallback: use direct time_slot if available
+        elif self.time_slot:
+            time_slots = [self.time_slot]
+        
+        return time_slots
+    
+    @property
+    def assignment_term(self):
+        """Get the academic term for this assignment"""
+        if self.course_offering:
+            return self.course_offering.academic_term
+        elif self.shared_session:
+            return self.shared_session.academic_term
+        return None
+
+    
     def __str__(self):
         weekly_hours = self.weekly_hours
         return f"Assignment {self.assignment_id} - {self.student.name if self.student else 'Unknown'} ({weekly_hours}h/week)"
+    
+    
 
 class AssignmentModification(models.Model):
     """Track assignment modifications that need student response"""
