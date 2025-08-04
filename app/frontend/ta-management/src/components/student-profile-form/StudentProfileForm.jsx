@@ -464,8 +464,8 @@ export default function StudentProfileForm({
               <Alert className="w-full mx-auto border-blue-200 bg-blue-50 mb-4" >
                 <AlertDescription>
                   <h2 className="text-base font-medium text-blue-900">
-                    <b><i>Returning</i> applicants:</b><br /> Please review and update your information as necessary.<br />
-                    <b><i>New</i> applicants:</b> <br /> Please fill out the remaining sections of your profile to ensure that your experience and preferences are accurately represented.<br />
+                    <b><i>Returning</i> applicants:</b> Please review and update your information as necessary.<br />
+                    <b><i>New</i> applicants:</b> Please fill out the remaining sections of your profile to ensure that your experience and preferences are accurately represented.<br />
                   </h2>
                 </AlertDescription>
               </Alert>
