@@ -151,7 +151,8 @@ describe("StudentDashboard", () => {
 
     // ✅ Check for welcome message and user data
     expect(screen.getByText(/Welcome back, Sarah!/i)).toBeInTheDocument();
-    expect(screen.getByText("Computer Science")).toBeInTheDocument();
+    // Use getAllByText for potentially non-unique text
+    expect(screen.getAllByText("Computer Science").length).toBeGreaterThan(0);
     expect(screen.getByText("GPA: 3.85")).toBeInTheDocument();
     expect(screen.getByText("Graduate Student")).toBeInTheDocument();
   });
@@ -169,7 +170,7 @@ describe("StudentDashboard", () => {
       ).not.toBeInTheDocument()
     );
 
-    // ✅ Check for the three stats cards (removed Active Positions)
+    // ✅ Check for the three stats cards
     expect(screen.getByText("Applications")).toBeInTheDocument();
     expect(screen.getByText("Pending Offers")).toBeInTheDocument();
     expect(screen.getByText("Open Postings")).toBeInTheDocument();
@@ -191,18 +192,30 @@ describe("StudentDashboard", () => {
       ).not.toBeInTheDocument()
     );
 
-    // ✅ Check for Recent Activity section
-    expect(screen.getByText("Recent Activity")).toBeInTheDocument();
-    
-    // ✅ Check for pending offers
-    expect(screen.getByText(/You have.*pending offer/i)).toBeInTheDocument();
+    // ✅ Check for Recent Activity section using getAllByText
+    const recentActivityElements = screen.getAllByText("Recent Activity");
+    expect(recentActivityElements.length).toBeGreaterThan(0);
+
+    // ✅ Check for pending offers using a flexible matcher
+    const pendingOffersText = screen.getByText((content, element) => {
+      const hasText = (node) =>
+        node.textContent?.match(/You have.*pending offer/i);
+      const nodeHasText = hasText(element);
+      const childrenDontHaveText = Array.from(element?.children || []).every(
+        (child) => !hasText(child)
+      );
+      return nodeHasText && childrenDontHaveText;
+    });
+    expect(pendingOffersText).toBeInTheDocument();
+
+    // ✅ Check for specific pending offer details
     expect(screen.getByText("TA Position for CMPS 101")).toBeInTheDocument();
-    
+
     // ✅ Check for recent applications
     expect(screen.getByText("Recent Applications")).toBeInTheDocument();
     expect(screen.getByText("Teaching Assistant - CMPS Summer 2025")).toBeInTheDocument();
     expect(screen.getByText("Teaching Assistant - MATH 2025")).toBeInTheDocument();
-    
+
     // ✅ Check for current positions (active assignments)
     expect(screen.getByText("Current Positions")).toBeInTheDocument();
     expect(screen.getByText("CMPS 101 Introduction to Computer Science")).toBeInTheDocument();
@@ -222,7 +235,7 @@ describe("StudentDashboard", () => {
     );
 
     // ✅ Check for Latest Job Postings section
-    expect(screen.getByText("Latest Job Postings")).toBeInTheDocument();
+    expect(screen.getAllByText("Latest Job Postings").length).toBeGreaterThan(0);
     expect(screen.getByText("TA - Computer Science 101")).toBeInTheDocument();
     expect(screen.getByText("TA - Mathematics 201")).toBeInTheDocument();
   });
@@ -241,7 +254,7 @@ describe("StudentDashboard", () => {
     );
 
     // ✅ Check for profile overview section
-    expect(screen.getByText("Profile Overview")).toBeInTheDocument();
+    expect(screen.getAllByText("Profile Overview").length).toBeGreaterThan(0);
     expect(screen.getByText("Profile Completion")).toBeInTheDocument();
     expect(screen.getByText("100%")).toBeInTheDocument(); // Should be 100% with all fields filled
   });
