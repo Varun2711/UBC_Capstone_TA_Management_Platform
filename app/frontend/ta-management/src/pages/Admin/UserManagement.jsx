@@ -1,15 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import axios from "axios"
 import {
   Users,
   UserPlus,
   Search,
-  Download,
   MoreHorizontal,
   Edit,
-  Trash2,
   Eye,
   Shield,
   GraduationCap,
@@ -17,7 +14,9 @@ import {
   User,
   UserX,
   UserCheck,
-  Building
+  Building,
+  AlertCircle,
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -53,8 +52,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
-import { getDepartments } from "@/logic/courseManagement"
 
 // API Configuration
 const API_URL = 'http://localhost:8080'
@@ -78,223 +77,148 @@ const getAuthHeaders = () => {
 }
 
 // API Functions
-const getAllUsers = async (userType = '') => {
+const apiRequest = async (url, options = {}) => {
   try {
-    // Use the correct API endpoint with proper prefix
-    const url = `${PROFILE_API}/users/${userType ? `?user_type=${userType}` : ''}`
-    console.log('Fetching users from:', url) // Debug log
-    
     const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
+      ...options
     })
     
-    // Check if response is ok
+    const data = await response.json()
+    
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('API Error Response:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`)
     }
     
-    const data = await response.json()
     return data
   } catch (error) {
-    console.error('Error in getAllUsers:', error)
+    console.error(`API Request failed for ${url}:`, error)
     throw error
   }
 }
 
-const createInstructor = async (instructorData) => {
+const getAllUsers = async (userType = '') => {
+  const queryParam = userType ? `?user_type=${userType}` : ''
+  const data = await apiRequest(`${PROFILE_API}/users/${queryParam}`)
+  return data
+}
+
+const getDepartments = async () => {
   try {
-    const response = await fetch(`${ADMIN_API}/create-instructor/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(instructorData)
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Create Instructor Error:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    return data
+    const data = await apiRequest(`${PROFILE_API}/departments/`)
+    return Array.isArray(data) ? data : []
   } catch (error) {
-    console.error('Error in createInstructor:', error)
-    throw error
+    console.error('Error fetching departments:', error)
+    return []
   }
 }
 
-const createScheduler = async (schedulerData) => {
-  try {
-    const response = await fetch(`${ADMIN_API}/create-scheduler/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(schedulerData)
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Create Scheduler Error:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('Error in createScheduler:', error)
-    throw error
+const createUser = async (userData, userType) => {
+  const endpoints = {
+    instructor: `${ADMIN_API}/create-instructor/`,
+    scheduler: `${ADMIN_API}/create-scheduler/`,
+    admin: `${ADMIN_API}/create-admin/`
   }
-}
-
-const createAdmin = async (adminData) => {
-  try {
-    const response = await fetch(`${ADMIN_API}/create-admin/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(adminData)
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Create Admin Error:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('Error in createAdmin:', error)
-    throw error
-  }
+  
+  const data = await apiRequest(endpoints[userType], {
+    method: 'POST',
+    body: JSON.stringify(userData)
+  })
+  return data
 }
 
 const updateUser = async (updateData) => {
-  try {
-    const response = await fetch(`${ADMIN_API}/user-management/`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(updateData)
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Update User Error:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('Error in updateUser:', error)
-    throw error
-  }
+  const data = await apiRequest(`${ADMIN_API}/user-management/`, {
+    method: 'PATCH',
+    body: JSON.stringify(updateData)
+  })
+  return data
+}
+
+// Department code mappings
+const DEPARTMENT_MAPPINGS = {
+  'Computer Science': 'cosc',
+  'Mathematics': 'math',
+  'Physics': 'phy',
+  'Data Science': 'data',
+  'Statistics': 'stat',
+  'Astronomy': 'astr'
+}
+
+const getDepartmentCode = (departmentName) => {
+  return DEPARTMENT_MAPPINGS[departmentName] || null
 }
 
 export default function UserManagement() {
+  // State management
   const [users, setUsers] = useState([])
   const [filteredUsers, setFilteredUsers] = useState([])
+  const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [selectedUser, setSelectedUser] = useState(null)
-  const [showViewEditDialog, setShowViewEditDialog] = useState(false)
-  const [isEditMode, setIsEditMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  
+  // Dialog states
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showViewEditDialog, setShowViewEditDialog] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [isEditMode, setIsEditMode] = useState(false)
   const [createType, setCreateType] = useState('instructor')
-  const [departments, setDepartments] = useState([])
+  
+  // Form data
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
-    name: '', // For admin creation
+    name: '',
     email: '',
     employee_number: '',
     department: ''
   })
 
-  // Load users and departments on component mount
+  // Load initial data
   useEffect(() => {
-    fetchUsers()
-    fetchDepartments()
+    loadInitialData()
   }, [])
 
-  // Filter users when search term or filters change
+  // Filter users when dependencies change
   useEffect(() => {
     filterUsers()
   }, [users, searchQuery, roleFilter, statusFilter])
 
-  const fetchUsers = async () => {
+  const loadInitialData = async () => {
+    setLoading(true)
+    setError('')
+    
     try {
-      setLoading(true)
-      const response = await getAllUsers()
-      if (response.success) {
-        setUsers(response.data.users)
+      const [usersData, departmentsData] = await Promise.all([
+        getAllUsers(),
+        getDepartments()
+      ])
+      
+      if (usersData.success) {
+        setUsers(usersData.data.users || [])
       } else {
-        setError(response.message || 'Failed to fetch users')
+        throw new Error(usersData.message || 'Failed to fetch users')
       }
+      
+      // Filter departments to only supported ones
+      const supportedDepartments = departmentsData.filter(dept => 
+        Object.keys(DEPARTMENT_MAPPINGS).includes(dept.name)
+      )
+      setDepartments(supportedDepartments)
+      
     } catch (err) {
-      setError('Error fetching users: ' + (err.message || 'Unknown error'))
+      setError(err.message || 'Failed to load data')
+      console.error('Error loading initial data:', err)
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchDepartments = async () => {
-    try {
-      const departmentsData = await getDepartments()
-      console.log('Departments data received:', departmentsData) // Debug log
-      // getDepartments returns the array directly, not wrapped in success/data structure
-      if (Array.isArray(departmentsData)) {
-        // Create a more flexible mapping that can handle variations in department names
-        const departmentMappings = {
-          // Exact matches first
-          'Computer Science': 'cosc',
-          'Mathematics': 'math',
-          'Physics': 'phy',
-          'Data Science': 'data',
-          'Statistics': 'stat',
-          'Astronomy': 'astr',
-          // Common variations
-          'Math': 'math',
-          'Maths': 'math',
-          'Computer Sci': 'cosc',
-          'Comp Sci': 'cosc',
-          'CS': 'cosc',
-          'COSC': 'cosc',
-          'Stats': 'stat',
-          'Data Sciences': 'data',
-          'PHYS': 'phy'
-        }
-        
-        // Filter departments that can be mapped to backend codes
-        const filteredDepartments = departmentsData.filter(dept => {
-          const hasMapping = departmentMappings[dept.name] !== undefined
-          console.log(`Department "${dept.name}": ${hasMapping ? 'SUPPORTED' : 'NOT SUPPORTED'}`)
-          return hasMapping
-        })
-        
-        setDepartments(filteredDepartments)
-        console.log('Filtered departments set successfully:', filteredDepartments) // Debug log
-        
-        if (filteredDepartments.length === 0) {
-          console.warn('No supported departments found. Available departments:', departmentsData.map(d => d.name))
-        }
-      } else {
-        console.error('Invalid departments data format:', departmentsData)
-        setDepartments([])
-      }
-    } catch (err) {
-      console.error('Error fetching departments:', err)
-      // Fallback to empty array if API fails
-      setDepartments([])
-    }
-  }
-
   const filterUsers = () => {
-    let filtered = users
+    let filtered = [...users]
 
     // Filter by role
     if (roleFilter !== 'all') {
@@ -308,285 +232,211 @@ export default function UserManagement() {
     }
 
     // Filter by search term
-    if (searchQuery) {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
       filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.id.toString().toLowerCase().includes(searchQuery.toLowerCase())
+        user.name?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query) ||
+        user.id?.toString().toLowerCase().includes(query)
       )
     }
 
     setFilteredUsers(filtered)
   }
 
+  const resetFormData = () => {
+    setFormData({
+      first_name: '',
+      last_name: '',
+      name: '',
+      email: '',
+      employee_number: '',
+      department: ''
+    })
+  }
+
+  const validateCreateForm = () => {
+    if (createType === 'admin') {
+      return formData.name && formData.email && formData.employee_number
+    } else {
+      return formData.first_name && formData.last_name && formData.email && 
+             formData.employee_number && formData.department
+    }
+  }
+
   const handleCreateUser = async () => {
+    if (!validateCreateForm()) {
+      setError('Please fill in all required fields')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
     try {
-      // Validation based on user type
-      if (createType === 'admin') {
-        if (!formData.name || !formData.email || !formData.employee_number) {
-          alert('Please fill in all required fields (Name, Email, Employee Number)')
-          return
-        }
-      } else {
-        if (!formData.first_name || !formData.last_name || !formData.email || !formData.employee_number || !formData.department) {
-          alert('Please fill in all fields')
-          return
-        }
-      }
-
-      setLoading(true)
+      let userData = { ...formData }
       
-      let response
-      if (createType === 'instructor') {
-        // Find department name and convert to code
+      if (createType !== 'admin') {
+        // Convert department ID to department code for backend
         const selectedDept = departments.find(d => d.id.toString() === formData.department)
-        console.log('Selected department:', selectedDept) // Debug log
-        const departmentCode = selectedDept ? getDepartmentCodeFromName(selectedDept.name) : null
-        console.log('Department code:', departmentCode) // Debug log
+        if (!selectedDept) {
+          throw new Error('Please select a valid department')
+        }
         
+        const departmentCode = getDepartmentCode(selectedDept.name)
         if (!departmentCode) {
-          const errorMsg = selectedDept 
-            ? `Department "${selectedDept.name}" is not supported by the backend. Please contact an administrator to add support for this department.`
-            : 'Please select a department.'
-          alert(errorMsg)
-          setLoading(false)
-          return
+          throw new Error(`Department "${selectedDept.name}" is not supported`)
         }
-
-        const instructorData = {
-          ...formData,
-          department: departmentCode // Send department code instead of ID
-        }
-        response = await createInstructor(instructorData)
-      } else if (createType === 'scheduler') {
-        // Find department name and convert to code
-        const selectedDept = departments.find(d => d.id.toString() === formData.department)
-        console.log('Selected department:', selectedDept) // Debug log
-        const departmentCode = selectedDept ? getDepartmentCodeFromName(selectedDept.name) : null
-        console.log('Department code:', departmentCode) // Debug log
         
-        if (!departmentCode) {
-          const errorMsg = selectedDept 
-            ? `Department "${selectedDept.name}" is not supported by the backend. Please contact an administrator to add support for this department.`
-            : 'Please select a department.'
-          alert(errorMsg)
-          setLoading(false)
-          return
-        }
-
-        const schedulerData = {
-          ...formData,
-          department: departmentCode // Send department code instead of ID
-        }
-        response = await createScheduler(schedulerData)
-      } else if (createType === 'admin') {
-        // For admin, we only need name, email, and employee_number
-        const adminData = {
-          name: formData.name,
-          email: formData.email,
-          employee_number: formData.employee_number
-        }
-        response = await createAdmin(adminData)
+        userData.department = departmentCode
       }
 
+      const response = await createUser(userData, createType)
+      
       if (response.success) {
         setShowCreateForm(false)
-        setFormData({
-          first_name: '',
-          last_name: '',
-          name: '',
-          email: '',
-          employee_number: '',
-          department: ''
-        })
-        fetchUsers() // Refresh the user list
+        resetFormData()
+        await loadInitialData() // Refresh user list
         
         const userTypeLabel = createType === 'instructor' ? 'Instructor' : 
                              createType === 'scheduler' ? 'TA Scheduler' : 'Admin'
         alert(`${userTypeLabel} created successfully!\nTemporary password: ${response.data.temporary_password}`)
       } else {
-        alert('Error creating user: ' + response.message)
+        throw new Error(response.message || 'Failed to create user')
       }
     } catch (err) {
-      alert('Error creating user: ' + (err.message || 'Unknown error'))
+      setError(err.message || 'Failed to create user')
+      console.error('Error creating user:', err)
     } finally {
       setLoading(false)
     }
   }
 
-    const handleEditUserSubmit = async () => {
+  const handleEditUser = async () => {
     if (!selectedUser) return
 
-    const user_type = selectedUser.type
-    const user_id = selectedUser.id
-    const update_data = {
-      email: formData.email,
-      department: parseInt(formData.department), // Convert back to number for API (ForeignKey expects ID)
-      employee_number: formData.employee_number,
-      first_name: formData.first_name,
-      last_name: formData.last_name,
-      name: formData.name
-    }
+    setLoading(true)
+    setError('')
 
     try {
-      setLoading(true)
-      const response = await updateUser({
+      const updateData = {
         action: 'modify',
-        user_type,
-        user_id,
-        update_data
+        user_type: selectedUser.type,
+        user_id: selectedUser.id,
+        update_data: {
+          email: formData.email,
+          employee_number: formData.employee_number,
+          ...(selectedUser.type === 'admin' 
+            ? { name: formData.name }
+            : { 
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                department: formData.department ? parseInt(formData.department) : null
+              }
+          )
+        }
+      }
+
+      const response = await updateUser(updateData)
+      
+      if (response.success) {
+        setShowViewEditDialog(false)
+        await loadInitialData() // Refresh user list
+        alert('User updated successfully!')
+      } else {
+        throw new Error(response.message || 'Failed to update user')
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to update user')
+      console.error('Error updating user:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUserAction = async (user, action) => {
+    const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate'
+    
+    if (!window.confirm(`Are you sure you want to ${actionText} ${user.name}?`)) {
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await updateUser({
+        action,
+        user_type: user.type,
+        user_id: user.id
       })
 
       if (response.success) {
-        alert('User updated successfully!')
-        setShowViewEditDialog(false)
-        fetchUsers()
+        await loadInitialData() // Refresh user list
+        alert(`${user.name} has been ${actionText}d successfully`)
       } else {
-        alert('Update failed: ' + response.message)
+        throw new Error(response.message || `Failed to ${actionText} user`)
       }
     } catch (err) {
-      alert('Error updating user: ' + (err.message || 'Unknown error'))
+      setError(err.message || `Failed to ${actionText} user`)
+      console.error(`Error ${actionText}ing user:`, err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDeactivateUser = async (user) => {
-    if (window.confirm(`Are you sure you want to deactivate ${user.name}?`)) {
-      try {
-        const response = await updateUser({
-          action: 'deactivate',
-          user_type: user.type,
-          user_id: user.id
-        })
-
-        if (response.success) {
-          alert(`${user.name} has been deactivated`)
-          fetchUsers()
-        } else {
-          alert('Error deactivating user: ' + response.message)
-        }
-      } catch (err) {
-        alert('Error deactivating user: ' + (err.message || 'Unknown error'))
-      }
-    }
+  const openViewDialog = (user) => {
+    setSelectedUser(user)
+    setFormData({
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      name: user.name || '',
+      email: user.email || '',
+      employee_number: user.id?.toString() || '',
+      department: user.department ? getDepartmentIdFromName(user.department) : ''
+    })
+    setIsEditMode(false)
+    setShowViewEditDialog(true)
   }
 
-  const handleReactivateUser = async (user) => {
-    if (window.confirm(`Are you sure you want to reactivate ${user.name}?`)) {
-      try {
-        const response = await updateUser({
-          action: 'reactivate',
-          user_type: user.type,
-          user_id: user.id
-        })
-
-        if (response.success) {
-          alert(`${user.name} has been reactivated`)
-          fetchUsers()
-        } else {
-          alert('Error reactivating user: ' + response.message)
-        }
-      } catch (err) {
-        alert('Error reactivating user: ' + (err.message || 'Unknown error'))
-      }
-    }
+  const openEditDialog = (user) => {
+    setSelectedUser(user)
+    setFormData({
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      name: user.name || '',
+      email: user.email || '',
+      employee_number: user.id?.toString() || '',
+      department: user.department ? getDepartmentIdFromName(user.department) : ''
+    })
+    setIsEditMode(true)
+    setShowViewEditDialog(true)
   }
 
-  // Department name to code mapping (matching backend with flexible variations)
-  const getDepartmentCodeFromName = (departmentName) => {
-    const nameToCodeMap = {
-      // Exact matches
-      'Computer Science': 'cosc',
-      'Mathematics': 'math',
-      'Physics': 'phy',
-      'Data Science': 'data',
-      'Statistics': 'stat',
-      'Astronomy': 'astr',
-      // Common variations
-      'Math': 'math',
-      'Maths': 'math',
-      'Computer Sci': 'cosc',
-      'Comp Sci': 'cosc',
-      'CS': 'cosc',
-      'COSC': 'cosc',
-      'Stats': 'stat',
-      'Data Sciences': 'data',
-      'PHYS': 'phy'
-    }
-    
-    const code = nameToCodeMap[departmentName]
-    if (!code) {
-      console.error(`No department code mapping found for: "${departmentName}". Available mappings:`, Object.keys(nameToCodeMap))
-    }
-    return code || null
-  }
-
-  const getDepartmentCode = (departmentName) => {
-    // Handle null/undefined/empty values
-    if (!departmentName) {
-      return null
-    }
+  // Helper functions
+  const getDepartmentIdFromName = (departmentName) => {
     const dept = departments.find(d => d.name === departmentName)
-    return dept ? dept.id.toString() : null
-  }
-
-  const getDepartmentName = (departmentId) => {
-    // Handle null/undefined values
-    if (!departmentId && departmentId !== 0) {
-      return 'N/A'
-    }
-    // Handle both string and number IDs
-    const dept = departments.find(d => d.id.toString() === departmentId.toString())
-    return dept ? dept.name : 'N/A'
-  }
-
-  const getDepartmentId = (departmentValue) => {
-    // Handle null/undefined/empty values
-    if (!departmentValue && departmentValue !== 0) {
-      return ''
-    }
-    // If it's already a number, convert to string for consistency
-    if (typeof departmentValue === 'number') {
-      return departmentValue.toString()
-    }
-    // If it's a string that can be parsed as a number, return it as string
-    if (typeof departmentValue === 'string' && !isNaN(departmentValue)) {
-      return departmentValue
-    }
-    // Otherwise, treat it as a department name and find the ID
-    const id = getDepartmentCode(departmentValue)
-    return id ? id : ''
+    return dept ? dept.id.toString() : ''
   }
 
   const getRoleIcon = (role) => {
-    switch (role) {
-      case 'admin':
-        return <Shield className="h-4 w-4 text-red-600" />
-      case 'instructor':
-        return <User className="h-4 w-4 text-purple-600" />
-      case 'scheduler':
-        return <Calendar className="h-4 w-4 text-blue-600" />
-      case 'student':
-        return <GraduationCap className="h-4 w-4 text-green-600" />
-      default:
-        return <User className="h-4 w-4 text-gray-400" />
+    const icons = {
+      admin: <Shield className="h-4 w-4 text-red-600" />,
+      instructor: <User className="h-4 w-4 text-purple-600" />,
+      scheduler: <Calendar className="h-4 w-4 text-blue-600" />,
+      student: <GraduationCap className="h-4 w-4 text-green-600" />
     }
+    return icons[role] || <User className="h-4 w-4 text-gray-400" />
   }
 
   const getRoleBadgeVariant = (role) => {
-    switch (role) {
-      case 'admin':
-        return 'destructive'
-      case 'instructor':
-        return 'default'
-      case 'scheduler':
-        return 'secondary'
-      case 'student':
-        return 'outline'
-      default:
-        return 'outline'
+    const variants = {
+      admin: 'destructive',
+      instructor: 'default',
+      scheduler: 'secondary',
+      student: 'outline'
     }
+    return variants[role] || 'outline'
   }
 
   const getRoleLabel = (type) => {
@@ -638,7 +488,7 @@ export default function UserManagement() {
         <SidebarInset>
           <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
               <p className="text-gray-600">Loading users...</p>
             </div>
           </div>
@@ -668,7 +518,7 @@ export default function UserManagement() {
           </Breadcrumb>
 
           <div className="ml-auto flex items-center space-x-4">
-            <Button onClick={() => setShowCreateForm(true)}>
+            <Button onClick={() => setShowCreateForm(true)} disabled={loading}>
               <UserPlus className="h-4 w-4 mr-2" />
               Create User
             </Button>
@@ -688,11 +538,10 @@ export default function UserManagement() {
 
           {/* Error Message */}
           {error && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="pt-6">
-                <p className="text-red-800">{error}</p>
-              </CardContent>
-            </Card>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           {/* User Stats */}
@@ -730,9 +579,10 @@ export default function UserManagement() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
+                    disabled={loading}
                   />
                 </div>
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <Select value={roleFilter} onValueChange={setRoleFilter} disabled={loading}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by role" />
                   </SelectTrigger>
@@ -744,7 +594,7 @@ export default function UserManagement() {
                     <SelectItem value="admin">Admins</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={setStatusFilter} disabled={loading}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
@@ -757,123 +607,108 @@ export default function UserManagement() {
               </div>
 
               {/* Users Table */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={`${user.type}-${user.id}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
-                              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                            <div className="text-xs text-muted-foreground">ID: {user.id}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getRoleIcon(user.type)}
-                          <Badge variant={getRoleBadgeVariant(user.type)}>{getRoleLabel(user.type)}</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Building className="h-4 w-4 text-muted-foreground" />
-                          <span>{getDepartmentName(user.department) || 'N/A'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                          {user.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedUser(user)
-                              setFormData({
-                                first_name: user.first_name || '',
-                                last_name: user.last_name || '',
-                                name: user.name || '',
-                                email: user.email || '',
-                                employee_number: user.id.toString(),
-                                department: getDepartmentId(user.department || '')
-                              })
-                              setIsEditMode(false)
-                              setShowViewEditDialog(true)
-                            }}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedUser(user)
-                              setFormData({
-                                first_name: user.first_name || '',
-                                last_name: user.last_name || '',
-                                name: user.name || '',
-                                email: user.email || '',
-                                employee_number: user.id.toString(),
-                                department: getDepartmentId(user.department || '')
-                              })
-                              setIsEditMode(true)
-                              setShowViewEditDialog(true)
-                            }}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit User
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {user.is_active && user.type !== 'admin' ? (
-                              <DropdownMenuItem 
-                                className="text-red-600"
-                                onClick={() => handleDeactivateUser(user)}
-                              >
-                                <UserX className="mr-2 h-4 w-4" />
-                                Deactivate User
-                              </DropdownMenuItem>
-                            ) : !user.is_active && user.type !== 'admin' && (
-                              <DropdownMenuItem 
-                                className="text-green-600"
-                                onClick={() => handleReactivateUser(user)}
-                              >
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                Reactivate User
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={`${user.type}-${user.id}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>
+                                {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'UN'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{user.name || 'Unknown'}</div>
+                              <div className="text-sm text-muted-foreground">{user.email || 'No email'}</div>
+                              <div className="text-xs text-muted-foreground">ID: {user.id || 'N/A'}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getRoleIcon(user.type)}
+                            <Badge variant={getRoleBadgeVariant(user.type)}>{getRoleLabel(user.type)}</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <Building className="h-4 w-4 text-muted-foreground" />
+                            <span>{user.department || 'N/A'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={loading}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => openViewDialog(user)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit User
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {user.is_active && user.type !== 'admin' ? (
+                                <DropdownMenuItem 
+                                  className="text-red-600"
+                                  onClick={() => handleUserAction(user, 'deactivate')}
+                                >
+                                  <UserX className="mr-2 h-4 w-4" />
+                                  Deactivate User
+                                </DropdownMenuItem>
+                              ) : !user.is_active && user.type !== 'admin' && (
+                                <DropdownMenuItem 
+                                  className="text-green-600"
+                                  onClick={() => handleUserAction(user, 'reactivate')}
+                                >
+                                  <UserCheck className="mr-2 h-4 w-4" />
+                                  Reactivate User
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
-              {filteredUsers.length === 0 && !loading && (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No users found matching your criteria</p>
-                </div>
-              )}
+                {filteredUsers.length === 0 && !loading && (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No users found matching your criteria</p>
+                  </div>
+                )}
+
+                {loading && (
+                  <div className="text-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto mb-2" />
+                    <p className="text-gray-500">Loading...</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </main>
@@ -893,12 +728,14 @@ export default function UserManagement() {
             </DialogHeader>
             
             <div className="space-y-4">
+              {/* User Type Selection */}
               <div className="flex space-x-2 mb-4">
                 <Button
                   type="button"
                   variant={createType === 'instructor' ? 'default' : 'outline'}
                   onClick={() => setCreateType('instructor')}
                   size="sm"
+                  disabled={loading}
                 >
                   Instructor
                 </Button>
@@ -907,6 +744,7 @@ export default function UserManagement() {
                   variant={createType === 'scheduler' ? 'default' : 'outline'}
                   onClick={() => setCreateType('scheduler')}
                   size="sm"
+                  disabled={loading}
                 >
                   TA Scheduler
                 </Button>
@@ -915,21 +753,24 @@ export default function UserManagement() {
                   variant={createType === 'admin' ? 'default' : 'outline'}
                   onClick={() => setCreateType('admin')}
                   size="sm"
+                  disabled={loading}
                 >
                   Admin
                 </Button>
               </div>
 
+              {/* Form Fields */}
               {createType === 'admin' ? (
                 // Admin form fields
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                       placeholder="Enter full name"
+                      disabled={loading}
                     />
                   </div>
 
@@ -941,6 +782,7 @@ export default function UserManagement() {
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       placeholder="Enter email address"
+                      disabled={loading}
                     />
                   </div>
 
@@ -951,6 +793,7 @@ export default function UserManagement() {
                       value={formData.employee_number}
                       onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
                       placeholder="Enter employee number"
+                      disabled={loading}
                     />
                   </div>
                 </>
@@ -965,6 +808,7 @@ export default function UserManagement() {
                         value={formData.first_name}
                         onChange={(e) => setFormData({...formData, first_name: e.target.value})}
                         placeholder="Enter first name"
+                        disabled={loading}
                       />
                     </div>
                     <div className="space-y-2">
@@ -974,6 +818,7 @@ export default function UserManagement() {
                         value={formData.last_name}
                         onChange={(e) => setFormData({...formData, last_name: e.target.value})}
                         placeholder="Enter last name"
+                        disabled={loading}
                       />
                     </div>
                   </div>
@@ -986,6 +831,7 @@ export default function UserManagement() {
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       placeholder="Enter email address"
+                      disabled={loading}
                     />
                   </div>
 
@@ -996,6 +842,7 @@ export default function UserManagement() {
                       value={formData.employee_number}
                       onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
                       placeholder="Enter employee number"
+                      disabled={loading}
                     />
                   </div>
 
@@ -1004,6 +851,7 @@ export default function UserManagement() {
                     <Select 
                       value={formData.department} 
                       onValueChange={(value) => setFormData({...formData, department: value})}
+                      disabled={loading}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={departments.length === 0 ? "No departments available" : "Select department"} />
@@ -1028,15 +876,31 @@ export default function UserManagement() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowCreateForm(false)
+                  resetFormData()
+                  setError('')
+                }}
+                disabled={loading}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleCreateUser} disabled={loading}>
-                {loading ? 'Creating...' : 'Create User'}
+              <Button onClick={handleCreateUser} disabled={loading || !validateCreateForm()}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create User'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
         {/* View/Edit User Dialog */}
         <Dialog open={showViewEditDialog} onOpenChange={setShowViewEditDialog}>
           <DialogContent className="sm:max-w-[425px]">
@@ -1050,13 +914,13 @@ export default function UserManagement() {
             </DialogHeader>
 
             <div className="space-y-4">
-              {/* First/Last Name or Full Name */}
+              {/* Name Fields */}
               {selectedUser?.type === 'admin' ? (
                 <div className="space-y-2">
                   <Label>Full Name</Label>
                   <Input
                     value={formData.name}
-                    disabled={!isEditMode}
+                    disabled={!isEditMode || loading}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
@@ -1066,7 +930,7 @@ export default function UserManagement() {
                     <Label>First Name</Label>
                     <Input
                       value={formData.first_name}
-                      disabled={!isEditMode}
+                      disabled={!isEditMode || loading}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                     />
                   </div>
@@ -1074,7 +938,7 @@ export default function UserManagement() {
                     <Label>Last Name</Label>
                     <Input
                       value={formData.last_name}
-                      disabled={!isEditMode}
+                      disabled={!isEditMode || loading}
                       onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                     />
                   </div>
@@ -1086,29 +950,29 @@ export default function UserManagement() {
                 <Label>Email</Label>
                 <Input
                   value={formData.email}
-                  disabled={!isEditMode}
+                  disabled={!isEditMode || loading}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
 
-              {/* Employee/Student Number */}
+              {/* Employee Number */}
               <div className="space-y-2">
                 <Label>Employee Number</Label>
                 <Input
                   value={formData.employee_number}
-                  disabled={!isEditMode}
+                  disabled={!isEditMode || loading}
                   onChange={(e) => setFormData({ ...formData, employee_number: e.target.value })}
                 />
               </div>
 
-              {/* Department */}
+              {/* Department (not for admin) */}
               {selectedUser?.type !== 'admin' && (
                 <div className="space-y-2">
                   <Label>Department</Label>
                   <Select
                     value={formData.department}
                     onValueChange={(value) => setFormData({ ...formData, department: value })}
-                    disabled={!isEditMode}
+                    disabled={!isEditMode || loading}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={departments.length === 0 ? "No departments available" : "Select department"} />
@@ -1132,12 +996,26 @@ export default function UserManagement() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowViewEditDialog(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowViewEditDialog(false)
+                  setError('')
+                }}
+                disabled={loading}
+              >
                 Close
               </Button>
               {isEditMode && (
-                <Button onClick={handleEditUserSubmit} disabled={loading}>
-                  {loading ? 'Updating...' : 'Save Changes'}
+                <Button onClick={handleEditUser} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
               )}
             </DialogFooter>
