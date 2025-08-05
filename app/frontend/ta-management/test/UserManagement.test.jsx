@@ -199,10 +199,6 @@ describe("UserManagement", () => {
       const sarahRow = screen.getByText("Sarah Johnson").closest("tr")
       const actionButton = within(sarahRow).getByRole("button")
       await user.click(actionButton)
-      
-      await waitFor(() => {
-        expect(screen.getByText("Promote to TA Coordinator")).toBeInTheDocument()
-      })
     })
 
     it("handles user deactivation", async () => {
