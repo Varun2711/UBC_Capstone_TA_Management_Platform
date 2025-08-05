@@ -758,6 +758,10 @@ class UserManagementView(generics.GenericAPIView):
                 user = TAScheduler.objects.get(employee_number=user_id)
                 user.is_active = False
                 user.save()
+            elif user_type == 'admin':
+                user = Admin.objects.get(employee_number=user_id)
+                user.is_active = False
+                user.save()
             else:
                 return Response(
                     error_response("Invalid user_type"),
@@ -770,7 +774,7 @@ class UserManagementView(generics.GenericAPIView):
                 success_response(message=f"{user_type.title()} account deactivated successfully")
             )
             
-        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist, Admin.DoesNotExist):
             return Response(
                 error_response(f"{user_type.title()} not found"),
                 status=status.HTTP_404_NOT_FOUND
@@ -805,6 +809,10 @@ class UserManagementView(generics.GenericAPIView):
                 user = TAScheduler.objects.get(employee_number=user_id)
                 user.is_active = True
                 user.save()
+            elif user_type == 'admin':
+                user = Admin.objects.get(employee_number=user_id)
+                user.is_active = True
+                user.save()
             else:
                 return Response(
                     error_response("Invalid user_type"),
@@ -817,7 +825,7 @@ class UserManagementView(generics.GenericAPIView):
                 success_response(message=f"{user_type.title()} account reactivated successfully")
             )
             
-        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist, Admin.DoesNotExist):
             return Response(
                 error_response(f"{user_type.title()} not found"),
                 status=status.HTTP_404_NOT_FOUND
