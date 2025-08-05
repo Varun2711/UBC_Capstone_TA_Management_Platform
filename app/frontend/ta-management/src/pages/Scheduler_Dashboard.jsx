@@ -55,7 +55,7 @@ async function calculateAvailableTimeSlots() {
     console.log("sharedSessions: ", sharedSessions);
     console.log("assignments: ", assignments);
 
-    // Initialize department tracking (NEW)
+    // Initialize department tracking
     const departmentSlots = {
       'Computer Science': { total: 0, assigned: 0, available: 0 },
       'Mathematics': { total: 0, assigned: 0, available: 0 },
@@ -70,94 +70,152 @@ async function calculateAvailableTimeSlots() {
 
     // 1. Get all unique time slot IDs from all available course offerings and shared sessions
     const allAvailableTimeSlotIds = new Set();
-    const slotToDepartmentMap = new Map(); // NEW: Track which department each slot belongs to
+    const slotToDepartmentMap = new Map(); // Key: "offeringId-slotId" or "sessionId-slotId"
+    const courseOfferingSlots = new Map(); // Key: offering_id, Value: Set of slot_ids
+    const sharedSessionSlots = new Map(); // Key: session_id, Value: Set of slot_ids
     
     courseOfferings.results.forEach(offering => {
+      console.log("Processing course offering: ", offering);
       const department = getDepartmentFromCourseName(offering.course_info);
       console.log("Department for course offering from course name: ", department);
+      
+      // Track slots for this specific offering
+      const offeringSlots = new Set();
+      
       offering.time_slots_info.forEach(slot => {
         allAvailableTimeSlotIds.add(slot.slot_id);
-        slotToDepartmentMap.set(slot.slot_id, department); // NEW: Map slot to department
         
-        // Count total slots per department (NEW)
+        // Create unique key: offering_id + slot_id
+        const uniqueKey = `offering-${offering.course_offering_id}-${slot.slot_id}`;
+        slotToDepartmentMap.set(uniqueKey, department);
+        offeringSlots.add(slot.slot_id);
+    
         if (departmentSlots[department]) {
           departmentSlots[department].total++;
         }
       });
+    courseOfferingSlots.set(offering.course_offering_id, offeringSlots);
     });
-    
+
     console.log("allAvailableTimeSlotIds after course offerings: ", allAvailableTimeSlotIds);
     
     sharedSessions.results.forEach(session => {
       const department = getDepartmentFromCourseName(session.course_info);
       console.log("Department from shared session: ", department);
+      
+      // Track slots for this specific session
+      const sessionSlots = new Set();
+      
       session.time_slots_info.forEach(slot => {
         allAvailableTimeSlotIds.add(slot.slot_id);
-        slotToDepartmentMap.set(slot.slot_id, department); // NEW: Map slot to department
         
-        // Count total slots per department (NEW)
+        // Create unique key: session_id + slot_id
+        const uniqueKey = `session-${session.shared_session_id}-${slot.slot_id}`;
+        slotToDepartmentMap.set(uniqueKey, department);
+        sessionSlots.add(slot.slot_id);
+        
         if (departmentSlots[department]) {
           departmentSlots[department].total++;
         }
       });
+      
+      sharedSessionSlots.set(session.shared_session_id, sessionSlots);
     });
 
     let counter = allAvailableTimeSlotIds.size;
-    console.log("allAvailableTimeSlotIds after getting both course offerings and shared sessions and before getting assignments: ", allAvailableTimeSlotIds);
+    console.log("allAvailableTimeSlotIds after getting both course offerings and shared sessions: ", allAvailableTimeSlotIds);
     
     // 2. Create a set of unique time slot IDs that are assigned
     const assignedTimeSlotIds = new Set();
-    
+
     assignments.forEach(assignment => {
-      // Determine which ID to use for matching (course offering or shared session)
-      const idToMatch = assignment.course_offering?.course_offering_id || assignment.shared_session?.shared_session_id;
+      console.log("Processing assignment: ", assignment);
+      
+      if (assignment.offer_details && assignment.offer_details.offer_items) {
+        let idToMatch = null;
+        let idType = null;
+        
+        if (assignment.course_offering) {
+          idToMatch = assignment.course_offering.course_offering_id;
+          idType = 'course_offering';
+          console.log("Assignment is for course offering ID: ", idToMatch);
+        } else if (assignment.shared_session) {
+          idToMatch = assignment.shared_session.shared_session_id;
+          idType = 'shared_session';
+        }
+        
+        if (idToMatch) {
+          const matchingOfferItem = assignment.offer_details.offer_items.find(
+            item => {
+              if (idType === 'course_offering') {
+                return item.course_offering_id === idToMatch;
+              } else if (idType === 'shared_session') {
+                return item.shared_session_id === idToMatch;
+              }
+              return false;
+            }
+          );
 
-      if (idToMatch && assignment.offer_details && assignment.offer_details.offer_items) {
-        // Find the matching offer item in the list
-        const matchingOfferItem = assignment.offer_details.offer_items.find(
-          item => item.course_offering_id === idToMatch || item.shared_session_id === idToMatch
-        );
-
-        if (matchingOfferItem && matchingOfferItem.time_slot) {
-          // Handle both single time_slot object and array of time_slot objects
-          if (Array.isArray(matchingOfferItem.time_slot)) {
-            matchingOfferItem.time_slot.forEach(slot => {
-              assignedTimeSlotIds.add(slot.slot_id);
+          if (matchingOfferItem && matchingOfferItem.time_slot) {
+            console.log("Found matching offer item: ", matchingOfferItem);
+            
+            if (Array.isArray(matchingOfferItem.time_slot)) {
+              matchingOfferItem.time_slot.forEach(slot => {
+                console.log("Adding assigned slot ID (array): ", slot.slot_id);
+                assignedTimeSlotIds.add(slot.slot_id);
+                
+                // Create the correct unique key based on assignment type
+                const uniqueKey = idType === 'course_offering' 
+                  ? `offering-${idToMatch}-${slot.slot_id}`
+                  : `session-${idToMatch}-${slot.slot_id}`;
+                
+                const department = slotToDepartmentMap.get(uniqueKey);
+                if (department && departmentSlots[department]) {
+                  departmentSlots[department].assigned++;
+                  console.log(`Assigned slot ${slot.slot_id} to ${department} (${uniqueKey})`);
+                }
+              });
+            } else {
+              console.log("Adding assigned slot ID (single): ", matchingOfferItem.time_slot.slot_id);
+              assignedTimeSlotIds.add(matchingOfferItem.time_slot.slot_id);
               
-              // Track assigned slots per department (NEW)
-              const department = slotToDepartmentMap.get(slot.slot_id);
+              // Create the correct unique key based on assignment type
+              const uniqueKey = idType === 'course_offering' 
+                ? `offering-${idToMatch}-${matchingOfferItem.time_slot.slot_id}`
+                : `session-${idToMatch}-${matchingOfferItem.time_slot.slot_id}`;
+              
+              const department = slotToDepartmentMap.get(uniqueKey);
               if (department && departmentSlots[department]) {
                 departmentSlots[department].assigned++;
+                console.log(`Assigned slot ${matchingOfferItem.time_slot.slot_id} to ${department} (${uniqueKey})`);
               }
-            });
-          } else {
-            assignedTimeSlotIds.add(matchingOfferItem.time_slot.slot_id);
-            
-            // Track assigned slots per department (NEW)
-            const department = slotToDepartmentMap.get(matchingOfferItem.time_slot.slot_id);
-            if (department && departmentSlots[department]) {
-              departmentSlots[department].assigned++;
             }
           }
         }
       }
     });
 
-    // 3. Subtract from the counter for each assigned time slot that exists in the total hours set
+    console.log("All assigned time slot IDs: ", assignedTimeSlotIds);
+
+    // 3. Subtract from the counter for each assigned time slot that exists in the available slots
     assignedTimeSlotIds.forEach(slotId => {
       if (allAvailableTimeSlotIds.has(slotId)) {
         counter--;
+        console.log(`Slot ${slotId} is assigned and available, decreasing counter`);
+      } else {
+        console.log(`Slot ${slotId} is assigned but not in available slots`);
       }
     });
 
-    // Calculate available slots for each department (NEW)
+    // Calculate available slots for each department
     Object.keys(departmentSlots).forEach(dept => {
       departmentSlots[dept].available = departmentSlots[dept].total - departmentSlots[dept].assigned;
     });
 
-    console.log("Department slots breakdown:", departmentSlots); // NEW
+    console.log("Department slots breakdown:", departmentSlots);
+    console.log("Final counter (total available slots): ", counter);
 
-    // Return both total counter and department breakdown (MODIFIED)
+    // Return both total counter and department breakdown
     return {
       totalAvailable: counter,
       byDepartment: departmentSlots
@@ -427,14 +485,14 @@ useEffect(() => {
               <CardContent>
                 <div className="space-y-6">
                   {Object.entries(departmentSlots).map(([deptName, data]) => {
-                    const percentage = data.total > 0 ? Math.round((data.available / data.total) * 100) : 0;
+                    const percentage = data.total > 0 ? 100 - Math.round((data.available / data.total) * 100) : 0;
                     return (
                       <div key={deptName} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium">{deptName}</p>
                             <p className="text-xs text-muted-foreground">
-                              {data.available} of {data.total} slots available
+                              {data.total - data.available} of {data.total} slots assigned
                             </p>
                           </div>
                           <Badge variant="outline">{percentage}%</Badge>
