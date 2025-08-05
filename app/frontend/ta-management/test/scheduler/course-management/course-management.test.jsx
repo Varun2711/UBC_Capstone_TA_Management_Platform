@@ -36,7 +36,7 @@ vi.mock('@/logic/courseManagement', () => ({
   createSharedSession: vi.fn(),
   updateSharedSession: vi.fn(),
   deleteSharedSession: vi.fn(),
-  getTerms: vi.fn(),
+  getActiveTerms: vi.fn(), // Changed from getTerms to getActiveTerms
   getDepartments: vi.fn(),
   getInstructors: vi.fn(),
   mapCourseData: vi.fn((course) => course),
@@ -197,7 +197,7 @@ describe('CourseManagement Page', () => {
     // Setup default API responses
     vi.mocked(courseManagementApi.getAllCoursesFullDetails).mockResolvedValue(mockCourses);
     vi.mocked(courseManagementApi.getDepartments).mockResolvedValue(mockDepartments);
-    vi.mocked(courseManagementApi.getTerms).mockResolvedValue(mockTerms);
+    vi.mocked(courseManagementApi.getActiveTerms).mockResolvedValue(mockTerms); // Changed from getTerms to getActiveTerms
     vi.mocked(courseManagementApi.getInstructors).mockResolvedValue(mockInstructors);
     vi.mocked(courseManagementApi.mapCourseData).mockImplementation((course) => course);
     vi.mocked(courseManagementApi.mapTermsForDropdown).mockImplementation((terms) => terms);
@@ -229,7 +229,7 @@ describe('CourseManagement Page', () => {
 
     expect(courseManagementApi.getAllCoursesFullDetails).toHaveBeenCalledTimes(1);
     expect(courseManagementApi.getDepartments).toHaveBeenCalledTimes(1);
-    expect(courseManagementApi.getTerms).toHaveBeenCalledTimes(1);
+    expect(courseManagementApi.getActiveTerms).toHaveBeenCalledTimes(1); // Changed from getTerms to getActiveTerms
     expect(courseManagementApi.getInstructors).toHaveBeenCalledTimes(1);
 
     expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
@@ -380,6 +380,57 @@ describe('CourseManagement Page', () => {
     expect(screen.getByTestId('add-lab-tutorial-modal')).toBeInTheDocument();
   });
 
+  it('handles lab/tutorial session addition', async () => {
+    const user = userEvent.setup();
+    vi.mocked(courseManagementApi.createSharedSession).mockResolvedValue({ id: 'new-session' });
+    
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('course-card-cs101')).toBeInTheDocument();
+    });
+
+    const cs101Card = screen.getByTestId('course-card-cs101');
+    const addLabButton = within(cs101Card).getByText('Add Lab/Tutorial');
+    
+    await user.click(addLabButton);
+    expect(screen.getByTestId('add-lab-tutorial-modal')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Add'));
+    
+    await waitFor(() => {
+      expect(courseManagementApi.createSharedSession).toHaveBeenCalledWith(expect.objectContaining({
+        sessionType: 'lab',
+        courseId: 'cs101',
+        section: 'L01'
+      }));
+    });
+  });
+
+  it('handles offering updates', async () => {
+    const user = userEvent.setup();
+    vi.mocked(courseManagementApi.updateCourseOffering).mockResolvedValue({});
+    
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('offering-1')).toBeInTheDocument();
+    });
+
+    const offering1 = screen.getByTestId('offering-1');
+    const editButton = within(offering1).getByText('Edit Offering: 001');
+    
+    await user.click(editButton);
+    await user.click(screen.getByText('Update'));
+    
+    await waitFor(() => {
+      expect(courseManagementApi.updateCourseOffering).toHaveBeenCalledWith('1', expect.objectContaining({
+        id: '1',
+        section: 'Updated'
+      }));
+    });
+  });
+
   it('handles modal close actions', async () => {
     const user = userEvent.setup();
     renderComponent();
@@ -411,6 +462,38 @@ describe('CourseManagement Page', () => {
     
     await waitFor(() => {
       expect(courseManagementApi.getAllCoursesFullDetails).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('displays loading state correctly', () => {
+    // Make the API call hang to test loading state
+    vi.mocked(courseManagementApi.getAllCoursesFullDetails).mockImplementation(
+      () => new Promise(() => {}) // Never resolves
+    );
+
+    renderComponent();
+
+    // Check that loading state is shown
+    expect(screen.getByText('Loading courses...')).toBeInTheDocument();
+    expect(screen.getByTestId('app-sidebar')).toBeInTheDocument();
+  });
+
+  it('handles API errors gracefully', async () => {
+    vi.mocked(courseManagementApi.createCourse).mockRejectedValue(new Error('Network error'));
+    
+    const user = userEvent.setup();
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add Course' })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Add Course' }));
+    await user.click(screen.getByText('Submit'));
+    
+    // The error should be handled by the component (setting error state)
+    await waitFor(() => {
+      expect(courseManagementApi.createCourse).toHaveBeenCalled();
     });
   });
 });

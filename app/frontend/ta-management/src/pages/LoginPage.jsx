@@ -53,7 +53,7 @@ import { isAlreadyLoggedIn, navigateToUserDashboard, requestLogin } from "@/logi
       // if anything goes wrong with login, set the error state (this is used in the return to conditionally display error text)
       setLoginError("Login Failed. You have entered an invalid email address or password. Please try again.")
     } finally {
-      
+      setIsLoading(false) // reset loading state after request completes
     }
   }
 
@@ -117,7 +117,7 @@ import { isAlreadyLoggedIn, navigateToUserDashboard, requestLogin } from "@/logi
 
             <div className="flex items-center justify-between">
               <div className="text-sm">
-                <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                <Link to="/reset-password" className="font-medium text-blue-600 hover:text-blue-500">
                   Forgot your password?
                 </Link>
               </div>
