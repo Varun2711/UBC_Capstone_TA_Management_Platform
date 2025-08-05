@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
+import { getDepartments as getSharedDepartments } from "@/logic/instructorManagement"
 
 // API Configuration
 const API_URL = 'http://localhost:8080'
@@ -145,14 +146,16 @@ function getDepartmentFromCourseName(course_info) {
   
   // Map variations to standard department names - only supported departments
   const departmentMap = {
-    'COSC': 'Computer Science',
-    'MATH': 'Mathematics', 
-    'MATHS': 'Mathematics',
-    'STAT': 'Statistics',
-    'PHYS': 'Physics',
-    'PHY': 'Physics', // Also support PHY as variation
-    'DATA': 'Data Science',
-    'ASTR': 'Astronomy'
+    'cosc': 'Computer Science',
+    'math': 'Mathematics', 
+    'stat': 'Statistics',
+    'phy': 'Physics', 
+    'data': 'Data Science',
+    'eng': 'Engineering',
+    'astr': 'Astronomy',
+    'psych': 'Psychology',
+    'bio': 'Biology',
+    'chem': 'Chemistry',
   };
   
   return departmentMap[firstWord] || 'Other';
@@ -162,32 +165,54 @@ function getDepartmentFromCourseName(course_info) {
 function getStandardDepartmentName(departmentInput) {
   if (!departmentInput) return 'Other';
   
-  // If it's already a standard name, return it - only supported departments
-  const standardNames = [
-    'Computer Science', 'Mathematics', 'Statistics', 'Physics', 
-    'Data Science', 'Astronomy'
-  ];
-  
-  if (standardNames.includes(departmentInput)) {
-    return departmentInput;
+  // If it's already a proper department name, return it as is
+  if (typeof departmentInput === 'string' && departmentInput.trim()) {
+    return departmentInput.trim();
   }
   
-  // Try to parse it as a course name
+  // Try to parse it as a course name for backwards compatibility
   return getDepartmentFromCourseName(departmentInput);
 }
 
-// Department code mappings for backend API calls - only include supported departments
-const DEPARTMENT_MAPPINGS = {
-  'Computer Science': 'cosc',
-  'Mathematics': 'math',
-  'Physics': 'phy',
-  'Data Science': 'data',
-  'Statistics': 'stat',
-  'Astronomy': 'astr'
-}
-
-const getDepartmentCode = (departmentName) => {
-  return DEPARTMENT_MAPPINGS[departmentName] || null
+// Dynamic department code mappings - generated from backend data
+const getDepartmentCode = (departmentName, departmentsList = []) => {
+  // Try to find the department in the fetched list
+  const dept = departmentsList.find(d => d.name === departmentName)
+  if (dept && dept.code) {
+    return dept.code
+  }
+  
+  // Fallback mappings for common departments if code is not provided by backend
+  const fallbackMappings = {
+    'Computer Science': 'cosc',
+    'Mathematics': 'math',
+    'Physics': 'phy',
+    'Data Science': 'data',
+    'Statistics': 'stat',
+    'Astronomy': 'astr',
+    'Engineering': 'eng'  // Add Engineering mapping
+  }
+  
+  // Try exact match first
+  if (fallbackMappings[departmentName]) {
+    return fallbackMappings[departmentName]
+  }
+  
+  // Try case-insensitive match
+  const lowerName = departmentName.toLowerCase()
+  for (const [key, value] of Object.entries(fallbackMappings)) {
+    if (key.toLowerCase() === lowerName) {
+      return value
+    }
+  }
+  
+  // If no mapping found, create a basic code from the name
+  // This ensures we always return something for the backend
+  const basicCode = departmentName.toLowerCase()
+    .replace(/[^a-z0-9]/g, '') // Remove non-alphanumeric chars
+    .substring(0, 4) // Take first 4 characters
+  
+  return basicCode || 'unknown'
 }
 
 export default function UserManagement() {
@@ -237,7 +262,7 @@ export default function UserManagement() {
     try {
       const [usersData, departmentsData] = await Promise.all([
         getAllUsers(),
-        getDepartments()
+        getSharedDepartments() // Use the shared function
       ])
       
       if (usersData.success) {
@@ -251,14 +276,15 @@ export default function UserManagement() {
         throw new Error(usersData.message || 'Failed to fetch users')
       }
       
-      // Filter departments to only supported ones and standardize names
-      const supportedDepartments = departmentsData
+      // Process departments from backend data
+      const processedDepartments = departmentsData
         .map(dept => ({
           ...dept,
-          name: getStandardDepartmentName(dept.name)
+          name: dept.name || 'Unknown Department'
         }))
-        .filter(dept => Object.keys(DEPARTMENT_MAPPINGS).includes(dept.name))
-        // Remove duplicates that might occur after standardization
+        // Remove any departments with empty or null names
+        .filter(dept => dept.name && dept.name.trim() !== '')
+        // Remove duplicates based on name
         .reduce((unique, dept) => {
           const exists = unique.find(u => u.name === dept.name);
           if (!exists) {
@@ -267,13 +293,42 @@ export default function UserManagement() {
           return unique;
         }, []);
       
-      setDepartments(supportedDepartments)
+      setDepartments(processedDepartments)
       
     } catch (err) {
       setError(err.message || 'Failed to load data')
       console.error('Error loading initial data:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Extract department names for modals (similar to instructor-requirements.jsx)
+  const departmentNames = departments.map(d => d.name)
+
+  // Function to refresh departments independently
+  const refreshDepartments = async () => {
+    try {
+      const departmentsData = await getSharedDepartments()
+      const processedDepartments = departmentsData
+        .map(dept => ({
+          ...dept,
+          name: dept.name || 'Unknown Department'
+        }))
+        .filter(dept => dept.name && dept.name.trim() !== '')
+        .reduce((unique, dept) => {
+          const exists = unique.find(u => u.name === dept.name);
+          if (!exists) {
+            unique.push(dept);
+          }
+          return unique;
+        }, []);
+      
+      setDepartments(processedDepartments)
+      return processedDepartments
+    } catch (err) {
+      console.error('Error refreshing departments:', err)
+      return departments // Return current departments if refresh fails
     }
   }
 
@@ -340,15 +395,23 @@ export default function UserManagement() {
         // Convert department ID to department code for backend
         const selectedDept = departments.find(d => d.id.toString() === formData.department)
         if (!selectedDept) {
-          throw new Error('Please select a valid department')
+          // Try to refresh departments and retry
+          const refreshedDepartments = await refreshDepartments()
+          const retryDept = refreshedDepartments.find(d => d.id.toString() === formData.department)
+          if (!retryDept) {
+            throw new Error('Please select a valid department')
+          }
+          userData.department = getDepartmentCode(retryDept.name, refreshedDepartments)
+        } else {
+          const departmentCode = getDepartmentCode(selectedDept.name, departments)
+          if (departmentCode) {
+            userData.department = departmentCode
+          } else {
+            // This shouldn't happen with the new getDepartmentCode function, but just in case
+            console.warn(`No department code found for "${selectedDept.name}", using default mapping`)
+            userData.department = selectedDept.name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 4) || 'unknown'
+          }
         }
-        
-        const departmentCode = getDepartmentCode(selectedDept.name)
-        if (!departmentCode) {
-          throw new Error(`Department "${selectedDept.name}" is not supported`)
-        }
-        
-        userData.department = departmentCode
       }
 
       const response = await createUser(userData, createType)
@@ -511,8 +574,17 @@ export default function UserManagement() {
   }
 
   const getDepartmentIdFromName = (departmentName) => {
-    const standardName = getStandardDepartmentName(departmentName)
-    const dept = departments.find(d => d.name === standardName)
+    // First try exact match
+    let dept = departments.find(d => d.name === departmentName)
+    if (!dept) {
+      // Try case-insensitive match
+      dept = departments.find(d => d.name.toLowerCase() === departmentName.toLowerCase())
+    }
+    if (!dept) {
+      // Try standardized name match
+      const standardName = getStandardDepartmentName(departmentName)
+      dept = departments.find(d => d.name === standardName)
+    }
     return dept ? dept.id.toString() : ''
   }
 
@@ -615,6 +687,14 @@ export default function UserManagement() {
           </Breadcrumb>
 
           <div className="ml-auto flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              onClick={refreshDepartments} 
+              disabled={loading}
+              size="sm"
+            >
+              Refresh Departments
+            </Button>
             <Button onClick={() => {
               resetFormData(); // Reset form data first
               setShowCreateForm(true);
@@ -956,12 +1036,20 @@ export default function UserManagement() {
                       disabled={loading}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={departments.length === 0 ? "No departments available" : "Select department"} />
+                        <SelectValue placeholder={
+                          loading ? "Loading departments..." : 
+                          departments.length === 0 ? "No departments available" : 
+                          "Select department"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        {departments.length === 0 ? (
+                        {loading ? (
                           <SelectItem value="" disabled>
-                            No supported departments found
+                            Loading departments...
+                          </SelectItem>
+                        ) : departments.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            No departments found
                           </SelectItem>
                         ) : (
                           departments.map((dept) => (
@@ -1077,12 +1165,20 @@ export default function UserManagement() {
                     disabled={!isEditMode || loading}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={departments.length === 0 ? "No departments available" : "Select department"} />
+                      <SelectValue placeholder={
+                        loading ? "Loading departments..." : 
+                        departments.length === 0 ? "No departments available" : 
+                        "Select department"
+                      } />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments.length === 0 ? (
+                      {loading ? (
                         <SelectItem value="" disabled>
-                          No supported departments found
+                          Loading departments...
+                        </SelectItem>
+                      ) : departments.length === 0 ? (
+                        <SelectItem value="" disabled>
+                          No departments found
                         </SelectItem>
                       ) : (
                         departments.map((dept) => (

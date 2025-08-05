@@ -403,6 +403,10 @@ class CreateInstructorSerializer(serializers.Serializer):
         ('data', 'Data Science'),
         ('stat', 'Statistics'), 
         ('cosc', 'Computer Science'),
+        ('eng', 'Engineering'),  # Add Engineering
+        ('psych', 'Psychology'),  # Add Psychology
+        ('bio', 'Biology'),  # Add Biology
+        ('chem', 'Chemistry'),  # Add Chemistry
         # based on current ta application form
     ]
     department = serializers.ChoiceField(choices=DEPARTMENT_CHOICES)
@@ -431,6 +435,7 @@ class CreateSchedulerSerializer(serializers.Serializer):
         ('data', 'Data Science'),
         ('stat', 'Statistics'), 
         ('cosc', 'Computer Science'),
+        ('eng', 'Engineering'),  # Add Engineering
         # based on current ta application form
     ]
     department = serializers.ChoiceField(choices=DEPARTMENT_CHOICES)
