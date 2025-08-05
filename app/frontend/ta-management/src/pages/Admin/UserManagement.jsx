@@ -89,6 +89,7 @@ const apiRequest = async (url, options = {}) => {
     const data = await response.json()
     
     if (!response.ok) {
+      console.error(`API Error for ${url}:`, { status: response.status, data })
       throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`)
     }
     
@@ -142,18 +143,16 @@ function getDepartmentFromCourseName(course_info) {
   if (!course_info) return 'Other';
   const firstWord = course_info.split(' ')[0].toUpperCase();
   
-  // Map variations to standard department names
+  // Map variations to standard department names - only supported departments
   const departmentMap = {
     'COSC': 'Computer Science',
     'MATH': 'Mathematics', 
     'MATHS': 'Mathematics',
     'STAT': 'Statistics',
     'PHYS': 'Physics',
+    'PHY': 'Physics', // Also support PHY as variation
     'DATA': 'Data Science',
-    'PSYO': 'Psychology',
-    'BIOL': 'Biology',
-    'CHEM': 'Chemistry',
-    'ENGR': 'Engineering',
+    'ASTR': 'Astronomy'
   };
   
   return departmentMap[firstWord] || 'Other';
@@ -163,10 +162,10 @@ function getDepartmentFromCourseName(course_info) {
 function getStandardDepartmentName(departmentInput) {
   if (!departmentInput) return 'Other';
   
-  // If it's already a standard name, return it
+  // If it's already a standard name, return it - only supported departments
   const standardNames = [
     'Computer Science', 'Mathematics', 'Statistics', 'Physics', 
-    'Data Science', 'Psychology', 'Biology', 'Chemistry', 'Engineering'
+    'Data Science', 'Astronomy'
   ];
   
   if (standardNames.includes(departmentInput)) {
@@ -177,17 +176,14 @@ function getStandardDepartmentName(departmentInput) {
   return getDepartmentFromCourseName(departmentInput);
 }
 
-// Department code mappings for backend API calls
+// Department code mappings for backend API calls - only include supported departments
 const DEPARTMENT_MAPPINGS = {
   'Computer Science': 'cosc',
   'Mathematics': 'math',
   'Physics': 'phy',
   'Data Science': 'data',
   'Statistics': 'stat',
-  'Psychology': 'psyo',
-  'Biology': 'biol',
-  'Chemistry': 'chem',
-  'Engineering': 'engr'
+  'Astronomy': 'astr'
 }
 
 const getDepartmentCode = (departmentName) => {
@@ -376,8 +372,8 @@ export default function UserManagement() {
         throw new Error(response.message || 'Failed to create user')
       }
     } catch (err) {
-      setError(err.message || 'Failed to create user')
       console.error('Error creating user:', err)
+      setError(err.message || 'Failed to create user')
     } finally {
       setLoading(false)
     }
@@ -467,9 +463,13 @@ export default function UserManagement() {
 
   const openViewDialog = (user) => {
     setSelectedUser(user)
+    
+    // Split the user name into first and last name if individual fields aren't available
+    const nameParts = splitUserName(user.name)
+    
     setFormData({
-      first_name: user.first_name || '',
-      last_name: user.last_name || '',
+      first_name: user.first_name || nameParts.first_name,
+      last_name: user.last_name || nameParts.last_name,
       name: user.name || '',
       email: user.email || '',
       employee_number: user.id?.toString() || '',
@@ -481,9 +481,13 @@ export default function UserManagement() {
 
   const openEditDialog = (user) => {
     setSelectedUser(user)
+    
+    // Split the user name into first and last name if individual fields aren't available
+    const nameParts = splitUserName(user.name)
+    
     setFormData({
-      first_name: user.first_name || '',
-      last_name: user.last_name || '',
+      first_name: user.first_name || nameParts.first_name,
+      last_name: user.last_name || nameParts.last_name,
       name: user.name || '',
       email: user.email || '',
       employee_number: user.id?.toString() || '',
@@ -494,6 +498,18 @@ export default function UserManagement() {
   }
 
   // Helper functions
+  const splitUserName = (fullName) => {
+    if (!fullName) return { first_name: '', last_name: '' }
+    const nameParts = fullName.trim().split(' ')
+    if (nameParts.length === 1) {
+      return { first_name: nameParts[0], last_name: '' }
+    }
+    return {
+      first_name: nameParts[0],
+      last_name: nameParts.slice(1).join(' ')
+    }
+  }
+
   const getDepartmentIdFromName = (departmentName) => {
     const standardName = getStandardDepartmentName(departmentName)
     const dept = departments.find(d => d.name === standardName)
