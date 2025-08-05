@@ -196,6 +196,9 @@ export default function UserManagement() {
   const [filteredUsers, setFilteredUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [showViewEditDialog, setShowViewEditDialog] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -654,11 +657,35 @@ export default function UserManagement() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedUser(user)
+                              setFormData({
+                                first_name: user.first_name || '',
+                                last_name: user.last_name || '',
+                                name: user.name || '',
+                                email: user.email || '',
+                                employee_number: user.id.toString(), // assuming this is employee/student number
+                                department: getDepartmentCode(user.department || '')
+                              })
+                              setIsEditMode(false)
+                              setShowViewEditDialog(true)
+                            }}>
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedUser(user)
+                              setFormData({
+                                first_name: user.first_name || '',
+                                last_name: user.last_name || '',
+                                name: user.name || '',
+                                email: user.email || '',
+                                employee_number: user.id.toString(),
+                                department: getDepartmentCode(user.department || '')
+                              })
+                              setIsEditMode(true)
+                              setShowViewEditDialog(true)
+                            }}>
                               <Edit className="mr-2 h-4 w-4" />
                               Edit User
                             </DropdownMenuItem>
