@@ -253,20 +253,14 @@ export const transformStudentsToAssignmentFormat = (studentsData) => {
     const yearlyAssignments = {};
     
     student.assignments.forEach(assignment => {
-      // Determine term and year from assignment
-      let termCode, academicYear;
-      
-      if (assignment.course_offering && assignment.course_offering.academic_term) {
-        termCode = assignment.course_offering.academic_term.code;
-        academicYear = assignment.course_offering.academic_term.academicYear;
-      } else if (assignment.shared_session && assignment.shared_session.academic_term) {
-        termCode = assignment.shared_session.academic_term.code;
-        academicYear = assignment.shared_session.academic_term.academicYear;
-      } else {
-        // Fallback - try to extract from available data
-        return;
+      // Get term and year from assignment_term
+      if (!assignment.assignment_term) {
+        return; // Skip if no term data
       }
 
+      const termCode = assignment.assignment_term.code;
+      const academicYear = assignment.assignment_term.academicYear;
+      
       const termData = parseTermCode(termCode);
       if (!termData) {
         return;
@@ -281,37 +275,80 @@ export const transformStudentsToAssignmentFormat = (studentsData) => {
         yearlyAssignments[year][termCode] = [];
       }
 
-      // Get time slot information
+      // Determine section type and get time slots
+      let sectionType = 'Lecture';
+      let section = 'N/A';
+      let instructor = 'Unknown';
       let timeSlots = [{ day: 'TBD', startTime: 'TBD', endTime: 'TBD' }];
-      
-      if (assignment.time_slot) {
-        // Use the time_slot directly from the assignment (works for both course offerings and shared sessions)
-        timeSlots = [{
-          day: assignment.time_slot.day,
-          startTime: convertTo12Hour(assignment.time_slot.start_time + ':00'),
-          endTime: convertTo12Hour(assignment.time_slot.end_time + ':00')
-        }];
+
+      // Get the actual assigned time slot from the assignment
+      if (assignment.time_slots && assignment.time_slots.length > 0) {
+        // Use the time slots directly from the assignment
+        timeSlots = assignment.time_slots.map(slot => ({
+          day: slot.day,
+          startTime: convertTo12Hour(slot.start_time),
+          endTime: convertTo12Hour(slot.end_time)
+        }));
+      }
+
+      // Determine section info based on course_offering or shared_session
+      if (assignment.course_offering) {
+        sectionType = 'Lecture';
+        section = assignment.course_offering.section_number;
+        instructor = assignment.course_offering.instructor || 'Unknown';
+      } else if (assignment.shared_session) {
+        // Capitalize first letter of session type
+        sectionType = assignment.shared_session.session_type ? 
+          assignment.shared_session.session_type.charAt(0).toUpperCase() + assignment.shared_session.session_type.slice(1) : 'Lab';
+        section = assignment.shared_session.section_number;
+        instructor = 'Unknown'; // Shared sessions don't have direct instructor info
+      }
+
+      // If we don't have time slots from assignment.time_slots, try to match with offer items
+      if (timeSlots[0].day === 'TBD' && assignment.offer_details && assignment.offer_details.offer_items) {
+        const matchingOfferItem = assignment.offer_details.offer_items.find(item => {
+          if (assignment.course_offering && item.item_type === 'course_offering') {
+            return item.course_offering_id === assignment.course_offering.course_offering_id;
+          } else if (assignment.shared_session && item.item_type === 'shared_session') {
+            return item.shared_session_id === assignment.shared_session.shared_session_id;
+          }
+          return false;
+        });
+
+        if (matchingOfferItem) {
+          if (matchingOfferItem.item_type === 'course_offering' && matchingOfferItem.time_slot) {
+            // For course offerings, use the specific time slot
+            timeSlots = [{
+              day: matchingOfferItem.time_slot.day,
+              startTime: convertTo12Hour(matchingOfferItem.time_slot.start_time.substring(0, 5)),
+              endTime: convertTo12Hour(matchingOfferItem.time_slot.end_time.substring(0, 5))
+            }];
+          } else if (matchingOfferItem.item_type === 'shared_session' && matchingOfferItem.time_slot) {
+            // For shared sessions, time_slot might be an array, use the first one as workaround
+            const timeSlotData = Array.isArray(matchingOfferItem.time_slot) ? 
+              matchingOfferItem.time_slot[0] : matchingOfferItem.time_slot;
+            
+            if (timeSlotData) {
+              timeSlots = [{
+                day: timeSlotData.day,
+                startTime: convertTo12Hour(timeSlotData.start_time.substring(0, 8)), // Handle HH:MM:SS format
+                endTime: convertTo12Hour(timeSlotData.end_time.substring(0, 8))
+              }];
+            }
+          }
+        }
       }
 
       const assignmentEntry = {
         id: assignment.assignment_id,
         courseCode: assignment.course.course_number,
         courseName: assignment.course.course_name,
-        // Use section_number for both course offerings and shared sessions
-        section: assignment.course_offering ? assignment.course_offering.section_number : 
-                assignment.shared_session ? assignment.shared_session.section_number : 'N/A',
-        // Use session_type from shared_session, capitalize first letter
-        sectionType: assignment.shared_session ? 
-          (assignment.shared_session.session_type ? 
-            assignment.shared_session.session_type.charAt(0).toUpperCase() + assignment.shared_session.session_type.slice(1) : 'Lab') : 'Lecture',
+        section: section,
+        sectionType: sectionType,
         weekHours: assignment.weekly_hours || 0,
-        instructor: assignment.course_offering ? assignment.course_offering.instructor : 
-                   assignment.shared_session ? assignment.shared_session.instructor : 'Unknown',
+        instructor: instructor,
         notes: assignment.notes,
         assignedDate: assignment.assigned_date,
-        // Store shared session ID for later time slot fetching (if needed for fallback)
-        sharedSessionId: assignment.shared_session ? assignment.shared_session.shared_session_id : null,
-        // Use the time slots we determined above
         timeSlots: timeSlots
       };
 
@@ -336,68 +373,18 @@ export const transformStudentsToAssignmentFormat = (studentsData) => {
 
 /**
  * Fetches and enriches student assignment data with time slot information
- * Now this function will only enrich shared sessions that don't have time_slot data
+ * Now simplified since most time slot data comes directly from the API
  */
 export const fetchAndEnrichStudentAssignments = async () => {
   try {
-    // First, get all students with assignments
+    // Get all students with assignments
     const studentsData = await fetchAllStudentAssignments();
     
-    // Transform to frontend format (this now handles most time slots)
+    // Transform to frontend format (this now handles time slots directly)
     const transformedStudents = transformStudentsToAssignmentFormat(studentsData);
     
-    // Only enrich shared sessions that don't have time slot data
-    const enrichedStudents = await Promise.all(
-      transformedStudents.map(async (student) => {
-        const enrichedYearlyAssignments = {};
-        
-        for (const [year, yearData] of Object.entries(student.yearlyAssignments)) {
-          enrichedYearlyAssignments[year] = {};
-          
-          for (const [termKey, assignments] of Object.entries(yearData)) {
-            const enrichedAssignments = await Promise.all(
-              assignments.map(async (assignment) => {
-                // Only fetch shared session details if we don't have time slot data and it's a shared session
-                if (assignment.sharedSessionId && 
-                    assignment.timeSlots[0].day === 'TBD') {
-                  try {
-                    const sessionDetails = await getSharedSessionDetails(assignment.sharedSessionId);
-                    
-                    // Use the first time slot (as specified in requirements)
-                    const timeSlot = sessionDetails.time_slots_info?.[0];
-                    
-                    if (timeSlot) {
-                      return {
-                        ...assignment,
-                        timeSlots: [{
-                          day: timeSlot.day_display,
-                          startTime: convertTo12Hour(timeSlot.start_time.substring(0, 5)),
-                          endTime: convertTo12Hour(timeSlot.end_time.substring(0, 5))
-                        }]
-                      };
-                    }
-                  } catch (error) {
-                    // Continue with original assignment if error
-                  }
-                }
-                
-                // Return assignment as-is if no shared session or if we already have time slot data
-                return assignment;
-              })
-            );
-            
-            enrichedYearlyAssignments[year][termKey] = enrichedAssignments;
-          }
-        }
-        
-        return {
-          ...student,
-          yearlyAssignments: enrichedYearlyAssignments
-        };
-      })
-    );
-    
-    return enrichedStudents;
+    // No additional enrichment needed since time slots come from the API
+    return transformedStudents;
   } catch (error) {
     throw error;
   }
