@@ -23,18 +23,42 @@ vi.mock('@/logic/scheduler-dashboard', () => ({
 // Import the mocked functions
 import * as schedulerDashboard from '@/logic/scheduler-dashboard';
 
-// Mock sessionStorage
-const mockSessionStorage = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-};
+// Mock sessionStorage BEFORE any other imports that might use it
+const mockSessionStorage = (() => {
+  let store = {};
+  return {
+    getItem: vi.fn((key) => store[key] || null),
+    setItem: vi.fn((key, value) => {
+      store[key] = value?.toString();
+    }),
+    removeItem: vi.fn((key) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: vi.fn((index) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
+    })
+  };
+})();
 
 Object.defineProperty(window, 'sessionStorage', {
   value: mockSessionStorage,
   writable: true,
 });
+
+// Also define it on window if window exists
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'sessionStorage', {
+    value: mockSessionStorage,
+    writable: true
+  });
+}
 
 beforeAll(() => {
   // Mock for responsive UI components
