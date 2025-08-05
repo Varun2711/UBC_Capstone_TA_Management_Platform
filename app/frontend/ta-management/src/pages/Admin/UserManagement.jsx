@@ -367,8 +367,7 @@ export default function UserManagement() {
         setCreatedUserData({
           name: createType === 'admin' ? formData.name : `${formData.first_name} ${formData.last_name}`,
           email: formData.email,
-          userType: userTypeLabel,
-          temporaryPassword: response.data.temporary_password
+          userType: userTypeLabel
         })
         setShowSuccessDialog(true)
         
@@ -1110,17 +1109,6 @@ export default function UserManagement() {
               <p className="mt-2 text-muted-foreground">
                 An email with their account details and a temporary password has been sent to <strong>{createdUserData?.email}</strong>.
               </p>
-              {createdUserData?.temporaryPassword && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-md">
-                  <p className="text-sm font-medium">Temporary Password:</p>
-                  <p className="text-sm font-mono bg-white px-2 py-1 rounded border mt-1">
-                    {createdUserData.temporaryPassword}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Please share this with the user if needed.
-                  </p>
-                </div>
-              )}
             </div>
             <DialogFooter>
               <Button onClick={() => setShowSuccessDialog(false)}>Done</Button>
