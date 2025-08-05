@@ -18,7 +18,7 @@ from auth_utils.decorators import admin_required, scheduler_required, authentica
 from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsAuthenticatedUser, IsStudentUser, IsSchedulerOrAdmin
 
 from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Department
-from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
+from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateStudentSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
                           StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, DepartmentSerializer, CreateAdminSerializer, SchedulerInstructorSerializer,SchedulerInstructorUpdateSerializer)
 
 from utils.profile_utils import get_user_by_id, get_user_by_email
@@ -843,7 +843,7 @@ class UserManagementView(generics.GenericAPIView):
         try:
             if user_type == 'student':
                 user = Student.objects.get(student_number=user_id)
-                serializer = UpdateStudentProfileSerializer(user, data=update_data, partial=True)
+                serializer = UpdateStudentSerializer(user, data=update_data, partial=True)
             elif user_type == 'instructor':
                 user = Instructor.objects.get(employee_number=user_id)
                 serializer = UpdateInstructorSerializer(user, data=update_data, partial=True)
