@@ -18,7 +18,7 @@ from auth_utils.decorators import admin_required, scheduler_required, authentica
 from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsAuthenticatedUser, IsStudentUser, IsSchedulerOrAdmin
 
 from .models import Student, Instructor, TAScheduler, Admin, StudentProfile, StudentExperience, StudentSkill, StudentAvailability, StudentCoursePreference, Department
-from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
+from .serializers import (StudentSerializer, InstructorSerializer, InstructorProfileSerializer, TASchedulerSerializer,TASchedulerProfileSerializer, AdminSerializer, AdminProfileSerializer, UpdateStudentProfileSerializer, UpdateStudentSerializer, UpdateInstructorSerializer, UpdateTASchedulerSerializer, UpdateAdminSerializer, StudentExperienceSerializer, StudentSkillsSerializer,
                           StudentAvailabilitySerializer, StudentCoursePreferenceSerializer,ComprehensiveStudentProfileSerializer, CreateInstructorSerializer,CreateSchedulerSerializer, DepartmentSerializer, CreateAdminSerializer, SchedulerInstructorSerializer,SchedulerInstructorUpdateSerializer)
 
 from utils.profile_utils import get_user_by_id, get_user_by_email
@@ -532,7 +532,25 @@ class CreateInstructorView(generics.CreateAPIView):
         if serializer.is_valid():
             try:
                 with transaction.atomic():
-                    department_name = serializer.validated_data['department']
+                    department_code = serializer.validated_data['department']
+                    
+                    # Map department codes to full names
+                    department_mapping = {
+                        'astr': 'Astronomy',
+                        'math': 'Mathematics',
+                        'phy': 'Physics',
+                        'data': 'Data Science',
+                        'stat': 'Statistics',
+                        'cosc': 'Computer Science',
+                    }
+                    
+                    department_name = department_mapping.get(department_code)
+                    if not department_name:
+                        return Response(
+                            error_response(f"Invalid department code: {department_code}"),
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    
                     department = Department.objects.get(name__iexact=department_name)
                     
                     password = generate_secure_password()
@@ -562,7 +580,8 @@ class CreateInstructorView(generics.CreateAPIView):
                         "name": instructor.name,
                         "department": instructor.department.name,
                         "email": instructor.email,
-                        "created_by": request.user_id
+                        "created_by": request.user_id,
+                        "temporary_password": password
                     }
                     
                     return Response(
@@ -631,6 +650,7 @@ class CreateSchedulerView(generics.CreateAPIView):
                 
                 # Generate secure temporary password
                 temp_password = generate_secure_password()
+                hashed_password = make_password(temp_password)
                 
                 # Create TA scheduler
                 scheduler = TAScheduler.objects.create(
@@ -638,19 +658,33 @@ class CreateSchedulerView(generics.CreateAPIView):
                     name=f"{serializer.validated_data['first_name']} {serializer.validated_data['last_name']}",
                     email=serializer.validated_data['email'],
                     department=department,
-                    password=temp_password
+                    password=hashed_password
                 )
                 
                 # Return response with temporary password for admin to share
-                response_data = TASchedulerSerializer(scheduler).data
-                response_data['temporary_password'] = temp_password
+                response_data = {
+                    "id": scheduler.employee_number,
+                    "name": scheduler.name,
+                    "department": scheduler.department.name,
+                    "email": scheduler.email,
+                    "created_by": request.user_id,
+                    "temporary_password": temp_password
+                }
                 
-                log_user_activity('admin', request.user.email, f'created_scheduler_{scheduler.employee_number}')
+                log_user_activity(request.user_id, 'ADMIN_CREATE_SCHEDULER', scheduler.employee_number)
+                
+                # Send notification email
+                send_account_creation_email(
+                    email=scheduler.email,
+                    name=scheduler.name,
+                    temporary_password=temp_password,
+                    user_type='scheduler'
+                )
                 
                 return Response(
                     success_response(
                         response_data,
-                        "TA Scheduler created successfully. Please share the temporary password with the scheduler."
+                        "TA Scheduler created successfully. A notification has been sent to their email."
                     ),
                     status=status.HTTP_201_CREATED
                 )
@@ -681,11 +715,24 @@ class UserManagementView(generics.GenericAPIView):
     def get(self, request):
         """Provide instructions for the endpoint."""
         return Response(
-            success_response(message="This endpoint is for modifying users. Use a PATCH request with an 'action' ('deactivate' or 'modify').")
+            success_response(message="This endpoint is for modifying users. Use a PATCH request with an 'action' ('deactivate', 'reactivate', or 'modify').")
         )
 
     def patch(self, request):
+        """Handle PATCH requests for user management actions"""
         action = request.data.get('action')
+        
+        if action == 'deactivate':
+            return self.deactivate_user(request)
+        elif action == 'reactivate':
+            return self.reactivate_user(request)
+        elif action == 'modify':
+            return self.modify_user(request)
+        else:
+            return Response(
+                error_response("Invalid action. Use 'deactivate', 'reactivate', or 'modify'"),
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     def deactivate_user(self, request):
         """Deactivate a user account - Admin only"""
@@ -717,7 +764,7 @@ class UserManagementView(generics.GenericAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            log_user_activity('admin', request.user.email, f'deactivated_{user_type}_{user_id}')
+            log_user_activity('admin', request.user_id, f'deactivated_{user_type}_{user_id}')
             
             return Response(
                 success_response(message=f"{user_type.title()} account deactivated successfully")
@@ -734,6 +781,53 @@ class UserManagementView(generics.GenericAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    def reactivate_user(self, request):
+        """Reactivate a user account - Admin only"""
+        user_type = request.data.get('user_type')
+        user_id = request.data.get('user_id')
+        
+        if not user_type or not user_id:
+            return Response(
+                error_response("user_type and user_id are required"),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            if user_type == 'student':
+                user = Student.objects.get(student_number=user_id)
+                user.is_active = True
+                user.save()
+            elif user_type == 'instructor':
+                user = Instructor.objects.get(employee_number=user_id)
+                user.is_active = True
+                user.save()
+            elif user_type == 'scheduler':
+                user = TAScheduler.objects.get(employee_number=user_id)
+                user.is_active = True
+                user.save()
+            else:
+                return Response(
+                    error_response("Invalid user_type"),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            log_user_activity('admin', request.user_id, f'reactivated_{user_type}_{user_id}')
+            
+            return Response(
+                success_response(message=f"{user_type.title()} account reactivated successfully")
+            )
+            
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+            return Response(
+                error_response(f"{user_type.title()} not found"),
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                error_response(f"Error reactivating user: {str(e)}"),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     def modify_user(self, request):
         """Modify a user account - Admin only"""
         user_type = request.data.get('user_type')
@@ -749,13 +843,16 @@ class UserManagementView(generics.GenericAPIView):
         try:
             if user_type == 'student':
                 user = Student.objects.get(student_number=user_id)
-                serializer = StudentSerializer(user, data=update_data, partial=True)
+                serializer = UpdateStudentSerializer(user, data=update_data, partial=True)
             elif user_type == 'instructor':
                 user = Instructor.objects.get(employee_number=user_id)
-                serializer = InstructorSerializer(user, data=update_data, partial=True)
+                serializer = UpdateInstructorSerializer(user, data=update_data, partial=True)
             elif user_type == 'scheduler':
                 user = TAScheduler.objects.get(employee_number=user_id)
-                serializer = TASchedulerSerializer(user, data=update_data, partial=True)
+                serializer = UpdateTASchedulerSerializer(user, data=update_data, partial=True)
+            elif user_type == 'admin':
+                user = Admin.objects.get(employee_number=user_id)
+                serializer = UpdateAdminSerializer(user, data=update_data, partial=True)
             else:
                 return Response(
                     error_response("Invalid user_type"),
@@ -764,7 +861,7 @@ class UserManagementView(generics.GenericAPIView):
             
             if serializer.is_valid():
                 serializer.save()
-                log_user_activity('admin', request.user.email, f'modified_{user_type}_{user_id}')
+                log_user_activity(request.user_id, f'ADMIN_MODIFY_{user_type.upper()}', user_id)
                 
                 return Response(
                     success_response(
@@ -778,7 +875,7 @@ class UserManagementView(generics.GenericAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
                 
-        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist, Admin.DoesNotExist):
             return Response(
                 error_response(f"{user_type.title()} not found"),
                 status=status.HTTP_404_NOT_FOUND
@@ -829,7 +926,8 @@ def create_admin(request):
                 "id": admin.employee_number,
                 "name": admin.name,
                 "email": admin.email,
-                "created_by": request.user_id
+                "created_by": request.user_id,
+                "temporary_password": password
             }
             
             return Response(
@@ -844,7 +942,7 @@ def create_admin(request):
         )
 
 @api_view(['GET'])
-@scheduler_required
+@permission_classes([IsSchedulerOrAdmin])
 def get_users(request):
     """Get all users - Scheduler and Admin access"""
     try:
@@ -1145,7 +1243,7 @@ def api_root(request):
             'admin_create_instructor': '/api/profile/admin/create-instructor/',
             'admin_create_scheduler': '/api/profile/admin/create-scheduler/',
             'admin_create_admin': '/api/profile/admin/create-admin/',
-            'admin_user_management': '/api/profile/admin/user-management/',
+            'admin_user_management': "/api/profile/admin/user-management/ (PATCH with action: 'deactivate', 'reactivate', 'modify')",
             'admin_dashboard': '/api/profile/admin/dashboard/',
             'get_users': '/api/profile/users/',
             'departments': '/api/profile/departments/',
