@@ -699,7 +699,7 @@ class UserManagementView(generics.GenericAPIView):
     def get(self, request):
         """Provide instructions for the endpoint."""
         return Response(
-            success_response(message="This endpoint is for modifying users. Use a PATCH request with an 'action' ('deactivate' or 'modify').")
+            success_response(message="This endpoint is for modifying users. Use a PATCH request with an 'action' ('deactivate', 'reactivate', or 'modify').")
         )
 
     def patch(self, request):
@@ -708,11 +708,13 @@ class UserManagementView(generics.GenericAPIView):
         
         if action == 'deactivate':
             return self.deactivate_user(request)
+        elif action == 'reactivate':
+            return self.reactivate_user(request)
         elif action == 'modify':
             return self.modify_user(request)
         else:
             return Response(
-                error_response("Invalid action. Use 'deactivate' or 'modify'"),
+                error_response("Invalid action. Use 'deactivate', 'reactivate', or 'modify'"),
                 status=status.HTTP_400_BAD_REQUEST
             )
     
@@ -763,6 +765,53 @@ class UserManagementView(generics.GenericAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    def reactivate_user(self, request):
+        """Reactivate a user account - Admin only"""
+        user_type = request.data.get('user_type')
+        user_id = request.data.get('user_id')
+        
+        if not user_type or not user_id:
+            return Response(
+                error_response("user_type and user_id are required"),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            if user_type == 'student':
+                user = Student.objects.get(student_number=user_id)
+                user.is_active = True
+                user.save()
+            elif user_type == 'instructor':
+                user = Instructor.objects.get(employee_number=user_id)
+                user.is_active = True
+                user.save()
+            elif user_type == 'scheduler':
+                user = TAScheduler.objects.get(employee_number=user_id)
+                user.is_active = True
+                user.save()
+            else:
+                return Response(
+                    error_response("Invalid user_type"),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            log_user_activity('admin', request.user_id, f'reactivated_{user_type}_{user_id}')
+            
+            return Response(
+                success_response(message=f"{user_type.title()} account reactivated successfully")
+            )
+            
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+            return Response(
+                error_response(f"{user_type.title()} not found"),
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                error_response(f"Error reactivating user: {str(e)}"),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     def modify_user(self, request):
         """Modify a user account - Admin only"""
         user_type = request.data.get('user_type')
@@ -1173,7 +1222,7 @@ def api_root(request):
             'admin_create_instructor': '/api/profile/admin/create-instructor/',
             'admin_create_scheduler': '/api/profile/admin/create-scheduler/',
             'admin_create_admin': '/api/profile/admin/create-admin/',
-            'admin_user_management': '/api/profile/admin/user-management/',
+            'admin_user_management': "/api/profile/admin/user-management/ (PATCH with action: 'deactivate', 'reactivate', 'modify')",
             'admin_dashboard': '/api/profile/admin/dashboard/',
             'get_users': '/api/profile/users/',
             'departments': '/api/profile/departments/',
