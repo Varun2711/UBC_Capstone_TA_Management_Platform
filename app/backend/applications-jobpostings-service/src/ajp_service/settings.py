@@ -5,6 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import sys
+from corsheaders.defaults import default_headers
+
 
 load_dotenv('../../.env')
 
@@ -20,7 +22,11 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = [   
+    "localhost",
+    "127.0.0.1",   
+]
 
 # Application definition
 INSTALLED_APPS = [    
@@ -50,8 +56,27 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',    
+    'http://localhost:8080',     
+    'http://127.0.0.1:8080',     
+    'http://nginx',
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:8080',   
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:8080',   
+    'http://nginx',
+] 
+
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'X-Requested-With',
+    'Content-Type',
+    'Authorization',
+]
+
 
 ROOT_URLCONF = 'ajp_service.urls'
 
@@ -111,3 +136,19 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Media files (user uploads including PDFs and Word docs)
+MEDIA_ROOT = '/app/documents'
+MEDIA_URL = '/media/'
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10MB
+
+# Allowed file types for documents
+ALLOWED_DOCUMENT_TYPES = ['pdf', 'doc', 'docx', 'jpeg', 'jpg', 'png']
+
+
+
+import os
+os.makedirs(MEDIA_ROOT, exist_ok=True)

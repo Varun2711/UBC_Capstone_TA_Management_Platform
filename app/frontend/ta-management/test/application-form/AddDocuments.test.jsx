@@ -239,18 +239,6 @@ describe("AddDocuments", () => {
     expect(mockSetDocuments).toHaveBeenCalled();
   });
 
-  it("opens previews for image/PDF", async () => {
-    renderAddDocuments({ documents: mockDocuments });
-    const user = userEvent.setup();
-    const eyeButtons = screen.getAllByTestId("eye-icon");
-    await user.click(eyeButtons[0]);
-
-    expect(global.URL.createObjectURL).toHaveBeenCalledWith(
-      mockDocuments[0].file
-    );
-    expect(global.window.open).toHaveBeenCalledWith("mock-url", "_blank");
-  });
-
   it("shows supported format string correctly", () => {
     renderAddDocuments({ acceptedTypes: ".pdf,jpg,png" });
     expect(

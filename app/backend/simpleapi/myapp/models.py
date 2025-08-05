@@ -748,7 +748,7 @@ class Offer(models.Model):
 class Assignment(models.Model):
     """Final assignment after offer acceptance"""
     assignment_id = models.AutoField(primary_key=True)
-    offer = models.OneToOneField('Offer', on_delete=models.CASCADE, related_name='assignment', null=True, blank=True)
+    offer = models.ForeignKey('Offer', on_delete=models.CASCADE, related_name='assignments', null=True, blank=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
@@ -811,13 +811,13 @@ class AssignmentModification(models.Model):
 
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
-    application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
+    application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE,null=True, blank=True, db_constraint=False)
     file_name = models.CharField(max_length=255)
     file_type = models.CharField(max_length=50)
     file_size = models.IntegerField()
-    file_link = models.TextField()
-    uploaded_at = models.DateField()
+    file = models.FileField(upload_to='applications/%Y/%m/') 
+    uploaded_at = models.DateField(auto_now_add=True)
 
     class Meta:
         managed = False

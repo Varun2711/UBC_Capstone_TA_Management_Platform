@@ -21,6 +21,10 @@ END
 echo "Loading sample data from fixture..."
 python manage.py loaddata simpleapi/fixtures/sample_data.json
 
+echo "Loading allocations data from it's fixture..."
+python manage.py loaddata simpleapi/fixtures/sample_allocations.json
+
+
 echo "Loading application form data from it's fixture..."
 python manage.py loaddata simpleapi/fixtures/application_form.json
 

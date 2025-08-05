@@ -58,7 +58,7 @@ const navigationItems = [
   {
     title: "Schedule",
     icon: Calendar,
-    url: "#",
+    url: "/schedule",
   },
   {
     title: "Offers",

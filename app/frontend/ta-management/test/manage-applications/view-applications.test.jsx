@@ -89,17 +89,23 @@ describe("ViewStudentApplication", () => {
       applied_at: "2025-06-12",
       student: { id: 2, name: "Alice Johnson", student_number: "A123" },
       posting: {
+        title: "TA for CMPS101",
         department: {
           name: "CMPS",
         },
       },
-      positionType: "",
+      positionType: "ta", // ✅ Use a valid value
+      termSelection: {
+        description: "Winter 2025",
+      },
+      status: "submitted", // if needed for StatusBadge
     };
     getMock.mockResolvedValue({ data });
     render(<ViewStudentApplication />);
-    await waitFor(() =>
-      expect(screen.getByText("Student Information")).toBeInTheDocument()
-    );
+
+    await waitFor(() => {
+      expect(screen.getByText("TA for CMPS101")).toBeInTheDocument();
+    });
     expect(screen.getByText("Alice Johnson")).toBeInTheDocument();
     expect(screen.getByText("A123")).toBeInTheDocument();
   });
