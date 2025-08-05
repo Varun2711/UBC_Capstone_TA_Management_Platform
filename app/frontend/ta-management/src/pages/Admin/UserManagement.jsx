@@ -214,13 +214,13 @@ export default function UserManagement() {
   })
 
   const departments = [
-    { code: 'cosc', name: 'Computer Science' },
-    { code: 'math', name: 'Mathematics' },
-    { code: 'phy', name: 'Physics' },
-    { code: 'chem', name: 'Chemistry' },
-    { code: 'bio', name: 'Biology' },
-    { code: 'econ', name: 'Economics' },
-    { code: 'psych', name: 'Psychology' }
+    "Computer Science",
+    "Mathematics",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Economics",
+    "Psychology",
   ]
 
   // Load users on component mount
