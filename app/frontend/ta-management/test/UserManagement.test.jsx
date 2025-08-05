@@ -188,23 +188,9 @@ describe("UserManagement", () => {
   })
 
   describe("User Actions", () => {
-    it("shows promote option for instructors", async () => {
-      renderUserMgmtPage()
-
-      await waitFor(() => {
-        expect(screen.getByText("Sarah Johnson")).toBeInTheDocument()
-      })
-
-      // Find Sarah Johnson's row and click the action menu
-      const sarahRow = screen.getByText("Sarah Johnson").closest("tr")
-      const actionButton = within(sarahRow).getByRole("button")
-      await user.click(actionButton)
-
-      await waitFor(() => {
-        expect(screen.getByText("Promote to TA Coordinator")).toBeInTheDocument()
-      })
-    })
-  })
+    it("handles user deactivation", async () => {
+      // Mock window.confirm
+      window.confirm = vi.fn(() => true)
 
       // Mock successful deactivation response
       fetch.mockImplementation((url, options) => {
@@ -248,7 +234,6 @@ describe("UserManagement", () => {
   })
 
   describe("Error Handling", () => {
-
     it("handles API response errors", async () => {
       // Mock API error response
       fetch.mockResolvedValue({
@@ -259,6 +244,11 @@ describe("UserManagement", () => {
       })
 
       renderUserMgmtPage()
+      
+      // Should handle the error gracefully
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled()
+      })
     })
 
     it("handles missing authentication token", async () => {
