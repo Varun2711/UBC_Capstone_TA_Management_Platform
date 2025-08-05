@@ -615,7 +615,10 @@ export default function UserManagement() {
           </Breadcrumb>
 
           <div className="ml-auto flex items-center space-x-4">
-            <Button onClick={() => setShowCreateForm(true)} disabled={loading}>
+            <Button onClick={() => {
+              resetFormData(); // Reset form data first
+              setShowCreateForm(true);
+            }} disabled={loading}>
               <UserPlus className="h-4 w-4 mr-2" />
               Create User
             </Button>
