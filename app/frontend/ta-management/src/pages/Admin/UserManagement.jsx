@@ -499,12 +499,6 @@ export default function UserManagement() {
                   <CardTitle>All Users</CardTitle>
                   <CardDescription>Manage and monitor all system users</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
               </div>
             </CardHeader>
             <CardContent>
