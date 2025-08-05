@@ -192,14 +192,14 @@
     "model": "myapp.term",
     "pk": 1,
     "fields": {
-      "code": "W2025 Term 1",
-      "description": "Winter 2025 Term 1",
+      "code": "W2026 Term 1",
+      "description": "Winter 2026 Term 1",
       "subsetOf": 3,
-      "start": "2025-01-06",
-      "end": "2025-04-04",
+      "start": "2025-09-02",
+      "end": "2025-12-05",
       "startCalendarYear": 2025,
       "endCalendarYear": 2025,
-      "academicYear": "2024/25",
+      "academicYear": "2025/26",
       "createdAt": "2024-08-01T10:00:00Z",
       "is_active": true,
       "term_type": "winter"
@@ -209,14 +209,14 @@
     "model": "myapp.term",
     "pk": 2,
     "fields": {
-      "code": "W2025 Term 2",
-      "description": "Winter 2025 Term 2",
+      "code": "W2026 Term 2",
+      "description": "Winter 2026 Term 2",
       "subsetOf": 3,
-      "start": "2025-01-06",
-      "end": "2025-04-04",
-      "startCalendarYear": 2025,
-      "endCalendarYear": 2025,
-      "academicYear": "2024/25",
+      "start": "2026-01-05",
+      "end": "2026-04-09",
+      "startCalendarYear": 2026,
+      "endCalendarYear": 2026,
+      "academicYear": "2025/26",
       "createdAt": "2024-08-01T10:00:00Z",
       "is_active": true,
       "term_type": "winter"
@@ -226,14 +226,14 @@
     "model": "myapp.term",
     "pk": 3,
     "fields": {
-      "code": "W2025 Both Terms",
-      "description": "Winter 2025 Both Terms",
+      "code": "W2026 Both Terms",
+      "description": "Winter 2026 Both Terms",
       "subsetOf": null,
-      "start": "2025-01-06",
-      "end": "2025-04-04",
+      "start": "2025-09-02",
+      "end": "2026-04-09",
       "startCalendarYear": 2025,
-      "endCalendarYear": 2025,
-      "academicYear": "2024/25",
+      "endCalendarYear": 2026,
+      "academicYear": "2025/26",
       "createdAt": "2024-08-01T10:00:00Z",
       "is_active": true,
       "term_type": "winter"
@@ -602,7 +602,7 @@
       "title": "Teaching Assistant - CMPS Summer 2025",
       "description": "We are seeking enthusiastic Teaching Assistants for Summer 2025. Responsibilities include assisting students during lab sessions, grading assignments, and supporting the instructor during lectures.",
       "post_date": "2025-06-30",
-      "deadline_date": "2025-07-24",
+      "deadline_date": "2025-08-24",
       "department": 1,
       "created_by": 3,
       "term": 7,
@@ -618,7 +618,7 @@
       "title": "Teaching Assistant - CMPS Winter 2025",
       "description": "Seeking qualified Teaching Assistants for CMPS department. TAs will help students understand complex concepts, assist with assignments, and facilitate lab sessions.",
       "post_date": "2025-06-30",
-      "deadline_date": "2025-07-30",
+      "deadline_date": "2025-08-30",
       "department": 1,
       "created_by": 3,
       "term": 3,
@@ -1718,45 +1718,6 @@
       "created_by": 3,
       "created_at": "2024-11-26T09:20:00Z",
       "notes": "Physics graduate student, strong analytical skills"
-    }
-  },
-  {
-    "model": "myapp.offeritem",
-    "pk": 1,
-    "fields": {
-      "offer_item_id": "550e8400-e29b-41d4-a716-446655440301",
-      "item_type": "course_offering",
-      "course_offering": "550e8400-e29b-41d4-a716-446655440101",
-      "shared_session": null
-    }
-  },
-  {
-    "model": "myapp.offeritem",
-    "pk": 2,
-    "fields": {
-      "offer_item_id": "550e8400-e29b-41d4-a716-446655440302",
-      "item_type": "shared_session",
-      "course_offering": null,
-      "shared_session": "550e8400-e29b-41d4-a716-446655440201"
-    }
-  },
-  {
-    "model": "myapp.offer",
-    "pk": 1,
-    "fields": {
-      "application": 1,
-      "student": 1,
-      "role": "ta",
-      "offer_date": "2024-12-01T10:00:00Z",
-      "response_deadline": "2024-12-15T23:59:59Z",
-      "status": "pending",
-      "responded_at": null,
-      "student_response": null,
-      "created_by": 3,
-      "notes": "Multi-item offer for COSC courses",
-      "reminder_sent": false,
-      "created_at": "2024-12-01T10:00:00Z",
-      "updated_at": "2024-12-01T10:00:00Z"
     }
   }
 ]

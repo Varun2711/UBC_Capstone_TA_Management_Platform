@@ -84,12 +84,14 @@ class OfferItemSerializer(serializers.ModelSerializer):
     course_offering_id = serializers.UUIDField(source='course_offering.course_offering_id', read_only=True, allow_null=True)
     shared_session_id = serializers.UUIDField(source='shared_session.shared_session_id', read_only=True, allow_null=True)
     time_slot = serializers.SerializerMethodField()
+    all_time_slots = serializers.SerializerMethodField()
     
     class Meta:
         model = OfferItem
         fields = [
             'offer_item_id', 'item_type', 
             'course_number', 'course_name', 'section_number', 'weekly_hours', 'time_slot', 'section_type_display',
+             'all_time_slots', #return all time slots for the calendar view in the frontend
             'course_offering_id', 'shared_session_id'
         ]
     
@@ -140,6 +142,15 @@ class OfferItemSerializer(serializers.ModelSerializer):
                 })
             return time_slots_data
         
+        return None
+    
+        
+    def get_all_time_slots(self, obj):
+        """Get the all time slot details for this offer item."""
+        details = obj.session_time_slot_details
+        # The property returns a list, we want the first (and only) item
+        if details:
+            return details
         return None
 
 class OfferSerializer(serializers.ModelSerializer):
@@ -222,7 +233,7 @@ class OfferSerializer(serializers.ModelSerializer):
 class AssignmentSerializer(serializers.ModelSerializer):
     """Updated assignment serializer"""
     student = StudentSerializer(read_only=True)
-    course = CourseSerializer(read_only=True)
+    course = CourseSerializer(read_only=True) #Course is nested in course_offering
     course_offering = CourseOfferingSerializer(read_only=True)
     shared_session = SharedSessionSerializer(read_only=True)
     offer_details = OfferSerializer(source='offer', read_only=True)
@@ -231,16 +242,20 @@ class AssignmentSerializer(serializers.ModelSerializer):
     # Add computed fields
     weekly_hours = serializers.SerializerMethodField()
     required_hours_category = serializers.SerializerMethodField()
-    time_slot = serializers.SerializerMethodField()
+    time_slots = serializers.SerializerMethodField() 
+    assignment_term = serializers.SerializerMethodField()
     
     class Meta:
         model = Assignment
         fields = [
-            'assignment_id', 'offer', 'student', 'course', 'course_offering', 'shared_session',
+            'assignment_id', 'offer', 'student', 
+            'course', #course is nested in course_offering
+            'course_offering', 'shared_session',
             # *** REMOVE: 'required_hours' (doesn't exist in model anymore)
             'role', 'assigned_date', 'assigned_by', 'is_active',
             'notes', 'offer_details', 'created_at', 'updated_at',
-            'weekly_hours', 'required_hours_category', 'time_slot' # ← Add computed fields
+            'weekly_hours', 'required_hours_category'  # ← Add computed fields
+            ,'time_slots', 'assignment_term' 
         ]
         read_only_fields = ['assignment_id', 'assigned_date']
     
@@ -252,16 +267,26 @@ class AssignmentSerializer(serializers.ModelSerializer):
         """Get the hours category based on actual hours"""
         return obj.required_hours_category
     
-    def get_time_slot(self, obj):
-        """Get the specific time slot details for this assignment."""
-        if obj.time_slot:
-            return {
-                'slot_id': str(obj.time_slot.slot_id),
-                'day': obj.time_slot.get_day_display(),
-                'start_time': obj.time_slot.start_time.strftime('%H:%M'),
-                'end_time': obj.time_slot.end_time.strftime('%H:%M'),
+    def get_time_slots(self,obj):
+        """Get all relevant time slots for this assignment"""
+        time_slots = obj.all_time_slots  # Fixed: added parentheses
+        # Return basic time slot info - adjust fields as needed
+        return [
+            {
+                'slot_id': str(slot.slot_id) if hasattr(slot, 'slot_id') else None,
+                'day': slot.get_day_display() if hasattr(slot, 'get_day_display') else None,
+                'day_code': slot.day,
+                'start_time': slot.start_time.strftime('%H:%M') if hasattr(slot, 'start_time') and slot.start_time else None,
+                'end_time': slot.end_time.strftime('%H:%M') if hasattr(slot, 'end_time') and slot.end_time else None,
             }
-        return None
+            for slot in time_slots
+        ]  
+    
+    def get_assignment_term (self, obj):
+        term = obj.assignment_term
+        return TermSerializer(term).data if term else None
+
+      
     
 class AssignmentModificationSerializer(serializers.ModelSerializer):
     """Serializer for assignment modifications that appear in student's offers"""

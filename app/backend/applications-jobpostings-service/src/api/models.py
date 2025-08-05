@@ -345,12 +345,12 @@ class ApplicationShortList(models.Model):
 class Document(models.Model):
     document_id = models.AutoField(primary_key=True)
     application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True,blank=True, db_constraint=False)
     file_name = models.CharField(max_length=255)
-    file_type = models.CharField(max_length=50)
+    file_type = models.CharField(max_length=150)
     file_size = models.IntegerField()
-    file_link = models.TextField()
-    uploaded_at = models.DateField()
+    file = models.FileField(upload_to='applications/%Y/%m/')     
+    uploaded_at = models.DateField(auto_now_add=True)
 
     class Meta:
         managed = True

@@ -9,16 +9,38 @@ const instance = axios.create({
   baseURL: API_URL,
 });
 
-// Helper function to get the auth headers
+const getCookie = (name) => {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith(name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+};
+
 const getAuthHeaders = () => {
   const token = sessionStorage.getItem("accessToken");
-  if (!token) {
-    console.warn("Access token not found in sessionStorage");
-    return {};
-  }
-  return {
-    Authorization: `Bearer ${token}`,
+  const csrfToken = getCookie("csrftoken");
+
+  const headers = {
+    "Content-Type": "application/json",
   };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (csrfToken) {
+    headers["X-CSRFToken"] = csrfToken;
+  }
+
+  return headers;
 };
 
 // ===============================
