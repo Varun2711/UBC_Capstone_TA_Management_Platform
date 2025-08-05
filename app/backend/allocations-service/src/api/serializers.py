@@ -231,6 +231,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
     # Add computed fields
     weekly_hours = serializers.SerializerMethodField()
     required_hours_category = serializers.SerializerMethodField()
+    time_slot = serializers.SerializerMethodField()
     
     class Meta:
         model = Assignment
@@ -239,7 +240,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             # *** REMOVE: 'required_hours' (doesn't exist in model anymore)
             'role', 'assigned_date', 'assigned_by', 'is_active',
             'notes', 'offer_details', 'created_at', 'updated_at',
-            'weekly_hours', 'required_hours_category'  # ← Add computed fields
+            'weekly_hours', 'required_hours_category', 'time_slot' # ← Add computed fields
         ]
         read_only_fields = ['assignment_id', 'assigned_date']
     
@@ -250,6 +251,17 @@ class AssignmentSerializer(serializers.ModelSerializer):
     def get_required_hours_category(self, obj):
         """Get the hours category based on actual hours"""
         return obj.required_hours_category
+    
+    def get_time_slot(self, obj):
+        """Get the specific time slot details for this assignment."""
+        if obj.time_slot:
+            return {
+                'slot_id': str(obj.time_slot.slot_id),
+                'day': obj.time_slot.get_day_display(),
+                'start_time': obj.time_slot.start_time.strftime('%H:%M'),
+                'end_time': obj.time_slot.end_time.strftime('%H:%M'),
+            }
+        return None
     
 class AssignmentModificationSerializer(serializers.ModelSerializer):
     """Serializer for assignment modifications that appear in student's offers"""
