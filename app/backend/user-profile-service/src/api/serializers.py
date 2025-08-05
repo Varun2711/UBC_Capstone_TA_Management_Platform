@@ -264,10 +264,13 @@ class UpdateStudentProfileSerializer(serializers.ModelSerializer):
     
 class UpdateInstructorSerializer(serializers.ModelSerializer):
     """Serializer for updating instructor profiles"""
+    first_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    last_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    
     class Meta:
         model = Instructor
-        fields = ['name', 'email', 'department', 'is_active']
-        read_only_fields = ['employee_number', 'department', 'is_active']
+        fields = ['name', 'email', 'department', 'employee_number', 'first_name', 'last_name']
+        read_only_fields = ['is_active']
         
     def validate_email(self, value):
         """Ensure email is not already in use by another instructor"""
@@ -275,14 +278,45 @@ class UpdateInstructorSerializer(serializers.ModelSerializer):
         if Instructor.objects.exclude(pk=instance.pk).filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
+    
+    def validate_employee_number(self, value):
+        """Ensure employee number is not already in use by another instructor"""
+        instance = self.instance
+        if Instructor.objects.exclude(pk=instance.pk).filter(employee_number=value).exists():
+            raise serializers.ValidationError("This employee number is already in use.")
+        return value
+    
+    def update(self, instance, validated_data):
+        # Handle first_name and last_name combination
+        first_name = validated_data.pop('first_name', None)
+        last_name = validated_data.pop('last_name', None)
+        
+        # If both first_name and last_name are provided, combine them into name
+        if first_name and last_name:
+            validated_data['name'] = f"{first_name} {last_name}"
+        elif first_name:
+            # If only first_name, keep existing last name
+            existing_name_parts = instance.name.split(' ', 1)
+            last_name_part = existing_name_parts[1] if len(existing_name_parts) > 1 else ''
+            validated_data['name'] = f"{first_name} {last_name_part}".strip()
+        elif last_name:
+            # If only last_name, keep existing first name
+            existing_name_parts = instance.name.split(' ', 1)
+            first_name_part = existing_name_parts[0] if existing_name_parts else ''
+            validated_data['name'] = f"{first_name_part} {last_name}".strip()
+            
+        return super().update(instance, validated_data)
 
 
 class UpdateTASchedulerSerializer(serializers.ModelSerializer):
     """Serializer for updating TA scheduler profiles"""
+    first_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    last_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    
     class Meta:
         model = TAScheduler
-        fields = ['name', 'email']
-        read_only_fields = ['employee_number', 'department', 'is_active']
+        fields = ['name', 'email', 'department', 'employee_number', 'first_name', 'last_name']
+        read_only_fields = ['is_active']
         
     def validate_email(self, value):
         """Ensure email is not already in use by another scheduler"""
@@ -290,20 +324,55 @@ class UpdateTASchedulerSerializer(serializers.ModelSerializer):
         if TAScheduler.objects.exclude(pk=instance.pk).filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
+    
+    def validate_employee_number(self, value):
+        """Ensure employee number is not already in use by another scheduler"""
+        instance = self.instance
+        if TAScheduler.objects.exclude(pk=instance.pk).filter(employee_number=value).exists():
+            raise serializers.ValidationError("This employee number is already in use.")
+        return value
+    
+    def update(self, instance, validated_data):
+        # Handle first_name and last_name combination
+        first_name = validated_data.pop('first_name', None)
+        last_name = validated_data.pop('last_name', None)
+        
+        # If both first_name and last_name are provided, combine them into name
+        if first_name and last_name:
+            validated_data['name'] = f"{first_name} {last_name}"
+        elif first_name:
+            # If only first_name, keep existing last name
+            existing_name_parts = instance.name.split(' ', 1)
+            last_name_part = existing_name_parts[1] if len(existing_name_parts) > 1 else ''
+            validated_data['name'] = f"{first_name} {last_name_part}".strip()
+        elif last_name:
+            # If only last_name, keep existing first name
+            existing_name_parts = instance.name.split(' ', 1)
+            first_name_part = existing_name_parts[0] if existing_name_parts else ''
+            validated_data['name'] = f"{first_name_part} {last_name}".strip()
+            
+        return super().update(instance, validated_data)
 
 
 class UpdateAdminSerializer(serializers.ModelSerializer):
     """Serializer for updating admin profiles"""
     class Meta:
         model = Admin
-        fields = ['name', 'email']
-        read_only_fields = ['employee_number', 'is_active', 'created_at']
+        fields = ['name', 'email', 'employee_number']
+        read_only_fields = ['is_active', 'created_at']
         
     def validate_email(self, value):
         """Ensure email is not already in use by another admin"""
         instance = self.instance
         if Admin.objects.exclude(pk=instance.pk).filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
+        return value
+    
+    def validate_employee_number(self, value):
+        """Ensure employee number is not already in use by another admin"""
+        instance = self.instance
+        if Admin.objects.exclude(pk=instance.pk).filter(employee_number=value).exists():
+            raise serializers.ValidationError("This employee number is already in use.")
         return value
 
 class StudentExperienceSerializer(serializers.ModelSerializer):

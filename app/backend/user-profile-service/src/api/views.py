@@ -809,13 +809,16 @@ class UserManagementView(generics.GenericAPIView):
         try:
             if user_type == 'student':
                 user = Student.objects.get(student_number=user_id)
-                serializer = StudentSerializer(user, data=update_data, partial=True)
+                serializer = UpdateStudentProfileSerializer(user, data=update_data, partial=True)
             elif user_type == 'instructor':
                 user = Instructor.objects.get(employee_number=user_id)
-                serializer = InstructorSerializer(user, data=update_data, partial=True)
+                serializer = UpdateInstructorSerializer(user, data=update_data, partial=True)
             elif user_type == 'scheduler':
                 user = TAScheduler.objects.get(employee_number=user_id)
-                serializer = TASchedulerSerializer(user, data=update_data, partial=True)
+                serializer = UpdateTASchedulerSerializer(user, data=update_data, partial=True)
+            elif user_type == 'admin':
+                user = Admin.objects.get(employee_number=user_id)
+                serializer = UpdateAdminSerializer(user, data=update_data, partial=True)
             else:
                 return Response(
                     error_response("Invalid user_type"),
@@ -838,7 +841,7 @@ class UserManagementView(generics.GenericAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
                 
-        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist, Admin.DoesNotExist):
             return Response(
                 error_response(f"{user_type.title()} not found"),
                 status=status.HTTP_404_NOT_FOUND
