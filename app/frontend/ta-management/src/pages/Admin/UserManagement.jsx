@@ -17,7 +17,8 @@ import {
   UserCheck,
   Building,
   AlertCircle,
-  Loader2
+  Loader2,
+  CheckCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -207,9 +208,11 @@ export default function UserManagement() {
   // Dialog states
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showViewEditDialog, setShowViewEditDialog] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [createType, setCreateType] = useState('instructor')
+  const [createdUserData, setCreatedUserData] = useState(null)
   
   // Form data
   const [formData, setFormData] = useState({
@@ -357,11 +360,19 @@ export default function UserManagement() {
       if (response.success) {
         setShowCreateForm(false)
         resetFormData()
-        await loadInitialData() // Refresh user list
         
+        // Set up success dialog data
         const userTypeLabel = createType === 'instructor' ? 'Instructor' : 
                              createType === 'scheduler' ? 'TA Scheduler' : 'Admin'
-        alert(`${userTypeLabel} created successfully!\nTemporary password: ${response.data.temporary_password}`)
+        setCreatedUserData({
+          name: createType === 'admin' ? formData.name : `${formData.first_name} ${formData.last_name}`,
+          email: formData.email,
+          userType: userTypeLabel,
+          temporaryPassword: response.data.temporary_password
+        })
+        setShowSuccessDialog(true)
+        
+        await loadInitialData() // Refresh user list
       } else {
         throw new Error(response.message || 'Failed to create user')
       }
@@ -1079,6 +1090,40 @@ export default function UserManagement() {
                   )}
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Success Dialog */}
+        <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <CheckCircle className="h-6 w-6 mr-2 text-green-500" />
+                {createdUserData?.userType} Added
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>
+                <strong>{createdUserData?.name}</strong> has been successfully added as a {createdUserData?.userType?.toLowerCase()}.
+              </p>
+              <p className="mt-2 text-muted-foreground">
+                An email with their account details and a temporary password has been sent to <strong>{createdUserData?.email}</strong>.
+              </p>
+              {createdUserData?.temporaryPassword && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm font-medium">Temporary Password:</p>
+                  <p className="text-sm font-mono bg-white px-2 py-1 rounded border mt-1">
+                    {createdUserData.temporaryPassword}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Please share this with the user if needed.
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setShowSuccessDialog(false)}>Done</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
