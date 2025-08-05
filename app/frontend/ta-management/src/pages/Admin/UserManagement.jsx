@@ -742,7 +742,7 @@ export default function UserManagement() {
                                 Edit User
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              {user.is_active && user.type !== 'admin' ? (
+                              {user.is_active ? (
                                 <DropdownMenuItem 
                                   className="text-red-600"
                                   onClick={() => handleUserAction(user, 'deactivate')}
@@ -750,7 +750,7 @@ export default function UserManagement() {
                                   <UserX className="mr-2 h-4 w-4" />
                                   Deactivate User
                                 </DropdownMenuItem>
-                              ) : !user.is_active && user.type !== 'admin' && (
+                              ) : (
                                 <DropdownMenuItem 
                                   className="text-green-600"
                                   onClick={() => handleUserAction(user, 'reactivate')}
