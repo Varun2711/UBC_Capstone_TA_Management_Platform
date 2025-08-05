@@ -338,7 +338,7 @@ export default function UserManagement() {
     const user_id = selectedUser.id
     const update_data = {
       email: formData.email,
-      department: formData.department,
+      department: formData.department?.id || formData.department,
       employee_number: formData.employee_number,
       first_name: formData.first_name,
       last_name: formData.last_name,
