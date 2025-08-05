@@ -88,7 +88,7 @@ const fetchActiveAssignments = async () => {
   try {
     const headers = getAuthHeaders();
     const response = await axios.get("http://localhost:8080/api/allocations/assignments/my_assignments/", { headers });
-    return response.data.filter(assignment => assignment.is_active);
+    return response.data.assignments || [];
   } catch (error) {
     console.error("Error fetching active assignments:", error);
     return [];
