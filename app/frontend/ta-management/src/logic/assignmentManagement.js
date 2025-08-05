@@ -1,11 +1,9 @@
 import axios from "axios";
 
-// API URLs
 const COURSE_TERM_API_URL = 'http://localhost:8080/api/course-term-service';
 const PROFILE_API_URL = 'http://localhost:8080/api/profile';
 const ALLOCATIONS_API_URL = 'http://localhost:8080/api/allocations';
 
-// Helper function to get the auth token from session storage
 const getAuthHeaders = () => {
   if (typeof window !== 'undefined') {
     const token = sessionStorage.getItem('accessToken');
@@ -16,11 +14,6 @@ const getAuthHeaders = () => {
   return {};
 };
 
-// --- Term Parsing Functions ---
-
-/**
- * Parses term code like "W2025 Term 2" into components
- */
 export const parseTermCode = (termCode) => {
   if (!termCode) return null;
   
@@ -51,11 +44,6 @@ export const parseTermCode = (termCode) => {
   };
 };
 
-// --- Student Assignment API Functions ---
-
-/**
- * Fetches all assigned students
- */
 export const getAssignedStudents = async () => {
   const response = await axios.get(`${ALLOCATIONS_API_URL}/assignments/assigned_students/`, {
     headers: getAuthHeaders()
@@ -63,9 +51,6 @@ export const getAssignedStudents = async () => {
   return response.data;
 };
 
-/**
- * Fetches assignments for a specific student
- */
 export const getStudentAssignments = async (studentNumber) => {
   const response = await axios.get(`${ALLOCATIONS_API_URL}/assignments/by_student/`, {
     params: { student_number: studentNumber },
@@ -74,11 +59,6 @@ export const getStudentAssignments = async (studentNumber) => {
   return response.data;
 };
 
-// --- Course Assignment API Functions ---
-
-/**
- * Fetches all courses with full details including offerings and shared sessions
- */
 export const getAllCoursesFullDetails = async () => {
   const response = await axios.get(`${COURSE_TERM_API_URL}/courses/all_full_details/`, {
     headers: getAuthHeaders()
@@ -86,9 +66,6 @@ export const getAllCoursesFullDetails = async () => {
   return response.data;
 };
 
-/**
- * Fetches TA assignments for a course offering
- */
 export const getTAsForCourseOffering = async (offeringId) => {
   const response = await axios.get(`${ALLOCATIONS_API_URL}/assignments/tas_by_offering/`, {
     params: { course_offering_id: offeringId },
@@ -97,9 +74,6 @@ export const getTAsForCourseOffering = async (offeringId) => {
   return response.data;
 };
 
-/**
- * Fetches TA assignments for a shared session
- */
 export const getTAsForSharedSession = async (sessionId) => {
   const response = await axios.get(`${ALLOCATIONS_API_URL}/assignments/tas_by_offering/`, {
     params: { shared_session_id: sessionId },
@@ -108,9 +82,6 @@ export const getTAsForSharedSession = async (sessionId) => {
   return response.data;
 };
 
-/**
- * Fetches all instructors
- */
 export const getInstructors = async () => {
   const response = await axios.get(`${PROFILE_API_URL}/instructors/`, {
     headers: getAuthHeaders()
@@ -118,9 +89,6 @@ export const getInstructors = async () => {
   return response.data;
 };
 
-/**
- * Fetches all departments
- */
 export const getDepartments = async () => {
   const response = await axios.get(`${PROFILE_API_URL}/departments/`, {
     headers: getAuthHeaders()
@@ -128,11 +96,6 @@ export const getDepartments = async () => {
   return response.data;
 };
 
-// --- Shared Session API Functions ---
-
-/**
- * Fetches detailed shared session information including time slots
- */
 export const getSharedSessionDetails = async (sessionId) => {
   const response = await axios.get(`${COURSE_TERM_API_URL}/shared-sessions/${sessionId}/`, {
     headers: getAuthHeaders()
@@ -140,11 +103,6 @@ export const getSharedSessionDetails = async (sessionId) => {
   return response.data;
 };
 
-// --- Helper Functions ---
-
-/**
- * Converts time format from "05:12 PM - 07:12 PM" to "17:12-19:12"
- */
 export const convertTimeFormat = (timeString) => {
   if (!timeString) return '';
   
@@ -168,9 +126,6 @@ export const convertTimeFormat = (timeString) => {
   return `${convertTo24Hour(startTime)}-${convertTo24Hour(endTime)}`;
 };
 
-/**
- * Converts 24-hour time format to 12-hour format
- */
 export const convertTo12Hour = (time24) => {
   if (!time24) return '';
   
@@ -182,9 +137,6 @@ export const convertTo12Hour = (time24) => {
   return `${hour12}:${minutes} ${modifier}`;
 };
 
-/**
- * Calculates the duration in hours between start and end time
- */
 export const calculateTimeSlotDuration = (timeString) => {
   if (!timeString) return 0;
   
@@ -201,31 +153,19 @@ export const calculateTimeSlotDuration = (timeString) => {
     const durationMinutes = endTotalMinutes - startTotalMinutes;
     const durationHours = durationMinutes / 60;
     
-    return Math.round(durationHours * 10) / 10; // Round to 1 decimal place
+    return Math.round(durationHours * 10) / 10;
   } catch (error) {
-    console.error('Error calculating time slot duration:', error);
     return 0;
   }
 };
 
-// --- Student Data Processing Functions ---
-
-/**
- * Fetches and processes all student assignment data
- */
 export const fetchAllStudentAssignments = async () => {
   try {
-    console.log("Fetching all assigned students...");
-    
-    // Fetch all assigned students
     const assignedStudents = await getAssignedStudents();
-    console.log("Assigned students:", assignedStudents);
 
-    // Fetch assignments for each student
     const studentsWithAssignments = await Promise.all(
       assignedStudents.map(async (student) => {
         try {
-          console.log(`Fetching assignments for student: ${student.name} (${student.student_number})`);
           const assignments = await getStudentAssignments(student.student_number);
           
           return {
@@ -233,7 +173,6 @@ export const fetchAllStudentAssignments = async () => {
             assignments: assignments || []
           };
         } catch (error) {
-          console.error(`Failed to fetch assignments for student ${student.student_number}:`, error);
           return {
             ...student,
             assignments: []
@@ -242,33 +181,21 @@ export const fetchAllStudentAssignments = async () => {
       })
     );
 
-    console.log("Students with assignments:", studentsWithAssignments);
     return studentsWithAssignments;
   } catch (error) {
-    console.error("Error fetching student assignments:", error);
     throw error;
   }
 };
 
-/**
- * Transforms backend student assignment data to frontend format
- */
 export const transformStudentsToAssignmentFormat = (studentsData) => {
-  console.log("Transforming students to assignment format...");
-  
   return studentsData.map(student => {
-    console.log(`Transforming student: ${student.name}`);
-    
-    // Calculate total weekly hours
     const totalWeeklyHours = student.assignments.reduce((total, assignment) => {
       return total + (assignment.weekly_hours || 0);
     }, 0);
 
-    // Group assignments by academic year and term
     const yearlyAssignments = {};
     
     student.assignments.forEach(assignment => {
-      // Determine term and year from assignment
       let termCode, academicYear;
       
       if (assignment.course_offering && assignment.course_offering.academic_term) {
@@ -278,14 +205,11 @@ export const transformStudentsToAssignmentFormat = (studentsData) => {
         termCode = assignment.shared_session.academic_term.code;
         academicYear = assignment.shared_session.academic_term.academicYear;
       } else {
-        // Fallback - try to extract from available data
-        console.warn("No term data found for assignment:", assignment);
         return;
       }
 
       const termData = parseTermCode(termCode);
       if (!termData) {
-        console.warn("Could not parse term code:", termCode);
         return;
       }
 
@@ -298,11 +222,9 @@ export const transformStudentsToAssignmentFormat = (studentsData) => {
         yearlyAssignments[year][termCode] = [];
       }
 
-      // Get time slot information
       let timeSlots = [{ day: 'TBD', startTime: 'TBD', endTime: 'TBD' }];
       
       if (assignment.time_slot) {
-        // Use the time_slot directly from the assignment (works for both course offerings and shared sessions)
         timeSlots = [{
           day: assignment.time_slot.day,
           startTime: convertTo12Hour(assignment.time_slot.start_time + ':00'),
@@ -310,15 +232,12 @@ export const transformStudentsToAssignmentFormat = (studentsData) => {
         }];
       }
 
-      // Create assignment entry
       const assignmentEntry = {
         id: assignment.assignment_id,
         courseCode: assignment.course.course_number,
         courseName: assignment.course.course_name,
-        // Use section_number for both course offerings and shared sessions
         section: assignment.course_offering ? assignment.course_offering.section_number : 
                 assignment.shared_session ? assignment.shared_session.section_number : 'N/A',
-        // Use session_type from shared_session, capitalize first letter
         sectionType: assignment.shared_session ? 
           (assignment.shared_session.session_type ? 
             assignment.shared_session.session_type.charAt(0).toUpperCase() + assignment.shared_session.session_type.slice(1) : 'Lab') : 'Lecture',
@@ -327,9 +246,7 @@ export const transformStudentsToAssignmentFormat = (studentsData) => {
                    assignment.shared_session ? assignment.shared_session.instructor : 'Unknown',
         notes: assignment.notes,
         assignedDate: assignment.assigned_date,
-        // Store shared session ID for later time slot fetching (if needed for fallback)
         sharedSessionId: assignment.shared_session ? assignment.shared_session.shared_session_id : null,
-        // Use the time slots we determined above
         timeSlots: timeSlots
       };
 
@@ -343,35 +260,23 @@ export const transformStudentsToAssignmentFormat = (studentsData) => {
       email: student.email,
       studyLevel: student.study_level,
       totalWeeklyHours: totalWeeklyHours,
-      maxHours: student.study_level === 'Graduate' ? 20 : 15, // Typical max hours
+      maxHours: student.study_level === 'Graduate' ? 20 : 15,
       yearlyAssignments: yearlyAssignments,
-      avatar: null // Could be added later if available
+      avatar: null
     };
 
-    console.log(`Transformed student ${student.name}:`, transformedStudent);
     return transformedStudent;
   });
 };
 
-/**
- * Fetches and enriches student assignment data with time slot information
- * Now this function will only enrich shared sessions that don't have time_slot data
- */
 export const fetchAndEnrichStudentAssignments = async () => {
   try {
-    console.log("Fetching and enriching student assignments...");
-    
-    // First, get all students with assignments
     const studentsData = await fetchAllStudentAssignments();
     
-    // Transform to frontend format (this now handles most time slots)
     const transformedStudents = transformStudentsToAssignmentFormat(studentsData);
     
-    // Only enrich shared sessions that don't have time slot data
     const enrichedStudents = await Promise.all(
       transformedStudents.map(async (student) => {
-        console.log(`Checking for missing time slots for student: ${student.studentName}`);
-        
         const enrichedYearlyAssignments = {};
         
         for (const [year, yearData] of Object.entries(student.yearlyAssignments)) {
@@ -380,32 +285,28 @@ export const fetchAndEnrichStudentAssignments = async () => {
           for (const [termKey, assignments] of Object.entries(yearData)) {
             const enrichedAssignments = await Promise.all(
               assignments.map(async (assignment) => {
-                // Only fetch shared session details if we don't have time slot data and it's a shared session
                 if (assignment.sharedSessionId && 
                     assignment.timeSlots[0].day === 'TBD') {
                   try {
-                    console.log(`Fetching shared session details for missing time slot: ${assignment.sharedSessionId}`);
                     const sessionDetails = await getSharedSessionDetails(assignment.sharedSessionId);
                     
-                    // Use the first time slot (as specified in requirements)
                     const timeSlot = sessionDetails.time_slots_info?.[0];
                     
                     if (timeSlot) {
                       return {
                         ...assignment,
                         timeSlots: [{
-                          day: timeSlot.day_display, // Use day_display for proper formatting
-                          startTime: convertTo12Hour(timeSlot.start_time.substring(0, 5)), // Convert "08:00:00" to "8:00 AM"
-                          endTime: convertTo12Hour(timeSlot.end_time.substring(0, 5)) // Convert "09:00:00" to "9:00 AM"
+                          day: timeSlot.day_display,
+                          startTime: convertTo12Hour(timeSlot.start_time.substring(0, 5)),
+                          endTime: convertTo12Hour(timeSlot.end_time.substring(0, 5))
                         }]
                       };
                     }
                   } catch (error) {
-                    console.error(`Failed to fetch shared session details for ${assignment.sharedSessionId}:`, error);
+                    // Continue with original assignment if error
                   }
                 }
                 
-                // Return assignment as-is if no shared session or if we already have time slot data
                 return assignment;
               })
             );
@@ -421,78 +322,56 @@ export const fetchAndEnrichStudentAssignments = async () => {
       })
     );
     
-    console.log("Enriched students with time slots:", enrichedStudents);
     return enrichedStudents;
   } catch (error) {
-    console.error("Error fetching and enriching student assignments:", error);
     throw error;
   }
 };
 
-// --- Course Data Processing Functions (existing) ---
-
-/**
- * Fetches and processes all course assignment data
- */
 export const fetchAllCourseAssignments = async () => {
   try {
-    console.log("Fetching all course data with assignments...");
-    
-    // Fetch all courses with full details
     const allCourses = await getAllCoursesFullDetails();
-    console.log("Raw courses data:", allCourses);
 
-    // Fetch instructors for name resolution
     const instructors = await getInstructors();
     const instructorMap = new Map();
     instructors.forEach(instructor => {
       instructorMap.set(instructor.id, instructor.name);
     });
 
-    // Process each course with TA assignments
     const coursesWithAssignments = await Promise.all(
       allCourses.map(async (course) => {
-        console.log(`Processing course: ${course.code}`);
-        
-        // Process course offerings
         const offeringsWithTAs = await Promise.all(
           (course.offerings || []).map(async (offering) => {
             try {
               const taData = await getTAsForCourseOffering(offering.id);
-              console.log(`TAs for offering ${offering.id}:`, taData);
               
               return {
                 ...offering,
                 assigned_tas: taData.assigned_tas || []
               };
             } catch (error) {
-              console.error(`Failed to fetch TAs for offering ${offering.id}:`, error);
               return { ...offering, assigned_tas: [] };
             }
           })
         );
 
-        // Process shared sessions
         const processedSharedSessions = {};
         
         for (const [termKey, termSessions] of Object.entries(course.sharedSessions || {})) {
           const processedTermSessions = { labs: [], tutorials: [], seminars: [], workshops: [] };
           
-          // Process each session type
           for (const [sessionType, sessions] of Object.entries(termSessions)) {
             if (Array.isArray(sessions)) {
               const sessionsWithTAs = await Promise.all(
                 sessions.map(async (session) => {
                   try {
                     const taData = await getTAsForSharedSession(session.id);
-                    console.log(`TAs for shared session ${session.id}:`, taData);
                     
                     return {
                       ...session,
                       assigned_tas: taData.assigned_tas || []
                     };
                   } catch (error) {
-                    console.error(`Failed to fetch TAs for shared session ${session.id}:`, error);
                     return { ...session, assigned_tas: [] };
                   }
                 })
@@ -512,30 +391,19 @@ export const fetchAllCourseAssignments = async () => {
       })
     );
 
-    console.log("Processed courses with assignments:", coursesWithAssignments);
     return coursesWithAssignments;
   } catch (error) {
-    console.error("Error fetching course assignments:", error);
     throw error;
   }
 };
 
-/**
- * Transforms backend course data to frontend assignment format
- */
 export const transformCoursesToAssignmentFormat = (coursesData, instructors = []) => {
-  console.log("Transforming courses to assignment format...");
-  
-  // Create instructor lookup map
   const instructorMap = new Map();
   instructors.forEach(instructor => {
     instructorMap.set(instructor.id, instructor.name);
   });
 
   return coursesData.map(course => {
-    console.log(`Transforming course: ${course.code}`);
-    
-    // Transform the course structure for assignment view
     const transformedCourse = {
       id: course.id,
       code: course.code,
@@ -545,7 +413,6 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
       yearlyOfferings: {}
     };
 
-    // Group offerings by year and term
     (course.offerings || []).forEach(offering => {
       const termData = parseTermCode(offering.term);
       if (!termData) return;
@@ -560,12 +427,9 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
         transformedCourse.yearlyOfferings[year][termKey] = [];
       }
 
-      // Process time slots for lecture sections
       (offering.time_slots || []).forEach((timeSlot, index) => {
-        // Calculate actual duration from time slot
         const calculatedHours = calculateTimeSlotDuration(timeSlot.time);
         
-        // Find TAs assigned to this specific time slot
         const assignedTAsForTimeSlot = (offering.assigned_tas || []).filter(ta => {
           if (!ta.time_slot) return false;
           
@@ -579,7 +443,6 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
           );
         });
 
-        // Create a separate entry for each time slot
         const timeSlotEntry = {
           id: `${offering.id}-slot-${index}`,
           type: "Lecture",
@@ -587,7 +450,6 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
           sectionType: "Lecture",
           assignedTA: assignedTAsForTimeSlot.length > 0 ? assignedTAsForTimeSlot[0].student_name : null,
           studentId: assignedTAsForTimeSlot.length > 0 ? assignedTAsForTimeSlot[0].student_number : null,
-          // Use actual calculated hours or assigned TA hours
           weekHours: assignedTAsForTimeSlot.length > 0 ? assignedTAsForTimeSlot[0].weekly_hours : calculatedHours,
           timeSlots: [{
             day: timeSlot.day,
@@ -600,7 +462,6 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
       });
     });
 
-    // Add shared sessions
     Object.entries(course.sharedSessions || {}).forEach(([termKey, termSessions]) => {
       const termData = parseTermCode(termKey);
       if (!termData) return;
@@ -614,7 +475,6 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
         transformedCourse.yearlyOfferings[year][termKey] = [];
       }
 
-      // Process each session type
       Object.entries(termSessions).forEach(([sessionType, sessions]) => {
         if (!Array.isArray(sessions)) return;
 
@@ -628,7 +488,6 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
 
           const assignedTAs = session.assigned_tas || [];
           
-          // Calculate actual duration for shared sessions
           const calculatedHours = calculateTimeSlotDuration(session.time);
           
           const sessionEntry = {
@@ -638,7 +497,6 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
             sectionType: sectionTypeMap[sessionType] || sessionType,
             assignedTA: assignedTAs.length > 0 ? assignedTAs[0].student_name : null,
             studentId: assignedTAs.length > 0 ? assignedTAs[0].student_number : null,
-            // Use actual calculated hours or assigned TA hours
             weekHours: assignedTAs.length > 0 ? assignedTAs[0].weekly_hours : calculatedHours,
             timeSlots: [{
               day: session.day,
@@ -652,35 +510,21 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
       });
     });
 
-    console.log(`Transformed course ${course.code}:`, transformedCourse);
     return transformedCourse;
   });
 };
 
-// --- Main Functions ---
-
-/**
- * Main function to fetch and transform all assignment data (both students and courses)
- */
 export const fetchAssignmentData = async () => {
   try {
-    console.log("Starting assignment data fetch...");
-    
-    // Fetch all required data in parallel
     const [coursesData, instructors, departments] = await Promise.all([
       fetchAllCourseAssignments(),
       getInstructors(),
       getDepartments()
     ]);
 
-    // Fetch and enrich student data separately (with time slot details)
     const enrichedStudents = await fetchAndEnrichStudentAssignments();
 
-    // Transform courses to assignment format
     const transformedCourses = transformCoursesToAssignmentFormat(coursesData, instructors);
-
-    console.log("Final transformed courses:", transformedCourses);
-    console.log("Final enriched students:", enrichedStudents);
 
     return {
       courses: transformedCourses,
@@ -689,14 +533,10 @@ export const fetchAssignmentData = async () => {
       departments
     };
   } catch (error) {
-    console.error("Error in fetchAssignmentData:", error);
     throw error;
   }
 };
 
-/**
- * Finalizes all allocations and sends notifications to instructors
- */
 export const finalizeAllAllocations = async () => {
   try {
     const response = await axios.post(`${ALLOCATIONS_API_URL}/allocations-actions/finalize-all/`, {}, {
@@ -704,7 +544,6 @@ export const finalizeAllAllocations = async () => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error finalizing allocations:', error);
     throw error;
   }
 };

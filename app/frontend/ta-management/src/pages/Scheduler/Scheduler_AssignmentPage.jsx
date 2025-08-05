@@ -5,7 +5,7 @@ import {
   Users,
   BookOpen,
   Calendar,
-  Send, // Add Send icon for the finalize button
+  Send,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,15 +34,13 @@ import {
 import { AppSidebar } from "@/components/scheduler-sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle } from "lucide-react"; // Add CheckCircle for success
-import { toast } from "sonner"; // Use sonner instead of useToast
+import { AlertCircle, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 
-// Import components
 import { StudentCard } from "@/components/scheduler/assignment/StudentCard";
 import { CourseCard } from "@/components/scheduler/assignment/CourseCard";
 import { CalendarTab } from "@/components/scheduler/assignment/CalendarTab";
 
-// Import API functions
 import { fetchAssignmentData, parseTermCode, finalizeAllAllocations } from "@/logic/assignmentManagement";
 
 export default function SchedulerAssignmentPage() {
@@ -53,35 +51,27 @@ export default function SchedulerAssignmentPage() {
   const [expandedStudentYears, setExpandedStudentYears] = useState(new Set());
   const [expandedCourseYears, setExpandedCourseYears] = useState(new Set());
 
-  // Backend data state
   const [courses, setCourses] = useState([]);
   const [students, setStudents] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [finalizing, setFinalizing] = useState(false); // Add state for finalize button
+  const [finalizing, setFinalizing] = useState(false);
 
-  // Remove the useToast hook since we're using sonner
-
-  // Load data from backend
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        console.log("Loading assignment data...");
         const data = await fetchAssignmentData();
         
         setCourses(data.courses);
         setStudents(data.students);
         setDepartments(data.departments);
         setInstructors(data.instructors);
-        
-        console.log("Data loaded successfully:", data);
       } catch (err) {
-        console.error("Failed to load assignment data:", err);
         setError("Failed to load assignment data. Please try again.");
       } finally {
         setLoading(false);
@@ -91,7 +81,6 @@ export default function SchedulerAssignmentPage() {
     loadData();
   }, []);
 
-  // Update finalize allocations handler to use sonner
   const handleFinalizeAllocations = async () => {
     try {
       setFinalizing(true);
@@ -103,8 +92,6 @@ export default function SchedulerAssignmentPage() {
       });
       
     } catch (error) {
-      console.error("Failed to finalize allocations:", error);
-      
       toast.error("Failed to finalize allocations", {
         description: "Please try again.",
       });
@@ -113,7 +100,6 @@ export default function SchedulerAssignmentPage() {
     }
   };
 
-  // Filter students based on search and filters
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
       const matchesSearch =
@@ -152,7 +138,6 @@ export default function SchedulerAssignmentPage() {
     });
   }, [students, searchTerm, selectedTerm, selectedYear]);
 
-  // Filter courses based on filters
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
       const matchesSearch =
@@ -163,7 +148,6 @@ export default function SchedulerAssignmentPage() {
       if (!matchesSearch) return false;
       if (selectedDepartment !== "all" && course.department !== selectedDepartment) return false;
 
-      // Year and term filtering
       if (selectedYear !== "all" || selectedTerm !== "all") {
         const hasMatchingOffering = Object.entries(course.yearlyOfferings || {}).some(([year, yearData]) => {
           if (selectedYear !== "all" && year !== selectedYear) return false;
@@ -193,18 +177,15 @@ export default function SchedulerAssignmentPage() {
     });
   }, [courses, searchTerm, selectedDepartment, selectedYear, selectedTerm]);
 
-  // Get unique years and terms from both students and courses
   const availableYears = useMemo(() => {
     const yearSet = new Set();
     
-    // Add years from courses
     courses.forEach(course => {
       Object.keys(course.yearlyOfferings || {}).forEach(year => {
         yearSet.add(year);
       });
     });
     
-    // Add years from students
     students.forEach(student => {
       Object.keys(student.yearlyAssignments || {}).forEach(year => {
         yearSet.add(year);
@@ -217,7 +198,6 @@ export default function SchedulerAssignmentPage() {
   const availableTerms = useMemo(() => {
     const termSet = new Set();
     
-    // Add terms from courses
     courses.forEach(course => {
       Object.values(course.yearlyOfferings || {}).forEach(yearData => {
         Object.keys(yearData).forEach(termKey => {
@@ -235,7 +215,6 @@ export default function SchedulerAssignmentPage() {
       });
     });
     
-    // Add terms from students
     students.forEach(student => {
       Object.values(student.yearlyAssignments || {}).forEach(yearData => {
         Object.keys(yearData).forEach(termKey => {
@@ -333,7 +312,6 @@ export default function SchedulerAssignmentPage() {
     <SidebarProvider>
       <AppSidebar activePage="Assignments" />
       <SidebarInset>
-        {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
@@ -345,7 +323,6 @@ export default function SchedulerAssignmentPage() {
             </BreadcrumbList>
           </Breadcrumb>
           <div className="ml-auto flex items-center space-x-4">
-            {/* Add Finalize Allocations button */}
             <Button 
               onClick={handleFinalizeAllocations}
               disabled={finalizing || students.length === 0}
@@ -369,9 +346,7 @@ export default function SchedulerAssignmentPage() {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="flex-1 space-y-6 p-6">
-          {/* Page Header */}
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Assignment Management</h2>
@@ -385,17 +360,14 @@ export default function SchedulerAssignmentPage() {
             </div>
           </div>
 
-          {/* Main Tabs */}
           <Tabs defaultValue="students" className="space-y-4">
             <TabsList>
               <TabsTrigger value="students">By Students</TabsTrigger>
               <TabsTrigger value="courses">By Courses</TabsTrigger>
-              <TabsTrigger value="calendar">Calendar View</TabsTrigger> {/* Add Calendar tab */}
+              <TabsTrigger value="calendar">Calendar View</TabsTrigger>
             </TabsList>
 
-            {/* Students Tab */}
             <TabsContent value="students" className="space-y-4">
-              {/* Filters */}
               <Card>
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -488,9 +460,7 @@ export default function SchedulerAssignmentPage() {
               )}
             </TabsContent>
 
-            {/* Courses Tab */}
             <TabsContent value="courses" className="space-y-4">
-              {/* Filters */}
               <Card>
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -583,7 +553,6 @@ export default function SchedulerAssignmentPage() {
               )}
             </TabsContent>
 
-            {/* Calendar Tab */}
             <TabsContent value="calendar">
               <CalendarTab students={students} courses={courses} />
             </TabsContent>
