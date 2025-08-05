@@ -16,6 +16,7 @@ import {
   User,
   ChevronUp,
   UserX,
+  UserCheck,
   Building
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -334,6 +335,27 @@ export default function UserManagement() {
     }
   }
 
+  const handleReactivateUser = async (user) => {
+    if (window.confirm(`Are you sure you want to reactivate ${user.name}?`)) {
+      try {
+        const response = await updateUser({
+          action: 'reactivate',
+          user_type: user.type,
+          user_id: user.id
+        })
+
+        if (response.success) {
+          alert(`${user.name} has been reactivated`)
+          fetchUsers()
+        } else {
+          alert('Error reactivating user: ' + response.message)
+        }
+      } catch (err) {
+        alert('Error reactivating user: ' + (err.message || 'Unknown error'))
+      }
+    }
+  }
+
   const getDepartmentCode = (departmentName) => {
     const dept = departments.find(d => d.name === departmentName)
     return dept ? dept.code : 'cosc'
@@ -605,13 +627,21 @@ export default function UserManagement() {
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            {user.is_active && user.type !== 'admin' && (
+                            {user.is_active && user.type !== 'admin' ? (
                               <DropdownMenuItem 
                                 className="text-red-600"
                                 onClick={() => handleDeactivateUser(user)}
                               >
                                 <UserX className="mr-2 h-4 w-4" />
                                 Deactivate User
+                              </DropdownMenuItem>
+                            ) : !user.is_active && user.type !== 'admin' && (
+                              <DropdownMenuItem 
+                                className="text-green-600"
+                                onClick={() => handleReactivateUser(user)}
+                              >
+                                <UserCheck className="mr-2 h-4 w-4" />
+                                Reactivate User
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
