@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import axios from "axios"
 import {
   Users,
   UserPlus,
@@ -54,6 +55,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
+import { getDepartments } from "@/logic/courseManagement"
 
 // API Configuration
 const API_URL = 'http://localhost:8080'
@@ -204,6 +206,7 @@ export default function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [createType, setCreateType] = useState('instructor')
+  const [departments, setDepartments] = useState([])
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -213,19 +216,10 @@ export default function UserManagement() {
     department: ''
   })
 
-  const departments = [
-    "Computer Science",
-    "Mathematics",
-    "Physics",
-    "Chemistry",
-    "Biology",
-    "Economics",
-    "Psychology",
-  ]
-
-  // Load users on component mount
+  // Load users and departments on component mount
   useEffect(() => {
     fetchUsers()
+    fetchDepartments()
   }, [])
 
   // Filter users when search term or filters change
@@ -240,12 +234,29 @@ export default function UserManagement() {
       if (response.success) {
         setUsers(response.data.users)
       } else {
-        setError('Failed to fetch users')
+        setError(response.message || 'Failed to fetch users')
       }
     } catch (err) {
       setError('Error fetching users: ' + (err.message || 'Unknown error'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchDepartments = async () => {
+    try {
+      const departmentsData = await getDepartments()
+      if (departmentsData.success) {
+        setDepartments(departmentsData.data)
+      } else {
+        console.error('Failed to fetch departments:', departmentsData.message)
+        // Fallback to empty array if API fails
+        setDepartments([])
+      }
+    } catch (err) {
+      console.error('Error fetching departments:', err)
+      // Fallback to empty array if API fails
+      setDepartments([])
     }
   }
 
@@ -339,7 +350,7 @@ export default function UserManagement() {
     const user_id = selectedUser.id
     const update_data = {
       email: formData.email,
-      department: formData.department?.id || formData.department,
+      department: formData.department,
       employee_number: formData.employee_number,
       first_name: formData.first_name,
       last_name: formData.last_name,
@@ -382,7 +393,7 @@ export default function UserManagement() {
         last_name: user.name.split(' ').slice(1).join(' '),
         email: user.email,
         employee_number: user.id,
-        department: getDepartmentCode(user.department)
+        department: getDepartmentId(user.department)
       }
 
       const response = await createScheduler(schedulerData)
@@ -441,7 +452,25 @@ export default function UserManagement() {
 
   const getDepartmentCode = (departmentName) => {
     const dept = departments.find(d => d.name === departmentName)
-    return dept ? dept.code : 'cosc'
+    return dept ? dept.id : null
+  }
+
+  const getDepartmentName = (departmentId) => {
+    const dept = departments.find(d => d.id === departmentId)
+    return dept ? dept.name : 'N/A'
+  }
+
+  const getDepartmentId = (departmentValue) => {
+    // If it's already a number, return it
+    if (typeof departmentValue === 'number') {
+      return departmentValue
+    }
+    // If it's a string that can be parsed as a number, return the parsed value
+    if (typeof departmentValue === 'string' && !isNaN(departmentValue)) {
+      return parseInt(departmentValue)
+    }
+    // Otherwise, treat it as a department name and find the ID
+    return getDepartmentCode(departmentValue)
   }
 
   const getRoleIcon = (role) => {
@@ -678,7 +707,7 @@ export default function UserManagement() {
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Building className="h-4 w-4 text-muted-foreground" />
-                          <span>{user.department || 'N/A'}</span>
+                          <span>{getDepartmentName(user.department) || 'N/A'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -703,7 +732,7 @@ export default function UserManagement() {
                                 name: user.name || '',
                                 email: user.email || '',
                                 employee_number: user.id.toString(),
-                                department: getDepartmentCode(user.department || '')
+                                department: getDepartmentId(user.department || '')
                               })
                               setIsEditMode(false)
                               setShowViewEditDialog(true)
@@ -719,7 +748,7 @@ export default function UserManagement() {
                                 name: user.name || '',
                                 email: user.email || '',
                                 employee_number: user.id.toString(),
-                                department: getDepartmentCode(user.department || '')
+                                department: getDepartmentId(user.department || '')
                               })
                               setIsEditMode(true)
                               setShowViewEditDialog(true)
@@ -901,7 +930,7 @@ export default function UserManagement() {
                       </SelectTrigger>
                       <SelectContent>
                         {departments.map((dept) => (
-                          <SelectItem key={dept.code} value={dept.code}>
+                          <SelectItem key={dept.id} value={dept.id}>
                             {dept.name}
                           </SelectItem>
                         ))}
@@ -1000,7 +1029,7 @@ export default function UserManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map((dept) => (
-                        <SelectItem key={dept.code} value={dept.code}>
+                        <SelectItem key={dept.id} value={dept.id}>
                           {dept.name}
                         </SelectItem>
                       ))}
