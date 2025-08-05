@@ -6,18 +6,15 @@ const API_URL = 'http://localhost:8080/api';
 
 // Helper function to get the auth token from session storage
 const getAuthHeaders = () => {
-  // 🎯 THE FIX: Check if we are in a browser environment
-  if (typeof window !== 'undefined') {
-    const token = sessionStorage.getItem('accessToken');
-    if (token) {
-      return {
-        'Authorization': `Bearer ${token}`
-      };
-    }
+  const token = sessionStorage.getItem('accessToken');
+  if (!token) {
+    console.warn('No access token found in sessionStorage');
+    return {};
   }
-  
-  // If not in a browser, or if no token is found, return empty headers.
-  return {};
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  };
 };
 
 
@@ -58,6 +55,7 @@ export const getApplications = async () => {
 };
 
 export const getCourseOfferings = async () => {
+  console.log()
   const response = await axios.get(`${API_URL}/course-term-service/course-offerings/`, {
     headers: getAuthHeaders()
   });
@@ -73,6 +71,43 @@ export const getSharedSessions = async () => {
 
 export const getAssignments = async () => {
   const response = await axios.get(`${API_URL}/allocations/assignments/`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+// Add these new API functions
+export const getShortlistedApplicants = async () => {
+  const response = await axios.get(`${API_URL}/allocations/shortlisted-applicants/`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const getOffers = async () => {
+  const response = await axios.get(`${API_URL}/allocations/offers/`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+// Or if you have separate endpoints for different offer statuses:
+export const getPendingOffers = async () => {
+  const response = await axios.get(`${API_URL}/allocations/offers/pending_offers/`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const getAcceptedOffers = async () => {
+  const response = await axios.get(`${API_URL}/allocations/offers/accepted_offers/`, {
+    headers: getAuthHeaders()
+  });
+  return response.data;
+};
+
+export const getRejectedOffers = async () => {
+  const response = await axios.get(`${API_URL}/allocations/offers/rejected_offers/`, {
     headers: getAuthHeaders()
   });
   return response.data;
