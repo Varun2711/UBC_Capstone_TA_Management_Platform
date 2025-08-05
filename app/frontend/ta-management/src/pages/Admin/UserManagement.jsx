@@ -331,6 +331,43 @@ export default function UserManagement() {
     }
   }
 
+    const handleEditUserSubmit = async () => {
+    if (!selectedUser) return
+
+    const user_type = selectedUser.type
+    const user_id = selectedUser.id
+    const update_data = {
+      email: formData.email,
+      department: formData.department,
+      employee_number: formData.employee_number,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      name: formData.name
+    }
+
+    try {
+      setLoading(true)
+      const response = await updateUser({
+        action: 'modify',
+        user_type,
+        user_id,
+        update_data
+      })
+
+      if (response.success) {
+        alert('User updated successfully!')
+        setShowViewEditDialog(false)
+        fetchUsers()
+      } else {
+        alert('Update failed: ' + response.message)
+      }
+    } catch (err) {
+      alert('Error updating user: ' + (err.message || 'Unknown error'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handlePromoteToCoordinator = async (user) => {
     if (user.type !== 'instructor') {
       alert('Only instructors can be promoted to TA coordinators')
@@ -664,7 +701,7 @@ export default function UserManagement() {
                                 last_name: user.last_name || '',
                                 name: user.name || '',
                                 email: user.email || '',
-                                employee_number: user.id.toString(), // assuming this is employee/student number
+                                employee_number: user.id.toString(),
                                 department: getDepartmentCode(user.department || '')
                               })
                               setIsEditMode(false)
@@ -881,6 +918,106 @@ export default function UserManagement() {
               <Button onClick={handleCreateUser} disabled={loading}>
                 {loading ? 'Creating...' : 'Create User'}
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        {/* View/Edit User Dialog */}
+        <Dialog open={showViewEditDialog} onOpenChange={setShowViewEditDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                {isEditMode ? "Edit User" : "User Details"}
+              </DialogTitle>
+              <DialogDescription>
+                {isEditMode ? "Update user information below" : "User information (read-only)"}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* First/Last Name or Full Name */}
+              {selectedUser?.type === 'admin' ? (
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input
+                    value={formData.name}
+                    disabled={!isEditMode}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>First Name</Label>
+                    <Input
+                      value={formData.first_name}
+                      disabled={!isEditMode}
+                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last Name</Label>
+                    <Input
+                      value={formData.last_name}
+                      disabled={!isEditMode}
+                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  value={formData.email}
+                  disabled={!isEditMode}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              {/* Employee/Student Number */}
+              <div className="space-y-2">
+                <Label>Employee Number</Label>
+                <Input
+                  value={formData.employee_number}
+                  disabled={!isEditMode}
+                  onChange={(e) => setFormData({ ...formData, employee_number: e.target.value })}
+                />
+              </div>
+
+              {/* Department */}
+              {selectedUser?.type !== 'admin' && (
+                <div className="space-y-2">
+                  <Label>Department</Label>
+                  <Select
+                    value={formData.department}
+                    onValueChange={(value) => setFormData({ ...formData, department: value })}
+                    disabled={!isEditMode}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.code} value={dept.code}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowViewEditDialog(false)}>
+                Close
+              </Button>
+              {isEditMode && (
+                <Button onClick={handleEditUserSubmit} disabled={loading}>
+                  {loading ? 'Updating...' : 'Save Changes'}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
