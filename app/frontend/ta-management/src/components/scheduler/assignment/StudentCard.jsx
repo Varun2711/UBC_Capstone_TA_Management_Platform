@@ -3,13 +3,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { YearSection } from "./YearSection";
 
 export function StudentCard({ student, expandedYears, onToggleYear }) {
-  const getUtilizationColor = (current, max) => {
-    const percentage = (current / max) * 100;
-    if (percentage >= 90) return "text-red-600";
-    if (percentage >= 75) return "text-yellow-600";
-    return "text-green-600";
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -29,12 +22,6 @@ export function StudentCard({ student, expandedYears, onToggleYear }) {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium">
-              Workload:{" "}
-              <span className={getUtilizationColor(student.totalWeeklyHours, student.maxHours)}>
-                {student.totalWeeklyHours}/{student.maxHours} hrs/week
-              </span>
-            </p>
             <p className="text-xs text-muted-foreground">
               {Object.keys(student.yearlyAssignments).length} academic year{Object.keys(student.yearlyAssignments).length !== 1 ? 's' : ''}
             </p>

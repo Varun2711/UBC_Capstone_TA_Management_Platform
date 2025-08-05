@@ -105,7 +105,7 @@ describe("StudentCard", () => {
       expect(avatarContainer).toHaveClass('h-12', 'w-12');
     });
 
-    it("renders workload information", () => {
+    it("does not render workload information", () => {
       render(
         <StudentCard
           student={mockStudent}
@@ -114,8 +114,9 @@ describe("StudentCard", () => {
         />
       );
 
-      expect(screen.getByText("Workload:")).toBeInTheDocument();
-      expect(screen.getByText("15/20 hrs/week")).toBeInTheDocument();
+      expect(screen.queryByText("Workload:")).not.toBeInTheDocument();
+      expect(screen.queryByText("15/20 hrs/week")).not.toBeInTheDocument();
+      expect(screen.queryByText(/hrs\/week/)).not.toBeInTheDocument();
     });
 
     it("renders academic years count", () => {
@@ -128,65 +129,6 @@ describe("StudentCard", () => {
       );
 
       expect(screen.getByText("2 academic years")).toBeInTheDocument();
-    });
-  });
-
-  describe("Workload color coding", () => {
-    it("shows green color for low utilization", () => {
-      const lowUtilizationStudent = {
-        ...mockStudent,
-        totalWeeklyHours: 10,
-        maxHours: 20, // 50% utilization
-      };
-
-      render(
-        <StudentCard
-          student={lowUtilizationStudent}
-          expandedYears={mockExpandedYears}
-          onToggleYear={mockOnToggleYear}
-        />
-      );
-
-      const workloadText = screen.getByText("10/20 hrs/week");
-      expect(workloadText).toHaveClass("text-green-600");
-    });
-
-    it("shows yellow color for medium utilization", () => {
-      const mediumUtilizationStudent = {
-        ...mockStudent,
-        totalWeeklyHours: 16,
-        maxHours: 20, // 80% utilization
-      };
-
-      render(
-        <StudentCard
-          student={mediumUtilizationStudent}
-          expandedYears={mockExpandedYears}
-          onToggleYear={mockOnToggleYear}
-        />
-      );
-
-      const workloadText = screen.getByText("16/20 hrs/week");
-      expect(workloadText).toHaveClass("text-yellow-600");
-    });
-
-    it("shows red color for high utilization", () => {
-      const highUtilizationStudent = {
-        ...mockStudent,
-        totalWeeklyHours: 19,
-        maxHours: 20, // 95% utilization
-      };
-
-      render(
-        <StudentCard
-          student={highUtilizationStudent}
-          expandedYears={mockExpandedYears}
-          onToggleYear={mockOnToggleYear}
-        />
-      );
-
-      const workloadText = screen.getByText("19/20 hrs/week");
-      expect(workloadText).toHaveClass("text-red-600");
     });
   });
 
@@ -348,21 +290,62 @@ describe("StudentCard", () => {
       expect(screen.getByText(/ID: 12345678/)).toBeInTheDocument();
     });
 
-    it("handles zero max hours", () => {
-      const zeroMaxHoursStudent = {
+    it("handles student with many academic years", () => {
+      const manyYearsStudent = {
         ...mockStudent,
-        maxHours: 0,
+        yearlyAssignments: {
+          "2024": mockStudent.yearlyAssignments["2024"],
+          "2023": mockStudent.yearlyAssignments["2023"],
+          "2022": mockStudent.yearlyAssignments["2023"],
+          "2021": mockStudent.yearlyAssignments["2023"],
+        },
       };
 
       render(
         <StudentCard
-          student={zeroMaxHoursStudent}
+          student={manyYearsStudent}
           expandedYears={mockExpandedYears}
           onToggleYear={mockOnToggleYear}
         />
       );
 
-      expect(screen.getByText("15/0 hrs/week")).toBeInTheDocument();
+      expect(screen.getByText("4 academic years")).toBeInTheDocument();
+    });
+
+    it("handles student with long name", () => {
+      const longNameStudent = {
+        ...mockStudent,
+        studentName: "Johann Sebastian Bach von Beethoven",
+      };
+
+      render(
+        <StudentCard
+          student={longNameStudent}
+          expandedYears={mockExpandedYears}
+          onToggleYear={mockOnToggleYear}
+        />
+      );
+
+      expect(screen.getByText("Johann Sebastian Bach von Beethoven")).toBeInTheDocument();
+      expect(screen.getByText("JSBvB")).toBeInTheDocument(); // Avatar fallback
+    });
+
+    it("handles student with special characters in name", () => {
+      const specialCharStudent = {
+        ...mockStudent,
+        studentName: "José María O'Connor-Smith",
+      };
+
+      render(
+        <StudentCard
+          student={specialCharStudent}
+          expandedYears={mockExpandedYears}
+          onToggleYear={mockOnToggleYear}
+        />
+      );
+
+      expect(screen.getByText("José María O'Connor-Smith")).toBeInTheDocument();
+      expect(screen.getByText("JMO")).toBeInTheDocument(); // Avatar fallback
     });
   });
 
@@ -387,6 +370,56 @@ describe("StudentCard", () => {
       expect(mockOnToggleYear).toHaveBeenCalledTimes(2);
       expect(mockOnToggleYear).toHaveBeenCalledWith(1, "2024");
       expect(mockOnToggleYear).toHaveBeenCalledWith(1, "2023");
+    });
+
+    it("maintains year expansion state correctly", () => {
+      const expandedYears = new Set(["1-2024", "1-2023"]);
+      
+      render(
+        <StudentCard
+          student={mockStudent}
+          expandedYears={expandedYears}
+          onToggleYear={mockOnToggleYear}
+        />
+      );
+
+      expect(screen.getByText("Collapse 2024")).toBeInTheDocument();
+      expect(screen.getByText("Collapse 2023")).toBeInTheDocument();
+      expect(screen.getByText("Year 2024 content - 2 terms")).toBeInTheDocument();
+      expect(screen.getByText("Year 2023 content - 1 terms")).toBeInTheDocument();
+    });
+  });
+
+  describe("Component structure", () => {
+    it("has proper card structure", () => {
+      render(
+        <StudentCard
+          student={mockStudent}
+          expandedYears={mockExpandedYears}
+          onToggleYear={mockOnToggleYear}
+        />
+      );
+
+      // Check that the card components are properly structured
+      const studentName = screen.getByText("John Doe");
+      const cardHeader = studentName.closest('[class*="card"]');
+      expect(cardHeader).toBeInTheDocument();
+    });
+
+    it("displays information in correct layout", () => {
+      render(
+        <StudentCard
+          student={mockStudent}
+          expandedYears={mockExpandedYears}
+          onToggleYear={mockOnToggleYear}
+        />
+      );
+
+      // Verify the main elements are present without workload
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getByText("john.doe@example.com • ID: 12345678")).toBeInTheDocument();
+      expect(screen.getByText("2 academic years")).toBeInTheDocument();
+      expect(screen.getByText("JD")).toBeInTheDocument(); // Avatar fallback
     });
   });
 });
