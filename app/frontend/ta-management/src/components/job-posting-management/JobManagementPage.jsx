@@ -8,6 +8,7 @@ import {
   Info,
   AlertTriangle,
   CheckIcon,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ import {
   fetchJobPostings,
   fetchTemplates,
   handleApiError,
+  countApplicationsForJobPosting,
 } from "@/logic/job-management";
 
 const JobManagementPage = () => {
@@ -55,6 +57,10 @@ const JobManagementPage = () => {
   const [terms, setTerms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Add application counts state
+  const [applicationCounts, setApplicationCounts] = useState({});
+  const [loadingCounts, setLoadingCounts] = useState(false);
 
   // Job posting state
   const [selectedJobPosting, setSelectedJobPosting] = useState(null);
@@ -77,6 +83,13 @@ const JobManagementPage = () => {
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  // Add effect to fetch application counts when job postings change
+  useEffect(() => {
+    if (jobPostings.length > 0) {
+      fetchApplicationCounts();
+    }
+  }, [jobPostings]);
 
   // Fetch initial data using the logic layer
   const fetchInitialData = async () => {
@@ -118,6 +131,46 @@ const JobManagementPage = () => {
     } catch (error) {
       console.error("Error refreshing templates:", error);
       setError(handleApiError(error));
+    }
+  };
+
+  // Fetch application counts for all job postings
+  const fetchApplicationCounts = async () => {
+    setLoadingCounts(true);
+    try {
+      const counts = {};
+
+      // Fetch counts for all job postings in parallel
+      const countPromises = jobPostings.map(async (posting) => {
+        try {
+          const response = await countApplicationsForJobPosting(
+            posting.posting_id
+          );
+          return {
+            postingId: response.posting_id,
+            count: response.application_count,
+          };
+        } catch (error) {
+          console.error(
+            `Error fetching count for posting ${posting.posting_id}:`,
+            error
+          );
+          return { postingId: response.posting_id, count: 0 };
+        }
+      });
+
+      const results = await Promise.all(countPromises);
+
+      // Build counts object
+      results.forEach(({ postingId, count }) => {
+        counts[postingId] = count;
+      });
+
+      setApplicationCounts(counts);
+    } catch (error) {
+      console.error("Error fetching application counts:", error);
+    } finally {
+      setLoadingCounts(false);
     }
   };
 
@@ -526,6 +579,24 @@ const JobManagementPage = () => {
                           {new Date(posting.deadline_date).toLocaleDateString()}
                         </div>
                       </div>
+                      {posting.status !== "draft" && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Users className="h-3 w-3" />
+                          <span>
+                            {loadingCounts
+                              ? "..."
+                              : `${
+                                  applicationCounts[posting.posting_id] || 0
+                                } application${
+                                  (applicationCounts[posting.posting_id] ||
+                                    0) !== 1
+                                    ? "s"
+                                    : ""
+                                }`}{" "}
+                            submitted
+                          </span>
+                        </div>
+                      )}
 
                       <div className="space-y-2">
                         <div className="flex gap-2">

@@ -21,6 +21,13 @@ export default function CreateAccount3() {
   })
   const [error, setError] = useState("") // Add error state
   const [isSubmitting, setIsSubmitting] = useState(false) // Add loading state
+  const [passwordValidation, setPasswordValidation] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    symbol: false,
+  });
 
   useEffect(() => {
     // Check if previous steps data exists
@@ -38,6 +45,17 @@ export default function CreateAccount3() {
       setFormData(JSON.parse(savedData))
     }
   }, [])
+
+  useEffect(() => {
+    const { password } = formData;
+    setPasswordValidation({
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      symbol: /[\W_]/.test(password), // Checks for non-alphanumeric characters
+    });
+  }, [formData.password]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -66,6 +84,13 @@ export default function CreateAccount3() {
   if (!emailRegex.test(trimmedEmail)) {
     setError("Please enter a valid email address.")
     return
+  }
+
+  // Check all password validation criteria are met
+  const allValid = Object.values(passwordValidation).every(Boolean);
+  if (!allValid) {
+    setError("Password does not meet all the requirements.");
+    return;
   }
 
 
@@ -179,7 +204,7 @@ export default function CreateAccount3() {
     } else {
       setError("Network error. Please check your connection and try again.")
     }
-  } finally {
+  } finally { 
     setIsSubmitting(false)
   }
 }
@@ -245,6 +270,27 @@ export default function CreateAccount3() {
                 )}
               </button>
             </div>
+          </div>
+
+          {/* Live Password Validation Checklist */}
+          <div className="text-sm text-gray-600">
+              <ul className="list-inside space-y-1">
+                <li className={passwordValidation.length ? 'text-green-600' : 'text-red-600'}>
+                  {passwordValidation.length ? '✓' : '✗'} At least 8 characters
+                </li>
+                <li className={passwordValidation.uppercase ? 'text-green-600' : 'text-red-600'}>
+                  {passwordValidation.uppercase ? '✓' : '✗'} At least one uppercase letter
+                </li>
+                <li className={passwordValidation.lowercase ? 'text-green-600' : 'text-red-600'}>
+                  {passwordValidation.lowercase ? '✓' : '✗'} At least one lowercase letter
+                </li>
+                <li className={passwordValidation.number ? 'text-green-600' : 'text-red-600'}>
+                  {passwordValidation.number ? '✓' : '✗'} At least one number
+                </li>
+                <li className={passwordValidation.symbol ? 'text-green-600' : 'text-red-600'}>
+                  {passwordValidation.symbol ? '✓' : '✗'} At least one symbol
+                </li>
+              </ul>
           </div>
 
           <div className="space-y-2">

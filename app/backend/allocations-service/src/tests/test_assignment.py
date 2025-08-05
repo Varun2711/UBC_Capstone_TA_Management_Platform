@@ -2,7 +2,7 @@ import pytest
 import uuid
 from django.test import TestCase
 from django.utils import timezone
-from datetime import timedelta, date
+from datetime import timedelta, date, time
 from api.models import (
     Department, TAScheduler, Student, Term, JobPosting,
     Application, Assignment, Offer, OfferItem,
@@ -71,8 +71,10 @@ class AssignmentModelTest(TestCase):
         
         self.time_slot = TimeSlot.objects.create(
             day="monday",
-            start_time="09:00:00",
-            end_time="11:00:00"  # 2 hour slot
+            #start_time=time()"09:00:00",
+            #end_time="11:00:00"  # 2 hour slot
+            start_time=time(9,0),
+            end_time=time(11,0),
         )
         
         self.shared_session = SharedSession.objects.create(
@@ -114,7 +116,8 @@ class AssignmentModelTest(TestCase):
             course=self.course,
             shared_session=self.shared_session,
             assigned_by=self.ta_scheduler,
-            notes="Test assignment"
+            notes="Test assignment",
+            
         )
         
         self.assertEqual(assignment.student, self.student)
@@ -130,7 +133,8 @@ class AssignmentModelTest(TestCase):
             student=self.student,
             course=self.course,
             shared_session=self.shared_session,
-            assigned_by=self.ta_scheduler
+            assigned_by=self.ta_scheduler,
+            time_slot = self.time_slot,
         )
         
         # Should calculate 2 hours from the time slot
@@ -144,7 +148,8 @@ class AssignmentModelTest(TestCase):
             student=self.student,
             course=self.course,
             shared_session=self.shared_session,
-            assigned_by=self.ta_scheduler
+            assigned_by=self.ta_scheduler,
+            time_slot = self.time_slot,
         )
         
         expected = f"Assignment {assignment.assignment_id} - {self.student.name} (2.0h/week)"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { BookOpen, GraduationCap, Home, MoreVerticalIcon } from "lucide-react"
+import { BookOpen, GraduationCap, Home, MoreVerticalIcon, Settings } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { getProfile } from "@/logic/scheduler-profile" 
 import {
@@ -143,6 +143,9 @@ export function InstructorSidebar({ activePage, ...props }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/instructor-profile")}>
                   My Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
+                  Change Password
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
                   Logout

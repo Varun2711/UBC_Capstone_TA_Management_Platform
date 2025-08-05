@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.conf import settings
 from .models import *
 
 
@@ -314,8 +315,7 @@ class ApplicationShortListSerializer(serializers.ModelSerializer):
     )
     created_by_id = serializers.PrimaryKeyRelatedField(
         queryset=TAScheduler.objects.all(),
-        source='created_by',
-        write_only=True,
+        source='created_by',       
         required=False,  # Can be set automatically from request user,
         allow_null= True
     )
@@ -332,3 +332,60 @@ class ApplicationShortListSerializer(serializers.ModelSerializer):
             'created_by_id', 'created_at', 'notes'  # Include the new fields
         ]
         read_only_fields = ['id', 'created_at']
+
+class ApplicationShortSerializer(serializers.ModelSerializer):
+    """Condensed serializer for application listings"""
+    # Read-only nested fields for display
+    posting_id = serializers.CharField(source='posting.posting_id', read_only=True)
+    title = serializers.CharField(source='posting.title', read_only=True)
+    department = serializers.CharField(source='posting.department.name', read_only=True)
+    termSelection = serializers.CharField(source='posting.term.description', read_only=True)
+    
+    class Meta:
+        model = Application
+        fields = [
+            'application_id',
+            'posting_id', 
+            'title',
+            'department',
+            'applied_at',
+            'status',
+            'termSelection'
+        ]
+        read_only_fields = fields  # All fields are read-only for this serializer
+
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = [
+            'document_id', 'application', 'student',
+            'file_name', 'file_type', 'file_size', 'file', 'uploaded_at'
+        ]
+        read_only_fields = ['document_id', 'uploaded_at', 'file_name', 'file_size', 'file_type']
+
+    def validate_file(self, file):
+        # File extension check
+        ext = file.name.split('.')[-1].lower()
+        if ext not in settings.ALLOWED_DOCUMENT_TYPES:
+            raise serializers.ValidationError(
+                f"Unsupported file type '{ext}'. Allowed types are: {', '.join(settings.ALLOWED_DOCUMENT_TYPES)}"
+            )
+        
+        # File size check
+        max_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE
+        if file.size > max_size:
+            raise serializers.ValidationError(
+                f"File size exceeds the maximum of {max_size / (1024 * 1024)} MB."
+            )
+        
+        return file
+
+    def create(self, validated_data):
+        file = validated_data.get("file")
+        if file:           
+            validated_data["file_name"] = file.name[:255]
+            validated_data["file_type"] = (file.content_type or "unknown")[:100]
+            validated_data["file_size"] = file.size
+        return super().create(validated_data)

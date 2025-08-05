@@ -207,6 +207,9 @@ export function AdminSidebar({ activePage, ...props }) {
                 <DropdownMenuItem>
                   <button>Admin Profile</button>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
+                  <button>Change Password</button>
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <button>System Logs</button>
                 </DropdownMenuItem>

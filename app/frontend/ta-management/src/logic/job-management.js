@@ -9,17 +9,51 @@ const instance = axios.create({
   baseURL: API_URL,
 });
 
-// Helper function to get the auth headers
+const getCookie = (name) => {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith(name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+};
+
 const getAuthHeaders = () => {
   const token = sessionStorage.getItem("accessToken");
-  if (!token) {
-    console.warn("Access token not found in sessionStorage");
-    return {};
-  }
-  return {
-    Authorization: `Bearer ${token}`,
+  const csrfToken = getCookie("csrftoken");
+
+  const headers = {
+    "Content-Type": "application/json",
   };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (csrfToken) {
+    headers["X-CSRFToken"] = csrfToken;
+  }
+
+  return headers;
 };
+
+// Helper function to get the auth headers
+// const getAuthHeaders = () => {
+//   const token = sessionStorage.getItem("accessToken");
+//   if (!token) {
+//     // console.warn("Access token not found in sessionStorage");
+//     return {};
+//   }
+//   return {
+//     Authorization: `Bearer ${token}`,
+//   };
+// };
 
 // Mock data for fallback when APIs are not available
 const mockDepartments = [{ id: "1", name: "CMPS" }];
@@ -34,8 +68,10 @@ const mockTerms = [
 // ===============================
 
 export const fetchJobPostings = async () => {
+  const headers = getAuthHeaders();
   try {
-    const response = await instance.get("/ajp/jobpostings/");
+    const response = await instance.get("/ajp/jobpostings/", { headers });
+    console.log("these are the job returned", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching job postings:", error);
@@ -44,8 +80,11 @@ export const fetchJobPostings = async () => {
 };
 
 export const fetchJobPostingById = async (postingId) => {
+  const headers = getAuthHeaders();
   try {
-    const response = await instance.get(`/ajp/jobpostings/${postingId}/`);
+    const response = await instance.get(`/ajp/jobpostings/${postingId}/`, {
+      headers,
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching job posting by ID:", error);
@@ -67,7 +106,7 @@ export const createJobPosting = async (jobPostingData) => {
       headers,
     });
 
-    console.log("Job posting created successfully:", response.data);
+    //console.log("Job posting created successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error creating job posting:", error);
@@ -112,7 +151,7 @@ export const deleteJobPosting = async (postingId) => {
       headers,
     });
 
-    console.log("Job posting archived successfully:", response.data);
+    //  console.log("Job posting archived successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error archiving job posting:", error);
@@ -133,31 +172,48 @@ export const assignTemplateToJobPosting = async (postingId, templateId) => {
       { headers }
     );
 
-    console.log("Template assigned successfully:", response.data);
+    // console.log("Template assigned successfully:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error assigning template:", error);
+    // console.error("Error assigning template:", error);
     throw error;
   }
 };
 
 export const fetchOpenJobPostings = async () => {
+  const headers = getAuthHeaders();
   try {
-    const response = await instance.get("/ajp/jobpostings/open/");
+    const response = await instance.get("/ajp/jobpostings/open/", { headers });
     return response.data;
   } catch (error) {
-    console.error("Error fetching open job postings:", error);
+    // console.error("Error fetching open job postings:", error);
     throw error;
   }
 };
 
 export const fetchJobPostingsByTerm = async (termId) => {
+  const headers = getAuthHeaders();
   try {
-    const response = await instance.get(`/ajp/jobpostings/by-term/${termId}/`);
+    const response = await instance.get(`/ajp/jobpostings/by-term/${termId}/`, {
+      headers,
+    });
     return response.data;
   } catch (error) {
-    console.error("Error fetching job postings by term:", error);
+    // console.error("Error fetching job postings by term:", error);
     throw error;
+  }
+};
+
+export const countApplicationsForJobPosting = async (postingId) => {
+  try {
+    const headers = getAuthHeaders();
+    const response = await instance.get(
+      `/ajp/applications/count-by-posting/${postingId}/`,
+      { headers }
+    );
+    return response.data;
+  } catch (error) {
+    // console.log("Error fetching job posting by application count", error);
   }
 };
 
@@ -166,8 +222,9 @@ export const fetchJobPostingsByTerm = async (termId) => {
 // ===============================
 
 export const fetchTemplates = async () => {
+  const headers = getAuthHeaders();
   try {
-    const response = await instance.get("/ajp/form-templates/");
+    const response = await instance.get("/ajp/form-templates/", { headers });
     // console.log("Templates fetched:", response.data);
     return response.data;
   } catch (error) {
@@ -259,11 +316,11 @@ export const deleteTemplate = async (templateId) => {
 export const fetchDepartments = async () => {
   try {
     const response = await instance.get("/profile/departments/");
-    console.log("Departments are here!", response.data);
+    //console.log("Departments are here!", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching departments from API:", error);
-    console.log("Falling back to mock departments");
+    // console.error("Error fetching departments from API:", error);
+    // console.log("Falling back to mock departments");
     return mockDepartments;
   }
 };
@@ -274,7 +331,7 @@ export const fetchTerms = async () => {
     const response = await instance.get("/course-term-service/terms/", {
       headers,
     });
-    console.log("Terms are here!", response.data.results);
+    //console.log("Terms are here!", response.data.results);
 
     return response.data.results;
   } catch (error) {
@@ -296,7 +353,7 @@ export const fetchSchedulerProfile = async () => {
     //  console.log("Scheduler profile fetched:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching scheduler profile:", error);
+    // console.error("Error fetching scheduler profile:", error);
     throw error;
   }
 };
@@ -402,7 +459,7 @@ export const fetchJobManagementData = async () => {
       templates,
     };
   } catch (error) {
-    console.error("Error fetching job management data:", error);
+    // console.error("Error fetching job management data:", error);
     throw error;
   }
 };
@@ -540,4 +597,5 @@ export default {
   buildSearchParams,
   filterJobPostings,
   filterTemplates,
+  countApplicationsForJobPosting,
 };

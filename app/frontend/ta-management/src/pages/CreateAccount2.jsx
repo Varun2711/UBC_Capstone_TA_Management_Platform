@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+import axios from "axios"
+
+const API_URL = 'http://localhost:8080';
 
 export default function CreateAccount2() {
   const navigate = useNavigate()

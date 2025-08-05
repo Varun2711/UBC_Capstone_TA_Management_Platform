@@ -211,7 +211,73 @@ def validate_token_view(request):
         return Response({"error": f"Invalid token: {str(e)}", "valid": False}, status=401)
     except Exception as e:
         return Response({"error": f"Token validation failed: {str(e)}", "valid": False}, status=500)
-    
+
+# Reset Password Views
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def lookup_account_view(request):
+    email = request.data.get('email')
+
+    # No email address provided, return error
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user_data = None
+
+    # Look up email address in each table to determine if an account exists
+    try:
+        student = Student.objects.get(email=email)
+        user_data = {
+            'user_type': 'student',
+            'id_number': student.student_number
+        }
+    except Student.DoesNotExist:
+        pass
+
+    try:
+        instructor = Instructor.objects.get(email=email)
+        user_data = {
+            'user_type': 'instructor',
+            'id_number': instructor.employee_number
+        }
+    except Instructor.DoesNotExist:
+        pass
+
+    try:
+        scheduler = TAScheduler.objects.get(email=email)
+        user_data = {
+            'user_type': 'tascheduler',
+            'id_number': scheduler.employee_number
+        }
+    except TAScheduler.DoesNotExist:
+        pass
+
+    try:
+        admin = Admin.objects.get(email=email)
+        user_data = {
+            'user_type': 'admin',
+            'id_number': admin.employee_number
+        }
+    except Admin.DoesNotExist:
+        pass
+
+    # Found a match: return success response and relevant user info
+    if user_data:
+        return Response(
+            {
+                'email': email,
+                'user_type': user_data['user_type'],
+                'id_number': user_data['id_number']
+            }, 
+            status=status.HTTP_200_OK
+        )
+    else:
+        return Response(
+            {
+                'error': 'Account not found'
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -220,28 +286,56 @@ def reset_password_complete(request):
     try:
         token = request.data.get('token')
         new_password = request.data.get('new_password')
+        user_id = request.data.get('user_id')
+        user_type = request.data.get('user_type')
+        email = request.data.get('email')
+        curr_password = request.data.get('curr_password') # optional
         
-        if not token or not new_password:
+        if not new_password:
             return Response({
-                'error': 'Token and new password are required'
+                'error': 'New password is required'
             }, status=400)
         
-        # Verify token with notification service
-        notification_response = requests.get(
-            f'http://notification-service:8006/api/notifications/verify_reset_token/',
-            params={'token': token}
-        )
+        # Case 1: reset via token (unauthenticated user was emailed a password reset link)
+        if token:
+            # Verify token with notification service
+            notification_response = requests.get(
+                f'http://notification-service:8006/api/notifications/verify_reset_token/',
+                params={'token': token}
+            )
+            
+            if notification_response.status_code != 200:
+                return Response({
+                    'error': 'Invalid or expired token'
+                }, status=400)
+            
+            token_data = notification_response.json()
+            email = token_data['email']
+            user_type = token_data['user_type']
+            user_id = token_data['user_id']
         
-        if notification_response.status_code != 200:
-            return Response({
-                'error': 'Invalid or expired token'
-            }, status=400)
-        
-        token_data = notification_response.json()
-        email = token_data['email']
-        user_type = token_data['user_type']
-        user_id = token_data['user_id']
-        
+        # Case 2: reset via session (authenticated user wanting to change password)
+        elif user_id and user_type and curr_password:
+            # Check that inputted current password matches what's set in DB
+
+            # Reuse the login_view code because it does what i need 
+            serializer = LoginSerializer(data={
+                "email": email,
+                "password": curr_password
+            })
+
+            if serializer.is_valid():
+                email = serializer.validated_data['email']
+                password = serializer.validated_data['password']
+                user, user_type, user_id = find_user_by_email(email, password)
+
+                if not user:
+                    return Response({'error': 'Incorrect password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+                # if no error, password was correct
+        else:        
+            return Response({'error': 'Must provide either a token or a user_id and user_type'}, status=400)
+
         # Hash the new password
         hashed_password = make_password(new_password)
         
@@ -281,11 +375,12 @@ def reset_password_complete(request):
             except Admin.DoesNotExist:
                 return Response({'error': 'Admin not found'}, status=404)
         
-        # Mark token as used
-        requests.post(
-            f'http://notification-service:8006/api/notifications/mark_token_used/',
-            json={'token': token}
-        )
+        # if token-based reset, mark token as used
+        if token:
+            requests.post(
+                f'http://notification-service:8006/api/notifications/mark_token_used/',
+                json={'token': token}
+            )
         
         return Response({
             'message': 'Password reset successfully',
@@ -297,7 +392,7 @@ def reset_password_complete(request):
         return Response({
             'error': f'Password reset failed: {str(e)}'
         }, status=500)
-    
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def api_root(request):
@@ -310,6 +405,7 @@ def api_root(request):
             'validate': '/api/auth/validate/',
             'token_refresh': '/api/auth/token/refresh/',
             'logout': '/api/auth/logout/',
+            'lookup_account': '/api/auth/reset-password/lookup/',
             'reset_password_complete': '/api/auth/reset-password-complete/',
         }
     })
