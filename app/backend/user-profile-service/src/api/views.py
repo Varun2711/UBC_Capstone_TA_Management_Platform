@@ -758,6 +758,11 @@ class UserManagementView(generics.GenericAPIView):
                 user = TAScheduler.objects.get(employee_number=user_id)
                 user.is_active = False
                 user.save()
+            elif user_type == 'admin':
+                user = Admin.objects.get(employee_number=user_id)
+                user.is_active = False
+                user.save()
+
             else:
                 return Response(
                     error_response("Invalid user_type"),
@@ -770,7 +775,8 @@ class UserManagementView(generics.GenericAPIView):
                 success_response(message=f"{user_type.title()} account deactivated successfully")
             )
             
-        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist):
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist, Admin.DoesNotExist):
+
             return Response(
                 error_response(f"{user_type.title()} not found"),
                 status=status.HTTP_404_NOT_FOUND
@@ -780,6 +786,60 @@ class UserManagementView(generics.GenericAPIView):
                 error_response(f"Error deactivating user: {str(e)}"),
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+            
+    def reactivate_user(self, request):
+        """Reactivate a user account - Admin only"""
+        user_type = request.data.get('user_type')
+        user_id = request.data.get('user_id')
+        
+        if not user_type or not user_id:
+            return Response(
+                error_response("user_type and user_id are required"),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            if user_type == 'student':
+                user = Student.objects.get(student_number=user_id)
+                user.is_active = True
+                user.save()
+            elif user_type == 'instructor':
+                user = Instructor.objects.get(employee_number=user_id)
+                user.is_active = True
+                user.save()
+            elif user_type == 'scheduler':
+                user = TAScheduler.objects.get(employee_number=user_id)
+                user.is_active = True
+                user.save()
+            elif user_type == 'admin':
+                user = Admin.objects.get(employee_number=user_id)
+                user.is_active = True
+                user.save()
+            else:
+                return Response(
+                    error_response("Invalid user_type"),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            log_user_activity('admin', request.user_id, f'reactivated_{user_type}_{user_id}')
+            
+            return Response(
+                success_response(message=f"{user_type.title()} account reactivated successfully")
+            )
+            
+        except (Student.DoesNotExist, Instructor.DoesNotExist, TAScheduler.DoesNotExist, Admin.DoesNotExist):
+            return Response(
+                error_response(f"{user_type.title()} not found"),
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                error_response(f"Error reactivating user: {str(e)}"),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
     
     def modify_user(self, request):
         """Modify a user account - Admin only"""
