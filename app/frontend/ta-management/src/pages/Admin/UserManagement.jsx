@@ -217,9 +217,10 @@ export default function UserManagement() {
     { code: 'cosc', name: 'Computer Science' },
     { code: 'math', name: 'Mathematics' },
     { code: 'phy', name: 'Physics' },
-    { code: 'astr', name: 'Astronomy' },
-    { code: 'data', name: 'Data Science' },
-    { code: 'stat', name: 'Statistics' }
+    { code: 'chem', name: 'Chemistry' },
+    { code: 'bio', name: 'Biology' },
+    { code: 'econ', name: 'Economics' },
+    { code: 'psych', name: 'Psychology' }
   ]
 
   // Load users on component mount
