@@ -926,7 +926,8 @@ def create_admin(request):
                 "id": admin.employee_number,
                 "name": admin.name,
                 "email": admin.email,
-                "created_by": request.user_id
+                "created_by": request.user_id,
+                "temporary_password": password
             }
             
             return Response(
