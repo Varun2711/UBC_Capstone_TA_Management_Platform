@@ -147,6 +147,28 @@ const createScheduler = async (schedulerData) => {
   }
 }
 
+const createAdmin = async (adminData) => {
+  try {
+    const response = await fetch(`${ADMIN_API}/create-admin/`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(adminData)
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Create Admin Error:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error in createAdmin:', error)
+    throw error
+  }
+}
+
 const updateUser = async (updateData) => {
   try {
     const response = await fetch(`${ADMIN_API}/user-management/`, {
@@ -182,6 +204,7 @@ export default function UserManagement() {
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
+    name: '', // For admin creation
     email: '',
     employee_number: '',
     department: ''
@@ -250,10 +273,17 @@ export default function UserManagement() {
 
   const handleCreateUser = async () => {
     try {
-      // Basic validation
-      if (!formData.first_name || !formData.last_name || !formData.email || !formData.employee_number || !formData.department) {
-        alert('Please fill in all fields')
-        return
+      // Validation based on user type
+      if (createType === 'admin') {
+        if (!formData.name || !formData.email || !formData.employee_number) {
+          alert('Please fill in all required fields (Name, Email, Employee Number)')
+          return
+        }
+      } else {
+        if (!formData.first_name || !formData.last_name || !formData.email || !formData.employee_number || !formData.department) {
+          alert('Please fill in all fields')
+          return
+        }
       }
 
       setLoading(true)
@@ -261,8 +291,16 @@ export default function UserManagement() {
       let response
       if (createType === 'instructor') {
         response = await createInstructor(formData)
-      } else {
+      } else if (createType === 'scheduler') {
         response = await createScheduler(formData)
+      } else if (createType === 'admin') {
+        // For admin, we only need name, email, and employee_number
+        const adminData = {
+          name: formData.name,
+          email: formData.email,
+          employee_number: formData.employee_number
+        }
+        response = await createAdmin(adminData)
       }
 
       if (response.success) {
@@ -270,12 +308,16 @@ export default function UserManagement() {
         setFormData({
           first_name: '',
           last_name: '',
+          name: '',
           email: '',
           employee_number: '',
           department: ''
         })
         fetchUsers() // Refresh the user list
-        alert(`${createType === 'instructor' ? 'Instructor' : 'TA Scheduler'} created successfully!\nTemporary password: ${response.data.temporary_password}`)
+        
+        const userTypeLabel = createType === 'instructor' ? 'Instructor' : 
+                             createType === 'scheduler' ? 'TA Scheduler' : 'Admin'
+        alert(`${userTypeLabel} created successfully!\nTemporary password: ${response.data.temporary_password}`)
       } else {
         alert('Error creating user: ' + response.message)
       }
@@ -667,10 +709,12 @@ export default function UserManagement() {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>
-                Create New {createType === 'instructor' ? 'Instructor' : 'TA Scheduler'}
+                Create New {createType === 'instructor' ? 'Instructor' : 
+                           createType === 'scheduler' ? 'TA Scheduler' : 'Admin'}
               </DialogTitle>
               <DialogDescription>
-                Add a new {createType === 'instructor' ? 'instructor' : 'TA scheduler'} to the system
+                Add a new {createType === 'instructor' ? 'instructor' : 
+                          createType === 'scheduler' ? 'TA scheduler' : 'admin'} to the system
               </DialogDescription>
             </DialogHeader>
             
@@ -692,68 +736,115 @@ export default function UserManagement() {
                 >
                   TA Scheduler
                 </Button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name</Label>
-                  <Input
-                    id="first_name"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                    placeholder="Enter first name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name</Label>
-                  <Input
-                    id="last_name"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                    placeholder="Enter last name"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="Enter email address"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="employee_number">Employee Number</Label>
-                <Input
-                  id="employee_number"
-                  value={formData.employee_number}
-                  onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
-                  placeholder="Enter employee number"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select 
-                  value={formData.department} 
-                  onValueChange={(value) => setFormData({...formData, department: value})}
+                <Button
+                  type="button"
+                  variant={createType === 'admin' ? 'default' : 'outline'}
+                  onClick={() => setCreateType('admin')}
+                  size="sm"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.code} value={dept.code}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  Admin
+                </Button>
               </div>
+
+              {createType === 'admin' ? (
+                // Admin form fields
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      placeholder="Enter full name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="employee_number">Employee Number</Label>
+                    <Input
+                      id="employee_number"
+                      value={formData.employee_number}
+                      onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
+                      placeholder="Enter employee number"
+                    />
+                  </div>
+                </>
+              ) : (
+                // Instructor/Scheduler form fields
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">First Name</Label>
+                      <Input
+                        id="first_name"
+                        value={formData.first_name}
+                        onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                        placeholder="Enter first name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">Last Name</Label>
+                      <Input
+                        id="last_name"
+                        value={formData.last_name}
+                        onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                        placeholder="Enter last name"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="employee_number">Employee Number</Label>
+                    <Input
+                      id="employee_number"
+                      value={formData.employee_number}
+                      onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
+                      placeholder="Enter employee number"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Select 
+                      value={formData.department} 
+                      onValueChange={(value) => setFormData({...formData, department: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.code} value={dept.code}>
+                            {dept.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </div>
 
             <DialogFooter>
