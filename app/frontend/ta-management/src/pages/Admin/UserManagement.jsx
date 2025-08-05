@@ -248,23 +248,40 @@ export default function UserManagement() {
       console.log('Departments data received:', departmentsData) // Debug log
       // getDepartments returns the array directly, not wrapped in success/data structure
       if (Array.isArray(departmentsData)) {
-        // Filter departments to only include those supported by the backend
-        // Backend CreateInstructor/CreateScheduler serializers only support these 6 departments
-        const supportedDepartmentNames = [
-          'Astronomy',
-          'Mathematics', 
-          'Physics',
-          'Data Science',
-          'Statistics',
-          'Computer Science'
-        ]
+        // Create a more flexible mapping that can handle variations in department names
+        const departmentMappings = {
+          // Exact matches first
+          'Computer Science': 'cosc',
+          'Mathematics': 'math',
+          'Physics': 'phy',
+          'Data Science': 'data',
+          'Statistics': 'stat',
+          'Astronomy': 'astr',
+          // Common variations
+          'Math': 'math',
+          'Maths': 'math',
+          'Computer Sci': 'cosc',
+          'Comp Sci': 'cosc',
+          'CS': 'cosc',
+          'COSC': 'cosc',
+          'Stats': 'stat',
+          'Data Sciences': 'data',
+          'PHYS': 'phy'
+        }
         
-        const filteredDepartments = departmentsData.filter(dept => 
-          supportedDepartmentNames.includes(dept.name)
-        )
+        // Filter departments that can be mapped to backend codes
+        const filteredDepartments = departmentsData.filter(dept => {
+          const hasMapping = departmentMappings[dept.name] !== undefined
+          console.log(`Department "${dept.name}": ${hasMapping ? 'SUPPORTED' : 'NOT SUPPORTED'}`)
+          return hasMapping
+        })
         
         setDepartments(filteredDepartments)
         console.log('Filtered departments set successfully:', filteredDepartments) // Debug log
+        
+        if (filteredDepartments.length === 0) {
+          console.warn('No supported departments found. Available departments:', departmentsData.map(d => d.name))
+        }
       } else {
         console.error('Invalid departments data format:', departmentsData)
         setDepartments([])
@@ -323,10 +340,15 @@ export default function UserManagement() {
       if (createType === 'instructor') {
         // Find department name and convert to code
         const selectedDept = departments.find(d => d.id.toString() === formData.department)
+        console.log('Selected department:', selectedDept) // Debug log
         const departmentCode = selectedDept ? getDepartmentCodeFromName(selectedDept.name) : null
+        console.log('Department code:', departmentCode) // Debug log
         
         if (!departmentCode) {
-          alert('Invalid department selected. Please select a supported department.')
+          const errorMsg = selectedDept 
+            ? `Department "${selectedDept.name}" is not supported by the backend. Please contact an administrator to add support for this department.`
+            : 'Please select a department.'
+          alert(errorMsg)
           setLoading(false)
           return
         }
@@ -339,10 +361,15 @@ export default function UserManagement() {
       } else if (createType === 'scheduler') {
         // Find department name and convert to code
         const selectedDept = departments.find(d => d.id.toString() === formData.department)
+        console.log('Selected department:', selectedDept) // Debug log
         const departmentCode = selectedDept ? getDepartmentCodeFromName(selectedDept.name) : null
+        console.log('Department code:', departmentCode) // Debug log
         
         if (!departmentCode) {
-          alert('Invalid department selected. Please select a supported department.')
+          const errorMsg = selectedDept 
+            ? `Department "${selectedDept.name}" is not supported by the backend. Please contact an administrator to add support for this department.`
+            : 'Please select a department.'
+          alert(errorMsg)
           setLoading(false)
           return
         }
@@ -424,8 +451,6 @@ export default function UserManagement() {
     }
   }
 
-
-
   const handleDeactivateUser = async (user) => {
     if (window.confirm(`Are you sure you want to deactivate ${user.name}?`)) {
       try {
@@ -468,17 +493,33 @@ export default function UserManagement() {
     }
   }
 
-  // Department name to code mapping (matching backend)
+  // Department name to code mapping (matching backend with flexible variations)
   const getDepartmentCodeFromName = (departmentName) => {
     const nameToCodeMap = {
-      'Astronomy': 'astr',
+      // Exact matches
+      'Computer Science': 'cosc',
       'Mathematics': 'math',
       'Physics': 'phy',
       'Data Science': 'data',
       'Statistics': 'stat',
-      'Computer Science': 'cosc'
+      'Astronomy': 'astr',
+      // Common variations
+      'Math': 'math',
+      'Maths': 'math',
+      'Computer Sci': 'cosc',
+      'Comp Sci': 'cosc',
+      'CS': 'cosc',
+      'COSC': 'cosc',
+      'Stats': 'stat',
+      'Data Sciences': 'data',
+      'PHYS': 'phy'
     }
-    return nameToCodeMap[departmentName] || null
+    
+    const code = nameToCodeMap[departmentName]
+    if (!code) {
+      console.error(`No department code mapping found for: "${departmentName}". Available mappings:`, Object.keys(nameToCodeMap))
+    }
+    return code || null
   }
 
   const getDepartmentCode = (departmentName) => {
@@ -965,14 +1006,20 @@ export default function UserManagement() {
                       onValueChange={(value) => setFormData({...formData, department: value})}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
+                        <SelectValue placeholder={departments.length === 0 ? "No departments available" : "Select department"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id.toString()}>
-                            {dept.name}
+                        {departments.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            No supported departments found
                           </SelectItem>
-                        ))}
+                        ) : (
+                          departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id.toString()}>
+                              {dept.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1064,14 +1111,20 @@ export default function UserManagement() {
                     disabled={!isEditMode}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
+                      <SelectValue placeholder={departments.length === 0 ? "No departments available" : "Select department"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id.toString()}>
-                          {dept.name}
+                      {departments.length === 0 ? (
+                        <SelectItem value="" disabled>
+                          No supported departments found
                         </SelectItem>
-                      ))}
+                      ) : (
+                        departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id.toString()}>
+                            {dept.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
