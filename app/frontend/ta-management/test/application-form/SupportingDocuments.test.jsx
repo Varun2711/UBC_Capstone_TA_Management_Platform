@@ -47,7 +47,7 @@ describe("SupportingDocuments Component", () => {
   it("renders the section header", () => {
     render(<SupportingDocuments documents={[]} setDocuments={setDocsMock} />);
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
-      "Add Supporting Documents (Optional)"
+      "Add Supporting Documents"
     );
   });
 
@@ -64,7 +64,7 @@ describe("SupportingDocuments Component", () => {
     render(<SupportingDocuments documents={[]} setDocuments={setDocsMock} />);
     expect(screen.getByTestId("maxfiles-prop")).toHaveTextContent("3");
     expect(screen.getByTestId("acceptedtypes-prop")).toHaveTextContent(
-      ".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+      ".pdf, .doc, .docx, .jpg, .jpeg, .png"
     );
     expect(screen.getByTestId("maxfilesize-prop")).toHaveTextContent(
       (10 * 1024 * 1024).toString()

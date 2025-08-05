@@ -50,7 +50,7 @@ export default function AddDocuments({
   documents = [],
   setDocuments,
   maxFiles = 5,
-  acceptedTypes = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx",
+  acceptedTypes = ".pdf, .doc, .docx, .jpg, .jpeg, .png",
   maxFileSize = 10 * 1024 * 1024, // 10MB in bytes
 }) {
   const [dragOver, setDragOver] = useState(false);
@@ -159,6 +159,21 @@ export default function AddDocuments({
     }
   };
 
+  // Handle click events to prevent form submission
+  const handleUploadAreaClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (documents.length < maxFiles) {
+      document.getElementById("file-upload").click();
+    }
+  };
+
+  const handleAddMoreClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById("file-upload").click();
+  };
+
   return (
     <div className="space-y-6 col-span-full">
       {/* Upload Area */}
@@ -183,11 +198,7 @@ export default function AddDocuments({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={() => {
-              if (documents.length < maxFiles) {
-                document.getElementById("file-upload").click();
-              }
-            }}
+            onClick={handleUploadAreaClick}
           >
             <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <div className="space-y-2">
@@ -264,25 +275,9 @@ export default function AddDocuments({
 
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-2 flex-shrink-0">
-                    {/* Preview Button (for images and PDFs) */}
-                    {(document.type.startsWith("image/") ||
-                      document.type === "application/pdf") && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          // Create blob URL and open in new tab
-                          const url = URL.createObjectURL(document.file);
-                          window.open(url, "_blank");
-                        }}
-                        title="Preview file"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
-
                     {/* Remove Button */}
                     <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => removeDocument(document.id)}
@@ -300,8 +295,9 @@ export default function AddDocuments({
             {documents.length < maxFiles && (
               <div className="mt-4 pt-4 border-t">
                 <Button
+                  type="button"
                   variant="outline"
-                  onClick={() => document.getElementById("file-upload").click()}
+                  onClick={handleAddMoreClick}
                   className="w-full"
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -315,12 +311,9 @@ export default function AddDocuments({
 
       {/* Help Text */}
       <div className="text-xs text-gray-500 space-y-1">
-        <p>
-          • Accepted file types: PDF, Word documents, Excel spreadsheets, Images
-        </p>
+        <p>• Accepted file types: PDF, Word documents, JPG, PNG</p>
         <p>• Maximum file size: {formatFileSize(maxFileSize)} per file</p>
         <p>• You can upload up to {maxFiles} documents total</p>
-        <p>• Documents are optional but may strengthen your application</p>
       </div>
     </div>
   );
