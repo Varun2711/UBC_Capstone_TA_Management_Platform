@@ -263,6 +263,62 @@ TA Management System
                 'error': f'Failed to send application confirmation: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+    @action(detail=False, methods=['post'])
+    def send_account_creation_email(self, request):
+        """Send account creation email with temporary password"""
+        try:
+            email = request.data.get('email')
+            name = request.data.get('name')
+            temporary_password = request.data.get('temporary_password')
+            user_type = request.data.get('user_type', 'user').title()
+
+            if not all([email, name, temporary_password]):
+                return Response({
+                    'error': 'email, name, and temporary_password are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            subject = f"Welcome to the TA Management System"
+            message_body = f"""
+Dear {name},
+
+An account has been created for you in the TA Management System.
+
+Your login details are:
+- Username: {email}
+- Temporary Password: {temporary_password}
+
+Please change this password upon your first login for security purposes.
+
+You can log in at: http://localhost:8080/login
+
+Best regards,
+TA Management System
+            """.strip()
+
+            notification = EmailNotification.objects.create(
+                recipient_email=email,
+                recipient_name=name,
+                subject=subject,
+                message_body=message_body,
+                notification_type='account_created',
+                context_data={
+                    'user_type': user_type
+                }
+            )
+
+            send_email_task.delay(str(notification.id))
+
+            return Response({
+                'message': 'Account creation email sent successfully',
+                'notification_id': str(notification.id)
+            })
+
+        except Exception as e:
+            logger.error(f"Error sending account creation email: {str(e)}")
+            return Response({
+                'error': f'Failed to send account creation email: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
     @action(detail=True, methods=['post'])
     def resend(self, request, pk=None):
         """Resend a failed notification"""

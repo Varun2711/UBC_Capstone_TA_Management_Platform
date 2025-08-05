@@ -12,6 +12,7 @@ import {
   User,
   MoreVerticalIcon,
   GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -60,11 +61,11 @@ const navigationItems = [
     url: "#",
   },
   {
-    title: "Profile",
-    icon: User,
-    url: "/profile",
+    title: "Offers",
+    icon: Briefcase,
+    url: "/student-offers",
   },
-]
+];
 
 export function AppSidebar({ name, email, avatar }) {
   // Using useNavigate from react-router-dom to handle navigation
@@ -141,15 +142,14 @@ export function AppSidebar({ name, email, avatar }) {
               >
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  {" "}
-                  <button>My Profile</button>
+                <DropdownMenuItem onClick={() => handleNav("/profile")}>
+                  My Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
                   <button>Change Password</button>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout(navigate)}>
-                  <button>Logout </button>
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

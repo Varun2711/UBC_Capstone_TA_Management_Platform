@@ -41,7 +41,7 @@ class SchedulerInstructorSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
     email = serializers.EmailField()
     department = serializers.CharField(max_length=100)
-    employee_number = serializers.CharField(max_length=20, required=False)
+    employee_number = serializers.CharField(max_length=20, required=True, allow_blank=False)
     
     def validate_email(self, value):
         # Check if creating new instructor
@@ -266,7 +266,7 @@ class UpdateInstructorSerializer(serializers.ModelSerializer):
     """Serializer for updating instructor profiles"""
     class Meta:
         model = Instructor
-        fields = ['name', 'email']
+        fields = ['name', 'email', 'department', 'is_active']
         read_only_fields = ['employee_number', 'department', 'is_active']
         
     def validate_email(self, value):

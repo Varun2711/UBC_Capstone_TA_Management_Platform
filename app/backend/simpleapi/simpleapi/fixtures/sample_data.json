@@ -1118,6 +1118,19 @@
     }
   },
   {
+    "model": "myapp.student",
+    "pk": 11,
+    "fields": {
+      "email": "aads@gmail.com",
+      "name": "aads shajs",
+      "student_number": "20241024",
+      "program": "computer science",
+      "year_standing": 4,
+      "study_level": "graduate",
+      "phone": "+1-250-555-0242"
+    }
+  },
+  {
     "model": "myapp.courseoffering",
     "pk": 1,
     "fields": {
