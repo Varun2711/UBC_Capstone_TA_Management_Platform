@@ -40,18 +40,20 @@ import {
   updateAvailability,
   updateCoursePreferences
 } from "@/logic/student-profile";
+import { toast } from "sonner";
+import { Alert, AlertDescription } from "../ui/alert";
 
 // Add this helper function at the top of StudentProfileForm.jsx
 // Replace the extractSemesterFromDate function in StudentProfileForm.jsx:
 const extractSemesterFromDate = (dateString) => {
   if (!dateString) return '';
-  
+
   // If it's already in "Fall 2022" format, return as-is
   if (dateString.match(/^(Fall|Winter|Summer)\s+\d{4}$/)) {
     console.log("Already in semester format:", dateString);
     return dateString;
   }
-  
+
   // Handle the "2022-09-02 to " format from ApplicationForm
   if (dateString.includes(' to ')) {
     const datePart = dateString.split(' to ')[0];
@@ -59,24 +61,24 @@ const extractSemesterFromDate = (dateString) => {
       dateString = datePart;
     }
   }
-  
+
   try {
     console.log("dateString is:", dateString);
-    
+
     // Only try to parse if it looks like a date
     if (dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
       const date = new Date(dateString);
       console.log("dateString to date becomes:", date);
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         console.log("Invalid date, returning original string");
         return dateString;
       }
-      
+
       const year = date.getFullYear();
       const month = date.getMonth(); // 0-indexed: Jan=0, Sep=8, Dec=11
-      
+
       console.log("Extracted semester info:", { year, month });
 
       let term = 'Winter';
@@ -88,16 +90,200 @@ const extractSemesterFromDate = (dateString) => {
       console.log("Final result:", result);
       return result;
     }
-    
+
     // If it doesn't look like a date, return as-is
     console.log("Not a date format, returning original:", dateString);
     return dateString;
-    
+
   } catch (e) {
     console.error("Date parsing error:", e);
     return dateString;
   }
 };
+
+// Add all validation functions from ProfilePage.jsx
+const validatePersonalInfoField = (field, value) => {
+  let error = null;
+
+  if (field === "name") {
+    if (!value || value.trim().length < 2) {
+      error = "Name must be at least 2 characters";
+    } else if (value.trim().length > 50) {
+      error = "Name must be less than 50 characters";
+    } else if (!/^[a-zA-Z\s\-']+$/.test(value.trim())) {
+      error = "Name can only contain letters, spaces, hyphens, and apostrophes";
+    }
+  } else if (field === "email") {
+    if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+      error = "Please enter a valid email address";
+    }
+  } else if (field === "studentId") {
+    if (!value || value.trim() === "") {
+      error = "Student ID is required";
+    } else if (!/^\d{8}$/.test(value.trim())) {
+      error = "Student ID must be exactly 8 digits";
+    }
+  } else if (field === "UBCEmployeeId") {
+    if (value && value.trim() !== "") {
+      if (!/^\d+$/.test(value.trim())) {
+        error = "UBC Employee ID must contain only numbers";
+      } else if (value.trim().length > 10) {
+        error = "UBC Employee ID must be maximum 10 digits";
+      }
+    }
+  } else if (field === "phone") {
+    if (value && value.trim() !== "") {
+      const digitsOnly = value.replace(/\D/g, '');
+      if (digitsOnly.length < 10) {
+        error = "Phone number must have at least 10 digits";
+      } else if (digitsOnly.length > 15) {
+        error = "Phone number must be maximum 15 digits";
+      }
+    }
+  }
+  return error;
+};
+
+const validateAcademicField = (field, value) => {
+  let error = null;
+
+  if (field === "major" || field === "minor") {
+    if (field === "major" && (!value || value.trim().length < 2)) {
+      error = "Major is required (minimum 2 characters)";
+    } else if (value && value.trim() !== "") {
+      if (value.trim().length > 100) {
+        error = `${field === "major" ? "Major" : "Minor"} must be less than 100 characters`;
+      } else if (!/^[a-zA-Z\s\-&]+$/.test(value.trim())) {
+        error = `${field === "major" ? "Major" : "Minor"} can only contain letters, spaces, hyphens, and ampersands`;
+      }
+    }
+  } else if (field === "year") {
+    if (!value || value.trim() === "") {
+      error = "Academic level is required";
+    }
+  } else if (field === "gpa") {
+    if (value && value.trim() !== "") {
+      const gpaValue = parseFloat(value);
+      if (isNaN(gpaValue)) {
+        error = "GPA must be a number";
+      } else if (gpaValue < 0 || gpaValue > 4.33) {
+        error = "GPA must be between 0.00 and 4.33 (UBC scale)";
+      } else if (!/^\d+(\.\d{1,2})?$/.test(value.trim())) {
+        error = "GPA can have maximum 2 decimal places";
+      }
+    }
+  } else if (field === "expectedGraduation") {
+    if (!value || value.trim() === "") {
+      error = "Expected graduation date is required";
+    } else if (value.trim().length > 20) {
+      error = "Expected graduation must be 20 characters or less";
+    }
+  } else if (field === "degreeStart") {
+    if (!value || value.trim() === "") {
+      error = "Degree start year is required";
+    } else if (!/^\d{4}$/.test(value.trim())) {
+      error = "Degree start must be a 4-digit year (e.g., 2021)";
+    } else {
+      const year = parseInt(value.trim());
+      const currentYear = new Date().getFullYear();
+      if (year < 1900 || year > currentYear + 10) {
+        error = `Degree start year must be between 1900 and ${currentYear + 10}`;
+      }
+    }
+  } else if (field === "yearStanding") {
+    if (!value || value.trim() === "") {
+      error = "Year standing is required";
+    } else if (!/^\d+$/.test(value.trim())) {
+      error = "Year standing must be a whole number";
+    } else {
+      const standing = parseInt(value.trim());
+      if (standing < 1 || standing > 8) {
+        error = "Year standing must be between 1 and 8";
+      }
+    }
+  }
+
+  return error;
+};
+
+const majors = [
+  "Computer Science",
+  "Mathematics",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Economics",
+  "Psychology",
+  "Other (please specify)",
+];
+
+const validateExperienceField = (field, value) => {
+  let error = null;
+
+  if (field === "course") {
+    if (!value || value.trim() === "") {
+      error = "Course is required";
+    } else if (!/^[A-Z]{2,4}\s*\d{3}[A-Z]?$/i.test(value.trim())) {
+      error = "Enter course code like 'COSC 499' or 'MATH 100A'";
+    } else if (value.trim().length > 100) {
+      error = "Course name must be 100 characters or less";
+    }
+  } else if (field === "semester") {
+    if (!value || value.trim() === "") {
+      error = "Semester is required";
+    } else {
+      const semesterRegex = /^(Fall|Winter|Summer)\s+\d{4}$/i;
+      if (!semesterRegex.test(value.trim())) {
+        error = "Enter semester as 'Fall 2023', 'Winter 2024', or 'Summer 2023'";
+      } else {
+        const year = parseInt(value.trim().split(' ')[1]);
+        const currentYear = new Date().getFullYear();
+        if (year < 1990 || year > currentYear + 2) {
+          error = `Year must be between 1990 and ${currentYear + 2}`;
+        }
+      }
+    }
+  } else if (field === "professor") {
+    if (!value || value.trim() === "") {
+      error = "Professor name is required";
+    } else if (value.trim().length < 2) {
+      error = "Professor name must be at least 2 characters";
+    } else if (value.trim().length > 100) {
+      error = "Professor name must be 100 characters or less";
+    } else if (!/^[a-zA-Z\s\.\-']+$/.test(value.trim())) {
+      error = "Professor name can only contain letters, spaces, periods, hyphens, and apostrophes";
+    }
+  }
+
+  return error;
+};
+
+const validateSkillField = (value) => {
+  if (!value || value.trim() === "") {
+    return "Skill cannot be empty";
+  } else if (value.trim().length < 2) {
+    return "Skill must be at least 2 characters";
+  } else if (value.trim().length > 50) {
+    return "Skill must be 50 characters or less";
+  } else if (!/^[a-zA-Z\s\+\#\.\-\/\(\)]+$/.test(value.trim())) {
+    return "Skills can only contain letters, spaces, and common symbols (+, #, -, /, etc.) - no numbers";
+  }
+  return null;
+};
+
+const validateCoursePreference = (value) => {
+  if (!value || value.trim() === "") {
+    return "Course preference cannot be empty";
+  } else if (value.trim().length > 20) {
+    return "Course code must be 20 characters or less";
+  } else if (!/^[A-Z]{2,4}\s*\d{3}[A-Z]?$/i.test(value.trim())) {
+    return "Enter course code like 'COSC 499' or 'MATH 100A'";
+  }
+  return null;
+};
+
+// ...existing imports and helper functions...
+
 
 export default function StudentProfileForm({
   // Data props
@@ -107,18 +293,48 @@ export default function StudentProfileForm({
   mode = "profile", //default is profile // "profile" or "application",
   // Display control props
 }) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(mode === "application");
   const [editedProfile, setEditedProfile] = useState({ ...profile });
+  const [errors, setErrors] = useState({}); // Add errors state
 
   // State for skills editing
-  const [skillsEdit, setSkillsEdit] = useState(false);
+  const [skillsEdit, setSkillsEdit] = useState(mode === "application");
   const [editedSkills, setEditedSkills] = useState({
-    technicalSkills: [...profile.technicalSkills],
-    softSkills: [...profile.softSkills],
+    technicalSkills: [...(profile.technicalSkills || [])],
+    softSkills: [...(profile.softSkills || [])],
   });
 
+  const handleAcademicInputChange = (field, value) => {
+    console.log(`Academic input change: ${field} = "${value}"`);
+
+    if (field.includes('.')) {
+      // Handle nested fields like academicInfo.degreeStart
+      const [parent, child] = field.split('.');
+      console.log(`Nested field detected: parent = ${parent}, child = ${child}`);
+      setEditedAcademicInfo((prev) => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      // Handle top-level fields
+      console.log(`Setting editedAcademicInfo[${field}] to "${value}"`);
+      setEditedAcademicInfo((prev) => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+
+    // Clear any related errors
+    const newErrors = { ...errors };
+    delete newErrors[field];
+    setErrors(newErrors);
+  };
+
   // State for academic information editing
-  const [isEditingAcademic, setIsEditingAcademic] = useState(false);
+  const [isEditingAcademic, setIsEditingAcademic] = useState(mode === "application");
   const [editedAcademicInfo, setEditedAcademicInfo] = useState({
     major: profile.major,
     minor: profile.minor,
@@ -128,7 +344,7 @@ export default function StudentProfileForm({
   });
 
   // Update the state initialization for experience
-  const [isEditingExperience, setIsEditingExperience] = useState(false);
+  const [isEditingExperience, setIsEditingExperience] = useState(mode === "application");
   const [editedExperience, setEditedExperience] = useState(
     profile.experience?.map(exp => ({
       ...exp,
@@ -136,13 +352,12 @@ export default function StudentProfileForm({
     })) || []
   );
 
-
   // State for availability editing
-  const [isEditingAvailability, setIsEditingAvailability] = useState(false);
+  const [isEditingAvailability, setIsEditingAvailability] = useState(mode === "application");
   const [availabilityData, setAvailabilityData] = useState([]); // Initialize as needed
 
   // State for course preference editing
-  const [isEditingCourses, setIsEditingCourses] = useState(false);
+  const [isEditingCourses, setIsEditingCourses] = useState(mode === "application");
   const [coursePreference, setCoursePreference] = useState(
     Array.isArray(profile.coursePreference) ? [...profile.coursePreference] : []
   );
@@ -150,8 +365,157 @@ export default function StudentProfileForm({
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false);
 
+  // Add form-level validation functions
+  const validatePersonalInfoForm = () => {
+    const newErrors = {};
+
+    // Validate name
+    const nameError = validatePersonalInfoField("name", editedProfile.name);
+    if (nameError) newErrors.name = nameError;
+
+    // Validate email
+    const emailError = validatePersonalInfoField("email", editedProfile.email);
+    if (emailError) newErrors.email = emailError;
+
+    // Validate student ID
+    const studentIdError = validatePersonalInfoField("studentId", editedProfile.studentId);
+    if (studentIdError) newErrors.studentId = studentIdError;
+
+    // Validate phone (optional)
+    if (editedProfile.phone) {
+      const phoneError = validatePersonalInfoField("phone", editedProfile.phone);
+      if (phoneError) newErrors.phone = phoneError;
+    }
+
+    // Validate UBC Employee ID (optional)
+    if (editedProfile.UBCEmployeeId) {
+      const employeeIdError = validatePersonalInfoField("UBCEmployeeId", editedProfile.UBCEmployeeId);
+      if (employeeIdError) newErrors.UBCEmployeeId = employeeIdError;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateAcademicForm = () => {
+    const newErrors = {};
+
+    // Validate major
+    const majorError = validateAcademicField("major", editedAcademicInfo.major);
+    if (majorError) newErrors.major = majorError;
+
+    // Validate year
+    const yearError = validateAcademicField("year", editedAcademicInfo.year);
+    if (yearError) newErrors.year = yearError;
+
+    // Validate GPA (optional)
+    if (editedAcademicInfo.gpa) {
+      const gpaError = validateAcademicField("gpa", editedAcademicInfo.gpa);
+      if (gpaError) newErrors.gpa = gpaError;
+    }
+
+    // Validate minor (optional)
+    if (editedAcademicInfo.minor) {
+      const minorError = validateAcademicField("minor", editedAcademicInfo.minor);
+      if (minorError) newErrors.minor = minorError;
+    }
+
+    // Validate academic info fields
+    const expectedGradError = validateAcademicField("expectedGraduation", editedAcademicInfo.academicInfo.expectedGraduation);
+    if (expectedGradError) newErrors.expectedGraduation = expectedGradError;
+
+    const degreeStartError = validateAcademicField("degreeStart", editedAcademicInfo.academicInfo.degreeStart);
+    if (degreeStartError) newErrors.degreeStart = degreeStartError;
+
+    const yearStandingError = validateAcademicField("yearStanding", editedAcademicInfo.academicInfo.yearStanding);
+    if (yearStandingError) newErrors.yearStanding = yearStandingError;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateExperienceForm = (experienceData) => {
+    const newErrors = {};
+    let hasErrors = false;
+
+    experienceData.forEach((exp, index) => {
+      const courseError = validateExperienceField("course", exp.course);
+      if (courseError) {
+        newErrors[`course_${index}`] = courseError;
+        hasErrors = true;
+      }
+
+      const semesterError = validateExperienceField("semester", exp.semester);
+      if (semesterError) {
+        newErrors[`semester_${index}`] = semesterError;
+        hasErrors = true;
+      }
+
+      const professorError = validateExperienceField("professor", exp.professor);
+      if (professorError) {
+        newErrors[`professor_${index}`] = professorError;
+        hasErrors = true;
+      }
+    });
+
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors }));
+    }
+    return !hasErrors;
+  };
+
+  const validateSkillsForm = (skillsData) => {
+    const newErrors = {};
+    let hasErrors = false;
+
+    skillsData.technicalSkills.forEach((skill, index) => {
+      const error = validateSkillField(skill);
+      if (error) {
+        newErrors[`technical_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+
+    skillsData.softSkills.forEach((skill, index) => {
+      const error = validateSkillField(skill);
+      if (error) {
+        newErrors[`soft_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors }));
+    }
+    return !hasErrors;
+  };
+
+  const validateCoursePreferencesForm = (courseData) => {
+    const newErrors = {};
+    let hasErrors = false;
+
+    courseData.forEach((course, index) => {
+      const error = validateCoursePreference(course);
+      if (error) {
+        newErrors[`course_${index}`] = error;
+        hasErrors = true;
+      }
+    });
+
+    if (hasErrors) {
+      setErrors(prev => ({ ...prev, ...newErrors }));
+    }
+    return !hasErrors;
+  };
+
   // Updated handleSave function that actually saves to backend
   const handleSave = async (profileData) => {
+    // Add validation gate
+    if (!validatePersonalInfoForm()) {
+      alert("Please fix the validation errors before saving.");
+      return false;
+    }
+
     const {
       name,
       studentId,
@@ -233,10 +597,17 @@ export default function StudentProfileForm({
   const handleCancel = (profileData) => {
     setEditedProfile({ ...profile }); // Reset to original data
     setIsEditing(false);
+    setErrors({}); // Clear errors on cancel
   };
 
   // Academic Information Save Handler
   const handleSaveAcademicInfo = async () => {
+    // Add validation gate
+    if (!validateAcademicForm()) {
+      alert("Please fix the validation errors before saving.");
+      return;
+    }
+
     const updatedProfile = {
       ...profile,
       major: editedAcademicInfo.major,
@@ -275,6 +646,12 @@ export default function StudentProfileForm({
 
   // Experience Save Handler
   const handleSaveExperience = async () => {
+    // Add validation gate
+    if (!validateExperienceForm(editedExperience)) {
+      alert("Please fix the validation errors before saving.");
+      return;
+    }
+
     // Validate experience data
     const hasEmptyFields = editedExperience.some(exp =>
       !exp.course.trim() || !exp.semester.trim() || !exp.professor.trim()
@@ -327,6 +704,12 @@ export default function StudentProfileForm({
 
   // Skills Save Handler
   const handleSaveSkills = async () => {
+    // Add validation gate
+    if (!validateSkillsForm(editedSkills)) {
+      alert("Please fix the validation errors before saving.");
+      return;
+    }
+
     const hasEmptyTechnical = editedSkills.technicalSkills.some(
       (skill) => skill.trim() === ""
     );
@@ -380,6 +763,12 @@ export default function StudentProfileForm({
 
   // Course Preferences Save Handler
   const handleSaveCoursePreferences = async () => {
+    // Add validation gate
+    if (!validateCoursePreferencesForm(coursePreference)) {
+      alert("Please fix the validation errors before saving.");
+      return;
+    }
+
     // Filter out empty courses before validation
     const validCourses = coursePreference.filter(course => course.trim() !== "");
 
@@ -457,11 +846,25 @@ export default function StudentProfileForm({
           {mode === "application" && (
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Confirm Your Student Profile
+                Confirm Your Profile
               </h2>
-              <h2 className="text-base font-medium text-gray-900 mb-4">
-                Please review and update your information if necessary.
-              </h2>
+              {/* Important info on how to use this page */}
+              <Alert className="w-full mx-auto border-blue-200 bg-blue-50 mb-4" >
+                <AlertDescription>
+                  <h2 className="text-base font-medium text-blue-900">
+                    <b><i>Returning</i> applicants:</b> Please review and update your information as necessary.<br />
+                    <b><i>New</i> applicants:</b> Please fill out the remaining sections of your profile to ensure that your experience and preferences are accurately represented.<br />
+                  </h2>
+                </AlertDescription>
+              </Alert>
+
+              <Alert className="w-full mx-auto border-orange-200 bg-orange-50" >
+                <AlertDescription>
+                  <h2 className="text-base font-medium text-orange-900">
+                    <b>Remember to save</b> each section before hitting "Next" to proceed.
+                  </h2>
+                </AlertDescription>
+              </Alert>
             </div>
           )}
           {mode !== "application" && (
@@ -537,17 +940,21 @@ export default function StudentProfileForm({
                     <Input
                       id="name"
                       value={editedProfile.name}
-                      onChange={(e) =>
-                        setEditedProfile({
-                          ...editedProfile,
-                          name: e.target.value,
-                        })
-                      }
+                      onChange={(e) => {
+                        const { value } = e.target;
+                        setEditedProfile({ ...editedProfile, name: value });
+
+                        // Real-time validation
+                        const error = validatePersonalInfoField("name", value);
+                        setErrors(prev => ({ ...prev, name: error }));
+                      }}
                     />
                   ) : (
                     <p className="text-sm">{profile.name}</p>
                   )}
+                  {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="studentId">
                     Student ID<span className="text-red-500">*</span>
@@ -556,17 +963,24 @@ export default function StudentProfileForm({
                     <Input
                       id="studentId"
                       value={editedProfile.studentId}
-                      onChange={(e) =>
-                        setEditedProfile({
-                          ...editedProfile,
-                          studentId: e.target.value,
-                        })
-                      }
+                      onChange={(e) => {
+                        // Only allow digits and limit to 8 characters
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 8);
+                        setEditedProfile({ ...editedProfile, studentId: value });
+
+                        // Real-time validation
+                        const error = validatePersonalInfoField("studentId", value);
+                        setErrors(prev => ({ ...prev, studentId: error }));
+                      }}
+                      placeholder="12345678 (8 digits)"
+                      maxLength="8"
                     />
                   ) : (
                     <p className="text-sm">{profile.studentId}</p>
                   )}
+                  {errors.studentId && <p className="text-red-500 text-xs">{errors.studentId}</p>}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="UBCEmployeeId">
                     UBC Employee ID (Optional)
@@ -575,17 +989,24 @@ export default function StudentProfileForm({
                     <Input
                       id="UBCEmployeeId"
                       value={editedProfile.UBCEmployeeId}
-                      onChange={(e) =>
-                        setEditedProfile({
-                          ...editedProfile,
-                          UBCEmployeeId: e.target.value,
-                        })
-                      }
+                      onChange={(e) => {
+                        // Only allow digits and limit to 10 characters
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setEditedProfile({ ...editedProfile, UBCEmployeeId: value });
+
+                        // Real-time validation
+                        const error = validatePersonalInfoField("UBCEmployeeId", value);
+                        setErrors(prev => ({ ...prev, UBCEmployeeId: error }));
+                      }}
+                      placeholder="1234567890 (max 10 digits)"
+                      maxLength="10"
                     />
                   ) : (
                     <p className="text-sm">{profile.UBCEmployeeId}</p>
                   )}
+                  {errors.UBCEmployeeId && <p className="text-red-500 text-xs">{errors.UBCEmployeeId}</p>}
                 </div>
+
                 {mode === "profile" && (
                   <div className="space-y-2">
                     <Label htmlFor="password">
@@ -631,16 +1052,19 @@ export default function StudentProfileForm({
                       id="email"
                       type="email"
                       value={editedProfile.email}
-                      onChange={(e) =>
-                        setEditedProfile({
-                          ...editedProfile,
-                          email: e.target.value,
-                        })
-                      }
+                      onChange={(e) => {
+                        const { value } = e.target;
+                        setEditedProfile({ ...editedProfile, email: value });
+
+                        // Real-time validation
+                        const error = validatePersonalInfoField("email", value);
+                        setErrors(prev => ({ ...prev, email: error }));
+                      }}
                     />
                   ) : (
                     <p className="text-sm">{profile.email}</p>
                   )}
+                  {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone (Optional)</Label>
@@ -648,15 +1072,25 @@ export default function StudentProfileForm({
                     <Input
                       id="phone"
                       value={editedProfile.phone}
-                      onChange={(e) =>
-                        setEditedProfile({
-                          ...editedProfile,
-                          phone: e.target.value,
-                        })
-                      }
+                      onChange={(e) => {
+                        // Allow common phone formats
+                        const value = e.target.value.replace(/[^\d\s\-\(\)\.\+]/g, '');
+                        setEditedProfile({ ...editedProfile, phone: value });
+
+                        // Real-time validation
+                        const error = validatePersonalInfoField("phone", value);
+                        setErrors(prev => ({ ...prev, phone: error }));
+                      }}
+                      placeholder="+1-234-567-8900 or (234) 567-8900"
                     />
                   ) : (
                     <p className="text-sm">{profile.phone}</p>
+                  )}
+                  {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
+                  {isEditing && (
+                    <p className="text-xs text-muted-foreground">
+                      Format: +1-234-567-8900, (234) 567-8900, or 234.567.8900
+                    </p>
                   )}
                 </div>
               </div>
@@ -689,6 +1123,7 @@ export default function StudentProfileForm({
                       academicInfo: { ...profile.academicInfo },
                     });
                     setIsEditingAcademic(false);
+                    setErrors({}); // Clear errors on cancel
                   }}
                 >
                   Cancel
@@ -704,24 +1139,75 @@ export default function StudentProfileForm({
 
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* UPDATED MAJOR FIELD */}
               <div className="space-y-2">
                 <Label>
                   Major<span className="text-red-500">*</span>
                 </Label>
                 {isEditingAcademic ? (
-                  <Input
-                    value={editedAcademicInfo.major}
-                    onChange={(e) =>
-                      setEditedAcademicInfo({
-                        ...editedAcademicInfo,
-                        major: e.target.value,
-                      })
-                    }
-                  />
+                  <div className="space-y-2">
+                    {/* Always show dropdown first, but handle custom values better */}
+                    {(editedAcademicInfo.major === "" || editedAcademicInfo.major === "Other (please specify)" || majors.includes(editedAcademicInfo.major || '')) && (
+                      <select
+                        value={editedAcademicInfo.major === "Other (please specify)" ? "Other (please specify)" : editedAcademicInfo.major || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          console.log("Major dropdown changed to:", value);
+                          if (value === "Other (please specify)") {
+                            // Set to empty string to trigger input field
+                            handleAcademicInputChange("major", "");
+                          } else {
+                            handleAcademicInputChange("major", value);
+                          }
+                        }}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="">Select Major</option>
+                        {majors.map((major) => (
+                          <option key={major} value={major}>
+                            {major}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    {/* Show input field for custom major or when "Other" is selected */}
+                    {((editedAcademicInfo.major && !majors.includes(editedAcademicInfo.major) && editedAcademicInfo.major !== "Other (please specify)") || editedAcademicInfo.major === "") && (
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Please specify your major"
+                          value={editedAcademicInfo.major === "Other (please specify)" ? "" : editedAcademicInfo.major || ''}
+                          onChange={(e) => {
+                            console.log("Major input changed to:", e.target.value);
+                            handleAcademicInputChange("major", e.target.value);
+
+                            // Real-time validation
+                            const error = validateAcademicField("major", e.target.value);
+                            setErrors(prev => ({ ...prev, major: error }));
+                          }}
+                          autoFocus
+                        />
+                        {/* Show button to go back to dropdown if they want */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            console.log("Switching back to dropdown");
+                            handleAcademicInputChange("major", "");
+                          }}
+                        >
+                          Choose from predefined majors
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-sm">{profile.major}</p>
                 )}
+                {errors.major && <p className="text-red-500 text-xs">{errors.major}</p>}
               </div>
+
+              {/* Academic Level field stays the same */}
               <div className="space-y-2">
                 <Label>
                   Academic Level<span className="text-red-500">*</span>
@@ -729,12 +1215,16 @@ export default function StudentProfileForm({
                 {isEditingAcademic ? (
                   <Select
                     value={editedAcademicInfo.year}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
                       setEditedAcademicInfo({
                         ...editedAcademicInfo,
                         year: value,
-                      })
-                    }
+                      });
+
+                      // Real-time validation
+                      const error = validateAcademicField("year", value);
+                      setErrors(prev => ({ ...prev, year: error }));
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Academic Level" />
@@ -747,23 +1237,35 @@ export default function StudentProfileForm({
                 ) : (
                   <p className="text-sm">{profile.year}</p>
                 )}
+                {errors.year && <p className="text-red-500 text-xs">{errors.year}</p>}
               </div>
+
+              {/* GPA field stays the same */}
               <div className="space-y-2">
                 <Label>GPA (Optional)</Label>
                 {isEditingAcademic ? (
                   <Input
                     value={editedAcademicInfo.gpa}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const { value } = e.target;
                       setEditedAcademicInfo({
                         ...editedAcademicInfo,
-                        gpa: e.target.value,
-                      })
-                    }
+                        gpa: value,
+                      });
+
+                      // Real-time validation
+                      const error = validateAcademicField("gpa", value);
+                      setErrors(prev => ({ ...prev, gpa: error }));
+                    }}
+                    placeholder="e.g., 3.85 (0.00-4.33)"
                   />
                 ) : (
                   <p className="text-sm">{profile.gpa}</p>
                 )}
+                {errors.gpa && <p className="text-red-500 text-xs">{errors.gpa}</p>}
               </div>
+
+              {/* Expected Graduation field stays the same */}
               <div className="space-y-2">
                 <Label>
                   Expected Graduation<span className="text-red-500">*</span>
@@ -771,22 +1273,36 @@ export default function StudentProfileForm({
                 {isEditingAcademic ? (
                   <Input
                     value={editedAcademicInfo.academicInfo.expectedGraduation}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const { value } = e.target;
                       setEditedAcademicInfo({
                         ...editedAcademicInfo,
                         academicInfo: {
                           ...editedAcademicInfo.academicInfo,
-                          expectedGraduation: e.target.value,
+                          expectedGraduation: value,
                         },
-                      })
-                    }
+                      });
+
+                      // Real-time validation
+                      const error = validateAcademicField("expectedGraduation", value);
+                      setErrors(prev => ({ ...prev, expectedGraduation: error }));
+                    }}
+                    placeholder="e.g., May 2025, 2025-05, Spring 2025"
                   />
                 ) : (
                   <p className="text-sm">
                     {profile.academicInfo.expectedGraduation}
                   </p>
                 )}
+                {errors.expectedGraduation && <p className="text-red-500 text-xs">{errors.expectedGraduation}</p>}
+                {isEditingAcademic && (
+                  <p className="text-xs text-muted-foreground">
+                    Enter any format: "May 2025", "2025-05", "Spring 2025", etc.
+                  </p>
+                )}
               </div>
+
+              {/* Degree Start and Year Standing fields stay the same */}
               <div className="space-y-2">
                 <Label>
                   Degree Start<span className="text-red-500">*</span>
@@ -794,20 +1310,30 @@ export default function StudentProfileForm({
                 {isEditingAcademic ? (
                   <Input
                     value={editedAcademicInfo.academicInfo.degreeStart}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      // Only allow 4 digits for year
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 4);
                       setEditedAcademicInfo({
                         ...editedAcademicInfo,
                         academicInfo: {
                           ...editedAcademicInfo.academicInfo,
-                          degreeStart: e.target.value,
+                          degreeStart: value,
                         },
-                      })
-                    }
+                      });
+
+                      // Real-time validation
+                      const error = validateAcademicField("degreeStart", value);
+                      setErrors(prev => ({ ...prev, degreeStart: error }));
+                    }}
+                    placeholder="e.g., 2021"
+                    maxLength="4"
                   />
                 ) : (
                   <p className="text-sm">{profile.academicInfo.degreeStart}</p>
                 )}
+                {errors.degreeStart && <p className="text-red-500 text-xs">{errors.degreeStart}</p>}
               </div>
+
               <div className="space-y-2">
                 <Label>
                   Year Standing<span className="text-red-500">*</span>
@@ -815,35 +1341,92 @@ export default function StudentProfileForm({
                 {isEditingAcademic ? (
                   <Input
                     value={editedAcademicInfo.academicInfo.yearStanding}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      // Only allow digits, max 1 character for standing
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 1);
                       setEditedAcademicInfo({
                         ...editedAcademicInfo,
                         academicInfo: {
                           ...editedAcademicInfo.academicInfo,
-                          yearStanding: e.target.value,
+                          yearStanding: value,
                         },
-                      })
-                    }
+                      });
+
+                      // Real-time validation
+                      const error = validateAcademicField("yearStanding", value);
+                      setErrors(prev => ({ ...prev, yearStanding: error }));
+                    }}
+                    placeholder="e.g., 3 (1-8)"
+                    maxLength="1"
                   />
                 ) : (
                   <p className="text-sm">{profile.academicInfo.yearStanding}</p>
                 )}
+                {errors.yearStanding && <p className="text-red-500 text-xs">{errors.yearStanding}</p>}
               </div>
+
+              {/* UPDATED MINOR FIELD */}
               <div className="space-y-2">
                 <Label>Minor (Optional)</Label>
                 {isEditingAcademic ? (
-                  <Input
-                    value={editedAcademicInfo.minor}
-                    onChange={(e) =>
-                      setEditedAcademicInfo({
-                        ...editedAcademicInfo,
-                        minor: e.target.value,
-                      })
-                    }
-                  />
+                  <div className="space-y-2">
+                    {/* Always show dropdown first for minor too */}
+                    {(editedAcademicInfo.minor === "" || editedAcademicInfo.minor === "Other (please specify)" || majors.includes(editedAcademicInfo.minor || '') || !editedAcademicInfo.minor) && (
+                      <select
+                        value={editedAcademicInfo.minor === "Other (please specify)" ? "Other (please specify)" : editedAcademicInfo.minor || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          console.log("Minor dropdown changed to:", value);
+                          if (value === "Other (please specify)") {
+                            handleAcademicInputChange("minor", "");
+                          } else {
+                            handleAcademicInputChange("minor", value);
+                          }
+                        }}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="">No Minor</option>
+                        {majors.map((major) => (
+                          <option key={major} value={major}>
+                            {major}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    {/* Show input field for custom minor */}
+                    {((editedAcademicInfo.minor && !majors.includes(editedAcademicInfo.minor) && editedAcademicInfo.minor !== "Other (please specify)") || editedAcademicInfo.minor === "") && editedAcademicInfo.minor !== null && (
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Please specify your minor"
+                          value={editedAcademicInfo.minor === "Other (please specify)" ? "" : editedAcademicInfo.minor || ''}
+                          onChange={(e) => {
+                            console.log("Minor input changed to:", e.target.value);
+                            handleAcademicInputChange("minor", e.target.value);
+
+                            // Real-time validation
+                            const error = validateAcademicField("minor", e.target.value);
+                            setErrors(prev => ({ ...prev, minor: error }));
+                          }}
+                          autoFocus
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            console.log("Switching minor back to dropdown");
+                            handleAcademicInputChange("minor", "");
+                          }}
+                        >
+                          Choose from predefined minors
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-sm">{profile.minor}</p>
                 )}
+                {errors.minor && <p className="text-red-500 text-xs">{errors.minor}</p>}
               </div>
             </div>
           </CardContent>
@@ -872,6 +1455,7 @@ export default function StudentProfileForm({
                       profile.experience.map((exp) => ({ ...exp }))
                     );
                     setIsEditingExperience(false);
+                    setErrors({}); // Clear errors on cancel
                   }}
                 >
                   Cancel
@@ -907,6 +1491,14 @@ export default function StudentProfileForm({
                           (_, i) => i !== index
                         );
                         setEditedExperience(updated);
+                        // Clear related errors
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors[`course_${index}`];
+                          delete newErrors[`semester_${index}`];
+                          delete newErrors[`professor_${index}`];
+                          return newErrors;
+                        });
                       }}
                     >
                       <X className="h-4 w-4" />
@@ -921,13 +1513,21 @@ export default function StudentProfileForm({
                       <Input
                         value={exp.course}
                         onChange={(e) => {
+                          const { value } = e.target;
                           const newExp = [...editedExperience];
-                          newExp[index].course = e.target.value;
+                          newExp[index].course = value;
                           setEditedExperience(newExp);
+
+                          // Real-time validation
+                          const error = validateExperienceField("course", value);
+                          setErrors(prev => ({ ...prev, [`course_${index}`]: error }));
                         }}
                       />
                     ) : (
                       <p className="text-sm">{exp.course}</p>
+                    )}
+                    {errors[`course_${index}`] && (
+                      <p className="text-red-500 text-xs">{errors[`course_${index}`]}</p>
                     )}
                   </div>
 
@@ -937,16 +1537,24 @@ export default function StudentProfileForm({
                       <Input
                         value={exp.semester}
                         onChange={(e) => {
+                          const { value } = e.target;
                           const newExp = [...editedExperience];
-                          newExp[index].semester = e.target.value;
+                          newExp[index].semester = value;
                           setEditedExperience(newExp);
+
+                          // Real-time validation
+                          const error = validateExperienceField("semester", value);
+                          setErrors(prev => ({ ...prev, [`semester_${index}`]: error }));
                         }}
                       />
                     ) : (
                       <p className="text-sm">{exp.semester}</p>
                     )}
                     {isEditingExperience && (
-                        <p className="text-xs text-muted-foreground">Accepted formats are Fall 2023, Winter 2024, Summer 2021</p>
+                      <p className="text-xs text-muted-foreground">Accepted formats are Fall 2023, Winter 2024, Summer 2021</p>
+                    )}
+                    {errors[`semester_${index}`] && (
+                      <p className="text-red-500 text-xs">{errors[`semester_${index}`]}</p>
                     )}
                   </div>
 
@@ -956,13 +1564,21 @@ export default function StudentProfileForm({
                       <Input
                         value={exp.professor}
                         onChange={(e) => {
+                          const { value } = e.target;
                           const newExp = [...editedExperience];
-                          newExp[index].professor = e.target.value;
+                          newExp[index].professor = value;
                           setEditedExperience(newExp);
+
+                          // Real-time validation
+                          const error = validateExperienceField("professor", value);
+                          setErrors(prev => ({ ...prev, [`professor_${index}`]: error }));
                         }}
                       />
                     ) : (
                       <p className="text-sm">{exp.professor}</p>
+                    )}
+                    {errors[`professor_${index}`] && (
+                      <p className="text-red-500 text-xs">{errors[`professor_${index}`]}</p>
                     )}
                   </div>
                 </div>
@@ -1032,6 +1648,7 @@ export default function StudentProfileForm({
                             softSkills: [...profile.softSkills],
                           });
                           setSkillsEdit(false);
+                          setErrors({}); // Clear errors on cancel
                         }}
                       >
                         Cancel
@@ -1068,31 +1685,47 @@ export default function StudentProfileForm({
                               key={index}
                               className="flex items-center gap-2"
                             >
-                              <Input
-                                value={skill}
-                                className="w-40"
-                                onChange={(e) => {
-                                  const newSkills = [
-                                    ...editedSkills.technicalSkills,
-                                  ];
-                                  newSkills[index] = e.target.value;
-                                  setEditedSkills({
-                                    ...editedSkills,
-                                    technicalSkills: newSkills,
-                                  });
-                                }}
-                              />
+                              <div className="flex-1">
+                                <Input
+                                  value={skill}
+                                  className="w-40"
+                                  onChange={(e) => {
+                                    // Filter out numbers and restrict to letters/symbols only
+                                    const value = e.target.value.replace(/[0-9]/g, '');
+                                    const newSkills = [...editedSkills.technicalSkills];
+                                    newSkills[index] = value;
+                                    setEditedSkills({
+                                      ...editedSkills,
+                                      technicalSkills: newSkills,
+                                    });
+
+                                    // Real-time validation
+                                    const error = validateSkillField(value);
+                                    setErrors(prev => ({
+                                      ...prev,
+                                      [`technical_${index}`]: error
+                                    }));
+                                  }}
+                                  placeholder="e.g., JavaScript, Python, React (no numbers)"
+                                />
+                                {errors[`technical_${index}`] && (
+                                  <p className="text-red-500 text-xs mt-1">{errors[`technical_${index}`]}</p>
+                                )}
+                              </div>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => {
-                                  const updated =
-                                    editedSkills.technicalSkills.filter(
-                                      (_, i) => i !== index
-                                    );
+                                  const updated = editedSkills.technicalSkills.filter((_, i) => i !== index);
                                   setEditedSkills({
                                     ...editedSkills,
                                     technicalSkills: updated,
+                                  });
+                                  // Clear error
+                                  setErrors(prev => {
+                                    const newErrors = { ...prev };
+                                    delete newErrors[`technical_${index}`];
+                                    return newErrors;
                                   });
                                 }}
                               >
@@ -1146,31 +1779,47 @@ export default function StudentProfileForm({
                               key={index}
                               className="flex items-center gap-2"
                             >
-                              <Input
-                                value={skill}
-                                className="w-40"
-                                onChange={(e) => {
-                                  const newSkills = [
-                                    ...editedSkills.softSkills,
-                                  ];
-                                  newSkills[index] = e.target.value;
-                                  setEditedSkills({
-                                    ...editedSkills,
-                                    softSkills: newSkills,
-                                  });
-                                }}
-                              />
+                              <div className="flex-1">
+                                <Input
+                                  value={skill}
+                                  className="w-40"
+                                  onChange={(e) => {
+                                    // Filter out numbers and restrict to letters/symbols only
+                                    const value = e.target.value.replace(/[0-9]/g, '');
+                                    const newSkills = [...editedSkills.softSkills];
+                                    newSkills[index] = value;
+                                    setEditedSkills({
+                                      ...editedSkills,
+                                      softSkills: newSkills,
+                                    });
+
+                                    // Real-time validation
+                                    const error = validateSkillField(value);
+                                    setErrors(prev => ({
+                                      ...prev,
+                                      [`soft_${index}`]: error
+                                    }));
+                                  }}
+                                  placeholder="e.g., Communication, Leadership (no numbers)"
+                                />
+                                {errors[`soft_${index}`] && (
+                                  <p className="text-red-500 text-xs mt-1">{errors[`soft_${index}`]}</p>
+                                )}
+                              </div>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => {
-                                  const updated =
-                                    editedSkills.softSkills.filter(
-                                      (_, i) => i !== index
-                                    );
+                                  const updated = editedSkills.softSkills.filter((_, i) => i !== index);
                                   setEditedSkills({
                                     ...editedSkills,
                                     softSkills: updated,
+                                  });
+                                  // Clear error
+                                  setErrors(prev => {
+                                    const newErrors = { ...prev };
+                                    delete newErrors[`soft_${index}`];
+                                    return newErrors;
                                   });
                                 }}
                               >
@@ -1231,6 +1880,7 @@ export default function StudentProfileForm({
                               setCoursePreference([
                                 ...profile.coursePreference,
                               ]);
+                              setErrors({}); // Clear errors on cancel
                             }}
                             variant="outline"
                             className="gap-2"
@@ -1259,14 +1909,28 @@ export default function StudentProfileForm({
                       <div className="space-y-4">
                         {coursePreference.map((course, index) => (
                           <div key={index} className="flex items-center gap-2">
-                            <Input
-                              value={course}
-                              onChange={(e) => {
-                                const updated = [...coursePreference];
-                                updated[index] = e.target.value;
-                                setCoursePreference(updated);
-                              }}
-                            />
+                            <div className="flex-1">
+                              <Input
+                                value={course}
+                                onChange={(e) => {
+                                  const { value } = e.target;
+                                  const updated = [...coursePreference];
+                                  updated[index] = value;
+                                  setCoursePreference(updated);
+
+                                  // Real-time validation
+                                  const error = validateCoursePreference(value);
+                                  setErrors(prev => ({
+                                    ...prev,
+                                    [`course_${index}`]: error
+                                  }));
+                                }}
+                                placeholder="e.g., COSC 499, MATH 100A"
+                              />
+                              {errors[`course_${index}`] && (
+                                <p className="text-red-500 text-xs mt-1">{errors[`course_${index}`]}</p>
+                              )}
+                            </div>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -1275,6 +1939,12 @@ export default function StudentProfileForm({
                                   (_, i) => i !== index
                                 );
                                 setCoursePreference(updated);
+                                // Clear error
+                                setErrors(prev => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors[`course_${index}`];
+                                  return newErrors;
+                                });
                               }}
                             >
                               <X className="h-4 w-4" />
@@ -1345,12 +2015,66 @@ export default function StudentProfileForm({
             </CardHeader>
             <CardContent>
               <p>
-                Please indicate your general weekly availability below. Blue
-                boxes represent times that you are available for TA work, and
-                white boxes represent times that you are not.
-                <br />
-                <br />
-              </p>
+
+
+                    <span style={{ display: "block", marginBottom: "1rem" }}>
+                      Please indicate your general weekly availability below.
+                    </span>
+
+                    <div style={{
+                      backgroundColor: "#f0f7ff",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                      marginBottom: "1rem",
+                      border: "1px solid #cfe2ff"
+                    }}>
+                      <strong style={{ color: "#2563eb" }}>Blue boxes</strong> represent times that you are
+                      <strong style={{ color: "#ef4444" }}> NOT available </strong>for work, and
+                      <strong style={{ color: "#000" }}> white boxes </strong>represent times that you
+                      <strong style={{ color: "#22c55e" }}> ARE available</strong>.
+                    </div>
+
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1.5rem",
+                      marginBottom: "1.5rem"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <div style={{
+                          width: "20px",
+                          height: "20px",
+                          backgroundColor: "#2563eb",
+                          border: "1px solid #ccc"
+                        }} />
+                        <span style={{ color: "#dc2626", fontWeight: "bold" }}>Not Available</span>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <div style={{
+                          width: "20px",
+                          height: "20px",
+                          backgroundColor: "#fff",
+                          border: "1px solid #ccc"
+                        }} />
+                        <span style={{ color: "#22c55e", fontWeight: "bold" }}>Available</span>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      backgroundColor: "#fff5f5",
+                      border: "1px solid #fecaca",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                      marginBottom: "1.5rem"
+    
+                    }}>
+                      <strong style={{ color: "#b91c1c" }}>⚠ Tip:</strong>
+                      <span style={{ color: "#b91c1c", marginLeft: "0.5rem" }}>
+                        Only highlight the times you are <u>NOT available</u>!
+                      </span>
+                    </div>
+                  </p>
               <WeeklyAvailabilityCalendar
                 editable={isEditingAvailability}
                 availability={availabilityData}

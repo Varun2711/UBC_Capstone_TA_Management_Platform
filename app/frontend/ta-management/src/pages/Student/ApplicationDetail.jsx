@@ -16,6 +16,7 @@ import {
   GraduationCap,
   MapPin,
   Briefcase,
+  Download,
 } from "lucide-react";
 
 import {
@@ -23,12 +24,15 @@ import {
   getApplicationWithFormData,
   formatResponseForDisplay,
   getStatusDisplayInfo,
+  fetchApplicationDocuments,
+  downloadDocument,
 } from "@/logic/student-view-applications";
 
 import { fetchAppBarProfile } from "@/logic/student-applications";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/student-dashboard-sidebar";
 import { Button } from "@/components/ui/button";
+import DocumentsSection from "@/components/student-view-application/DocumentsSection";
 
 // Status badge component
 const StatusBadge = ({ status }) => {
@@ -367,6 +371,10 @@ export default function ApplicationDetail() {
             <ApplicationHeader application={applicationData.application} />
             {/* Job posting details */}
             <JobPostingDetails posting={applicationData.application.posting} />
+            {/* Documents section - ADD THIS LINE */}
+            <DocumentsSection
+              applicationId={applicationData.application.application_id}
+            />
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Application Responses
             </h2>

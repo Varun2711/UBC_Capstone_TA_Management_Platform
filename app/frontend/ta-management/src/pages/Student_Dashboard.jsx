@@ -203,7 +203,6 @@ export default function StudentDashboard() {
     const fetchApplications = async () => {
       try {
         setIsLoadingApplications(true);
-
         if (!userData) {
           //  console.error("User data is not available yet.");
           setIsLoadingApplications(false);
@@ -229,14 +228,14 @@ export default function StudentDashboard() {
 
         setSubmittedApplications(transformedApplications);
       } catch (err) {
-        console.log("Error fetching student applications:", err);
+        //console.log("Error fetching student applications:", err);
       } finally {
         setIsLoadingApplications(false);
       }
     };
 
     fetchApplications();
-  }, [userData]); // ✅ Runs only when userData is updated
+  }, [userData]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {

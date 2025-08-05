@@ -1,5 +1,8 @@
 import pytest
 from django.apps import apps
+import tempfile
+import shutil
+from django.test import override_settings
 
 
 def pytest_configure():
@@ -17,6 +20,21 @@ def pytest_configure():
         for model in unmanaged_models:
             model._meta.managed = True
 
+@pytest.fixture(scope='session', autouse=True)
+def temp_media_root():
+    """
+    Create a temporary media root for all tests and clean it up afterwards.
+    This fixture runs once per test session.
+    """
+    # Create temporary directory
+    temp_dir = tempfile.mkdtemp()
+    
+    # Override the MEDIA_ROOT setting
+    with override_settings(MEDIA_ROOT=temp_dir):
+        yield temp_dir
+    
+    # Clean up after all tests are done
+    shutil.rmtree(temp_dir, ignore_errors=True)
 
 @pytest.fixture(autouse=True)
 def enable_db_access(db):
@@ -25,7 +43,13 @@ def enable_db_access(db):
     """
     pass
 
-
+@pytest.fixture(autouse=True)
+def use_temp_media(temp_media_root, settings):
+    """
+    Ensure all tests use the temporary media directory.
+    """
+    settings.MEDIA_ROOT = temp_media_root
+    
 @pytest.fixture
 def sample_test_data():
     """
