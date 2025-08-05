@@ -750,7 +750,7 @@ export default function UserManagement() {
                 // Admin form fields
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">Name</Label>
                     <Input
                       id="name"
                       value={formData.name}
