@@ -532,7 +532,25 @@ class CreateInstructorView(generics.CreateAPIView):
         if serializer.is_valid():
             try:
                 with transaction.atomic():
-                    department_name = serializer.validated_data['department']
+                    department_code = serializer.validated_data['department']
+                    
+                    # Map department codes to full names
+                    department_mapping = {
+                        'astr': 'Astronomy',
+                        'math': 'Mathematics',
+                        'phy': 'Physics',
+                        'data': 'Data Science',
+                        'stat': 'Statistics',
+                        'cosc': 'Computer Science',
+                    }
+                    
+                    department_name = department_mapping.get(department_code)
+                    if not department_name:
+                        return Response(
+                            error_response(f"Invalid department code: {department_code}"),
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    
                     department = Department.objects.get(name__iexact=department_name)
                     
                     password = generate_secure_password()
@@ -562,7 +580,8 @@ class CreateInstructorView(generics.CreateAPIView):
                         "name": instructor.name,
                         "department": instructor.department.name,
                         "email": instructor.email,
-                        "created_by": request.user_id
+                        "created_by": request.user_id,
+                        "temporary_password": password
                     }
                     
                     return Response(
@@ -631,6 +650,7 @@ class CreateSchedulerView(generics.CreateAPIView):
                 
                 # Generate secure temporary password
                 temp_password = generate_secure_password()
+                hashed_password = make_password(temp_password)
                 
                 # Create TA scheduler
                 scheduler = TAScheduler.objects.create(
@@ -638,19 +658,33 @@ class CreateSchedulerView(generics.CreateAPIView):
                     name=f"{serializer.validated_data['first_name']} {serializer.validated_data['last_name']}",
                     email=serializer.validated_data['email'],
                     department=department,
-                    password=temp_password
+                    password=hashed_password
                 )
                 
                 # Return response with temporary password for admin to share
-                response_data = TASchedulerSerializer(scheduler).data
-                response_data['temporary_password'] = temp_password
+                response_data = {
+                    "id": scheduler.employee_number,
+                    "name": scheduler.name,
+                    "department": scheduler.department.name,
+                    "email": scheduler.email,
+                    "created_by": request.user_id,
+                    "temporary_password": temp_password
+                }
                 
-                log_user_activity('admin', request.user.email, f'created_scheduler_{scheduler.employee_number}')
+                log_user_activity(request.user_id, 'ADMIN_CREATE_SCHEDULER', scheduler.employee_number)
+                
+                # Send notification email
+                send_account_creation_email(
+                    email=scheduler.email,
+                    name=scheduler.name,
+                    temporary_password=temp_password,
+                    user_type='scheduler'
+                )
                 
                 return Response(
                     success_response(
                         response_data,
-                        "TA Scheduler created successfully. Please share the temporary password with the scheduler."
+                        "TA Scheduler created successfully. A notification has been sent to their email."
                     ),
                     status=status.HTTP_201_CREATED
                 )
@@ -827,7 +861,7 @@ class UserManagementView(generics.GenericAPIView):
             
             if serializer.is_valid():
                 serializer.save()
-                log_user_activity('admin', request.user.email, f'modified_{user_type}_{user_id}')
+                log_user_activity(request.user_id, f'ADMIN_MODIFY_{user_type.upper()}', user_id)
                 
                 return Response(
                     success_response(

@@ -415,42 +415,6 @@ export default function UserManagement() {
     }
   }
 
-  const handlePromoteToCoordinator = async (user) => {
-    if (user.type !== 'instructor') {
-      alert('Only instructors can be promoted to TA coordinators')
-      return
-    }
-
-    try {
-      // Use the standardized department name to get the department code
-      const departmentCode = getDepartmentCode(user.department)
-      
-      if (!departmentCode) {
-        alert('Invalid department for this user. Cannot promote to TA Coordinator.')
-        return
-      }
-
-      // Create a scheduler record with the same details as the instructor
-      const schedulerData = {
-        first_name: user.name.split(' ')[0],
-        last_name: user.name.split(' ').slice(1).join(' '),
-        email: user.email,
-        employee_number: user.id,
-        department: departmentCode // Send department code instead of ID
-      }
-
-      const response = await createUser(schedulerData, 'scheduler')
-      if (response.success) {
-        alert(`${user.name} has been promoted to TA Coordinator!`)
-        await loadInitialData()
-      } else {
-        alert('Error promoting user: ' + response.message)
-      }
-    } catch (err) {
-      alert('Error promoting user: ' + (err.message || 'Unknown error'))
-    }
-  }
-
   const handleUserAction = async (user, action) => {
     const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate'
     
@@ -767,12 +731,6 @@ export default function UserManagement() {
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit User
                               </DropdownMenuItem>
-                              {user.type === 'instructor' && user.is_active && (
-                                <DropdownMenuItem onClick={() => handlePromoteToCoordinator(user)}>
-                                  <ChevronUp className="mr-2 h-4 w-4" />
-                                  Promote to TA Coordinator
-                                </DropdownMenuItem>
-                              )}
                               <DropdownMenuSeparator />
                               {user.is_active && user.type !== 'admin' ? (
                                 <DropdownMenuItem 
