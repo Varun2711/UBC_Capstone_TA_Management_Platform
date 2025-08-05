@@ -246,11 +246,11 @@ export default function UserManagement() {
   const fetchDepartments = async () => {
     try {
       const departmentsData = await getDepartments()
-      if (departmentsData.success) {
-        setDepartments(departmentsData.data)
+      // getDepartments returns the array directly, not wrapped in success/data structure
+      if (Array.isArray(departmentsData)) {
+        setDepartments(departmentsData)
       } else {
-        console.error('Failed to fetch departments:', departmentsData.message)
-        // Fallback to empty array if API fails
+        console.error('Invalid departments data format:', departmentsData)
         setDepartments([])
       }
     } catch (err) {
@@ -305,9 +305,17 @@ export default function UserManagement() {
       
       let response
       if (createType === 'instructor') {
-        response = await createInstructor(formData)
+        const instructorData = {
+          ...formData,
+          department: parseInt(formData.department) // Convert to number for API
+        }
+        response = await createInstructor(instructorData)
       } else if (createType === 'scheduler') {
-        response = await createScheduler(formData)
+        const schedulerData = {
+          ...formData,
+          department: parseInt(formData.department) // Convert to number for API
+        }
+        response = await createScheduler(schedulerData)
       } else if (createType === 'admin') {
         // For admin, we only need name, email, and employee_number
         const adminData = {
@@ -350,7 +358,7 @@ export default function UserManagement() {
     const user_id = selectedUser.id
     const update_data = {
       email: formData.email,
-      department: formData.department,
+      department: parseInt(formData.department), // Convert back to number for API
       employee_number: formData.employee_number,
       first_name: formData.first_name,
       last_name: formData.last_name,
@@ -393,7 +401,7 @@ export default function UserManagement() {
         last_name: user.name.split(' ').slice(1).join(' '),
         email: user.email,
         employee_number: user.id,
-        department: getDepartmentId(user.department)
+        department: parseInt(getDepartmentId(user.department)) // Convert to number for API
       }
 
       const response = await createScheduler(schedulerData)
@@ -452,25 +460,27 @@ export default function UserManagement() {
 
   const getDepartmentCode = (departmentName) => {
     const dept = departments.find(d => d.name === departmentName)
-    return dept ? dept.id : null
+    return dept ? dept.id.toString() : null
   }
 
   const getDepartmentName = (departmentId) => {
-    const dept = departments.find(d => d.id === departmentId)
+    // Handle both string and number IDs
+    const dept = departments.find(d => d.id.toString() === departmentId.toString())
     return dept ? dept.name : 'N/A'
   }
 
   const getDepartmentId = (departmentValue) => {
-    // If it's already a number, return it
+    // If it's already a number, convert to string for consistency
     if (typeof departmentValue === 'number') {
+      return departmentValue.toString()
+    }
+    // If it's a string that can be parsed as a number, return it as string
+    if (typeof departmentValue === 'string' && !isNaN(departmentValue)) {
       return departmentValue
     }
-    // If it's a string that can be parsed as a number, return the parsed value
-    if (typeof departmentValue === 'string' && !isNaN(departmentValue)) {
-      return parseInt(departmentValue)
-    }
     // Otherwise, treat it as a department name and find the ID
-    return getDepartmentCode(departmentValue)
+    const id = getDepartmentCode(departmentValue)
+    return id ? id : ''
   }
 
   const getRoleIcon = (role) => {
@@ -930,7 +940,7 @@ export default function UserManagement() {
                       </SelectTrigger>
                       <SelectContent>
                         {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
+                          <SelectItem key={dept.id} value={dept.id.toString()}>
                             {dept.name}
                           </SelectItem>
                         ))}
@@ -1029,7 +1039,7 @@ export default function UserManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
+                        <SelectItem key={dept.id} value={dept.id.toString()}>
                           {dept.name}
                         </SelectItem>
                       ))}
