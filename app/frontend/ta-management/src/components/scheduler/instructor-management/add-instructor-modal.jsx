@@ -1,128 +1,92 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, AlertCircle, Eye, EyeOff, Copy, Check } from "lucide-react";
-import { addInstructor } from "@/logic/instructorManagement";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { addInstructor } from "@/logic/instructorManagement";
+import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
-export function AddInstructorModal({ isOpen, onClose, onDataChange, existingInstructors = [], departments = [] }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    department: "",
-    employeeNumber: "",
-  });
-
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiError, setApiError] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [tempPassword, setTempPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [passwordCopied, setPasswordCopied] = useState(false);
-
-  const validateField = (name, value) => {
-    switch (name) {
-      case "name": if (!value.trim()) return "Instructor name is required"; if (value.trim().length < 2) return "Name must be at least 2 characters"; return "";
-      case "email": if (!value.trim()) return "Email address is required"; const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; if (!emailRegex.test(value.trim())) return "Please enter a valid email address"; if (existingInstructors.find((i) => i.email.toLowerCase() === value.trim().toLowerCase())) { return "An instructor with this email already exists"; } return "";
-      case "department": if (!value) return "Department is required"; return "";
-      case "employeeNumber": if (!value.trim()) return "Employee number is required"; if (!/^\d{8}$/.test(value.trim())) return "Employee number must be exactly 8 digits"; if (existingInstructors.find((i) => i.employeeNumber === value.trim())) { return "An instructor with this employee number already exists"; } return "";
-      default: return "";
-    }
-  };
-
-  const handleInputChange = (name, value) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name] || apiError) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-      setApiError("");
-    }
-  };
-
-  const handleBlur = (name, value) => {
-    const error = validateField(name, value);
-    setErrors((prev) => ({ ...prev, [name]: error }));
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    Object.keys(formData).forEach((key) => {
-      newErrors[key] = validateField(key, formData[key]);
-    });
-    setErrors(newErrors);
-    return !Object.values(newErrors).some((error) => error);
-  };
+export function AddInstructorModal({ isOpen, onClose, onDataChange, existingInstructors, departments }) {
+  const [name, setName] = useState("");
+  const [employeeNumber, setEmployeeNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [department, setDepartment] = useState("");
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [newInstructor, setNewInstructor] = useState(null);
 
   const resetForm = () => {
-    setFormData({ name: "", email: "", department: "", employeeNumber: "" });
-    setErrors({});
-    setIsSubmitting(false);
-    setShowSuccess(false);
-    setApiError("");
-    setTempPassword("");
-  };
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-    setApiError("");
-
-    try {
-      const payload = {
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        department: formData.department,
-        employee_number: formData.employeeNumber.trim(),
-      };
-      
-      const newInstructorData = await addInstructor(payload);
-      setTempPassword(newInstructorData.temporary_password);
-      setShowSuccess(true);
-
-    } catch (error) {
-      console.error("Error adding instructor:", error);
-      const errorMsg = error.response?.data?.errors
-        ? Object.values(error.response.data.errors).flat().join(" ")
-        : (error.response?.data?.message || "An unknown error occurred. Please try again.");
-      setApiError(errorMsg);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setName("");
+    setEmployeeNumber("");
+    setEmail("");
+    setDepartment("");
+    setError(null);
+    setIsLoading(false);
+    setIsSuccess(false);
+    setNewInstructor(null);
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
-      resetForm();
-      onClose();
+    resetForm();
+    onClose();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!name || !email || !department || !employeeNumber) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    if (existingInstructors.some(inst => inst.email === email)) {
+      setError("An instructor with this email already exists.");
+      return;
+    }
+    if (employeeNumber && existingInstructors.some(inst => inst.employeeNumber === employeeNumber)) {
+      setError("An instructor with this employee number already exists.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const instructorData = { name, email, department, employee_number: employeeNumber };
+      const response = await addInstructor(instructorData);
+      setNewInstructor(response);
+      setIsSuccess(true);
+      onDataChange();
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "An unexpected error occurred.";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  const handleSuccessModalClose = () => {
-    onDataChange();
-    handleClose();
-  };
-  
-  const handleCopyPassword = async () => {
-    await navigator.clipboard.writeText(tempPassword);
-    setPasswordCopied(true);
-    setTimeout(() => setPasswordCopied(false), 2000);
-  };
-  
-  if (showSuccess) {
+
+  if (isSuccess) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleSuccessModalClose}>
-        <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle className="flex items-center gap-2 text-green-600"><Check className="h-5 w-5" /> Instructor Added</DialogTitle><DialogDescription>Please share the temporary password with the instructor.</DialogDescription></DialogHeader><div className="space-y-4"><div className="space-y-2"><Label className="text-sm font-medium">Temporary Password</Label><div className="flex items-center space-x-2"><div className="relative flex-1"><Input type={showPassword ? "text" : "password"} value={tempPassword} readOnly className="pr-10 font-mono" /><Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div><Button type="button" variant="outline" size="sm" onClick={handleCopyPassword} className={passwordCopied ? "text-green-600" : ""}>{passwordCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button></div><p className="text-xs text-muted-foreground">The instructor should change this password upon first login.</p></div><Alert><AlertCircle className="h-4 w-4" /><AlertDescription>Securely share this password. It will not be shown again.</AlertDescription></Alert></div>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CheckCircle className="h-6 w-6 mr-2 text-green-500" />
+              Instructor Added
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>
+              <strong>{newInstructor?.name}</strong> has been successfully added.
+            </p>
+            <p className="mt-2 text-muted-foreground">
+              An email with their account details and a temporary password has been sent to <strong>{newInstructor?.email}</strong>.
+            </p>
+          </div>
           <DialogFooter>
-            <Button onClick={handleSuccessModalClose} className="w-full">Done</Button>
+            <Button onClick={handleClose}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -131,7 +95,54 @@ export function AddInstructorModal({ isOpen, onClose, onDataChange, existingInst
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-md"><DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="h-5 w-5" />Add New Instructor</DialogTitle><DialogDescription>Fill in the details for the new instructor.</DialogDescription></DialogHeader><form onSubmit={handleSubmit} className="space-y-4 pt-4"><div className="space-y-2"><Label htmlFor="name">Full Name *</Label><Input id="name" value={formData.name} onChange={(e) => handleInputChange("name", e.target.value)} onBlur={(e) => handleBlur("name", e.target.value)} className={errors.name ? "border-red-500" : ""} />{errors.name && <p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-4 w-4" />{errors.name}</p>}</div><div className="space-y-2"><Label htmlFor="employeeNumber">Employee Number *</Label><Input id="employeeNumber" value={formData.employeeNumber} onChange={(e) => handleInputChange("employeeNumber", e.target.value)} onBlur={(e) => handleBlur("employeeNumber", e.target.value)} className={errors.employeeNumber ? "border-red-500" : ""} maxLength={8} />{errors.employeeNumber && <p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-4 w-4" />{errors.employeeNumber}</p>}</div><div className="space-y-2"><Label htmlFor="email">Email Address *</Label><Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} onBlur={(e) => handleBlur("email", e.target.value)} className={errors.email ? "border-red-500" : ""} />{errors.email && <p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-4 w-4" />{errors.email}</p>}</div><div className="space-y-2"><Label htmlFor="department">Department *</Label><Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}><SelectTrigger className={errors.department ? "border-red-500" : ""}><SelectValue placeholder="Select department" /></SelectTrigger><SelectContent>{departments.map((deptName) => <SelectItem key={deptName} value={deptName}>{deptName}</SelectItem>)}</SelectContent></Select>{errors.department && <p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-4 w-4" />{errors.department}</p>}</div>{apiError && (<Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{apiError}</AlertDescription></Alert>)}</form><DialogFooter><Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>Cancel</Button><Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>{isSubmitting ? "Adding..." : "Add Instructor"}</Button></DialogFooter></DialogContent>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add New Instructor</DialogTitle>
+          <DialogDescription>
+            Fill in the details for the new instructor.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-2" noValidate>
+          {error && (
+            <div className="flex items-center bg-red-50 border border-red-200 text-red-700 p-3 rounded-md">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name *</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="employeeNumber">Employee Number *</Label>
+            <Input id="employeeNumber" value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address *</Label>
+            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="department">Department *</Label>
+            <Select onValueChange={setDepartment} value={department}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Instructor
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 }

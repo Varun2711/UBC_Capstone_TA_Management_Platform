@@ -129,8 +129,8 @@ export default function ApplicationForm() {
               sortedSections.forEach((section, index) => {
                 labels[index + 1] = section.name;
               });
-              labels[dynamicStepCount + 1] = "Personal Details";
-              labels[dynamicStepCount + 2] = "Supporting Documents";
+              labels[dynamicStepCount + 1] = "Supporting Documents";
+              labels[dynamicStepCount + 2] = "Personal Details";
               labels[dynamicStepCount + 3] = "Review";
               setStepLabels(labels);
             }
@@ -143,8 +143,8 @@ export default function ApplicationForm() {
             setStepLabels({
               1: "Eligibility",
               2: "Selections",
-              3: "Personal Details",
-              4: "Supporting Documents",
+              3: "Supporting Documents",
+              4: "Personal Details",
               5: "Review",
             });
           }
@@ -153,8 +153,8 @@ export default function ApplicationForm() {
           setStepLabels({
             1: "Eligibility",
             2: "Selections",
-            3: "Personal Details",
-            4: "Supporting Documents",
+            3: "Supporting Documents",
+            4: "Personal Details",
             5: "Review",
           });
         }
