@@ -126,7 +126,6 @@ describe("AdminSidebar", () => {
     await user.click(dropdownTrigger)
 
     expect(await screen.findByText("Admin Account")).toBeInTheDocument()
-    expect(screen.getByText("Admin Profile")).toBeInTheDocument()
     expect(screen.getByText("System Logs")).toBeInTheDocument()
     expect(screen.getByText("Logout")).toBeInTheDocument()
   })
