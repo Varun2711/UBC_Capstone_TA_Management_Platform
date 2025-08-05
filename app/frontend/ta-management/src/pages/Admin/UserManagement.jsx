@@ -428,6 +428,15 @@ export default function UserManagement() {
   const handleUserAction = async (user, action) => {
     const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate'
     
+    // Check if trying to deactivate the last admin
+    if (action === 'deactivate' && user.type === 'admin') {
+      const activeAdmins = users.filter(u => u.type === 'admin' && u.is_active)
+      if (activeAdmins.length <= 1) {
+        alert('Cannot deactivate the last active admin. At least one admin must remain active.')
+        return
+      }
+    }
+    
     if (!window.confirm(`Are you sure you want to ${actionText} ${user.name}?`)) {
       return
     }
@@ -746,9 +755,12 @@ export default function UserManagement() {
                                 <DropdownMenuItem 
                                   className="text-red-600"
                                   onClick={() => handleUserAction(user, 'deactivate')}
+                                  disabled={user.type === 'admin' && users.filter(u => u.type === 'admin' && u.is_active).length <= 1}
                                 >
                                   <UserX className="mr-2 h-4 w-4" />
-                                  Deactivate User
+                                  {user.type === 'admin' && users.filter(u => u.type === 'admin' && u.is_active).length <= 1 
+                                    ? 'Cannot deactivate last admin' 
+                                    : 'Deactivate User'}
                                 </DropdownMenuItem>
                               ) : (
                                 <DropdownMenuItem 
