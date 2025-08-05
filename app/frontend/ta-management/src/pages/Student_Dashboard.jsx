@@ -104,7 +104,7 @@ export default function StudentDashboard() {
   const [isLoadingOffers, setIsLoadingOffers] = useState(true);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
   const [isLoadingJobPostings, setIsLoadingJobPostings] = useState(true);
-  
+
   // State for current user data
   const [userData, setUserData] = useState(null);
   const [submittedApplications, setSubmittedApplications] = useState([]);
@@ -291,7 +291,7 @@ export default function StudentDashboard() {
                   Here's your TA application overview and current status
                 </p>
               </div>
-              <Button 
+              <Button
                 onClick={() => navigate("/apply")}
                 className="bg-blue-600 hover:bg-blue-700"
               >
@@ -404,8 +404,8 @@ export default function StudentDashboard() {
                     )}
                   </div>
 
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full mt-4"
                     onClick={() => navigate("/profile")}
                   >
@@ -442,8 +442,8 @@ export default function StudentDashboard() {
                                 Deadline: {formatDate(offer.response_deadline)}
                               </p>
                             </div>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               onClick={() => navigate("/student-offers")}
                             >
                               View Offers
@@ -470,9 +470,9 @@ export default function StudentDashboard() {
                             </div>
                           </div>
                         ))}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="w-full mt-2"
                           onClick={() => navigate("/my-applications")}
                         >
@@ -485,7 +485,7 @@ export default function StudentDashboard() {
                     {activeAssignments.length > 0 && (
                       <div className="space-y-2">
                         <h4 className="font-medium text-gray-900">Current Positions</h4>
-                        {activeAssignments.slice(0, 2).map((assignment) => (
+                        {activeAssignments.map((assignment) => (
                           <div key={assignment.assignment_id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                             <div>
                               <p className="text-sm font-medium">
@@ -509,7 +509,7 @@ export default function StudentDashboard() {
                         <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
                         <p className="text-gray-600 mb-4">Start by applying to TA positions to see your activity here.</p>
-                        <Button 
+                        <Button
                           onClick={() => navigate("/apply")}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
@@ -548,8 +548,8 @@ export default function StudentDashboard() {
                         <p className="text-xs text-gray-500 mb-3">
                           Deadline: {formatDate(posting.deadline_date)}
                         </p>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           className="w-full"
                           onClick={() => navigate("/apply")}
                         >
@@ -559,7 +559,7 @@ export default function StudentDashboard() {
                     ))}
                   </div>
                   <div className="mt-4 text-center">
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={() => navigate("/apply")}
                     >
