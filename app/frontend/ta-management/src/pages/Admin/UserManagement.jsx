@@ -136,14 +136,57 @@ const updateUser = async (updateData) => {
   return data
 }
 
-// Department code mappings
+// Department mapping functions - matching scheduler dashboard approach
+function getDepartmentFromCourseName(course_info) {
+  if (!course_info) return 'Other';
+  const firstWord = course_info.split(' ')[0].toUpperCase();
+  
+  // Map variations to standard department names
+  const departmentMap = {
+    'COSC': 'Computer Science',
+    'MATH': 'Mathematics', 
+    'MATHS': 'Mathematics',
+    'STAT': 'Statistics',
+    'PHYS': 'Physics',
+    'DATA': 'Data Science',
+    'PSYO': 'Psychology',
+    'BIOL': 'Biology',
+    'CHEM': 'Chemistry',
+    'ENGR': 'Engineering',
+  };
+  
+  return departmentMap[firstWord] || 'Other';
+}
+
+// Function to get standard department name from various formats
+function getStandardDepartmentName(departmentInput) {
+  if (!departmentInput) return 'Other';
+  
+  // If it's already a standard name, return it
+  const standardNames = [
+    'Computer Science', 'Mathematics', 'Statistics', 'Physics', 
+    'Data Science', 'Psychology', 'Biology', 'Chemistry', 'Engineering'
+  ];
+  
+  if (standardNames.includes(departmentInput)) {
+    return departmentInput;
+  }
+  
+  // Try to parse it as a course name
+  return getDepartmentFromCourseName(departmentInput);
+}
+
+// Department code mappings for backend API calls
 const DEPARTMENT_MAPPINGS = {
   'Computer Science': 'cosc',
   'Mathematics': 'math',
   'Physics': 'phy',
   'Data Science': 'data',
   'Statistics': 'stat',
-  'Astronomy': 'astr'
+  'Psychology': 'psyo',
+  'Biology': 'biol',
+  'Chemistry': 'chem',
+  'Engineering': 'engr'
 }
 
 const getDepartmentCode = (departmentName) => {
@@ -199,15 +242,32 @@ export default function UserManagement() {
       ])
       
       if (usersData.success) {
-        setUsers(usersData.data.users || [])
+        // Process users to standardize department names
+        const processedUsers = (usersData.data.users || []).map(user => ({
+          ...user,
+          department: user.department ? getStandardDepartmentName(user.department) : 'Other'
+        }));
+        setUsers(processedUsers)
       } else {
         throw new Error(usersData.message || 'Failed to fetch users')
       }
       
-      // Filter departments to only supported ones
-      const supportedDepartments = departmentsData.filter(dept => 
-        Object.keys(DEPARTMENT_MAPPINGS).includes(dept.name)
-      )
+      // Filter departments to only supported ones and standardize names
+      const supportedDepartments = departmentsData
+        .map(dept => ({
+          ...dept,
+          name: getStandardDepartmentName(dept.name)
+        }))
+        .filter(dept => Object.keys(DEPARTMENT_MAPPINGS).includes(dept.name))
+        // Remove duplicates that might occur after standardization
+        .reduce((unique, dept) => {
+          const exists = unique.find(u => u.name === dept.name);
+          if (!exists) {
+            unique.push(dept);
+          }
+          return unique;
+        }, []);
+      
       setDepartments(supportedDepartments)
       
     } catch (err) {
@@ -362,7 +422,7 @@ export default function UserManagement() {
     }
 
     try {
-      // Find department name and convert to code for the user's current department
+      // Use the standardized department name to get the department code
       const departmentCode = getDepartmentCode(user.department)
       
       if (!departmentCode) {
@@ -452,7 +512,8 @@ export default function UserManagement() {
 
   // Helper functions
   const getDepartmentIdFromName = (departmentName) => {
-    const dept = departments.find(d => d.name === departmentName)
+    const standardName = getStandardDepartmentName(departmentName)
+    const dept = departments.find(d => d.name === standardName)
     return dept ? dept.id.toString() : ''
   }
 
