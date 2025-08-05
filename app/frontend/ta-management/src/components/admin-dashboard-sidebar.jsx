@@ -204,9 +204,6 @@ export function AdminSidebar({ activePage, ...props }) {
               <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
                 <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <button>Admin Profile</button>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
                   <button>Change Password</button>
                 </DropdownMenuItem>
