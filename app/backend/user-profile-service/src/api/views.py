@@ -746,7 +746,7 @@ class UserManagementView(generics.GenericAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            log_user_activity('admin', request.user.email, f'deactivated_{user_type}_{user_id}')
+            log_user_activity('admin', request.user_id, f'deactivated_{user_type}_{user_id}')
             
             return Response(
                 success_response(message=f"{user_type.title()} account deactivated successfully")

@@ -28,7 +28,7 @@ def find_user_by_email(email, password):
     '''
     try:
         student = Student.objects.get(email = email)
-        if check_password(password, student.password):
+        if check_password(password, student.password) and student.is_active:
             return student, "student", student.student_number
         else:
             return None, None, None
@@ -37,7 +37,7 @@ def find_user_by_email(email, password):
 
     try:
         instructor = Instructor.objects.get(email = email)
-        if check_password(password, instructor.password):
+        if check_password(password, instructor.password) and instructor.is_active:
             return instructor, "instructor", instructor.employee_number
         else:
             return None, None, None
@@ -46,7 +46,7 @@ def find_user_by_email(email, password):
 
     try:
         ta_scheduler = TAScheduler.objects.get(email = email)
-        if check_password(password, ta_scheduler.password):
+        if check_password(password, ta_scheduler.password) and ta_scheduler.is_active:
             return ta_scheduler, "scheduler", ta_scheduler.employee_number
         else:
             return None, None, None
@@ -55,7 +55,7 @@ def find_user_by_email(email, password):
 
     try:
         admin = Admin.objects.get(email=email)
-        if check_password(password, admin.password):
+        if check_password(password, admin.password) and admin.is_active:
             return admin, "admin", admin.employee_number
         else:
             return None, None, None
