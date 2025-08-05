@@ -17,7 +17,9 @@ import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
-import ResetPasswordController, { RESET_PASSWORD_STEPS } from "./pages/ResetPassword/ResetPasswordController";
+import ResetPasswordController, {
+  RESET_PASSWORD_STEPS,
+} from "./pages/ResetPassword/ResetPasswordController";
 import UserProfile from "./pages/profile-page-scheduler";
 import TaCoordinatorAllocationPage from "./pages/Scheduler/TaCoordinatorAllocationPage";
 import ViewJobPostings from "./pages/Student/Student_ViewJobPostings";
@@ -31,6 +33,7 @@ import StudentOffers from "./pages/StudentOffersPage";
 import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
 import AdminCourseManagement from "./pages/Admin/CourseManagement";
+import ViewStudentSchedule from "./pages/Student/Student_Schedule";
 import MyApplications from "./pages/Student/MyApplications";
 import ApplicationDetail from "./pages/Student/ApplicationDetail";
 
@@ -91,6 +94,15 @@ function App() {
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
             <StudentOffers />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/schedule"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ViewStudentSchedule />
           </ProtectedRoute>
         }
       />

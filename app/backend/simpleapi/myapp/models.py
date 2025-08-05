@@ -748,7 +748,7 @@ class Offer(models.Model):
 class Assignment(models.Model):
     """Final assignment after offer acceptance"""
     assignment_id = models.AutoField(primary_key=True)
-    offer = models.OneToOneField('Offer', on_delete=models.CASCADE, related_name='assignment', null=True, blank=True)
+    offer = models.ForeignKey('Offer', on_delete=models.CASCADE, related_name='assignments', null=True, blank=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, db_constraint=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, db_constraint=False)
     course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, null=True, blank=True, db_constraint=False)
