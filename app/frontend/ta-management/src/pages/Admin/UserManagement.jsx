@@ -139,33 +139,23 @@ const updateUser = async (updateData) => {
   return data
 }
 
-// Helper function to get supported departments (must match backend)
-const getSupportedDepartments = () => {
-  return ['Computer Science', 'Mathematics', 'Physics', 'Data Science', 'Statistics', 'Astronomy']
-}
-
-// Helper function to check if department is supported
-const isDepartmentSupported = (departmentName) => {
-  return getSupportedDepartments().some(supported => 
-    departmentName.toLowerCase() === supported.toLowerCase()
-  )
-}
-
 // Department mapping functions - matching scheduler dashboard approach
 function getDepartmentFromCourseName(course_info) {
   if (!course_info) return 'Other';
-  const firstWord = course_info.split('   ')[0].toUpperCase();
+  const firstWord = course_info.split(' ')[0].toUpperCase();
   
-  // Map variations to standard department names - only supported departments (matching backend)
+  // Map variations to standard department names - only supported departments
   const departmentMap = {
-    'COSC': 'Computer Science',
-    'MATH': 'Mathematics', 
-    'MATHS': 'Mathematics',
-    'STAT': 'Statistics',
-    'PHYS': 'Physics',
-    'PHY': 'Physics', // Also support PHY as variation
-    'DATA': 'Data Science',
-    'ASTR': 'Astronomy'
+    'cosc': 'Computer Science',
+    'math': 'Mathematics', 
+    'stat': 'Statistics',
+    'phy': 'Physics', 
+    'data': 'Data Science',
+    'eng': 'Engineering',
+    'astr': 'Astronomy',
+    'psych': 'Psychology',
+    'bio': 'Biology',
+    'chem': 'Chemistry',
   };
   
   return departmentMap[firstWord] || 'Other';
@@ -192,32 +182,37 @@ const getDepartmentCode = (departmentName, departmentsList = []) => {
     return dept.code
   }
   
-  // Backend-specific mappings - MUST match backend department_mapping exactly
-  const backendMappings = {
+  // Fallback mappings for common departments if code is not provided by backend
+  const fallbackMappings = {
     'Computer Science': 'cosc',
     'Mathematics': 'math',
     'Physics': 'phy',
     'Data Science': 'data',
     'Statistics': 'stat',
-    'Astronomy': 'astr'
+    'Astronomy': 'astr',
+    'Engineering': 'eng'  // Add Engineering mapping
   }
   
   // Try exact match first
-  if (backendMappings[departmentName]) {
-    return backendMappings[departmentName]
+  if (fallbackMappings[departmentName]) {
+    return fallbackMappings[departmentName]
   }
   
   // Try case-insensitive match
   const lowerName = departmentName.toLowerCase()
-  for (const [key, value] of Object.entries(backendMappings)) {
+  for (const [key, value] of Object.entries(fallbackMappings)) {
     if (key.toLowerCase() === lowerName) {
       return value
     }
   }
   
-  // If no mapping found, this department is not supported by the backend
-  console.error(`Unsupported department: "${departmentName}". Backend only supports: ${Object.keys(backendMappings).join(', ')}`)
-  return null // Return null to indicate unsupported department
+  // If no mapping found, create a basic code from the name
+  // This ensures we always return something for the backend
+  const basicCode = departmentName.toLowerCase()
+    .replace(/[^a-z0-9]/g, '') // Remove non-alphanumeric chars
+    .substring(0, 4) // Take first 4 characters
+  
+  return basicCode || 'unknown'
 }
 
 export default function UserManagement() {
@@ -289,8 +284,6 @@ export default function UserManagement() {
         }))
         // Remove any departments with empty or null names
         .filter(dept => dept.name && dept.name.trim() !== '')
-        // Only show departments that are supported by the backend
-        .filter(dept => isDepartmentSupported(dept.name))
         // Remove duplicates based on name
         .reduce((unique, dept) => {
           const exists = unique.find(u => u.name === dept.name);
@@ -323,8 +316,6 @@ export default function UserManagement() {
           name: dept.name || 'Unknown Department'
         }))
         .filter(dept => dept.name && dept.name.trim() !== '')
-        // Only show departments that are supported by the backend
-        .filter(dept => isDepartmentSupported(dept.name))
         .reduce((unique, dept) => {
           const exists = unique.find(u => u.name === dept.name);
           if (!exists) {
@@ -410,17 +401,16 @@ export default function UserManagement() {
           if (!retryDept) {
             throw new Error('Please select a valid department')
           }
-          const departmentCode = getDepartmentCode(retryDept.name, refreshedDepartments)
-          if (!departmentCode) {
-            throw new Error(`The department "${retryDept.name}" is not supported by the system. Please contact an administrator.`)
-          }
-          userData.department = departmentCode
+          userData.department = getDepartmentCode(retryDept.name, refreshedDepartments)
         } else {
           const departmentCode = getDepartmentCode(selectedDept.name, departments)
-          if (!departmentCode) {
-            throw new Error(`The department "${selectedDept.name}" is not supported by the system. Please contact an administrator.`)
+          if (departmentCode) {
+            userData.department = departmentCode
+          } else {
+            // This shouldn't happen with the new getDepartmentCode function, but just in case
+            console.warn(`No department code found for "${selectedDept.name}", using default mapping`)
+            userData.department = selectedDept.name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 4) || 'unknown'
           }
-          userData.department = departmentCode
         }
       }
 
