@@ -580,7 +580,7 @@ export default function UserManagement() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
+                <BreadcrumbLink href="/admin-dashboard">Admin</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
