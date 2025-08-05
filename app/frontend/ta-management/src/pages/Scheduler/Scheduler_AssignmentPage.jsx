@@ -51,6 +51,7 @@ export default function SchedulerAssignmentPage() {
   const [expandedStudentYears, setExpandedStudentYears] = useState(new Set());
   const [expandedCourseYears, setExpandedCourseYears] = useState(new Set());
 
+  // Backend data state
   const [courses, setCourses] = useState([]);
   const [students, setStudents] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -177,6 +178,7 @@ export default function SchedulerAssignmentPage() {
     });
   }, [courses, searchTerm, selectedDepartment, selectedYear, selectedTerm]);
 
+  // Get unique years and terms from both students and courses
   const availableYears = useMemo(() => {
     const yearSet = new Set();
     
