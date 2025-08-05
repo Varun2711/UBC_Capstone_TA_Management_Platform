@@ -249,8 +249,23 @@ export default function UserManagement() {
       console.log('Departments data received:', departmentsData) // Debug log
       // getDepartments returns the array directly, not wrapped in success/data structure
       if (Array.isArray(departmentsData)) {
-        setDepartments(departmentsData)
-        console.log('Departments set successfully:', departmentsData) // Debug log
+        // Filter departments to only include those supported by the backend
+        // Backend CreateInstructor/CreateScheduler serializers only support these 6 departments
+        const supportedDepartmentNames = [
+          'Astronomy',
+          'Mathematics', 
+          'Physics',
+          'Data Science',
+          'Statistics',
+          'Computer Science'
+        ]
+        
+        const filteredDepartments = departmentsData.filter(dept => 
+          supportedDepartmentNames.includes(dept.name)
+        )
+        
+        setDepartments(filteredDepartments)
+        console.log('Filtered departments set successfully:', filteredDepartments) // Debug log
       } else {
         console.error('Invalid departments data format:', departmentsData)
         setDepartments([])
@@ -307,15 +322,35 @@ export default function UserManagement() {
       
       let response
       if (createType === 'instructor') {
+        // Find department name and convert to code
+        const selectedDept = departments.find(d => d.id.toString() === formData.department)
+        const departmentCode = selectedDept ? getDepartmentCodeFromName(selectedDept.name) : null
+        
+        if (!departmentCode) {
+          alert('Invalid department selected. Please select a supported department.')
+          setLoading(false)
+          return
+        }
+
         const instructorData = {
           ...formData,
-          department: parseInt(formData.department) // Convert to number for API
+          department: departmentCode // Send department code instead of ID
         }
         response = await createInstructor(instructorData)
       } else if (createType === 'scheduler') {
+        // Find department name and convert to code
+        const selectedDept = departments.find(d => d.id.toString() === formData.department)
+        const departmentCode = selectedDept ? getDepartmentCodeFromName(selectedDept.name) : null
+        
+        if (!departmentCode) {
+          alert('Invalid department selected. Please select a supported department.')
+          setLoading(false)
+          return
+        }
+
         const schedulerData = {
           ...formData,
-          department: parseInt(formData.department) // Convert to number for API
+          department: departmentCode // Send department code instead of ID
         }
         response = await createScheduler(schedulerData)
       } else if (createType === 'admin') {
@@ -360,7 +395,7 @@ export default function UserManagement() {
     const user_id = selectedUser.id
     const update_data = {
       email: formData.email,
-      department: parseInt(formData.department), // Convert back to number for API
+      department: parseInt(formData.department), // Convert back to number for API (ForeignKey expects ID)
       employee_number: formData.employee_number,
       first_name: formData.first_name,
       last_name: formData.last_name,
@@ -397,13 +432,22 @@ export default function UserManagement() {
     }
 
     try {
+      // Find department name and convert to code for the user's current department
+      const userDeptName = getDepartmentName(user.department)
+      const departmentCode = getDepartmentCodeFromName(userDeptName)
+      
+      if (!departmentCode) {
+        alert('Invalid department for this user. Cannot promote to TA Coordinator.')
+        return
+      }
+
       // Create a scheduler record with the same details as the instructor
       const schedulerData = {
         first_name: user.name.split(' ')[0],
         last_name: user.name.split(' ').slice(1).join(' '),
         email: user.email,
         employee_number: user.id,
-        department: parseInt(getDepartmentId(user.department)) // Convert to number for API
+        department: departmentCode // Send department code instead of ID
       }
 
       const response = await createScheduler(schedulerData)
@@ -458,6 +502,19 @@ export default function UserManagement() {
         alert('Error reactivating user: ' + (err.message || 'Unknown error'))
       }
     }
+  }
+
+  // Department name to code mapping (matching backend)
+  const getDepartmentCodeFromName = (departmentName) => {
+    const nameToCodeMap = {
+      'Astronomy': 'astr',
+      'Mathematics': 'math',
+      'Physics': 'phy',
+      'Data Science': 'data',
+      'Statistics': 'stat',
+      'Computer Science': 'cosc'
+    }
+    return nameToCodeMap[departmentName] || null
   }
 
   const getDepartmentCode = (departmentName) => {
