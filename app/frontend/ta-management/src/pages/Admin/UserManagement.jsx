@@ -363,8 +363,7 @@ export default function UserManagement() {
 
     try {
       // Find department name and convert to code for the user's current department
-      const userDeptName = getDepartmentName(user.department)
-      const departmentCode = getDepartmentCodeFromName(userDeptName)
+      const departmentCode = getDepartmentCode(user.department)
       
       if (!departmentCode) {
         alert('Invalid department for this user. Cannot promote to TA Coordinator.')
@@ -380,10 +379,10 @@ export default function UserManagement() {
         department: departmentCode // Send department code instead of ID
       }
 
-      const response = await createScheduler(schedulerData)
+      const response = await createUser(schedulerData, 'scheduler')
       if (response.success) {
         alert(`${user.name} has been promoted to TA Coordinator!`)
-        fetchUsers()
+        await loadInitialData()
       } else {
         alert('Error promoting user: ' + response.message)
       }
@@ -391,6 +390,13 @@ export default function UserManagement() {
       alert('Error promoting user: ' + (err.message || 'Unknown error'))
     }
   }
+
+  const handleUserAction = async (user, action) => {
+    const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate'
+    
+    if (!window.confirm(`Are you sure you want to ${actionText} ${user.name}?`)) {
+      return
+    }
 
     setLoading(true)
     setError('')
@@ -638,122 +644,99 @@ export default function UserManagement() {
               </div>
 
               {/* Users Table */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={`${user.type}-${user.id}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
-                              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                            <div className="text-xs text-muted-foreground">ID: {user.id}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getRoleIcon(user.type)}
-                          <Badge variant={getRoleBadgeVariant(user.type)}>{getRoleLabel(user.type)}</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Building className="h-4 w-4 text-muted-foreground" />
-                          <span>{getDepartmentName(user.department) || 'N/A'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                          {user.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedUser(user)
-                              setFormData({
-                                first_name: user.first_name || '',
-                                last_name: user.last_name || '',
-                                name: user.name || '',
-                                email: user.email || '',
-                                employee_number: user.id.toString(),
-                                department: getDepartmentId(user.department || '')
-                              })
-                              setIsEditMode(false)
-                              setShowViewEditDialog(true)
-                            }}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedUser(user)
-                              setFormData({
-                                first_name: user.first_name || '',
-                                last_name: user.last_name || '',
-                                name: user.name || '',
-                                email: user.email || '',
-                                employee_number: user.id.toString(),
-                                department: getDepartmentId(user.department || '')
-                              })
-                              setIsEditMode(true)
-                              setShowViewEditDialog(true)
-                            }}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit User
-                            </DropdownMenuItem>
-                            {user.type === 'instructor' && user.is_active && (
-                              <DropdownMenuItem onClick={() => handlePromoteToCoordinator(user)}>
-                                <ChevronUp className="mr-2 h-4 w-4" />
-                                Promote to TA Coordinator
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            {user.is_active && user.type !== 'admin' ? (
-                              <DropdownMenuItem 
-                                className="text-red-600"
-                                onClick={() => handleDeactivateUser(user)}
-                              >
-                                <UserX className="mr-2 h-4 w-4" />
-                                Deactivate User
-                              </DropdownMenuItem>
-                            ) : !user.is_active && user.type !== 'admin' && (
-                              <DropdownMenuItem 
-                                className="text-green-600"
-                                onClick={() => handleReactivateUser(user)}
-                              >
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                Reactivate User
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={`${user.type}-${user.id}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>
+                                {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'UN'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{user.name || 'Unknown'}</div>
+                              <div className="text-sm text-muted-foreground">{user.email || 'No email'}</div>
+                              <div className="text-xs text-muted-foreground">ID: {user.id || 'N/A'}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getRoleIcon(user.type)}
+                            <Badge variant={getRoleBadgeVariant(user.type)}>{getRoleLabel(user.type)}</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <Building className="h-4 w-4 text-muted-foreground" />
+                            <span>{user.department || 'N/A'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={loading}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => openViewDialog(user)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit User
+                              </DropdownMenuItem>
+                              {user.type === 'instructor' && user.is_active && (
+                                <DropdownMenuItem onClick={() => handlePromoteToCoordinator(user)}>
+                                  <ChevronUp className="mr-2 h-4 w-4" />
+                                  Promote to TA Coordinator
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              {user.is_active && user.type !== 'admin' ? (
+                                <DropdownMenuItem 
+                                  className="text-red-600"
+                                  onClick={() => handleUserAction(user, 'deactivate')}
+                                >
+                                  <UserX className="mr-2 h-4 w-4" />
+                                  Deactivate User
+                                </DropdownMenuItem>
+                              ) : !user.is_active && user.type !== 'admin' && (
+                                <DropdownMenuItem 
+                                  className="text-green-600"
+                                  onClick={() => handleUserAction(user, 'reactivate')}
+                                >
+                                  <UserCheck className="mr-2 h-4 w-4" />
+                                  Reactivate User
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
                 {filteredUsers.length === 0 && !loading && (
                   <div className="text-center py-12">
@@ -772,7 +755,6 @@ export default function UserManagement() {
             </CardContent>
           </Card>
         </main>
-
         {/* Create User Dialog */}
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DialogContent className="sm:max-w-[425px]">
