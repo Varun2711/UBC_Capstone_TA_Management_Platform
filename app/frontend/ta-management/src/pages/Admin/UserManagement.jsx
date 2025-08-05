@@ -246,9 +246,11 @@ export default function UserManagement() {
   const fetchDepartments = async () => {
     try {
       const departmentsData = await getDepartments()
+      console.log('Departments data received:', departmentsData) // Debug log
       // getDepartments returns the array directly, not wrapped in success/data structure
       if (Array.isArray(departmentsData)) {
         setDepartments(departmentsData)
+        console.log('Departments set successfully:', departmentsData) // Debug log
       } else {
         console.error('Invalid departments data format:', departmentsData)
         setDepartments([])
@@ -459,17 +461,29 @@ export default function UserManagement() {
   }
 
   const getDepartmentCode = (departmentName) => {
+    // Handle null/undefined/empty values
+    if (!departmentName) {
+      return null
+    }
     const dept = departments.find(d => d.name === departmentName)
     return dept ? dept.id.toString() : null
   }
 
   const getDepartmentName = (departmentId) => {
+    // Handle null/undefined values
+    if (!departmentId && departmentId !== 0) {
+      return 'N/A'
+    }
     // Handle both string and number IDs
     const dept = departments.find(d => d.id.toString() === departmentId.toString())
     return dept ? dept.name : 'N/A'
   }
 
   const getDepartmentId = (departmentValue) => {
+    // Handle null/undefined/empty values
+    if (!departmentValue && departmentValue !== 0) {
+      return ''
+    }
     // If it's already a number, convert to string for consistency
     if (typeof departmentValue === 'number') {
       return departmentValue.toString()
