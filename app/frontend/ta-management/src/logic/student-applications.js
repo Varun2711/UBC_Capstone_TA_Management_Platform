@@ -28,20 +28,6 @@ const getCookie = (name) => {
   return cookieValue;
 };
 
-// Helper function to get the auth headers
-// const getAuthHeaders = () => {
-//   const token = sessionStorage.getItem("accessToken");
-//   const csrfToken = getCookie("csrftoken");
-
-//   if (!token) {
-//     //console.warn("Access token not found in sessionStorage");
-//     return {};
-//   }
-//   return {
-//     Authorization: `Bearer ${token}`,
-//   };
-// };
-
 const getAuthHeaders = () => {
   const token = sessionStorage.getItem("accessToken");
   const csrfToken = getCookie("csrftoken");

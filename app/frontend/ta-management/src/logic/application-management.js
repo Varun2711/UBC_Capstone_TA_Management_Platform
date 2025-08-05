@@ -9,18 +9,6 @@ const instance = axios.create({
   baseURL: API_URL,
 });
 
-// Helper function to get the auth headers
-// const getAuthHeaders = () => {
-//   const token = sessionStorage.getItem("accessToken");
-//   if (!token) {
-//     console.warn("Access token not found in sessionStorage");
-//     return {};
-//   }
-//   return {
-//     Authorization: `Bearer ${token}`,
-//   };
-// };
-
 const getCookie = (name) => {
   let cookieValue = null;
   if (document.cookie && document.cookie !== "") {

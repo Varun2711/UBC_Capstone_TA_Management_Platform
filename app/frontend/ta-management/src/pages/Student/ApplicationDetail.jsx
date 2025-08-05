@@ -24,7 +24,7 @@ import {
   getApplicationWithFormData,
   formatResponseForDisplay,
   getStatusDisplayInfo,
-  fetchApplicationDocuments, // Add this
+  fetchApplicationDocuments,
   downloadDocument,
 } from "@/logic/student-view-applications";
 
