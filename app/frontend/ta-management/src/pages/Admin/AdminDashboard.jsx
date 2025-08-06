@@ -19,7 +19,6 @@ import {
   Settings,
   GraduationCap,
   Activity,
-  Database,
   Server,
   Eye,
   Calendar,
