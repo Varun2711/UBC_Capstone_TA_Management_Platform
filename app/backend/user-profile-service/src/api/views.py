@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
+from django.utils import timezone
 from utils.password_utils import generate_secure_password
 from django.http import Http404
 import requests
@@ -1025,22 +1026,91 @@ def get_users(request):
 @api_view(['GET'])
 @admin_required
 def admin_dashboard(request):
-    """Admin-only dashboard data"""
+    """Admin-only dashboard data with comprehensive statistics"""
     try:
+        # Basic user counts
         student_count = Student.objects.count()
         instructor_count = Instructor.objects.count()
         scheduler_count = TAScheduler.objects.count()
         admin_count = Admin.objects.count()
         
+        # Active vs inactive users
+        active_students = Student.objects.filter(is_active=True).count()
+        active_instructors = Instructor.objects.filter(is_active=True).count()
+        active_schedulers = TAScheduler.objects.filter(is_active=True).count()
+        active_admins = Admin.objects.filter(is_active=True).count()
+        
+        # Department distribution
+        department_stats = {}
+        departments = Department.objects.all()
+        for dept in departments:
+            dept_students = Student.objects.filter(department=dept).count()
+            dept_instructors = Instructor.objects.filter(department=dept).count()
+            dept_schedulers = TAScheduler.objects.filter(department=dept).count()
+            
+            department_stats[dept.name] = {
+                "students": dept_students,
+                "instructors": dept_instructors,
+                "schedulers": dept_schedulers,
+                "total": dept_students + dept_instructors + dept_schedulers
+            }
+        
+        # Recent activity (users created in last 30 days)
+        from datetime import datetime, timedelta
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        
+        # For students, we don't have created_at, so we'll use a different approach
+        recent_activity = {
+            "new_admins_30d": Admin.objects.filter(created_at__gte=thirty_days_ago).count(),
+            # Note: Other models don't have created_at fields
+        }
+        
+        # System health indicators
+        total_active_users = active_students + active_instructors + active_schedulers + active_admins
+        total_users = student_count + instructor_count + scheduler_count + admin_count
+        
         return Response(success_response({
             "user_id": request.user_id,
             "user_type": request.user_type,
             "statistics": {
+                # Basic counts
                 "total_students": student_count,
                 "total_instructors": instructor_count,
                 "total_schedulers": scheduler_count,
                 "total_admins": admin_count,
-                "total_users": student_count + instructor_count + scheduler_count + admin_count
+                "total_users": total_users,
+                
+                # Active user counts
+                "active_students": active_students,
+                "active_instructors": active_instructors,
+                "active_schedulers": active_schedulers,
+                "active_admins": active_admins,
+                "total_active_users": total_active_users,
+                
+                # Calculated metrics
+                "inactive_users": total_users - total_active_users,
+                "user_activity_rate": round((total_active_users / total_users * 100) if total_users > 0 else 0, 1),
+                
+                # Department breakdown
+                "department_distribution": department_stats,
+                "total_departments": len(departments),
+                
+                # Recent activity
+                "recent_activity": recent_activity,
+                
+                # User type distribution for charts
+                "user_type_distribution": {
+                    "students": student_count,
+                    "instructors": instructor_count,
+                    "schedulers": scheduler_count,
+                    "admins": admin_count
+                },
+                
+                # Activity status distribution
+                "activity_status": {
+                    "active": total_active_users,
+                    "inactive": total_users - total_active_users
+                }
             }
         }, "Admin dashboard data"))
         
