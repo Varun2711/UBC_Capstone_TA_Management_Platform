@@ -7,33 +7,33 @@ Session year,Term type,term number,department,course number,course name,course d
 2025,Winter,2,MATH,200,Calculus II,Second course in calculus covering integration and series.,lecture,001,tuesday,10:00,11:30
 2025,Winter,2,MATH,200,Calculus II,Second course in calculus covering integration and series.,lecture,001,thursday,10:00,11:30
 2025,Winter,2,MATH,200,Calculus II,Second course in calculus covering integration and series.,tutorial,T01,friday,13:00,14:00
-2025,Winter,0,CHEM,125,General Chemistry I,Introduction to atomic structure and bonding.,lecture,001,monday,08:00,09:30
-2025,Winter,0,CHEM,125,General Chemistry I,Introduction to atomic structure and bonding.,lecture,001,wednesday,08:00,09:30
-2025,Winter,0,CHEM,125,General Chemistry I,Introduction to atomic structure and bonding.,lecture,001,friday,08:00,09:30
-2025,Winter,0,CHEM,125,General Chemistry I,Introduction to atomic structure and bonding.,lab,L01,tuesday,14:00,17:00
-2025,Winter,0,CHEM,125,General Chemistry I,Introduction to atomic structure and bonding.,tutorial,T01,thursday,10:00,11:00
+2025,Winter,0,ASTR,200,Introduction to Astrophysics,Survey of stellar and galactic astrophysics.,lecture,001,monday,08:00,09:30
+2025,Winter,0,ASTR,200,Introduction to Astrophysics,Survey of stellar and galactic astrophysics.,lecture,001,wednesday,08:00,09:30
+2025,Winter,0,ASTR,200,Introduction to Astrophysics,Survey of stellar and galactic astrophysics.,lecture,001,friday,08:00,09:30
+2025,Winter,0,ASTR,200,Introduction to Astrophysics,Survey of stellar and galactic astrophysics.,lab,L01,tuesday,14:00,17:00
+2025,Winter,0,ASTR,200,Introduction to Astrophysics,Survey of stellar and galactic astrophysics.,tutorial,T01,thursday,10:00,11:00
 2026,Winter,1,COSC,310,Software Engineering,Advanced software design and development methodologies.,lecture,001,monday,09:00,10:30
 2026,Winter,1,COSC,310,Software Engineering,Advanced software design and development methodologies.,lecture,001,wednesday,09:00,10:30
 2026,Winter,1,COSC,310,Software Engineering,Advanced software design and development methodologies.,lecture,001,friday,09:00,10:30
 2026,Winter,1,COSC,310,Software Engineering,Advanced software design and development methodologies.,lab,L01,tuesday,13:00,16:00
 2026,Winter,1,COSC,310,Software Engineering,Advanced software design and development methodologies.,tutorial,T01,thursday,11:00,12:00
-2026,Winter,2,BIOL,115,Cell Biology,Study of cellular structure and function.,lecture,001,monday,11:00,12:30
-2026,Winter,2,BIOL,115,Cell Biology,Study of cellular structure and function.,lecture,001,wednesday,11:00,12:30
-2026,Winter,2,BIOL,115,Cell Biology,Study of cellular structure and function.,lecture,001,friday,11:00,12:30
-2026,Winter,2,BIOL,115,Cell Biology,Study of cellular structure and function.,lab,L01,tuesday,09:00,12:00
-2026,Winter,2,BIOL,115,Cell Biology,Study of cellular structure and function.,tutorial,T01,thursday,15:00,16:00
+2026,Winter,2,DATA,301,Machine Learning Fundamentals,Introduction to machine learning algorithms and applications.,lecture,001,monday,11:00,12:30
+2026,Winter,2,DATA,301,Machine Learning Fundamentals,Introduction to machine learning algorithms and applications.,lecture,001,wednesday,11:00,12:30
+2026,Winter,2,DATA,301,Machine Learning Fundamentals,Introduction to machine learning algorithms and applications.,lecture,001,friday,11:00,12:30
+2026,Winter,2,DATA,301,Machine Learning Fundamentals,Introduction to machine learning algorithms and applications.,lab,L01,tuesday,09:00,12:00
+2026,Winter,2,DATA,301,Machine Learning Fundamentals,Introduction to machine learning algorithms and applications.,tutorial,T01,thursday,15:00,16:00
 2025,Summer,1,PHYS,301,Thermal Physics,Statistical mechanics and thermodynamics.,lecture,001,monday,13:00,14:30
 2025,Summer,1,PHYS,301,Thermal Physics,Statistical mechanics and thermodynamics.,lecture,001,wednesday,13:00,14:30
 2025,Summer,1,PHYS,301,Thermal Physics,Statistical mechanics and thermodynamics.,lecture,001,friday,13:00,14:30
 2025,Summer,1,PHYS,301,Thermal Physics,Statistical mechanics and thermodynamics.,lab,L01,tuesday,10:00,13:00
-2026,Summer,1,PSYC,205,Research Methods in Psychology,Statistical methods for psychology research.,lecture,001,tuesday,10:00,11:30
-2026,Summer,1,PSYC,205,Research Methods in Psychology,Statistical methods for psychology research.,lecture,001,wednesday,10:00,11:30
-2026,Summer,1,PSYC,205,Research Methods in Psychology,Statistical methods for psychology research.,lecture,001,thursday,10:00,11:30
-2026,Summer,1,PSYC,205,Research Methods in Psychology,Statistical methods for psychology research.,lab,L01,friday,14:00,17:00
-2024,Winter,1,ENGR,140,Engineering Design,Introduction to engineering problem solving.,lecture,001,tuesday,13:00,14:30
-2024,Winter,1,ENGR,140,Engineering Design,Introduction to engineering problem solving.,lecture,001,wednesday,13:00,14:30
-2024,Winter,1,ENGR,140,Engineering Design,Introduction to engineering problem solving.,lecture,001,thursday,13:00,14:30
-2024,Winter,1,ENGR,140,Engineering Design,Introduction to engineering problem solving.,lab,L01,friday,09:00,12:00
+2026,Summer,1,STAT,250,Applied Statistics,Statistical analysis methods for scientific research.,lecture,001,tuesday,10:00,11:30
+2026,Summer,1,STAT,250,Applied Statistics,Statistical analysis methods for scientific research.,lecture,001,wednesday,10:00,11:30
+2026,Summer,1,STAT,250,Applied Statistics,Statistical analysis methods for scientific research.,lecture,001,thursday,10:00,11:30
+2026,Summer,1,STAT,250,Applied Statistics,Statistical analysis methods for scientific research.,lab,L01,friday,14:00,17:00
+2024,Winter,1,DATA,101,Introduction to Data Science,Fundamentals of data analysis and visualization.,lecture,001,tuesday,13:00,14:30
+2024,Winter,1,DATA,101,Introduction to Data Science,Fundamentals of data analysis and visualization.,lecture,001,wednesday,13:00,14:30
+2024,Winter,1,DATA,101,Introduction to Data Science,Fundamentals of data analysis and visualization.,lecture,001,thursday,13:00,14:30
+2024,Winter,1,DATA,101,Introduction to Data Science,Fundamentals of data analysis and visualization.,lab,L01,friday,09:00,12:00
 2024,Summer,0,COSC,499,Capstone Project,Senior capstone project in computer science.,seminar,001,monday,13:00,16:00
 2024,Summer,0,COSC,499,Capstone Project,Senior capstone project in computer science.,seminar,001,wednesday,13:00,16:00
 2027,Winter,1,MATH,342,Elementary Number Theory,Properties of integers and modular arithmetic.,lecture,001,tuesday,10:00,11:30

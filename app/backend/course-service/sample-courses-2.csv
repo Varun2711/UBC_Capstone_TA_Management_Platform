@@ -1,35 +1,48 @@
 Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
-2025,winter,1,Computer Science,COSC 310,Software Engineering,Advanced software design and development methodologies,lecture,001,Monday,09:00,10:30
-2025,winter,1,Computer Science,COSC 310,Software Engineering,Advanced software design and development methodologies,lecture,001,Wednesday,09:00,10:30
-2025,winter,1,Computer Science,COSC 310,Software Engineering,Advanced software design and development methodologies,lecture,001,Friday,09:00,10:30
-2025,winter,1,Computer Science,COSC 310,Software Engineering Lab,Team-based software development projects,lab,L01,Tuesday,13:00,16:00
-2025,winter,1,Computer Science,COSC 310,Software Engineering Tutorial,Code review and design patterns,tutorial,T01,Thursday,11:00,12:00
-2025,winter,2,Computer Science,COSC 322,Introduction to Artificial Intelligence,Fundamentals of AI and machine learning,lecture,001,Monday,11:00,12:30
-2025,winter,2,Computer Science,COSC 322,Introduction to Artificial Intelligence,Fundamentals of AI and machine learning,lecture,001,Wednesday,11:00,12:30
-2025,winter,2,Computer Science,COSC 322,Introduction to Artificial Intelligence,Fundamentals of AI and machine learning,lecture,001,Friday,11:00,12:30
-2025,winter,2,Computer Science,COSC 322,Introduction to Artificial Intelligence Lab,AI programming and algorithm implementation,lab,L01,Tuesday,15:00,17:00
-2025,winter,2,Computer Science,COSC 322,Introduction to Artificial Intelligence Tutorial,Problem solving in AI,tutorial,T01,Thursday,13:00,14:00
-2025,winter,1,Mathematics,MATH 307,Applied Linear Algebra,Linear transformations and matrix theory,lecture,001,Tuesday,08:00,09:30
-2025,winter,1,Mathematics,MATH 307,Applied Linear Algebra,Linear transformations and matrix theory,lecture,001,Thursday,08:00,09:30
-2025,winter,1,Mathematics,MATH 307,Applied Linear Algebra,Linear transformations and matrix theory,lecture,001,Friday,08:00,09:30
-2025,winter,1,Mathematics,MATH 307,Applied Linear Algebra Tutorial,Matrix computations and applications,tutorial,T01,Monday,15:00,16:00
-2025,winter,2,Mathematics,MATH 342,Elementary Number Theory,Properties of integers and modular arithmetic,lecture,001,Tuesday,10:00,11:30
-2025,winter,2,Mathematics,MATH 342,Elementary Number Theory,Properties of integers and modular arithmetic,lecture,001,Thursday,10:00,11:30
-2025,winter,2,Mathematics,MATH 342,Elementary Number Theory,Properties of integers and modular arithmetic,lecture,001,Friday,10:00,11:30
-2025,winter,2,Mathematics,MATH 342,Elementary Number Theory Tutorial,Proof techniques and problem solving,tutorial,T01,Wednesday,14:00,15:00
-2025,winter,1,Physics,PHYS 301,Thermal Physics,Statistical mechanics and thermodynamics,lecture,001,Monday,13:00,14:30
-2025,winter,1,Physics,PHYS 301,Thermal Physics,Statistical mechanics and thermodynamics,lecture,001,Wednesday,13:00,14:30
-2025,winter,1,Physics,PHYS 301,Thermal Physics,Statistical mechanics and thermodynamics,lecture,001,Friday,13:00,14:30
-2025,winter,1,Physics,PHYS 301,Thermal Physics Lab,Temperature and heat transfer experiments,lab,L01,Tuesday,10:00,13:00
-2025,winter,2,Physics,PHYS 350,Quantum Mechanics I,Introduction to quantum theory,lecture,001,Monday,15:00,16:30
-2025,winter,2,Physics,PHYS 350,Quantum Mechanics I,Introduction to quantum theory,lecture,001,Wednesday,15:00,16:30
-2025,winter,2,Physics,PHYS 350,Quantum Mechanics I,Introduction to quantum theory,lecture,001,Friday,15:00,16:30
-2025,winter,2,Physics,PHYS 350,Quantum Mechanics I Tutorial,Problem solving in quantum mechanics,tutorial,T01,Thursday,14:00,15:00
-2026,summer,1,Computer Science,COSC 404,Database Systems,Advanced database design and implementation,lecture,001,Monday,10:00,12:00
-2026,summer,1,Computer Science,COSC 404,Database Systems,Advanced database design and implementation,lecture,001,Wednesday,10:00,12:00
-2026,summer,1,Computer Science,COSC 404,Database Systems,Advanced database design and implementation,lecture,001,Friday,10:00,12:00
-2026,summer,1,Computer Science,COSC 404,Database Systems Lab,SQL programming and database administration,lab,L01,Tuesday,13:00,16:00
-2026,summer,1,Mathematics,STAT 403,Statistical Inference,Hypothesis testing and confidence intervals,lecture,001,Tuesday,09:00,10:30
-2026,summer,1,Mathematics,STAT 403,Statistical Inference,Hypothesis testing and confidence intervals,lecture,001,Thursday,09:00,10:30
-2026,summer,1,Mathematics,STAT 403,Statistical Inference,Hypothesis testing and confidence intervals,lecture,001,Friday,09:00,10:30
-2026,summer,1,Mathematics,STAT 403,Statistical Inference Lab,Advanced statistical analysis with software,lab,L01,Monday,14:00,16:00
+2025,winter,1,COSC,COSC 310,Software Engineering,Advanced software design and development methodologies,lecture,001,Monday,09:00,10:30
+2025,winter,1,COSC,COSC 310,Software Engineering,Advanced software design and development methodologies,lecture,001,Wednesday,09:00,10:30
+2025,winter,1,COSC,COSC 310,Software Engineering,Advanced software design and development methodologies,lecture,001,Friday,09:00,10:30
+2025,winter,1,COSC,COSC 310,Software Engineering Lab,Team-based software development projects,lab,L01,Tuesday,13:00,16:00
+2025,winter,1,COSC,COSC 310,Software Engineering Tutorial,Code review and design patterns,tutorial,T01,Thursday,11:00,12:00
+2025,winter,2,COSC,COSC 322,Introduction to Artificial Intelligence,Fundamentals of AI and machine learning,lecture,001,Monday,11:00,12:30
+2025,winter,2,COSC,COSC 322,Introduction to Artificial Intelligence,Fundamentals of AI and machine learning,lecture,001,Wednesday,11:00,12:30
+2025,winter,2,COSC,COSC 322,Introduction to Artificial Intelligence,Fundamentals of AI and machine learning,lecture,001,Friday,11:00,12:30
+2025,winter,2,COSC,COSC 322,Introduction to Artificial Intelligence Lab,AI programming and algorithm implementation,lab,L01,Tuesday,15:00,17:00
+2025,winter,2,COSC,COSC 322,Introduction to Artificial Intelligence Tutorial,Problem solving in AI,tutorial,T01,Thursday,13:00,14:00
+2025,winter,1,MATH,MATH 307,Applied Linear Algebra,Linear transformations and matrix theory,lecture,001,Tuesday,08:00,09:30
+2025,winter,1,MATH,MATH 307,Applied Linear Algebra,Linear transformations and matrix theory,lecture,001,Thursday,08:00,09:30
+2025,winter,1,MATH,MATH 307,Applied Linear Algebra,Linear transformations and matrix theory,lecture,001,Friday,08:00,09:30
+2025,winter,1,MATH,MATH 307,Applied Linear Algebra Tutorial,Matrix computations and applications,tutorial,T01,Monday,15:00,16:00
+2025,winter,2,MATH,MATH 342,Elementary Number Theory,Properties of integers and modular arithmetic,lecture,001,Tuesday,10:00,11:30
+2025,winter,2,MATH,MATH 342,Elementary Number Theory,Properties of integers and modular arithmetic,lecture,001,Thursday,10:00,11:30
+2025,winter,2,MATH,MATH 342,Elementary Number Theory,Properties of integers and modular arithmetic,lecture,001,Friday,10:00,11:30
+2025,winter,2,MATH,MATH 342,Elementary Number Theory Tutorial,Proof techniques and problem solving,tutorial,T01,Wednesday,14:00,15:00
+2025,winter,1,PHYS,PHYS 301,Thermal Physics,Statistical mechanics and thermodynamics,lecture,001,Monday,13:00,14:30
+2025,winter,1,PHYS,PHYS 301,Thermal Physics,Statistical mechanics and thermodynamics,lecture,001,Wednesday,13:00,14:30
+2025,winter,1,PHYS,PHYS 301,Thermal Physics,Statistical mechanics and thermodynamics,lecture,001,Friday,13:00,14:30
+2025,winter,1,PHYS,PHYS 301,Thermal Physics Lab,Temperature and heat transfer experiments,lab,L01,Tuesday,10:00,13:00
+2025,winter,2,PHYS,PHYS 350,Quantum Mechanics I,Introduction to quantum theory,lecture,001,Monday,15:00,16:30
+2025,winter,2,PHYS,PHYS 350,Quantum Mechanics I,Introduction to quantum theory,lecture,001,Wednesday,15:00,16:30
+2025,winter,2,PHYS,PHYS 350,Quantum Mechanics I,Introduction to quantum theory,lecture,001,Friday,15:00,16:30
+2025,winter,2,PHYS,PHYS 350,Quantum Mechanics I Tutorial,Problem solving in quantum mechanics,tutorial,T01,Thursday,14:00,15:00
+2026,summer,1,COSC,COSC 404,Database Systems,Advanced database design and implementation,lecture,001,Monday,10:00,12:00
+2026,summer,1,COSC,COSC 404,Database Systems,Advanced database design and implementation,lecture,001,Wednesday,10:00,12:00
+2026,summer,1,COSC,COSC 404,Database Systems,Advanced database design and implementation,lecture,001,Friday,10:00,12:00
+2026,summer,1,COSC,COSC 404,Database Systems Lab,SQL programming and database administration,lab,L01,Tuesday,13:00,16:00
+2026,summer,1,STAT,STAT 403,Statistical Inference,Hypothesis testing and confidence intervals,lecture,001,Tuesday,09:00,10:30
+2026,summer,1,STAT,STAT 403,Statistical Inference,Hypothesis testing and confidence intervals,lecture,001,Thursday,09:00,10:30
+2026,summer,1,STAT,STAT 403,Statistical Inference,Hypothesis testing and confidence intervals,lecture,001,Friday,09:00,10:30
+2026,summer,1,STAT,STAT 403,Statistical Inference Lab,Advanced statistical analysis with software,lab,L01,Monday,14:00,16:00
+2025,winter,1,DATA,DATA 310,Big Data Analytics,Large-scale data processing and analysis techniques,lecture,001,Tuesday,11:00,12:30
+2025,winter,1,DATA,DATA 310,Big Data Analytics,Large-scale data processing and analysis techniques,lecture,001,Thursday,11:00,12:30
+2025,winter,1,DATA,DATA 310,Big Data Analytics,Large-scale data processing and analysis techniques,lecture,001,Friday,11:00,12:30
+2025,winter,1,DATA,DATA 310,Big Data Analytics Lab,Distributed computing and data processing,lab,L01,Monday,14:00,17:00
+2025,winter,2,DATA,DATA 350,Data Visualization,Principles and techniques for effective data presentation,lecture,001,Tuesday,13:00,14:30
+2025,winter,2,DATA,DATA 350,Data Visualization,Principles and techniques for effective data presentation,lecture,001,Thursday,13:00,14:30
+2025,winter,2,DATA,DATA 350,Data Visualization Tutorial,Interactive visualization and design,tutorial,T01,Friday,13:00,14:00
+2025,winter,1,ASTR,ASTR 300,Stellar Structure and Evolution,Physical properties and life cycles of stars,lecture,001,Monday,16:00,17:30
+2025,winter,1,ASTR,ASTR 300,Stellar Structure and Evolution,Physical properties and life cycles of stars,lecture,001,Wednesday,16:00,17:30
+2025,winter,1,ASTR,ASTR 300,Stellar Structure and Evolution,Physical properties and life cycles of stars,lecture,001,Friday,16:00,17:30
+2025,winter,2,ASTR,ASTR 320,Galactic Astronomy,Structure and dynamics of galaxies,lecture,001,Tuesday,16:00,17:30
+2025,winter,2,ASTR,ASTR 320,Galactic Astronomy,Structure and dynamics of galaxies,lecture,001,Thursday,16:00,17:30
+2025,winter,2,ASTR,ASTR 320,Galactic Astronomy Lab,Radio astronomy and galaxy observations,lab,L01,Friday,19:00,22:00
