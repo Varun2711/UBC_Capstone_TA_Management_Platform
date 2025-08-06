@@ -58,7 +58,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import systemSettingsService from "../../services/systemSettingsService"
 
 export default function SystemSettings() {
