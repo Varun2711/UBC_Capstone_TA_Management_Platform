@@ -121,12 +121,6 @@ const mockSystemSettings = {
     sessionTimeoutMinutes: 30,
     maxLoginAttempts: 5,
     twoFactorRequired: false
-  },
-  enrollment: {
-    maxCoursesPerStudent: 6,
-    minCoursesForFullTime: 4,
-    waitlistEnabled: true,
-    autoEnrollFromWaitlist: true
   }
 }
 
@@ -169,8 +163,7 @@ export default function SystemSettings() {
     { id: "general", label: "General Settings", icon: Settings },
     { id: "deadlines", label: "Deadlines", icon: Clock },
     { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "security", label: "Security", icon: Shield },
-    { id: "enrollment", label: "Enrollment", icon: Users }
+    { id: "security", label: "Security", icon: Shield }
   ]
 
   const handleSettingChange = (category, setting, value) => {
@@ -883,38 +876,6 @@ export default function SystemSettings() {
                     label="Two-Factor Authentication Required"
                     value={systemSettings.security.twoFactorRequired}
                     onChange={(value) => handleSettingChange("security", "twoFactorRequired", value)}
-                    type="checkbox"
-                  />
-                </div>
-              </div>
-            )}
-
-            {activeTab === "enrollment" && (
-              <div className="bg-white rounded-lg shadow border p-6">
-                <h2 className="text-xl font-semibold mb-6">Enrollment Settings</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <SettingField
-                    label="Maximum Courses Per Student"
-                    value={systemSettings.enrollment.maxCoursesPerStudent}
-                    onChange={(value) => handleSettingChange("enrollment", "maxCoursesPerStudent", value)}
-                    type="number"
-                  />
-                  <SettingField
-                    label="Minimum Courses for Full-Time Status"
-                    value={systemSettings.enrollment.minCoursesForFullTime}
-                    onChange={(value) => handleSettingChange("enrollment", "minCoursesForFullTime", value)}
-                    type="number"
-                  />
-                  <SettingField
-                    label="Enable Waitlist"
-                    value={systemSettings.enrollment.waitlistEnabled}
-                    onChange={(value) => handleSettingChange("enrollment", "waitlistEnabled", value)}
-                    type="checkbox"
-                  />
-                  <SettingField
-                    label="Auto-enroll from Waitlist"
-                    value={systemSettings.enrollment.autoEnrollFromWaitlist}
-                    onChange={(value) => handleSettingChange("enrollment", "autoEnrollFromWaitlist", value)}
                     type="checkbox"
                   />
                 </div>

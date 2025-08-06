@@ -202,20 +202,6 @@ describe("SystemSettings", () => {
         expect(screen.getByText("Minimum Password Length")).toBeInTheDocument()
       })
     })
-
-    it("switches to Enrollment tab when clicked", async () => {
-      mockGetTerms.mockResolvedValue(mockTermsData)
-      const user = userEvent.setup()
-      
-      renderSystemSettings()
-      
-      await user.click(screen.getByText("Enrollment"))
-      
-      await waitFor(() => {
-        expect(screen.getByText("Enrollment Settings")).toBeInTheDocument()
-        expect(screen.getByText("Maximum Courses Per Student")).toBeInTheDocument()
-      })
-    })
   })
 
   describe("Settings Modification", () => {
