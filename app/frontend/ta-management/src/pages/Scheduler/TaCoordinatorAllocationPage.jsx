@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
   Bell,
   BookOpen,
@@ -873,47 +873,6 @@ export default function TAAllocationPage() {
       .join(" | ");
   };
 
-  /*
-  function getTotalHoursFromSlotString(slotString) {
-    console.log("slotString in getTotalHoursFromSlotString: ", slotString);
-    // Normalize en dash to regular dash
-    slotString = slotString.replace(/–/g, "-");
-
-    // Split only at the first colon
-    const firstColonIndex = slotString.indexOf(":");
-
-    if (firstColonIndex === -1) return 0;
-
-    const dayPart = slotString.slice(0, firstColonIndex).trim(); // e.g., "MTh"
-    const timeRange = slotString.slice(firstColonIndex + 1).trim(); // e.g., "08:00-10:00"
-
-    // Handle day abbreviations including "Th"
-    const days = [];
-    for (let i = 0; i < dayPart.length; i++) {
-      if (dayPart[i] === "T" && dayPart[i + 1] === "h") {
-        days.push("Th");
-        i++; // skip 'h'
-      } else {
-        days.push(dayPart[i]);
-      }
-    }
-
-    const [startTime, endTime] = timeRange.split("-");
-
-    if (!startTime || !endTime) return 0;
-
-    const [startHour, startMin] = startTime.split(":").map(Number);
-    const [endHour, endMin] = endTime.split(":").map(Number);
-
-    const durationInMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
-    const durationPerDay = durationInMinutes / 60;
-
-    const total = days.length * durationPerDay;
-    //console.log("result of getTotalHoursFromSlotString: ", total);
-    return total;
-  }
-  */
-
   // Function to get assignments for a specific TA
   function getAssignmentsForTA(taName) {
     return assignments.filter((assignment) => assignment.taName === taName)
@@ -958,11 +917,6 @@ export default function TAAllocationPage() {
       item.application.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.application.student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.application.student.study_level.toLowerCase().includes(searchTerm.toLowerCase())
-    //application.skills.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    //application.experience.some((exp) => exp.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    //application.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    //application.availability.some((day) => day.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    //application.year.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesFilter = filterStatus === "all" || ta.status.toLowerCase().includes(filterStatus.toLowerCase())
     return matchesSearch && matchesFilter
@@ -1016,22 +970,32 @@ export default function TAAllocationPage() {
     setSearchTermForCourse("");
   };
 
-  const termCodeOptions = [
-    { value: "", label: "Select Term" },
-    { value: "S2025", label: "S2025" },
-    { value: "W2025 Term 1", label: "W2025 Term 1" },
-    { value: "W2025 Term 2", label: "W2025 Term 2" },
-  ];
+  const disciplineOptions = useMemo(() => {
+    if (!courses || courses.length === 0) {
+      return [{ value: "", label: "Select Discipline" }];
+    }
+    const disciplines = new Set(
+      courses.map(course => course.course_number.split(" ")[0])
+    );
+    return [
+      { value: "", label: "Select Discipline" },
+      ...Array.from(disciplines).sort().map(d => ({ value: d, label: d }))
+    ];
+  }, [courses]);
 
-  const disciplineOptions = [
-    { value: "", label: "Select Discipline" },
-    { value: "ASTR", label: "ASTR" },
-    { value: "COSC", label: "COSC" },
-    { value: "DATA", label: "DATA" },
-    { value: "MATH", label: "MATH" },
-    { value: "PHYS", label: "PHYS" },
-    { value: "STAT", label: "STAT" },
-  ];
+  const termCodeOptions = useMemo(() => {
+    if (!courseOfferings || Object.keys(courseOfferings).length === 0) {
+      return [{ value: "", label: "Select Term" }];
+    }
+    const allOfferings = Object.values(courseOfferings).flat();
+    const terms = new Set(
+      allOfferings.map(offering => offering.term_info)
+    );
+    return [
+      { value: "", label: "Select Term" },
+      ...Array.from(terms).sort().map(t => ({ value: t, label: t }))
+    ];
+  }, [courseOfferings]);
 
   const getCourseData = async (courseId) => {
     // Avoid re-fetching if both offerings and sessions are already loaded
@@ -1043,6 +1007,8 @@ export default function TAAllocationPage() {
         fetchOfferingsForCourse(courseId),
         fetchSharedSessionsForCourse(courseId),
       ]);
+
+      console.log(`Fetched offerings for course ${courseId}:`, offerings);
 
       // Update state for both
       setCourseOfferings((prev) => ({ ...prev, [courseId]: offerings }));
@@ -1156,9 +1122,6 @@ export default function TAAllocationPage() {
     return () => clearInterval(pollInterval);
   }, []); // Empty dependency array means this only sets up once
 
-
-  console.log("offers state variable RIGHT BEFORE fetchOfferSlotTimes useEffect is called: ", offers);
-  console.log("selectedApplication RIGHT BEFORE fetchOfferSlotTimes useEffect is called: ", selectedApplication);
   useEffect(() => {
     const fetchOfferSlotTimes = async () => {
       console.log("fetchOfferSlotTimes has begun");
@@ -1172,7 +1135,6 @@ export default function TAAllocationPage() {
           offer.status !== "cancelled" && offer.status !== "rejected" 
       );
       console.log("relevantOffers for TA:", selectedApplication?.application?.student?.id, "are: ", relevantOffers);
-      //console.log("Filtered Offers for TA:", relevantOffers);
 
       if (relevantOffers.length === 0) {
         setOfferSlotTimes([]); // No offers → clear times
@@ -1182,19 +1144,18 @@ export default function TAAllocationPage() {
       const slotPromises = relevantOffers.flatMap((offer) =>
         offer.offer_items.map(async (item) => {
           console.log("offer item in fetchOfferSlotTimes: ", item);
-          //console.log("item.course_offering_id in fetchOfferSlotTimes: ", item.course_offering_id);
-          //console.log("item.shared_session_id in fetchOfferSlotTimes: ", item.shared_session_id);
+
           try {
-            if (item.course_offering_id || item.course_offering_id !== null) {
-              const details = await fetchCourseOfferingDetails(item.course_offering_id);
-              return item?.time_slot || [];
+            if (item.course_offering_id) {
+              // The time_slot is already in the offer_item, no need to fetch details again
+              return item.time_slot ? [item.time_slot] : [];
             } else if (item.shared_session_id) {
-              const details = await fetchSharedSessionDetails(item.shared_session_id);
-              return details?.time_slots_info || [];
+              // The time_slots_info should be part of the offer_item for shared sessions
+              return item.time_slots_info || [];
             }
             return [];
           } catch (error) {
-            console.error("Failed to fetch offer item slot info:", error);
+            console.error("Failed to process offer item slot info:", error);
             return [];
           }
         })
@@ -1216,14 +1177,6 @@ export default function TAAllocationPage() {
     (item) => item.id === selectedTA?.id
   );
 
-  console.log("selectedApplication in CardContent: ", selectedApplication);
-  //console.log("selectedTAProfile in CardContent: ", selectedTAProfile);
-  console.log("selectedSections before highlightedSlots is updated: ", selectedSections);
-
-  console.log("offerSlotTimes before highlightedSlots is updated: ", offerSlotTimes);
-  console.log("selectedSections before highlightedSlots is updated: ", selectedSections);
-  console.log("assignments before highlightedSlots is updated: ", assignments);
-  console.log("activeOffers before highlightedSlots is updated: ", activeOffers);
   const highlightedSlots = selectedTA ? [
     // Include slots from the currently selected course section (red highlight for potential offer)
     ...(selectedSections.length > 0
@@ -1233,24 +1186,9 @@ export default function TAAllocationPage() {
     ...assignments
       .filter(a => a.taStudentId === selectedTA.application.student.id)
       .flatMap(a => a.slots || []),
-    // Include slots from added offers for this TA (persistent red highlight)
-    //...addedOffers
-    //.filter(o => o.taStudentId === selectedTA.application.student.id)
-    //.flatMap(o =>
-    //o.offers?.flatMap(offer => offer.slots || []) || []
-    //),
-    //...activeOffers
-    //.filter(o => o.taStudentId === selectedTA.application.student.id)
-    //.flatMap(o =>
-    //o.offers?.flatMap(offer => offer.slots || []) || []
-    //),
     ...offerSlotTimes,
   ]
     : [];
-  console.log("highlightedSlots just now got declared again. it is with selectedTA: ", selectedTA)
-  console.log("highlightedSlots: ", highlightedSlots);
-
-  console.log("Offers state variable is: ", offers);
 
   const totalWeeklyHoursForSelectedTA = selectedTA ? (() => {
     const taOffers = offers.filter(

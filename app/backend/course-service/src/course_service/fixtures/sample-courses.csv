@@ -1,0 +1,26 @@
+Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
+2025,winter,1,Computer Science,COSC 121,Introduction to Programming,Fundamentals of programming using Python,lecture,001,Monday,08:00,09:30
+2025,winter,1,Computer Science,COSC 121,Introduction to Programming,Fundamentals of programming using Python,lecture,001,Wednesday,08:00,09:30
+2025,winter,1,Computer Science,COSC 121,Introduction to Programming,Fundamentals of programming using Python,lecture,001,Friday,08:00,09:30
+2025,winter,1,Computer Science,COSC 121,Introduction to Programming Lab,Hands-on programming exercises,lab,L01,Tuesday,14:00,17:00
+2025,winter,1,Computer Science,COSC 121,Introduction to Programming Tutorial,Problem-solving and debugging sessions,tutorial,T01,Thursday,10:00,11:00
+2025,winter,2,Computer Science,COSC 122,Data Structures and Algorithms,Introduction to data structures and algorithm design,lecture,001,Tuesday,09:00,10:30
+2025,winter,2,Computer Science,COSC 122,Data Structures and Algorithms,Introduction to data structures and algorithm design,lecture,001,Wednesday,09:00,10:30
+2025,winter,2,Computer Science,COSC 122,Data Structures and Algorithms,Introduction to data structures and algorithm design,lecture,001,Thursday,09:00,10:30
+2025,winter,2,Computer Science,COSC 122,Data Structures and Algorithms Lab,Implementation of data structures and algorithms,lab,L01,Friday,13:00,16:00
+2025,winter,2,Computer Science,COSC 122,Data Structures and Algorithms Tutorial,Algorithm analysis and optimization,tutorial,T01,Monday,15:00,16:00
+2025,winter,1,Mathematics,MATH 100,Differential Calculus with Applications,Introduction to differential calculus,lecture,001,Monday,10:00,11:30
+2025,winter,1,Mathematics,MATH 100,Differential Calculus with Applications,Introduction to differential calculus,lecture,001,Wednesday,10:00,11:30
+2025,winter,1,Mathematics,MATH 100,Differential Calculus with Applications,Introduction to differential calculus,lecture,001,Friday,10:00,11:30
+2025,winter,1,Mathematics,MATH 100,Differential Calculus Tutorial,Problem-solving sessions for calculus,tutorial,T01,Tuesday,11:00,12:00
+2025,winter,2,Mathematics,MATH 101,Integral Calculus with Applications,Introduction to integral calculus,lecture,001,Tuesday,11:00,12:30
+2025,winter,2,Mathematics,MATH 101,Integral Calculus with Applications,Introduction to integral calculus,lecture,001,Thursday,11:00,12:30
+2025,winter,2,Mathematics,MATH 101,Integral Calculus Tutorial,Integration techniques and applications,tutorial,T01,Friday,11:00,12:00
+2025,winter,1,Physics,PHYS 111,Mechanics and Thermodynamics,Classical mechanics and thermodynamics principles,lecture,001,Monday,13:00,14:30
+2025,winter,1,Physics,PHYS 111,Mechanics and Thermodynamics,Classical mechanics and thermodynamics principles,lecture,001,Wednesday,13:00,14:30
+2025,winter,1,Physics,PHYS 111,Mechanics and Thermodynamics,Classical mechanics and thermodynamics principles,lecture,001,Friday,13:00,14:30
+2025,winter,1,Physics,PHYS 111,Mechanics and Thermodynamics Lab,Physics laboratory experiments,lab,L01,Tuesday,15:00,18:00
+2025,winter,2,Physics,PHYS 112,Electricity and Magnetism,Electromagnetic theory and applications,lecture,001,Monday,14:00,15:30
+2025,winter,2,Physics,PHYS 112,Electricity and Magnetism,Electromagnetic theory and applications,lecture,001,Wednesday,14:00,15:30
+2025,winter,2,Physics,PHYS 112,Electricity and Magnetism,Electromagnetic theory and applications,lecture,001,Friday,14:00,15:30
+2025,winter,2,Physics,PHYS 112,Electricity and Magnetism Lab,Electromagnetic experiments and measurements,lab,L01,Thursday,15:00,18:00
