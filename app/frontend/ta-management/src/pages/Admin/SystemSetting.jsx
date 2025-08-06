@@ -56,6 +56,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
+import { 
+  getTerms, 
+  createTerm, 
+  updateTerm, 
+  deleteTerm, 
+  getTermById 
+} from "../../logic/courseManagement"
 
 
 // Mock data for academic terms
@@ -125,12 +132,37 @@ const mockSystemSettings = {
 
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState("terms")
-  const [academicTerms, setAcademicTerms] = useState(mockAcademicTerms)
+  const [academicTerms, setAcademicTerms] = useState([])
   const [systemSettings, setSystemSettings] = useState(mockSystemSettings)
   const [editingTerm, setEditingTerm] = useState(null)
   const [showAddTerm, setShowAddTerm] = useState(false)
+  const [showEditTerm, setShowEditTerm] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Load academic terms from API
+  const loadAcademicTerms = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const terms = await getTerms()
+      setAcademicTerms(terms)
+    } catch (error) {
+      console.error('Error loading academic terms:', error)
+      setError('Failed to load academic terms')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load data on component mount
+  useEffect(() => {
+    if (activeTab === "terms") {
+      loadAcademicTerms()
+    }
+  }, [activeTab])
 
   const tabs = [
     { id: "terms", label: "Academic Terms", icon: Calendar },
@@ -161,32 +193,140 @@ export default function SystemSettings() {
     setTimeout(() => setSaveStatus(null), 3000)
   }
 
-  const handleAddTerm = (termData) => {
-    const newTerm = {
-      id: Date.now(),
-      ...termData,
-      status: "draft"
+  const handleAddTerm = async (termData) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Create term object matching backend expectations
+      const termPayload = {
+        code: termData.code,
+        description: termData.description || "",
+        start: termData.startDate,
+        end: termData.endDate,
+        startCalendarYear: new Date(termData.startDate).getFullYear(),
+        endCalendarYear: new Date(termData.endDate).getFullYear(),
+        academicYear: termData.academicYear,
+        is_active: termData.is_active || true,
+        term_type: termData.term_type || 'winter'
+      }
+      
+      await createTerm(termPayload)
+      setShowAddTerm(false)
+      await loadAcademicTerms() // Reload terms from server
+      setSaveStatus("success")
+      setTimeout(() => setSaveStatus(null), 3000)
+    } catch (error) {
+      console.error('Error creating term:', error)
+      setError('Failed to create term')
+    } finally {
+      setLoading(false)
     }
-    setAcademicTerms(prev => [...prev, newTerm])
-    setShowAddTerm(false)
-    setHasChanges(true)
   }
 
-  const handleDeleteTerm = (termId) => {
-    setAcademicTerms(prev => prev.filter(term => term.id !== termId))
-    setHasChanges(true)
+  const handleEditTerm = async (termId, termData) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Update term object matching backend expectations
+      const termPayload = {
+        code: termData.code,
+        description: termData.description || "",
+        start: termData.startDate,
+        end: termData.endDate,
+        startCalendarYear: new Date(termData.startDate).getFullYear(),
+        endCalendarYear: new Date(termData.endDate).getFullYear(),
+        academicYear: termData.academicYear,
+        is_active: termData.is_active,
+        term_type: termData.term_type
+      }
+      
+      await updateTerm(termId, termPayload)
+      setShowEditTerm(false)
+      setEditingTerm(null)
+      await loadAcademicTerms() // Reload terms from server
+      setSaveStatus("success")
+      setTimeout(() => setSaveStatus(null), 3000)
+    } catch (error) {
+      console.error('Error updating term:', error)
+      setError('Failed to update term')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800'
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-800'
-      case 'draft':
-        return 'bg-gray-100 text-gray-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+  const handleDeleteTerm = async (termId) => {
+    if (!confirm('Are you sure you want to delete this term? This action cannot be undone.')) {
+      return
+    }
+    
+    try {
+      setLoading(true)
+      setError(null)
+      await deleteTerm(termId)
+      await loadAcademicTerms() // Reload terms from server
+      setSaveStatus("success")
+      setTimeout(() => setSaveStatus(null), 3000)
+    } catch (error) {
+      console.error('Error deleting term:', error)
+      setError('Failed to delete term')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleStartEditTerm = async (termId) => {
+    try {
+      setLoading(true)
+      const termData = await getTermById(termId)
+      setEditingTerm({
+        ...termData,
+        startDate: termData.start,
+        endDate: termData.end
+      })
+      setShowEditTerm(true)
+    } catch (error) {
+      console.error('Error loading term for edit:', error)
+      setError('Failed to load term data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getStatusColor = (term) => {
+    if (!term.is_active) {
+      return 'bg-gray-100 text-gray-800'
+    }
+    
+    const today = new Date()
+    const startDate = new Date(term.start)
+    const endDate = new Date(term.end)
+    
+    if (today >= startDate && today <= endDate) {
+      return 'bg-green-100 text-green-800'
+    } else if (today < startDate) {
+      return 'bg-blue-100 text-blue-800'
+    } else {
+      return 'bg-yellow-100 text-yellow-800'
+    }
+  }
+
+  const getStatusText = (term) => {
+    if (!term.is_active) {
+      return 'Inactive'
+    }
+    
+    const today = new Date()
+    const startDate = new Date(term.start)
+    const endDate = new Date(term.end)
+    
+    if (today >= startDate && today <= endDate) {
+      return 'Active'
+    } else if (today < startDate) {
+      return 'Upcoming'
+    } else {
+      return 'Completed'
     }
   }
 
@@ -226,22 +366,65 @@ export default function SystemSettings() {
 
   const AddTermModal = () => {
     const [termData, setTermData] = useState({
-      name: "",
+      code: "",
+      description: "",
       startDate: "",
       endDate: "",
-      registrationStart: "",
-      registrationEnd: ""
+      academicYear: "",
+      term_type: "winter",
+      is_active: true
     })
+
+    const validateTermData = () => {
+      if (!termData.code.trim()) return "Term code is required"
+      if (!termData.startDate) return "Start date is required"
+      if (!termData.endDate) return "End date is required"
+      if (!termData.academicYear.trim()) return "Academic year is required"
+      if (new Date(termData.startDate) >= new Date(termData.endDate)) {
+        return "End date must be after start date"
+      }
+      return null
+    }
+
+    const handleSubmit = () => {
+      const validation = validateTermData()
+      if (validation) {
+        alert(validation)
+        return
+      }
+      handleAddTerm(termData)
+    }
 
     return showAddTerm ? (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="bg-white rounded-lg p-6 w-full max-w-lg">
           <h3 className="text-lg font-semibold mb-4">Add Academic Term</h3>
           <div className="space-y-4">
             <SettingField
-              label="Term Name"
-              value={termData.name}
-              onChange={(value) => setTermData(prev => ({ ...prev, name: value }))}
+              label="Term Code (e.g., W2025 Term 1)"
+              value={termData.code}
+              onChange={(value) => setTermData(prev => ({ ...prev, code: value }))}
+            />
+            <SettingField
+              label="Description"
+              value={termData.description}
+              onChange={(value) => setTermData(prev => ({ ...prev, description: value }))}
+            />
+            <SettingField
+              label="Term Type"
+              value={termData.term_type}
+              onChange={(value) => setTermData(prev => ({ ...prev, term_type: value }))}
+              type="select"
+              options={[
+                { value: "winter", label: "Winter" },
+                { value: "summer", label: "Summer" },
+                { value: "full_year", label: "Full Year" }
+              ]}
+            />
+            <SettingField
+              label="Academic Year (e.g., 2024/25)"
+              value={termData.academicYear}
+              onChange={(value) => setTermData(prev => ({ ...prev, academicYear: value }))}
             />
             <SettingField
               label="Start Date"
@@ -256,28 +439,143 @@ export default function SystemSettings() {
               type="date"
             />
             <SettingField
-              label="Registration Start"
-              value={termData.registrationStart}
-              onChange={(value) => setTermData(prev => ({ ...prev, registrationStart: value }))}
-              type="date"
-            />
-            <SettingField
-              label="Registration End"
-              value={termData.registrationEnd}
-              onChange={(value) => setTermData(prev => ({ ...prev, registrationEnd: value }))}
-              type="date"
+              label="Active"
+              value={termData.is_active}
+              onChange={(value) => setTermData(prev => ({ ...prev, is_active: value }))}
+              type="checkbox"
             />
           </div>
           <div className="flex gap-2 mt-6">
             <button
-              onClick={() => handleAddTerm(termData)}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              Add Term
+              {loading ? 'Adding...' : 'Add Term'}
             </button>
             <button
               onClick={() => setShowAddTerm(false)}
-              className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+              disabled={loading}
+              className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null
+  }
+
+  const EditTermModal = () => {
+    const [termData, setTermData] = useState({
+      code: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      academicYear: "",
+      term_type: "winter",
+      is_active: true
+    })
+
+    const validateTermData = () => {
+      if (!termData.code.trim()) return "Term code is required"
+      if (!termData.startDate) return "Start date is required"
+      if (!termData.endDate) return "End date is required"
+      if (!termData.academicYear.trim()) return "Academic year is required"
+      if (new Date(termData.startDate) >= new Date(termData.endDate)) {
+        return "End date must be after start date"
+      }
+      return null
+    }
+
+    const handleSubmit = () => {
+      const validation = validateTermData()
+      if (validation) {
+        alert(validation)
+        return
+      }
+      handleEditTerm(editingTerm.id, termData)
+    }
+
+    useEffect(() => {
+      if (editingTerm) {
+        setTermData({
+          code: editingTerm.code || "",
+          description: editingTerm.description || "",
+          startDate: editingTerm.startDate || "",
+          endDate: editingTerm.endDate || "",
+          academicYear: editingTerm.academicYear || "",
+          term_type: editingTerm.term_type || "winter",
+          is_active: editingTerm.is_active !== undefined ? editingTerm.is_active : true
+        })
+      }
+    }, [editingTerm])
+
+    return showEditTerm ? (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+          <h3 className="text-lg font-semibold mb-4">Edit Academic Term</h3>
+          <div className="space-y-4">
+            <SettingField
+              label="Term Code (e.g., W2025 Term 1)"
+              value={termData.code}
+              onChange={(value) => setTermData(prev => ({ ...prev, code: value }))}
+            />
+            <SettingField
+              label="Description"
+              value={termData.description}
+              onChange={(value) => setTermData(prev => ({ ...prev, description: value }))}
+            />
+            <SettingField
+              label="Term Type"
+              value={termData.term_type}
+              onChange={(value) => setTermData(prev => ({ ...prev, term_type: value }))}
+              type="select"
+              options={[
+                { value: "winter", label: "Winter" },
+                { value: "summer", label: "Summer" },
+                { value: "full_year", label: "Full Year" }
+              ]}
+            />
+            <SettingField
+              label="Academic Year (e.g., 2024/25)"
+              value={termData.academicYear}
+              onChange={(value) => setTermData(prev => ({ ...prev, academicYear: value }))}
+            />
+            <SettingField
+              label="Start Date"
+              value={termData.startDate}
+              onChange={(value) => setTermData(prev => ({ ...prev, startDate: value }))}
+              type="date"
+            />
+            <SettingField
+              label="End Date"
+              value={termData.endDate}
+              onChange={(value) => setTermData(prev => ({ ...prev, endDate: value }))}
+              type="date"
+            />
+            <SettingField
+              label="Active"
+              value={termData.is_active}
+              onChange={(value) => setTermData(prev => ({ ...prev, is_active: value }))}
+              type="checkbox"
+            />
+          </div>
+          <div className="flex gap-2 mt-6">
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Updating...' : 'Update Term'}
+            </button>
+            <button
+              onClick={() => {
+                setShowEditTerm(false)
+                setEditingTerm(null)
+              }}
+              disabled={loading}
+              className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -326,6 +624,13 @@ export default function SystemSettings() {
             )}
           </div>
 
+          {/* Global Success/Error Messages */}
+          {saveStatus === "success" && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+              Operation completed successfully!
+            </div>
+          )}
+
           {/* Tab Navigation */}
           <div className="border-b border-gray-200 mb-6">
             <nav className="flex space-x-8">
@@ -361,61 +666,88 @@ export default function SystemSettings() {
                   </button>
                 </div>
 
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                    {error}
+                  </div>
+                )}
+
                 <div className="bg-white rounded-lg shadow border overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Term Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Term Dates
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Registration Period
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {academicTerms.map((term) => (
-                        <tr key={term.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {term.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {term.startDate} to {term.endDate}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {term.registrationStart} to {term.registrationEnd}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(term.status)}`}>
-                              {term.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center gap-2">
-                              <button className="text-blue-600 hover:text-blue-900">
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteTerm(term.id)}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
+                  {loading ? (
+                    <div className="p-8 text-center text-gray-500">
+                      Loading academic terms...
+                    </div>
+                  ) : academicTerms.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      No academic terms found. Add your first term to get started.
+                    </div>
+                  ) : (
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Term Code
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Description
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Term Dates
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Academic Year
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {academicTerms.map((term) => (
+                          <tr key={term.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {term.code}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {term.description || 'No description'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {term.start} to {term.end}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {term.academicYear}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(term)}`}>
+                                {getStatusText(term)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => handleStartEditTerm(term.id)}
+                                  className="text-blue-600 hover:text-blue-900"
+                                  disabled={loading}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteTerm(term.id)}
+                                  className="text-red-600 hover:text-red-900"
+                                  disabled={loading}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             )}
@@ -592,6 +924,7 @@ export default function SystemSettings() {
         </div>
       </div>    
       <AddTermModal />
+      <EditTermModal />
     </SidebarInset>
     </SidebarProvider>
   )

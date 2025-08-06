@@ -255,6 +255,15 @@ function App() {
       />
 
       <Route
+        path="/system-settings"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
+            <SystemSettings />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/manage-templates"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
