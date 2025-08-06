@@ -1023,7 +1023,11 @@
       "course": 1,
       "section_number": "001",
       "academic_term": 4,
-      "instructor": 1
+      "instructor": 1,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440003"
+      ]
     }
   },
   {
@@ -1033,7 +1037,11 @@
       "course": 1,
       "section_number": "002",
       "academic_term": 4,
-      "instructor": 2
+      "instructor": 2,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440005",
+        "550e8400-e29b-41d4-a716-446655440007"
+      ]
     }
   },
   {
@@ -1043,7 +1051,11 @@
       "course": 1,
       "section_number": "001",
       "academic_term": 5,
-      "instructor": 1
+      "instructor": 1,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440008",
+        "550e8400-e29b-41d4-a716-446655440010"
+      ]
     }
   },
   {
@@ -1053,7 +1065,11 @@
       "course": 2,
       "section_number": "001",
       "academic_term": 5,
-      "instructor": 2
+      "instructor": 2,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440012",
+        "550e8400-e29b-41d4-a716-446655440014"
+      ]
     }
   },
   {
@@ -1063,7 +1079,11 @@
       "course": 2,
       "section_number": "001",
       "academic_term": 6,
-      "instructor": 6
+      "instructor": 6,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440015",
+        "550e8400-e29b-41d4-a716-446655440017"
+      ]
     }
   },
   {
@@ -1073,7 +1093,11 @@
       "course": 3,
       "section_number": "001",
       "academic_term": 4,
-      "instructor": 6
+      "instructor": 6,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440002",
+        "550e8400-e29b-41d4-a716-446655440004"
+      ]
     }
   },
   {
@@ -1083,7 +1107,11 @@
       "course": 6,
       "section_number": "001",
       "academic_term": 4,
-      "instructor": 1
+      "instructor": 1,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440006",
+        "550e8400-e29b-41d4-a716-446655440008"
+      ]
     }
   },
   {
@@ -1093,7 +1121,11 @@
       "course": 6,
       "section_number": "001",
       "academic_term": 5,
-      "instructor": 2
+      "instructor": 2,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440009",
+        "550e8400-e29b-41d4-a716-446655440011"
+      ]
     }
   },
   {
@@ -1103,7 +1135,11 @@
       "course": 8,
       "section_number": "001",
       "academic_term": 5,
-      "instructor": 6
+      "instructor": 6,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440013",
+        "550e8400-e29b-41d4-a716-446655440015"
+      ]
     }
   },
   {
@@ -1113,7 +1149,11 @@
       "course": 9,
       "section_number": "001",
       "academic_term": 4,
-      "instructor": 3
+      "instructor": 3,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440003"
+      ]
     }
   },
   {
@@ -1123,7 +1163,11 @@
       "course": 9,
       "section_number": "002",
       "academic_term": 4,
-      "instructor": 3
+      "instructor": 3,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440005",
+        "550e8400-e29b-41d4-a716-446655440007"
+      ]
     }
   },
   {
@@ -1133,7 +1177,11 @@
       "course": 10,
       "section_number": "001",
       "academic_term": 5,
-      "instructor": 3
+      "instructor": 3,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440009",
+        "550e8400-e29b-41d4-a716-446655440011"
+      ]
     }
   },
   {
@@ -1143,7 +1191,11 @@
       "course": 13,
       "section_number": "001",
       "academic_term": 4,
-      "instructor": 4
+      "instructor": 4,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440012",
+        "550e8400-e29b-41d4-a716-446655440014"
+      ]
     }
   },
   {
@@ -1153,7 +1205,11 @@
       "course": 14,
       "section_number": "001",
       "academic_term": 5,
-      "instructor": 4
+      "instructor": 4,
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440016",
+        "550e8400-e29b-41d4-a716-446655440017"
+      ]
     }
   },
   {
@@ -1164,7 +1220,8 @@
       "course": 1,
       "section_number": "L01",
       "academic_term": 4,
-      "student": 1
+      "student": 1,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440002"]
     }
   },
   {
@@ -1175,7 +1232,8 @@
       "course": 1,
       "section_number": "L02",
       "academic_term": 4,
-      "student": 2
+      "student": 2,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440004"]
     }
   },
   {
@@ -1186,7 +1244,8 @@
       "course": 1,
       "section_number": "L03",
       "academic_term": 4,
-      "student": 3
+      "student": 3,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440006"]
     }
   },
   {
@@ -1197,7 +1256,8 @@
       "course": 1,
       "section_number": "L01",
       "academic_term": 5,
-      "student": 4
+      "student": 4,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440007"]
     }
   },
   {
@@ -1208,7 +1268,8 @@
       "course": 1,
       "section_number": "T01",
       "academic_term": 4,
-      "student": 5
+      "student": 5,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440009"]
     }
   },
   {
@@ -1219,7 +1280,8 @@
       "course": 1,
       "section_number": "T01",
       "academic_term": 5,
-      "student": 6
+      "student": 6,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440010"]
     }
   },
   {
@@ -1230,7 +1292,8 @@
       "course": 2,
       "section_number": "L01",
       "academic_term": 5,
-      "student": 7
+      "student": 7,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440011"]
     }
   },
   {
@@ -1241,7 +1304,8 @@
       "course": 2,
       "section_number": "L02",
       "academic_term": 5,
-      "student": 8
+      "student": 8,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440013"]
     }
   },
   {
@@ -1252,7 +1316,8 @@
       "course": 6,
       "section_number": "T01",
       "academic_term": 4,
-      "student": 9
+      "student": 9,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440014"]
     }
   },
   {
@@ -1263,7 +1328,8 @@
       "course": 6,
       "section_number": "T01",
       "academic_term": 5,
-      "student": 1
+      "student": 1,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440015"]
     }
   },
   {
@@ -1274,7 +1340,8 @@
       "course": 8,
       "section_number": "S01",
       "academic_term": 5,
-      "student": 2
+      "student": 2,
+      "time_slots": ["550e8400-e29b-41d4-a716-446655440016"]
     }
   },
   {

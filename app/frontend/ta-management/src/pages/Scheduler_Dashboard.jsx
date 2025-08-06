@@ -42,20 +42,14 @@ import { getApplications, getCourses, getCourseOfferings, getSharedSessions, get
  */
 
 async function calculateAvailableTimeSlots() {
-  console.log("entered calculateAvailableTimeSlots");
   try {
-    console.log("entered try of calculateAvailableTimeSlots");
     const [courseOfferings, sharedSessions, assignments] = await Promise.all([
       getCourseOfferings(),
       getSharedSessions(),
       getAssignments(),
     ]);
-    
-    console.log("courseOfferings: ", courseOfferings);
-    console.log("sharedSessions: ", sharedSessions);
-    console.log("assignments: ", assignments);
 
-    // Initialize department tracking (NEW)
+    // Initialize department tracking
     const departmentSlots = {
       'Computer Science': { total: 0, assigned: 0, available: 0 },
       'Mathematics': { total: 0, assigned: 0, available: 0 },
@@ -68,104 +62,107 @@ async function calculateAvailableTimeSlots() {
       'Engineering': { total: 0, assigned: 0, available: 0 }
     };
 
-    // 1. Get all unique time slot IDs from all available course offerings and shared sessions
-    const allAvailableTimeSlotIds = new Set();
-    const slotToDepartmentMap = new Map(); // NEW: Track which department each slot belongs to
-    
+    // 1. Track all available offering-slot and session-slot combinations
+    const allAvailableSlotCombinations = new Set();
+    const slotToDepartmentMap = new Map();
+
+    // Process course offerings
     courseOfferings.results.forEach(offering => {
       const department = getDepartmentFromCourseName(offering.course_info);
-      console.log("Department for course offering from course name: ", department);
       offering.time_slots_info.forEach(slot => {
-        allAvailableTimeSlotIds.add(slot.slot_id);
-        slotToDepartmentMap.set(slot.slot_id, department); // NEW: Map slot to department
-        
-        // Count total slots per department (NEW)
-        if (departmentSlots[department]) {
-          departmentSlots[department].total++;
+        const uniqueKey = `offering-${offering.course_offering_id}-${slot.slot_id}`;
+        if (!allAvailableSlotCombinations.has(uniqueKey)) {
+          allAvailableSlotCombinations.add(uniqueKey);
+          slotToDepartmentMap.set(uniqueKey, department);
+          if (departmentSlots[department]) {
+            departmentSlots[department].total++;
+          }
         }
       });
     });
-    
-    console.log("allAvailableTimeSlotIds after course offerings: ", allAvailableTimeSlotIds);
-    
+
+    // Process shared sessions
     sharedSessions.results.forEach(session => {
       const department = getDepartmentFromCourseName(session.course_info);
-      console.log("Department from shared session: ", department);
       session.time_slots_info.forEach(slot => {
-        allAvailableTimeSlotIds.add(slot.slot_id);
-        slotToDepartmentMap.set(slot.slot_id, department); // NEW: Map slot to department
-        
-        // Count total slots per department (NEW)
-        if (departmentSlots[department]) {
-          departmentSlots[department].total++;
+        const uniqueKey = `session-${session.shared_session_id}-${slot.slot_id}`;
+        if (!allAvailableSlotCombinations.has(uniqueKey)) {
+          allAvailableSlotCombinations.add(uniqueKey);
+          slotToDepartmentMap.set(uniqueKey, department);
+          if (departmentSlots[department]) {
+            departmentSlots[department].total++;
+          }
         }
       });
     });
 
-    let counter = allAvailableTimeSlotIds.size;
-    console.log("allAvailableTimeSlotIds after getting both course offerings and shared sessions and before getting assignments: ", allAvailableTimeSlotIds);
-    
-    // 2. Create a set of unique time slot IDs that are assigned
-    const assignedTimeSlotIds = new Set();
-    
+    // 2. Track assigned slot combinations
+    const assignedSlotCombinations = new Set();
+
     assignments.forEach(assignment => {
-      // Determine which ID to use for matching (course offering or shared session)
-      const idToMatch = assignment.course_offering?.course_offering_id || assignment.shared_session?.shared_session_id;
+      // An assignment is for ONE course offering OR ONE shared session.
+      // We need to find the ID of that specific offering/session.
+      const assignedOfferingId = assignment.course_offering?.course_offering_id;
+      const assignedSessionId = assignment.shared_session?.shared_session_id;
 
-      if (idToMatch && assignment.offer_details && assignment.offer_details.offer_items) {
-        // Find the matching offer item in the list
-        const matchingOfferItem = assignment.offer_details.offer_items.find(
-          item => item.course_offering_id === idToMatch || item.shared_session_id === idToMatch
-        );
+      if (assignment.offer_details && assignment.offer_details.offer_items) {
+        // Now, find the specific offer_item that matches the assignment's target
+        // and has a time_slot.
+        const matchingOfferItem = assignment.offer_details.offer_items.find(item => {
+          // The item must match the assignment's offering/session AND have a time slot.
+          return (item.course_offering_id === assignedOfferingId || item.shared_session_id === assignedSessionId) && item.time_slot;
+        });
 
-        if (matchingOfferItem && matchingOfferItem.time_slot) {
-          // Handle both single time_slot object and array of time_slot objects
-          if (Array.isArray(matchingOfferItem.time_slot)) {
-            matchingOfferItem.time_slot.forEach(slot => {
-              assignedTimeSlotIds.add(slot.slot_id);
-              
-              // Track assigned slots per department (NEW)
-              const department = slotToDepartmentMap.get(slot.slot_id);
+        if (matchingOfferItem) {
+          const timeSlots = Array.isArray(matchingOfferItem.time_slot)
+            ? matchingOfferItem.time_slot
+            : [matchingOfferItem.time_slot];
+
+          timeSlots.forEach(slot => {
+            const idToMatch = assignedOfferingId || assignedSessionId;
+            const idType = assignedOfferingId ? 'offering' : 'session';
+            const uniqueKey = `${idType}-${idToMatch}-${slot.slot_id}`;
+
+            // Check if the slot combination is valid and exists in our master list.
+            if (allAvailableSlotCombinations.has(uniqueKey)) {
+              // Add the key to our set of assigned slots.
+              // The Set automatically handles duplicates, so we don't need an extra if-check here.
+              assignedSlotCombinations.add(uniqueKey);
+
+              // **FIX:** We must increment the department's assigned count
+              // every time we find a valid assigned slot in an assignment,
+              // as the total count is what matters for the department breakdown.
+              const department = slotToDepartmentMap.get(uniqueKey);
               if (department && departmentSlots[department]) {
                 departmentSlots[department].assigned++;
               }
-            });
-          } else {
-            assignedTimeSlotIds.add(matchingOfferItem.time_slot.slot_id);
-            
-            // Track assigned slots per department (NEW)
-            const department = slotToDepartmentMap.get(matchingOfferItem.time_slot.slot_id);
-            if (department && departmentSlots[department]) {
-              departmentSlots[department].assigned++;
             }
-          }
+          });
         }
       }
     });
 
-    // 3. Subtract from the counter for each assigned time slot that exists in the total hours set
-    assignedTimeSlotIds.forEach(slotId => {
-      if (allAvailableTimeSlotIds.has(slotId)) {
-        counter--;
-      }
-    });
-
-    // Calculate available slots for each department (NEW)
+    // Calculate available slots for each department using the now-correct assigned count
     Object.keys(departmentSlots).forEach(dept => {
       departmentSlots[dept].available = departmentSlots[dept].total - departmentSlots[dept].assigned;
     });
 
-    console.log("Department slots breakdown:", departmentSlots); // NEW
-
-    // Return both total counter and department breakdown (MODIFIED)
+    // **FIX:** Calculate the total by summing the departmental `available` counts.
+    // This ensures the main stat card is consistent with the department breakdown.
+    const totalAvailable = Object.values(departmentSlots).reduce(
+      (sum, deptData) => sum + deptData.available,
+      0
+    );
+    console.log("printing totalAvailable: ", totalAvailable);
     return {
-      totalAvailable: counter,
+      totalAvailable: totalAvailable,
       byDepartment: departmentSlots
     };
 
   } catch (error) {
-    console.error("An error occurred:", error);
-    throw error;
+    console.error("An error occurred in calculateAvailableTimeSlots:", error);
+    // Return a default state on error to prevent crashes
+    return { totalAvailable: 0, byDepartment: {} };
   }
 }
 
@@ -427,14 +424,14 @@ useEffect(() => {
               <CardContent>
                 <div className="space-y-6">
                   {Object.entries(departmentSlots).map(([deptName, data]) => {
-                    const percentage = data.total > 0 ? Math.round((data.available / data.total) * 100) : 0;
+                    const percentage = data.total > 0 ? 100 - Math.round((data.available / data.total) * 100) : 0;
                     return (
                       <div key={deptName} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium">{deptName}</p>
                             <p className="text-xs text-muted-foreground">
-                              {data.available} of {data.total} slots available
+                              {data.total - data.available} of {data.total} slots assigned
                             </p>
                           </div>
                           <Badge variant="outline">{percentage}%</Badge>
