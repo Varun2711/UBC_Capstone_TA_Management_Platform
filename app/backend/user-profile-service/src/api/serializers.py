@@ -453,8 +453,9 @@ class CreateSchedulerSerializer(serializers.Serializer):
     
     # Adding serializer for admin accounts 
 class CreateAdminSerializer(serializers.Serializer):
-    first_name = serializers.CharField(max_length=30)
-    last_name = serializers.CharField(max_length=30)
+    name = serializers.CharField(max_length=100)
+    first_name = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=30, required=False, allow_blank=True)
     email = serializers.EmailField()
     employee_number = serializers.CharField(max_length=20)
     

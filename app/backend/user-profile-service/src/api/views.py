@@ -535,23 +535,20 @@ class CreateInstructorView(generics.CreateAPIView):
                 with transaction.atomic():
                     department_code = serializer.validated_data['department']
                     
-                    # Map department codes to full names
+                    # Map department code to full name
                     department_mapping = {
-                        'astr': 'Astronomy',
+                        'cosc': 'Computer Science',
                         'math': 'Mathematics',
                         'phy': 'Physics',
                         'data': 'Data Science',
                         'stat': 'Statistics',
-                        'cosc': 'Computer Science',
+                        'astr': 'Astronomy'
                     }
-                    
                     department_name = department_mapping.get(department_code)
+
                     if not department_name:
-                        return Response(
-                            error_response(f"Invalid department code: {department_code}"),
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-                    
+                        return Response(error_response("Invalid department code provided"), status=status.HTTP_400_BAD_REQUEST)
+
                     department = Department.objects.get(name__iexact=department_name)
                     
                     password = generate_secure_password()
@@ -631,22 +628,22 @@ class CreateSchedulerView(generics.CreateAPIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Get department object
                 department_code = serializer.validated_data['department']
-                department_name_map = {
-                    'astr': 'Astronomy',
+                
+                # Map department code to full name
+                department_mapping = {
+                    'cosc': 'Computer Science',
                     'math': 'Mathematics',
                     'phy': 'Physics',
                     'data': 'Data Science',
                     'stat': 'Statistics',
-                    'cosc': 'Computer Science'
+                    'astr': 'Astronomy'
                 }
-                department_name = department_name_map.get(department_code)
+                department_name = department_mapping.get(department_code)
+
                 if not department_name:
-                    return Response(
-                        error_response("Invalid department code"),
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    return Response(error_response("Invalid department code provided"), status=status.HTTP_400_BAD_REQUEST)
+                
                 department = Department.objects.get(name__iexact=department_name)
                 
                 # Generate secure temporary password
