@@ -81,34 +81,6 @@ const systemItems = [
     icon: Settings,
     url: "#",
   },
-  // {
-  //   title: "Database Management",
-  //   icon: Database,
-  //   url: "#",
-  // },
-  {
-    title: "Notifications",
-    icon: Bell,
-    url: "#",
-  },
-]
-
-const quickActions = [
-  {
-    title: "Create User",
-    icon: Plus,
-    url: "#",
-  },
-  {
-    title: "Import Data",
-    icon: Upload,
-    url: "#",
-  },
-  {
-    title: "Export Reports",
-    icon: Download,
-    url: "#",
-  },
 ]
 
 export function AdminSidebar({ activePage, ...props }) {
@@ -136,24 +108,6 @@ export function AdminSidebar({ activePage, ...props }) {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={activePage === item.title}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {quickActions.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -206,9 +160,6 @@ export function AdminSidebar({ activePage, ...props }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/reset-password?fromSession=true")}>
                   <button>Change Password</button>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <button>System Logs</button>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout(navigate)}>
