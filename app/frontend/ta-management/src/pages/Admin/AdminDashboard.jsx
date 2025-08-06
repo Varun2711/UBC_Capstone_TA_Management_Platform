@@ -141,7 +141,6 @@ export default function AdminDashboard() {
       name: dept,
       students: data.students,
       instructors: data.instructors,
-      schedulers: data.schedulers,
       total: data.total
     })) : [];
 
@@ -486,7 +485,6 @@ export default function AdminDashboard() {
                           <Legend />
                           <Bar dataKey="students" stackId="a" fill="#0088FE" name="Students" />
                           <Bar dataKey="instructors" stackId="a" fill="#00C49F" name="Instructors" />
-                          <Bar dataKey="schedulers" stackId="a" fill="#FFBB28" name="Schedulers" />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
