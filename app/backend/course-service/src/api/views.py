@@ -1683,7 +1683,6 @@ def process_csv_file(uploaded_file):
     """
     import csv
     import io
-    import re
     from datetime import datetime, time
     
     # Initialize results tracking
@@ -1698,6 +1697,22 @@ def process_csv_file(uploaded_file):
         'processed_rows': 0,
         'skipped_rows': 0,
         'debug_info': []  # Add debug information
+    }
+    
+    # Define allowed departments and their abbreviations
+    ALLOWED_DEPARTMENTS = {
+        'COMPUTER SCIENCE': 'Computer Science',
+        'COSC': 'Computer Science',
+        'MATHEMATICS': 'Mathematics',
+        'MATH': 'Mathematics',
+        'PHYSICS': 'Physics',
+        'PHYS': 'Physics',
+        'DATA SCIENCE': 'Data Science',
+        'DATA': 'Data Science',
+        'STATISTICS': 'Statistics',
+        'STAT': 'Statistics',
+        'ASTRONOMY': 'Astronomy',
+        'ASTR': 'Astronomy'
     }
     
     def get_or_create_term(session_year, term_type, term_number):
@@ -1791,17 +1806,33 @@ def process_csv_file(uploaded_file):
                 return new_term
                 
         except Exception as e:
-            results['errors'].append(f"Error creating term {session_year} {term_type} {term_number}: {str(e)}")
+            results['errors'].append(f"Error finding/creating term for {session_year} {term_type} {term_number}: {str(e)}")
             return None
     
-    def get_or_create_department(dept_name):
-        """Get or create department by name."""
+    def get_department_from_csv(dept_name_from_csv):
+        """
+        Get department by name, but only if it's in the allowed list.
+        Does not create new departments.
+        """
+        if not dept_name_from_csv:
+            return None
+        
+        normalized_dept_name = dept_name_from_csv.strip().upper()
+        
+        # Check if the department is in our allowed list (including abbreviations)
+        if normalized_dept_name not in ALLOWED_DEPARTMENTS:
+            return None
+            
+        # Get the standardized full name
+        standard_name = ALLOWED_DEPARTMENTS[normalized_dept_name]
+        
         try:
-            return Department.objects.get(name__iexact=dept_name)
+            # Fetch the department from the database
+            return Department.objects.get(name__iexact=standard_name)
         except Department.DoesNotExist:
-            # Create new department
-            dept = Department.objects.create(name=dept_name)
-            return dept
+            # This case should ideally not happen if fixtures are loaded correctly
+            results['errors'].append(f"Allowed department '{standard_name}' not found in the database. Please ensure fixtures are loaded.")
+            return None
     
     def get_or_create_timeslot(weekday, start_time, end_time):
         """Get or create a single timeslot for the given schedule."""
@@ -1835,8 +1866,8 @@ def process_csv_file(uploaded_file):
         results['processed_rows'] += 1
         
         try:
-            # Extract and clean data from row
-            session_year = row.get('Session year', '').strip()
+            # Get all values from the row
+            session_year_str = row.get('Session year', '').strip()
             term_type = row.get('Term type', '').strip()
             term_number = row.get('term number', '').strip()
             department_name = row.get('department', '').strip()
@@ -1863,9 +1894,10 @@ def process_csv_file(uploaded_file):
                 results['skipped_rows'] += 1
                 continue
             
-            # Get/create department
-            department = get_or_create_department(department_name)
+            # Get department, but do not create it if it doesn't exist or is not allowed
+            department = get_department_from_csv(department_name)
             if not department:
+                results['errors'].append(f"Row {results['processed_rows']}: Department '{department_name}' is not supported or not found in the database.")
                 results['skipped_rows'] += 1
                 continue
             

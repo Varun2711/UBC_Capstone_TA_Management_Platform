@@ -251,23 +251,8 @@ export default function UserManagement() {
         throw new Error(usersData.message || 'Failed to fetch users')
       }
       
-      // Filter departments to only supported ones and standardize names
-      const supportedDepartments = departmentsData
-        .map(dept => ({
-          ...dept,
-          name: getStandardDepartmentName(dept.name)
-        }))
-        .filter(dept => Object.keys(DEPARTMENT_MAPPINGS).includes(dept.name))
-        // Remove duplicates that might occur after standardization
-        .reduce((unique, dept) => {
-          const exists = unique.find(u => u.name === dept.name);
-          if (!exists) {
-            unique.push(dept);
-          }
-          return unique;
-        }, []);
-      
-      setDepartments(supportedDepartments)
+      // Remove the filtering logic and just set the departments from the API
+      setDepartments(departmentsData || [])
       
     } catch (err) {
       setError(err.message || 'Failed to load data')
