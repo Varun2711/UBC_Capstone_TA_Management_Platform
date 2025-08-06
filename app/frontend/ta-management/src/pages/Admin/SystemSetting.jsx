@@ -20,6 +20,8 @@ import {
   Globe,
   FileText,
   BookOpen,
+  Loader2,
+  RefreshCw,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,81 +58,52 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
-
-
-// Mock data for academic terms
-const mockAcademicTerms = [
-  {
-    id: 1,
-    name: "Fall 2024",
-    startDate: "2024-08-26",
-    endDate: "2024-12-15",
-    registrationStart: "2024-07-01",
-    registrationEnd: "2024-08-15",
-    status: "active"
-  },
-  {
-    id: 2,
-    name: "Spring 2025",
-    startDate: "2025-01-13",
-    endDate: "2025-05-10",
-    registrationStart: "2024-11-01",
-    registrationEnd: "2024-12-20",
-    status: "upcoming"
-  },
-  {
-    id: 3,
-    name: "Summer 2025",
-    startDate: "2025-06-02",
-    endDate: "2025-08-15",
-    registrationStart: "2025-03-01",
-    registrationEnd: "2025-05-20",
-    status: "draft"
-  }
-]
-
-// Mock system settings
-const mockSystemSettings = {
-  general: {
-    institutionName: "University of Education",
-    timezone: "America/Vancouver",
-    academicYear: "2024-2025",
-    defaultLanguage: "English"
-  },
-  deadlines: {
-    gradeSubmissionDays: 7,
-    attendanceSubmissionDays: 3,
-    courseWithdrawalWeeks: 6,
-    incompleteGradeWeeks: 8
-  },
-  notifications: {
-    emailNotifications: true,
-    smsNotifications: false,
-    reminderDaysBefore: 3,
-    systemMaintenanceNotice: true
-  },
-  security: {
-    passwordMinLength: 8,
-    sessionTimeoutMinutes: 30,
-    maxLoginAttempts: 5,
-    twoFactorRequired: false
-  },
-  enrollment: {
-    maxCoursesPerStudent: 6,
-    minCoursesForFullTime: 4,
-    waitlistEnabled: true,
-    autoEnrollFromWaitlist: true
-  }
-}
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import systemSettingsService from "../../services/systemSettingsService"
 
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState("terms")
-  const [academicTerms, setAcademicTerms] = useState(mockAcademicTerms)
-  const [systemSettings, setSystemSettings] = useState(mockSystemSettings)
+  const [academicTerms, setAcademicTerms] = useState([])
+  const [systemSettings, setSystemSettings] = useState({})
   const [editingTerm, setEditingTerm] = useState(null)
   const [showAddTerm, setShowAddTerm] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [systemStats, setSystemStats] = useState({})
+
+  // Load initial data
+  useEffect(() => {
+    loadInitialData()
+  }, [])
+
+  const loadInitialData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [terms, settings, stats] = await Promise.all([
+        systemSettingsService.getAcademicTerms(),
+        systemSettingsService.getSystemSettings(),
+        systemSettingsService.getSystemStatistics()
+      ])
+      
+      setAcademicTerms(terms)
+      setSystemSettings(settings)
+      setSystemStats(stats)
+    } catch (err) {
+      setError(err.message || 'Failed to load system data')
+      console.error('Failed to load initial data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const refreshData = async () => {
+    await loadInitialData()
+    setSaveStatus(null)
+    setHasChanges(false)
+  }
 
   const tabs = [
     { id: "terms", label: "Academic Terms", icon: Calendar },
@@ -141,40 +114,135 @@ export default function SystemSettings() {
     { id: "enrollment", label: "Enrollment", icon: Users }
   ]
 
-  const handleSettingChange = (category, setting, value) => {
-    setSystemSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [setting]: value
+  const handleSettingChange = async (category, setting, value) => {
+    try {
+      const updatedSettings = {
+        ...systemSettings,
+        [category]: {
+          ...systemSettings[category],
+          [setting]: value
+        }
       }
-    }))
-    setHasChanges(true)
+      setSystemSettings(updatedSettings)
+      setHasChanges(true)
+      
+      // Auto-save individual setting changes
+      await systemSettingsService.updateSystemSetting(category, setting, value)
+    } catch (err) {
+      setError(err.message || 'Failed to update setting')
+      console.error('Failed to update setting:', err)
+    }
   }
 
   const handleSaveSettings = async () => {
     setSaveStatus("saving")
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setSaveStatus("success")
-    setHasChanges(false)
-    setTimeout(() => setSaveStatus(null), 3000)
-  }
-
-  const handleAddTerm = (termData) => {
-    const newTerm = {
-      id: Date.now(),
-      ...termData,
-      status: "draft"
+    setError(null)
+    try {
+      await systemSettingsService.saveSystemSettings(systemSettings)
+      setSaveStatus("success")
+      setHasChanges(false)
+      setTimeout(() => setSaveStatus(null), 3000)
+    } catch (err) {
+      setSaveStatus("error")
+      setError(err.message || 'Failed to save settings')
+      setTimeout(() => setSaveStatus(null), 3000)
+      console.error('Failed to save settings:', err)
     }
-    setAcademicTerms(prev => [...prev, newTerm])
-    setShowAddTerm(false)
-    setHasChanges(true)
   }
 
-  const handleDeleteTerm = (termId) => {
-    setAcademicTerms(prev => prev.filter(term => term.id !== termId))
-    setHasChanges(true)
+  const handleAddTerm = async (termData) => {
+    setLoading(true)
+    setError(null)
+    try {
+      // Validate term data
+      const validation = systemSettingsService.validateTermData(termData)
+      if (!validation.isValid) {
+        throw new Error(validation.errors.join(' '))
+      }
+
+      const newTerm = await systemSettingsService.createAcademicTerm({
+        ...termData,
+        academicYear: systemSettingsService.generateAcademicYear(termData.startDate, termData.endDate),
+        termType: 'winter' // Default term type
+      })
+      
+      setAcademicTerms(prev => [...prev, newTerm])
+      setShowAddTerm(false)
+      setHasChanges(true)
+    } catch (err) {
+      setError(err.message || 'Failed to create term')
+      console.error('Failed to create term:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditTerm = async (termId, termData) => {
+    setLoading(true)
+    setError(null)
+    try {
+      // Validate term data
+      const validation = systemSettingsService.validateTermData(termData)
+      if (!validation.isValid) {
+        throw new Error(validation.errors.join(' '))
+      }
+
+      const updatedTerm = await systemSettingsService.updateAcademicTerm(termId, {
+        ...termData,
+        academicYear: systemSettingsService.generateAcademicYear(termData.startDate, termData.endDate)
+      })
+      
+      setAcademicTerms(prev => 
+        prev.map(term => term.id === termId ? updatedTerm : term)
+      )
+      setEditingTerm(null)
+      setHasChanges(true)
+    } catch (err) {
+      setError(err.message || 'Failed to update term')
+      console.error('Failed to update term:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteTerm = async (termId) => {
+    if (!window.confirm('Are you sure you want to delete this term? This action cannot be undone.')) {
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      await systemSettingsService.deleteAcademicTerm(termId)
+      setAcademicTerms(prev => prev.filter(term => term.id !== termId))
+      setHasChanges(true)
+    } catch (err) {
+      setError(err.message || 'Failed to delete term')
+      console.error('Failed to delete term:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleArchiveTerm = async (termId) => {
+    if (!window.confirm('Are you sure you want to archive this term?')) {
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await systemSettingsService.archiveAcademicTerm(termId)
+      setAcademicTerms(prev => 
+        prev.map(term => term.id === termId ? { ...term, status: 'archived', isActive: false } : term)
+      )
+      setHasChanges(true)
+    } catch (err) {
+      setError(err.message || 'Failed to archive term')
+      console.error('Failed to archive term:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getStatusColor = (status) => {
@@ -183,21 +251,31 @@ export default function SystemSettings() {
         return 'bg-green-100 text-green-800'
       case 'upcoming':
         return 'bg-blue-100 text-blue-800'
+      case 'completed':
+        return 'bg-gray-100 text-gray-800'
+      case 'archived':
+        return 'bg-red-100 text-red-800'
       case 'draft':
-        return 'bg-gray-100 text-gray-800'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-yellow-100 text-yellow-800'
     }
   }
 
-  const SettingField = ({ label, value, onChange, type = "text", options = null }) => (
+  // Get dynamic status based on current date
+  const getDynamicStatus = (term) => {
+    if (!term.isActive) return 'draft'
+    return systemSettingsService.getTermStatus(term)
+  }
+
+  const SettingField = ({ label, value, onChange, type = "text", options = null, disabled = false }) => (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">{label}</label>
       {type === "select" && options ? (
         <select 
           value={value} 
           onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={disabled}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
         >
           {options.map(option => (
             <option key={option.value} value={option.value}>{option.label}</option>
@@ -209,7 +287,8 @@ export default function SystemSettings() {
             type="checkbox"
             checked={value}
             onChange={(e) => onChange(e.target.checked)}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            disabled={disabled}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           <span className="text-sm text-gray-600">Enable this setting</span>
         </label>
@@ -217,8 +296,10 @@ export default function SystemSettings() {
         <input
           type={type}
           value={value}
-          onChange={(e) => onChange(type === "number" ? parseInt(e.target.value) : e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={(e) => onChange(type === "number" ? parseInt(e.target.value) || 0 : e.target.value)}
+          disabled={disabled}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          min={type === "number" ? 0 : undefined}
         />
       )}
     </div>
@@ -229,55 +310,108 @@ export default function SystemSettings() {
       name: "",
       startDate: "",
       endDate: "",
-      registrationStart: "",
-      registrationEnd: ""
+      description: "",
+      termType: "winter"
     })
+    const [modalError, setModalError] = useState(null)
+    const [modalLoading, setModalLoading] = useState(false)
+
+    const handleSubmit = async () => {
+      setModalError(null)
+      setModalLoading(true)
+      
+      try {
+        await handleAddTerm(termData)
+        setTermData({
+          name: "",
+          startDate: "",
+          endDate: "",
+          description: "",
+          termType: "winter"
+        })
+      } catch (err) {
+        setModalError(err.message)
+      } finally {
+        setModalLoading(false)
+      }
+    }
 
     return showAddTerm ? (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
           <h3 className="text-lg font-semibold mb-4">Add Academic Term</h3>
+          
+          {modalError && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {modalError}
+            </div>
+          )}
+          
           <div className="space-y-4">
             <SettingField
-              label="Term Name"
+              label="Term Code"
               value={termData.name}
               onChange={(value) => setTermData(prev => ({ ...prev, name: value }))}
+              disabled={modalLoading}
+            />
+            <SettingField
+              label="Description"
+              value={termData.description}
+              onChange={(value) => setTermData(prev => ({ ...prev, description: value }))}
+              disabled={modalLoading}
+            />
+            <SettingField
+              label="Term Type"
+              value={termData.termType}
+              onChange={(value) => setTermData(prev => ({ ...prev, termType: value }))}
+              type="select"
+              options={systemSettingsService.getTermTypeOptions()}
+              disabled={modalLoading}
             />
             <SettingField
               label="Start Date"
               value={termData.startDate}
               onChange={(value) => setTermData(prev => ({ ...prev, startDate: value }))}
               type="date"
+              disabled={modalLoading}
             />
             <SettingField
               label="End Date"
               value={termData.endDate}
               onChange={(value) => setTermData(prev => ({ ...prev, endDate: value }))}
               type="date"
-            />
-            <SettingField
-              label="Registration Start"
-              value={termData.registrationStart}
-              onChange={(value) => setTermData(prev => ({ ...prev, registrationStart: value }))}
-              type="date"
-            />
-            <SettingField
-              label="Registration End"
-              value={termData.registrationEnd}
-              onChange={(value) => setTermData(prev => ({ ...prev, registrationEnd: value }))}
-              type="date"
+              disabled={modalLoading}
             />
           </div>
           <div className="flex gap-2 mt-6">
             <button
-              onClick={() => handleAddTerm(termData)}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              onClick={handleSubmit}
+              disabled={modalLoading}
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Add Term
+              {modalLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Creating...
+                </>
+              ) : (
+                'Add Term'
+              )}
             </button>
             <button
-              onClick={() => setShowAddTerm(false)}
-              className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+              onClick={() => {
+                setShowAddTerm(false)
+                setModalError(null)
+                setTermData({
+                  name: "",
+                  startDate: "",
+                  endDate: "",
+                  description: "",
+                  termType: "winter"
+                })
+              }}
+              disabled={modalLoading}
+              className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -299,32 +433,76 @@ export default function SystemSettings() {
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">System Settings</h1>
               <p className="text-gray-600 mt-1">Configure academic terms and system-wide settings</p>
+              {systemStats && (
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                  <span>{systemStats.activeTermsCount} active terms</span>
+                  <span>{systemStats.totalCoursesCount} courses</span>
+                  <span>{systemStats.totalOfferingsCount} offerings</span>
+                </div>
+              )}
             </div>
-            {hasChanges && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={handleSaveSettings}
-                disabled={saveStatus === "saving"}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                onClick={refreshData}
+                disabled={loading}
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saveStatus === "saving" ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Saving...
-                  </>
-                ) : saveStatus === "success" ? (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Saved
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Save Changes
-                  </>
-                )}
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
               </button>
-            )}
+              {hasChanges && (
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={saveStatus === "saving" || loading}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saveStatus === "saving" ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : saveStatus === "success" ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Saved
+                    </>
+                  ) : saveStatus === "error" ? (
+                    <>
+                      <AlertTriangle className="w-4 h-4" />
+                      Error
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+              <span>{error}</span>
+              <button 
+                onClick={() => setError(null)}
+                className="ml-auto text-red-700 hover:text-red-900"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          {/* Loading Overlay */}
+          {loading && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-700 rounded-md flex items-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Loading...</span>
+            </div>
+          )}
 
           {/* Tab Navigation */}
           <div className="border-b border-gray-200 mb-6">
@@ -383,37 +561,79 @@ export default function SystemSettings() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {academicTerms.map((term) => (
-                        <tr key={term.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {term.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {term.startDate} to {term.endDate}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {term.registrationStart} to {term.registrationEnd}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(term.status)}`}>
-                              {term.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center gap-2">
-                              <button className="text-blue-600 hover:text-blue-900">
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteTerm(term.id)}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                      {academicTerms.map((term) => {
+                        const dynamicStatus = getDynamicStatus(term)
+                        return (
+                          <tr key={term.id}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{term.name}</div>
+                                {term.description && (
+                                  <div className="text-xs text-gray-500">{term.description}</div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div>
+                                <div>{term.startDate} to {term.endDate}</div>
+                                {term.academicYear && (
+                                  <div className="text-xs text-gray-400">Academic Year: {term.academicYear}</div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div>
+                                <div>{term.registrationStart || term.startDate} to {term.registrationEnd || term.endDate}</div>
+                                {term.termType && (
+                                  <div className="text-xs text-gray-400">Type: {term.termType}</div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(dynamicStatus)}`}>
+                                {dynamicStatus}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => setEditingTerm(term)}
+                                  disabled={loading}
+                                  className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Edit term"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleArchiveTerm(term.id)}
+                                  disabled={loading || dynamicStatus === 'active'}
+                                  className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title={dynamicStatus === 'active' ? 'Cannot archive active term' : 'Archive term'}
+                                >
+                                  <Database className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteTerm(term.id)}
+                                  disabled={loading || dynamicStatus === 'active'}
+                                  className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title={dynamicStatus === 'active' ? 'Cannot delete active term' : 'Delete term'}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {academicTerms.length === 0 && !loading && (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                            <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <div className="text-lg font-medium mb-2">No academic terms found</div>
+                            <div className="text-sm">Create your first academic term to get started.</div>
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -426,36 +646,31 @@ export default function SystemSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <SettingField
                     label="Institution Name"
-                    value={systemSettings.general.institutionName}
+                    value={systemSettings.general?.institutionName || ''}
                     onChange={(value) => handleSettingChange("general", "institutionName", value)}
+                    disabled={loading}
                   />
                   <SettingField
                     label="Timezone"
-                    value={systemSettings.general.timezone}
+                    value={systemSettings.general?.timezone || 'America/Vancouver'}
                     onChange={(value) => handleSettingChange("general", "timezone", value)}
                     type="select"
-                    options={[
-                      { value: "America/Vancouver", label: "Pacific Time (Vancouver)" },
-                      { value: "America/Toronto", label: "Eastern Time (Toronto)" },
-                      { value: "America/Chicago", label: "Central Time (Chicago)" },
-                      { value: "America/Denver", label: "Mountain Time (Denver)" }
-                    ]}
+                    options={systemSettingsService.getTimezoneOptions()}
+                    disabled={loading}
                   />
                   <SettingField
                     label="Academic Year"
-                    value={systemSettings.general.academicYear}
+                    value={systemSettings.general?.academicYear || ''}
                     onChange={(value) => handleSettingChange("general", "academicYear", value)}
+                    disabled={loading}
                   />
                   <SettingField
                     label="Default Language"
-                    value={systemSettings.general.defaultLanguage}
+                    value={systemSettings.general?.defaultLanguage || 'English'}
                     onChange={(value) => handleSettingChange("general", "defaultLanguage", value)}
                     type="select"
-                    options={[
-                      { value: "English", label: "English" },
-                      { value: "French", label: "Français" },
-                      { value: "Spanish", label: "Español" }
-                    ]}
+                    options={systemSettingsService.getLanguageOptions()}
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -467,27 +682,31 @@ export default function SystemSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <SettingField
                     label="Grade Submission (Days after term end)"
-                    value={systemSettings.deadlines.gradeSubmissionDays}
+                    value={systemSettings.deadlines?.gradeSubmissionDays || 0}
                     onChange={(value) => handleSettingChange("deadlines", "gradeSubmissionDays", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Attendance Submission (Days after class)"
-                    value={systemSettings.deadlines.attendanceSubmissionDays}
+                    value={systemSettings.deadlines?.attendanceSubmissionDays || 0}
                     onChange={(value) => handleSettingChange("deadlines", "attendanceSubmissionDays", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Course Withdrawal (Weeks into term)"
-                    value={systemSettings.deadlines.courseWithdrawalWeeks}
+                    value={systemSettings.deadlines?.courseWithdrawalWeeks || 0}
                     onChange={(value) => handleSettingChange("deadlines", "courseWithdrawalWeeks", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Incomplete Grade Resolution (Weeks)"
-                    value={systemSettings.deadlines.incompleteGradeWeeks}
+                    value={systemSettings.deadlines?.incompleteGradeWeeks || 0}
                     onChange={(value) => handleSettingChange("deadlines", "incompleteGradeWeeks", value)}
                     type="number"
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -499,27 +718,31 @@ export default function SystemSettings() {
                 <div className="space-y-6">
                   <SettingField
                     label="Email Notifications"
-                    value={systemSettings.notifications.emailNotifications}
+                    value={systemSettings.notifications?.emailNotifications || false}
                     onChange={(value) => handleSettingChange("notifications", "emailNotifications", value)}
                     type="checkbox"
+                    disabled={loading}
                   />
                   <SettingField
                     label="SMS Notifications"
-                    value={systemSettings.notifications.smsNotifications}
+                    value={systemSettings.notifications?.smsNotifications || false}
                     onChange={(value) => handleSettingChange("notifications", "smsNotifications", value)}
                     type="checkbox"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Reminder Days Before Deadline"
-                    value={systemSettings.notifications.reminderDaysBefore}
+                    value={systemSettings.notifications?.reminderDaysBefore || 0}
                     onChange={(value) => handleSettingChange("notifications", "reminderDaysBefore", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="System Maintenance Notices"
-                    value={systemSettings.notifications.systemMaintenanceNotice}
+                    value={systemSettings.notifications?.systemMaintenanceNotice || false}
                     onChange={(value) => handleSettingChange("notifications", "systemMaintenanceNotice", value)}
                     type="checkbox"
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -531,27 +754,31 @@ export default function SystemSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <SettingField
                     label="Minimum Password Length"
-                    value={systemSettings.security.passwordMinLength}
+                    value={systemSettings.security?.passwordMinLength || 0}
                     onChange={(value) => handleSettingChange("security", "passwordMinLength", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Session Timeout (Minutes)"
-                    value={systemSettings.security.sessionTimeoutMinutes}
+                    value={systemSettings.security?.sessionTimeoutMinutes || 0}
                     onChange={(value) => handleSettingChange("security", "sessionTimeoutMinutes", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Max Login Attempts"
-                    value={systemSettings.security.maxLoginAttempts}
+                    value={systemSettings.security?.maxLoginAttempts || 0}
                     onChange={(value) => handleSettingChange("security", "maxLoginAttempts", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Two-Factor Authentication Required"
-                    value={systemSettings.security.twoFactorRequired}
+                    value={systemSettings.security?.twoFactorRequired || false}
                     onChange={(value) => handleSettingChange("security", "twoFactorRequired", value)}
                     type="checkbox"
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -563,27 +790,31 @@ export default function SystemSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <SettingField
                     label="Maximum Courses Per Student"
-                    value={systemSettings.enrollment.maxCoursesPerStudent}
+                    value={systemSettings.enrollment?.maxCoursesPerStudent || 0}
                     onChange={(value) => handleSettingChange("enrollment", "maxCoursesPerStudent", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Minimum Courses for Full-Time Status"
-                    value={systemSettings.enrollment.minCoursesForFullTime}
+                    value={systemSettings.enrollment?.minCoursesForFullTime || 0}
                     onChange={(value) => handleSettingChange("enrollment", "minCoursesForFullTime", value)}
                     type="number"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Enable Waitlist"
-                    value={systemSettings.enrollment.waitlistEnabled}
+                    value={systemSettings.enrollment?.waitlistEnabled || false}
                     onChange={(value) => handleSettingChange("enrollment", "waitlistEnabled", value)}
                     type="checkbox"
+                    disabled={loading}
                   />
                   <SettingField
                     label="Auto-enroll from Waitlist"
-                    value={systemSettings.enrollment.autoEnrollFromWaitlist}
+                    value={systemSettings.enrollment?.autoEnrollFromWaitlist || false}
                     onChange={(value) => handleSettingChange("enrollment", "autoEnrollFromWaitlist", value)}
                     type="checkbox"
+                    disabled={loading}
                   />
                 </div>
               </div>
