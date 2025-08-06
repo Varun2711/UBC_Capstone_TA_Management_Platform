@@ -25,8 +25,6 @@ import {
   Calendar,
   Mail,
   Database,
-  Server,
-
   BarChart3,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -264,12 +262,22 @@ export default function AdminDashboard() {
       case 'negative': return 'text-red-600';
       default: return 'text-gray-600';
     }
+  };
 
   const getTrendIcon = (trend) => {
     switch (trend) {
       case 'positive': return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'negative': return <AlertTriangle className="w-4 h-4 text-red-600" />;
       default: return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getSeverityColor = (severity) => {
+    switch (severity) {
+      case 'info': return 'bg-blue-100 text-blue-800';
+      case 'warning': return 'bg-yellow-100 text-yellow-800';
+      case 'error': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -613,39 +621,7 @@ export default function AdminDashboard() {
                 </TabsContent>
               </Tabs>
             </div>
-            <Card className="shadow-md border">
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Timestamp</TableHead>
-                      <TableHead>User</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Details</TableHead>
-                      <TableHead>Severity</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockAuditLogs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="font-mono text-sm">
-                          {log.timestamp}
-                        </TableCell>
-                        <TableCell>{log.user}</TableCell>
-                        <TableCell className="font-medium">{log.action}</TableCell>
-                        <TableCell className="max-w-xs truncate">{log.details}</TableCell>
-                        <TableCell>
-                          <Badge className={getSeverityColor(log.severity)} variant="secondary">
-                            {log.severity}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
+          )}
         </main>
       </SidebarInset>
     </SidebarProvider>
