@@ -287,6 +287,7 @@ class CourseOffering(models.Model):
         db_constraint=False,  # ← No foreign key constraints across services
         help_text="Time slots when this course offering meets"
     )
+    final_notification_sent_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the final allocation notice was sent to the instructor")
 
     class Meta:
         managed = False
@@ -317,6 +318,7 @@ class SharedSession(models.Model):
         db_constraint=False,  # ← No foreign key constraints across services
         help_text="Time slots when this lab section meets"
     )
+    final_notification_sent_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the final allocation notice was sent to the instructor")
 
     class Meta:
         managed = False
@@ -693,9 +695,15 @@ class Assignment(models.Model):
     
     @property
     def time_slots(self):
-        """Get the specific time slot assigned"""
-        if self.time_slot:
+        """
+        Get the specific time slot(s) assigned.
+        For a course offering, it's a single slot.
+        For a shared session, it's all slots of that session.
+        """
+        if self.course_offering and self.time_slot:
             return [self.time_slot]
+        if self.shared_session:
+            return self.shared_session.time_slots.all()
         return []
     
     
