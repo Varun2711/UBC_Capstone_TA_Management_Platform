@@ -123,8 +123,8 @@ const validatePersonalInfoField = (field, value) => {
     } else if (!/^\d{8}$/.test(value.trim())) {
       error = "Student ID must be exactly 8 digits";
     }
-  } else if (field === "UBCEmployeeId") {
-    if (value && value.trim() !== "") {
+  } else if (field === "UBCEmployeeId") { // optional
+    if (value && value.trim() !== "N/A") {
       if (!/^\d+$/.test(value.trim())) {
         error = "UBC Employee ID must contain only numbers";
       } else if (value.trim().length > 10) {
@@ -132,7 +132,7 @@ const validatePersonalInfoField = (field, value) => {
       }
     }
   } else if (field === "phone") {
-    if (value && value.trim() !== "") {
+    if (value && value.trim() !== "N/A") { // optional
       const digitsOnly = value.replace(/\D/g, '');
       if (digitsOnly.length < 10) {
         error = "Phone number must have at least 10 digits";
@@ -150,7 +150,7 @@ const validateAcademicField = (field, value) => {
   if (field === "major" || field === "minor") {
     if (field === "major" && (!value || value.trim().length < 2)) {
       error = "Major is required (minimum 2 characters)";
-    } else if (value && value.trim() !== "") {
+    } else if (value && value.trim() !== "N/A") { // minor is optional
       if (value.trim().length > 100) {
         error = `${field === "major" ? "Major" : "Minor"} must be less than 100 characters`;
       } else if (!/^[a-zA-Z\s\-&]+$/.test(value.trim())) {
@@ -162,7 +162,7 @@ const validateAcademicField = (field, value) => {
       error = "Academic level is required";
     }
   } else if (field === "gpa") {
-    if (value && value.trim() !== "") {
+    if (value && value.trim() !== "N/A") { // Optional
       const gpaValue = parseFloat(value);
       if (isNaN(gpaValue)) {
         error = "GPA must be a number";
@@ -173,7 +173,7 @@ const validateAcademicField = (field, value) => {
       }
     }
   } else if (field === "expectedGraduation") {
-    if (!value || value.trim() === "") {
+    if (!value || value.trim() === "N/A") {
       error = "Expected graduation date is required";
     } else if (value.trim().length > 20) {
       error = "Expected graduation must be 20 characters or less";
@@ -304,34 +304,16 @@ export default function StudentProfileForm({
     softSkills: [...(profile.softSkills || [])],
   });
 
-  const handleAcademicInputChange = (field, value) => {
-    console.log(`Academic input change: ${field} = "${value}"`);
-
-    if (field.includes('.')) {
-      // Handle nested fields like academicInfo.degreeStart
-      const [parent, child] = field.split('.');
-      console.log(`Nested field detected: parent = ${parent}, child = ${child}`);
-      setEditedAcademicInfo((prev) => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
-    } else {
-      // Handle top-level fields
-      console.log(`Setting editedAcademicInfo[${field}] to "${value}"`);
-      setEditedAcademicInfo((prev) => ({
-        ...prev,
-        [field]: value
-      }));
-    }
-
-    // Clear any related errors
-    const newErrors = { ...errors };
-    delete newErrors[field];
-    setErrors(newErrors);
-  };
+  // State for personal information editing
+  const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(mode === "application");
+  const [editedPersonalInfo, setEditedPersonalInfo] = useState({
+    name: profile.name,
+    studentId: profile.studentId,
+    UBCEmployeeId: profile.UBCEmployeeId,
+    email: profile.email,
+    phone: profile.phone,
+    ...(mode === "profile" && { password: profile.password })
+  })
 
   // State for academic information editing
   const [isEditingAcademic, setIsEditingAcademic] = useState(mode === "application");
@@ -370,26 +352,26 @@ export default function StudentProfileForm({
     const newErrors = {};
 
     // Validate name
-    const nameError = validatePersonalInfoField("name", editedProfile.name);
+    const nameError = validatePersonalInfoField("name", editedPersonalInfo.name);
     if (nameError) newErrors.name = nameError;
 
     // Validate email
-    const emailError = validatePersonalInfoField("email", editedProfile.email);
+    const emailError = validatePersonalInfoField("email", editedPersonalInfo.email);
     if (emailError) newErrors.email = emailError;
 
     // Validate student ID
-    const studentIdError = validatePersonalInfoField("studentId", editedProfile.studentId);
+    const studentIdError = validatePersonalInfoField("studentId", editedPersonalInfo.studentId);
     if (studentIdError) newErrors.studentId = studentIdError;
 
     // Validate phone (optional)
-    if (editedProfile.phone) {
-      const phoneError = validatePersonalInfoField("phone", editedProfile.phone);
+    if (editedPersonalInfo.phone) {
+      const phoneError = validatePersonalInfoField("phone", editedPersonalInfo.phone);
       if (phoneError) newErrors.phone = phoneError;
     }
 
     // Validate UBC Employee ID (optional)
-    if (editedProfile.UBCEmployeeId) {
-      const employeeIdError = validatePersonalInfoField("UBCEmployeeId", editedProfile.UBCEmployeeId);
+    if (editedPersonalInfo.UBCEmployeeId) {
+      const employeeIdError = validatePersonalInfoField("UBCEmployeeId", editedPersonalInfo.UBCEmployeeId);
       if (employeeIdError) newErrors.UBCEmployeeId = employeeIdError;
     }
 
@@ -508,97 +490,52 @@ export default function StudentProfileForm({
     return !hasErrors;
   };
 
-  // Updated handleSave function that actually saves to backend
-  const handleSave = async (profileData) => {
-    // Add validation gate
+  /*
+  * Save handlers for each individual section
+  */
+  // Personal Information Save Handler
+  const handleSavePersonalInfo = async() => {
     if (!validatePersonalInfoForm()) {
-      alert("Please fix the validation errors before saving.");
-      return false;
+      alert("Please fix the validation errors before saving.")
+      return;
     }
 
-    const {
-      name,
-      studentId,
-      UBCEmployeeId,
-      password,
-      email,
-      major,
-      year,
-      academicInfo,
-      experience,
-      phone,
-      gpa,
-      minor,
-    } = profileData;
+    const updatedProfile = {
+    ...profile,
+    name: editedPersonalInfo.name,
+    studentId: editedPersonalInfo.studentId,
+    UBCEmployeeId: editedPersonalInfo.UBCEmployeeId,
+    email: editedPersonalInfo.email,
+    phone: editedPersonalInfo.phone,
+    ...(mode === "profile" && { password: editedPersonalInfo.password }) // only include password in profile mode
+  };
 
-    // Validation - skip password validation in application mode
-    const requiredFields = [
-      !(name || "").trim(),
-      !(studentId || "").trim(),
-      !(email || "").trim(),
-      !(major || "").trim(),
-      !(year || "").trim(),
-      !((academicInfo?.expectedGraduation || "").trim()),
-      !((academicInfo?.degreeStart || "").trim()),
-      !((academicInfo?.yearStanding || "").trim())
-    ];
+  try {
+    // Parse name into first and last
+    const nameParts = (editedPersonalInfo.name || "").trim().split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
 
-    // Only validate password in profile mode
-    if (mode === "profile") {
-      requiredFields.push(!(password || "").trim());
-    }
-
-    if (requiredFields.some(field => field)) {
-      alert("Please fill out all required fields.");
-      return false;
-    }
-
-    try {
-      // Parse name into first and last name
-      const nameParts = name.trim().split(" ");
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
-
-      // Format data for backend
-      const backendData = {
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        student_number: studentId,
-        phone: phone || '',
-
-        // Student model fields
-        program: major,
-        study_level: year,
-        year_standing: academicInfo?.yearStanding ? parseInt(academicInfo.yearStanding) : null,
-        expected_graduation: academicInfo?.expectedGraduation || '',
-
-        // StudentProfile nested fields
-        student_profile: {
-          gpa: gpa ? parseFloat(gpa) : null,
-          minor: minor || '',
-          year_degree_start: academicInfo?.degreeStart ? parseInt(academicInfo.degreeStart) : null,
-          ubc_employee_id: UBCEmployeeId || ''
-        }
-      };
-
-      console.log("Saving profile data:", backendData);
+    const backendData = {
+      first_name: firstName,
+      last_name: lastName,
+      email: editedPersonalInfo.email,
+      student_number: editedPersonalInfo.studentId,
+      phone: editedPersonalInfo.phone || '',
+      ...(mode === "profile" && { password: editedPersonalInfo.password }),
+      student_profile: {
+        ubc_employee_id: editedPersonalInfo.UBCEmployeeId || ''
+      }
+    };
       await updateProfile(backendData);
 
-      console.log("Profile saved successfully");
-      return true;
+      setProfile(updatedProfile);
+      setIsEditingPersonalInfo(false);
     } catch (error) {
-      console.error("Failed to save profile:", error);
-      alert("Failed to save profile. Please try again.");
-      return false;
+      console.error("Failed to save personal info:", error);
+      alert("Failed to save personal information. Please try again.");
     }
-  };
-
-  const handleCancel = (profileData) => {
-    setEditedProfile({ ...profile }); // Reset to original data
-    setIsEditing(false);
-    setErrors({}); // Clear errors on cancel
-  };
+  }
 
   // Academic Information Save Handler
   const handleSaveAcademicInfo = async () => {
@@ -642,6 +579,36 @@ export default function StudentProfileForm({
       console.error("Failed to save academic info:", error);
       alert("Failed to save academic information. Please try again.");
     }
+  };
+
+  // Academic Information Change Handler
+  const handleAcademicInputChange = (field, value) => {
+    console.log(`Academic input change: ${field} = "${value}"`);
+
+    if (field.includes('.')) {
+      // Handle nested fields like academicInfo.degreeStart
+      const [parent, child] = field.split('.');
+      console.log(`Nested field detected: parent = ${parent}, child = ${child}`);
+      setEditedAcademicInfo((prev) => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      // Handle top-level fields
+      console.log(`Setting editedAcademicInfo[${field}] to "${value}"`);
+      setEditedAcademicInfo((prev) => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+
+    // Clear any related errors
+    const newErrors = { ...errors };
+    delete newErrors[field];
+    setErrors(newErrors);
   };
 
   // Experience Save Handler
@@ -881,23 +848,28 @@ export default function StudentProfileForm({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Personal Information</CardTitle>
-            {isEditing ? (
+            {isEditingPersonalInfo ? (
               <div className="flex gap-2">
                 <Button
-                  onClick={async () => {
-                    const isValid = await handleSave(editedProfile);
-                    if (!isValid) return;
-
-                    setProfile(editedProfile);
-                    setIsEditing(false);
-                  }}
+                  onClick={handleSavePersonalInfo}
                   className="gap-2"
                 >
                   <Save className="h-4 w-4" />
                   Save
                 </Button>
                 <Button
-                  onClick={() => handleCancel(profile)}
+                  onClick={() => {
+                    setEditedPersonalInfo({
+                      name: profile.name,
+                      studentId: profile.studentId,
+                      UBCEmployeeId: profile.UBCEmployeeId,
+                      email: profile.email,
+                      phone: profile.phone,
+                      ...(mode === "profile" && { password: profile.password })
+                    });
+                    setIsEditingPersonalInfo(false)
+                    setErrors({});
+                  }}
                   variant="outline"
                   className="gap-2"
                 >
@@ -907,10 +879,7 @@ export default function StudentProfileForm({
               </div>
             ) : (
               <Button
-                onClick={() => {
-                  setEditedProfile({ ...profile });
-                  setIsEditing(true);
-                }}
+                onClick={() => setIsEditingPersonalInfo(true)}
                 className="gap-2"
               >
                 <Edit className="h-4 w-4" />
@@ -936,13 +905,13 @@ export default function StudentProfileForm({
                   <Label htmlFor="name">
                     Full Name<span className="text-red-500">*</span>
                   </Label>
-                  {isEditing ? (
+                  {isEditingPersonalInfo ? (
                     <Input
                       id="name"
-                      value={editedProfile.name}
+                      value={editedPersonalInfo.name}
                       onChange={(e) => {
-                        const { value } = e.target;
-                        setEditedProfile({ ...editedProfile, name: value });
+                        const value = e.target.value;
+                        setEditedPersonalInfo(prev => ({ ...prev, name: value }));
 
                         // Real-time validation
                         const error = validatePersonalInfoField("name", value);
@@ -959,14 +928,14 @@ export default function StudentProfileForm({
                   <Label htmlFor="studentId">
                     Student ID<span className="text-red-500">*</span>
                   </Label>
-                  {isEditing ? (
+                  {isEditingPersonalInfo ? (
                     <Input
                       id="studentId"
-                      value={editedProfile.studentId}
+                      value={editedPersonalInfo.studentId}
                       onChange={(e) => {
                         // Only allow digits and limit to 8 characters
                         const value = e.target.value.replace(/\D/g, '').slice(0, 8);
-                        setEditedProfile({ ...editedProfile, studentId: value });
+                        setEditedPersonalInfo(prev => ({ ...prev, studentId: value }))
 
                         // Real-time validation
                         const error = validatePersonalInfoField("studentId", value);
@@ -985,15 +954,14 @@ export default function StudentProfileForm({
                   <Label htmlFor="UBCEmployeeId">
                     UBC Employee ID (Optional)
                   </Label>
-                  {isEditing ? (
+                  {isEditingPersonalInfo ? (
                     <Input
                       id="UBCEmployeeId"
-                      value={editedProfile.UBCEmployeeId}
+                      value={editedPersonalInfo.UBCEmployeeId}
                       onChange={(e) => {
                         // Only allow digits and limit to 10 characters
                         const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                        setEditedProfile({ ...editedProfile, UBCEmployeeId: value });
-
+                        setEditedPersonalInfo(prev => ({ ...prev, UBCEmployeeId: value}));
                         // Real-time validation
                         const error = validatePersonalInfoField("UBCEmployeeId", value);
                         setErrors(prev => ({ ...prev, UBCEmployeeId: error }));
@@ -1012,18 +980,16 @@ export default function StudentProfileForm({
                     <Label htmlFor="password">
                       Password<span className="text-red-500">*</span>
                     </Label>
-                    {isEditing ? (
+                    {isEditingPersonalInfo ? (
                       <div className="relative">
                         <Input
                           id="password"
                           type={showPassword ? "text" : "password"}
-                          value={editedProfile.password}
-                          onChange={(e) =>
-                            setEditedProfile({
-                              ...editedProfile,
-                              password: e.target.value,
-                            })
-                          }
+                          value={editedPersonalInfo.password}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setEditedPersonalInfo(prev => ({ ...prev, name: value }));
+                          }}
                           className="pr-10"
                         />
                         <button
@@ -1047,15 +1013,14 @@ export default function StudentProfileForm({
                   <Label htmlFor="email">
                     Email<span className="text-red-500">*</span>
                   </Label>
-                  {isEditing ? (
+                  {isEditingPersonalInfo ? (
                     <Input
                       id="email"
                       type="email"
-                      value={editedProfile.email}
+                      value={editedPersonalInfo.email}
                       onChange={(e) => {
                         const { value } = e.target;
-                        setEditedProfile({ ...editedProfile, email: value });
-
+                        setEditedPersonalInfo(prev => ({ ...prev, email: value }));
                         // Real-time validation
                         const error = validatePersonalInfoField("email", value);
                         setErrors(prev => ({ ...prev, email: error }));
@@ -1068,15 +1033,15 @@ export default function StudentProfileForm({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone (Optional)</Label>
-                  {isEditing ? (
+                  {isEditingPersonalInfo ? (
                     <Input
                       id="phone"
-                      value={editedProfile.phone}
+                      value={editedPersonalInfo.phone}
                       onChange={(e) => {
                         // Allow common phone formats
                         const value = e.target.value.replace(/[^\d\s\-\(\)\.\+]/g, '');
-                        setEditedProfile({ ...editedProfile, phone: value });
-
+                        setEditedPersonalInfo(prev => ({ ...prev, phone: value }))
+                        
                         // Real-time validation
                         const error = validatePersonalInfoField("phone", value);
                         setErrors(prev => ({ ...prev, phone: error }));
@@ -1087,7 +1052,7 @@ export default function StudentProfileForm({
                     <p className="text-sm">{profile.phone}</p>
                   )}
                   {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
-                  {isEditing && (
+                  {isEditingPersonalInfo && (
                     <p className="text-xs text-muted-foreground">
                       Format: +1-234-567-8900, (234) 567-8900, or 234.567.8900
                     </p>
