@@ -59,9 +59,6 @@ describe("AdminSidebar", () => {
       { title: "Dashboard", icon: "home-icon" },
       { title: "User Management", icon: "users-icon", isActive: true },
       { title: "Course Management", icon: "book-open-icon" },
-      { title: "TA Positions", icon: "user-check-icon" },
-      { title: "Applications", icon: "file-text-icon" },
-      { title: "Reports & Analytics", icon: "bar-chart-icon" },
     ]
 
     const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
@@ -77,17 +74,6 @@ describe("AdminSidebar", () => {
         expect(menuItem.closest('[data-active="true"]')).not.toBeInTheDocument()
       }
     })
-  })
-
-
-  it("applies active state styling to the specified active page", () => {
-    renderSidebar({ activePage: "Reports & Analytics" })
-
-    const activeItem = screen.getByText("Reports & Analytics").closest('[data-active="true"]')
-    expect(activeItem).toHaveAttribute("data-active", "true")
-
-    const inactiveItem = screen.getByText("Dashboard").closest('[data-active="true"]')
-    expect(inactiveItem).not.toBeInTheDocument()
   })
 
   it("renders avatar with correct fallback and styling", () => {

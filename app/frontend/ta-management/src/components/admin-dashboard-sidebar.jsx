@@ -57,22 +57,6 @@ const navigationItems = [
     icon: BookOpen,
     url: "/admin-course-management",
   },
-  {
-    title: "TA Positions",
-    icon: UserCheck,
-    url: "#",
-  },
-  {
-    title: "Applications",
-    icon: FileText,
-    url: "#",
-  },
-  
-  {
-    title: "Reports & Analytics",
-    icon: BarChart3,
-    url: "#",
-  },
 ]
 
 const systemItems = [
