@@ -1,11 +1,13 @@
 from rest_framework import generics, status, viewsets
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view, permission_classes, action, parser_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from django.http import JsonResponse
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.http import JsonResponse, HttpResponse
 from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+import os
 
 import uuid
 
@@ -1418,6 +1420,624 @@ class InstructorRequestViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
+# Bulk Import View
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+@permission_classes([IsSchedulerOrAdmin])
+def bulk_import(request):
+    """
+    Bulk import endpoint for CSV and Excel files.
+    Accepts .csv and .xlsx file formats for data import.
+    Admin/Scheduler only.
+    
+    Expected CSV format:
+    - Each row represents a single weekday schedule for a course session
+    - Courses running multiple days should have separate rows for each day
+    - Headers: Session year, Term type, term number, department, course number,
+              course name, course description, item_type, section number,
+              weekday, time start, time end
+    
+    Upload method: form-data with 'file' key
+    """
+    # Check request method
+    if request.method != 'POST':
+        return Response(
+            {'error': 'Only POST method is allowed'}, 
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+    
+    # Debug: Print request details
+    debug_info = {
+        'content_type': request.content_type,
+        'method': request.method,
+        'files_keys': list(request.FILES.keys()),
+        'data_keys': list(request.data.keys()) if hasattr(request, 'data') else [],
+        'META_content_type': request.META.get('CONTENT_TYPE', 'Not set'),
+        'parser_classes': ['MultiPartParser', 'FormParser']
+    }
+    
+    # Check for uploaded file
+    if 'file' not in request.FILES:
+        return Response(
+            {
+                'error': 'No file provided. Use form-data upload with "file" key.',
+                'debug_info': debug_info,
+                'instructions': [
+                    '1. In Postman, go to Body tab',
+                    '2. Select "form-data" (NOT raw/JSON or binary)',
+                    '3. Add key "file" and change type to "File"',
+                    '4. Upload your CSV/Excel file'
+                ]
+            }, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    uploaded_file = request.FILES['file']
+    debug_info['upload_method'] = 'form-data'
+    
+    # Validate file extension
+    allowed_extensions = ['.csv', '.xlsx']
+    file_extension = uploaded_file.name.lower().split('.')[-1] if '.' in uploaded_file.name else ''
+    
+    if f'.{file_extension}' not in allowed_extensions:
+        return Response(
+            {
+                'error': f'Invalid file format. Only {", ".join(allowed_extensions)} files are supported.',
+                'received_extension': f'.{file_extension}' if file_extension else 'no extension',
+                'allowed_extensions': allowed_extensions
+            }, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Validate file size (limit to 25MB)
+    max_file_size = 25 * 1024 * 1024  # 25MB in bytes
+    if uploaded_file.size > max_file_size:
+        return Response(
+            {
+                'error': f'File too large. Maximum size allowed is {max_file_size // (1024*1024)}MB.',
+                'file_size': f'{uploaded_file.size / (1024*1024):.2f}MB'
+            }, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Validate MIME type - be more lenient with CSV files
+    allowed_mime_types = [
+        'text/csv',
+        'application/csv',
+        'application/octet-stream',
+        'text/plain',  # Some systems send CSV as text/plain
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ]
+    
+    # For CSV files, also accept if the file extension is .csv even if MIME type is different
+    if f'.{file_extension}' == '.csv':
+        # Allow CSV files with various MIME types
+        allowed_csv_mime_types = ['text/csv', 'application/csv', 'text/plain', 'application/octet-stream']
+        if uploaded_file.content_type not in allowed_csv_mime_types:
+            return Response(
+                {
+                    'error': 'Invalid file type for CSV file.',
+                    'received_mime_type': uploaded_file.content_type,
+                    'allowed_csv_mime_types': allowed_csv_mime_types,
+                    'note': 'CSV files should have MIME type: text/csv, application/csv, text/plain, or application/octet-stream'
+                }, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    elif uploaded_file.content_type not in allowed_mime_types:
+        return Response(
+            {
+                'error': 'Invalid file type based on content.',
+                'received_mime_type': uploaded_file.content_type,
+                'allowed_mime_types': allowed_mime_types
+            }, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # File validation passed - process the file
+    try:
+        if f'.{file_extension}' == '.csv':
+            # Process CSV file
+            results = process_csv_file(uploaded_file)
+        else:
+            # TODO: Handle Excel files with pandas or openpyxl
+            return Response({
+                'error': 'Excel file processing not yet implemented',
+                'message': 'Please use CSV files for now'
+            }, status=status.HTTP_501_NOT_IMPLEMENTED)
+        
+        return Response({
+            'message': 'Bulk import completed successfully',
+            'file_info': {
+                'name': uploaded_file.name,
+                'size': f'{uploaded_file.size / 1024:.2f}KB',
+                'type': uploaded_file.content_type,
+                'extension': f'.{file_extension}'
+            },
+            'results': results,
+            'debug_info': debug_info
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'An error occurred during file processing',
+            'details': str(e),
+            'file_info': {
+                'name': uploaded_file.name,
+                'size': f'{uploaded_file.size / 1024:.2f}KB',
+                'type': uploaded_file.content_type,
+                'extension': f'.{file_extension}'
+            }
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Helper functions for CSV processing
+def parse_weekday(weekday_str):
+    """Parse individual weekday string into standardized day name."""
+    if not weekday_str:
+        return None
+    
+    weekday_str = weekday_str.strip().lower()
+    
+    # Handle various weekday formats
+    day_variations = {
+        'monday': ['monday', 'mon', 'm'],
+        'tuesday': ['tuesday', 'tue', 'tues', 't'],
+        'wednesday': ['wednesday', 'wed', 'w'],
+        'thursday': ['thursday', 'thu', 'thurs', 'th'],
+        'friday': ['friday', 'fri', 'f'],
+        'saturday': ['saturday', 'sat'],
+        'sunday': ['sunday', 'sun']
+    }
+    
+    for standard_day, variations in day_variations.items():
+        if weekday_str in variations:
+            return standard_day
+    
+    # If no match found, return None and let error handling deal with it
+    return None
+
+
+def parse_time(time_str):
+    """Parse time string like '09:00' or '9:00 AM' into time object."""
+    from datetime import datetime
+    
+    if not time_str:
+        return None
+    
+    time_str = time_str.strip()
+    
+    # Handle different time formats
+    if ':' in time_str:
+        try:
+            # Try HH:MM format first (24-hour)
+            return datetime.strptime(time_str, '%H:%M').time()
+        except ValueError:
+            try:
+                # Try HH:MM AM/PM format
+                return datetime.strptime(time_str, '%I:%M %p').time()
+            except ValueError:
+                try:
+                    # Try H:MM format (single digit hour)
+                    return datetime.strptime(time_str, '%H:%M').time()
+                except ValueError:
+                    pass
+    
+    return None
+
+
+def parse_term_number(term_number_str):
+    """Parse and validate term number."""
+    if not term_number_str:
+        return '1'  # Default to term 1
+    
+    term_number_str = term_number_str.strip()
+    if term_number_str in ['0', '1', '2']:
+        return term_number_str
+    
+    return None
+
+
+def parse_session_year(session_year_str):
+    """Parse and validate session year."""
+    if not session_year_str:
+        return None
+    
+    session_year_str = session_year_str.strip()
+    
+    # Should be a 4-digit year
+    if len(session_year_str) == 4 and session_year_str.isdigit():
+        year = int(session_year_str)
+        if 2020 <= year <= 2050:  # Reasonable range
+            return session_year_str
+    
+    return None
+
+
+def validate_required_fields(row_data):
+    """Validate that required fields are present and not empty."""
+    required_fields = [
+        'Session year', 'Term type', 'department', 'course number', 
+        'course name', 'item_type'
+    ]
+    
+    missing_fields = []
+    for field in required_fields:
+        if not row_data.get(field, '').strip():
+            missing_fields.append(field)
+    
+    return missing_fields
+
+
+def process_csv_file(uploaded_file):
+    """
+    Process CSV data and create/update courses, course offerings, and shared sessions.
+    
+    Expected CSV headers:
+    - Session year, Term type, term number, department, course number, 
+    - course name, course description, item_type, section number, 
+    - weekday, time start, time end
+    
+    Note: Each row represents a single weekday schedule. Courses running multiple
+    days should have separate rows for each day.
+    """
+    import csv
+    import io
+    import re
+    from datetime import datetime, time
+    
+    # Initialize results tracking
+    results = {
+        'courses_created': 0,
+        'courses_updated': 0,
+        'course_offerings_created': 0,
+        'shared_sessions_created': 0,
+        'time_slots_created': 0,
+        'terms_created': 0,  # Add terms created counter
+        'errors': [],
+        'processed_rows': 0,
+        'skipped_rows': 0,
+        'debug_info': []  # Add debug information
+    }
+    
+    def get_or_create_term(session_year, term_type, term_number):
+        """Get or create term based on session year, term type, and term number."""
+        try:
+            # Build term code based on the pattern in fixtures
+            if term_type.lower() == 'winter':
+                if term_number == '0':
+                    code = f"W{session_year} Both Terms"
+                else:
+                    code = f"W{session_year} Term {term_number}"
+            elif term_type.lower() == 'summer':
+                if term_number == '0':
+                    code = f"S{session_year} Both Terms"
+                else:
+                    code = f"S{session_year} Term {term_number}"
+            else:
+                code = f"{term_type.upper()}{session_year} Term {term_number}"
+            
+            # Try to get existing term
+            try:
+                return Term.objects.get(code=code)
+            except Term.DoesNotExist:
+                # Create the term if it doesn't exist
+                from datetime import datetime
+                
+                # Calculate start and end dates based on term type and number
+                year = int(session_year)
+                
+                if term_type.lower() == 'winter':
+                    if term_number == '1':
+                        start_date = f"{year}-09-01"
+                        end_date = f"{year}-12-31"
+                        start_cal_year = year
+                        end_cal_year = year
+                        description = f"Winter {session_year} Term 1"
+                        academic_year = f"{year}/{str(year+1)[2:]}"
+                    elif term_number == '2':
+                        start_date = f"{year}-01-01"
+                        end_date = f"{year}-04-30"
+                        start_cal_year = year
+                        end_cal_year = year
+                        description = f"Winter {session_year} Term 2"
+                        academic_year = f"{year-1}/{str(year)[2:]}"
+                    else:  # term_number == '0' (Both Terms)
+                        start_date = f"{year}-09-01"
+                        end_date = f"{year+1}-04-30"
+                        start_cal_year = year
+                        end_cal_year = year + 1
+                        description = f"Winter {session_year} Both Terms"
+                        academic_year = f"{year}/{str(year+1)[2:]}"
+                elif term_type.lower() == 'summer':
+                    if term_number == '1':
+                        start_date = f"{year}-05-01"
+                        end_date = f"{year}-06-30"
+                        start_cal_year = year
+                        end_cal_year = year
+                        description = f"Summer {session_year} Term 1"
+                        academic_year = f"{year-1}/{str(year)[2:]}"
+                    else:  # Both terms or term 2
+                        start_date = f"{year}-05-01"
+                        end_date = f"{year}-08-31"
+                        start_cal_year = year
+                        end_cal_year = year
+                        description = f"Summer {session_year} Both Terms"
+                        academic_year = f"{year-1}/{str(year)[2:]}"
+                else:
+                    # Default fallback
+                    start_date = f"{year}-01-01"
+                    end_date = f"{year}-12-31"
+                    start_cal_year = year
+                    end_cal_year = year
+                    description = f"{term_type.title()} {session_year} Term {term_number}"
+                    academic_year = f"{year}/{str(year+1)[2:]}"
+                
+                # Create the new term
+                new_term = Term.objects.create(
+                    code=code,
+                    description=description,
+                    start=start_date,
+                    end=end_date,
+                    startCalendarYear=start_cal_year,
+                    endCalendarYear=end_cal_year,
+                    academicYear=academic_year,
+                    is_active=True,
+                    term_type=term_type.lower()
+                )
+                
+                results['terms_created'] += 1
+                results['debug_info'].append(f"Created new term: {code}")
+                return new_term
+                
+        except Exception as e:
+            results['errors'].append(f"Error creating term {session_year} {term_type} {term_number}: {str(e)}")
+            return None
+    
+    def get_or_create_department(dept_name):
+        """Get or create department by name."""
+        try:
+            return Department.objects.get(name__iexact=dept_name)
+        except Department.DoesNotExist:
+            # Create new department
+            dept = Department.objects.create(name=dept_name)
+            return dept
+    
+    def get_or_create_timeslot(weekday, start_time, end_time):
+        """Get or create a single timeslot for the given schedule."""
+        if not weekday or not start_time or not end_time:
+            return None
+        
+        timeslot, created = TimeSlot.objects.get_or_create(
+            day=weekday,
+            start_time=start_time,
+            end_time=end_time
+        )
+        if created:
+            results['time_slots_created'] += 1
+        
+        return timeslot
+    
+    # Read and decode the CSV file
+    try:
+        decoded_file = uploaded_file.read().decode('utf-8')
+        io_string = io.StringIO(decoded_file)
+        reader = csv.DictReader(io_string)
+    except UnicodeDecodeError:
+        # Try with different encoding
+        uploaded_file.seek(0)
+        decoded_file = uploaded_file.read().decode('utf-8-sig')  # Handle BOM
+        io_string = io.StringIO(decoded_file)
+        reader = csv.DictReader(io_string)
+    
+    # Process each row in the CSV
+    for row in reader:
+        results['processed_rows'] += 1
+        
+        try:
+            # Extract and clean data from row
+            session_year = row.get('Session year', '').strip()
+            term_type = row.get('Term type', '').strip()
+            term_number = row.get('term number', '').strip()
+            department_name = row.get('department', '').strip()
+            course_number = row.get('course number', '').strip()
+            course_name = row.get('course name', '').strip()
+            course_description = row.get('course description', '').strip()
+            item_type = row.get('item_type', '').strip().lower()
+            section_number = row.get('section number', '').strip()
+            weekday = row.get('weekday', '').strip()
+            time_start = row.get('time start', '').strip()
+            time_end = row.get('time end', '').strip()
+            
+            # Validate required fields using helper function
+            missing_fields = validate_required_fields(row)
+            if missing_fields:
+                results['errors'].append(f"Row {results['processed_rows']}: Missing required fields: {missing_fields}")
+                results['skipped_rows'] += 1
+                continue
+            
+            # Validate item_type
+            valid_item_types = ['lecture', 'lab', 'tutorial', 'seminar']
+            if item_type not in valid_item_types:
+                results['errors'].append(f"Row {results['processed_rows']}: Invalid item_type '{item_type}'. Must be one of: {valid_item_types}")
+                results['skipped_rows'] += 1
+                continue
+            
+            # Get/create department
+            department = get_or_create_department(department_name)
+            if not department:
+                results['skipped_rows'] += 1
+                continue
+            
+            # Get/create course
+            course, created = Course.objects.get_or_create(
+                course_number=course_number,
+                department=department,
+                defaults={
+                    'course_name': course_name,
+                    'course_description': course_description,
+                    'course_level': course_number[:1] + '00' if course_number and course_number[0].isdigit() else '100',
+                    'is_active': True
+                }
+            )
+            
+            if created:
+                results['courses_created'] += 1
+                results['debug_info'].append(f"Created new Course: {course_number} - {course_name}")
+            else:
+                results['debug_info'].append(f"Found existing Course: {course_number} - {course_name}")
+                # Update course if needed
+                updated = False
+                if course.course_name != course_name:
+                    course.course_name = course_name
+                    updated = True
+                if course.course_description != course_description:
+                    course.course_description = course_description
+                    updated = True
+                if updated:
+                    course.save()
+                    results['courses_updated'] += 1
+                    results['debug_info'].append(f"Updated Course: {course_number}")
+            
+            # Get term
+            term = get_or_create_term(session_year, term_type, term_number)
+            if not term:
+                results['debug_info'].append(f"Failed to find/create term: {session_year} {term_type} {term_number}")
+                results['skipped_rows'] += 1
+                continue
+            else:
+                results['debug_info'].append(f"Using term: {term.code}")
+            
+            # Parse time schedule using helper functions
+            parsed_weekday = parse_weekday(weekday)
+            start_time = parse_time(time_start)
+            end_time = parse_time(time_end)
+            
+            # Validate weekday if provided
+            if weekday and not parsed_weekday:
+                results['errors'].append(f"Row {results['processed_rows']}: Invalid weekday '{weekday}'")
+                results['skipped_rows'] += 1
+                continue
+            
+            # Validate time format if time data is provided
+            if time_start and not start_time:
+                results['errors'].append(f"Row {results['processed_rows']}: Invalid start time format '{time_start}'")
+                results['skipped_rows'] += 1
+                continue
+            
+            if time_end and not end_time:
+                results['errors'].append(f"Row {results['processed_rows']}: Invalid end time format '{time_end}'")
+                results['skipped_rows'] += 1
+                continue
+            
+            # Create timeslot if time info is provided
+            timeslot = None
+            if parsed_weekday and start_time and end_time:
+                timeslot = get_or_create_timeslot(parsed_weekday, start_time, end_time)
+            
+            # Set default section number if not provided
+            if not section_number:
+                section_number = '001'
+            
+            # Create course offering or shared session based on item_type
+            if item_type == 'lecture':
+                # Create CourseOffering (get existing or create new)
+                course_offering, created = CourseOffering.objects.get_or_create(
+                    course=course,
+                    section_number=section_number,
+                    academic_term=term,
+                    defaults={
+                        'instructor': None  # Will be assigned later by administrators
+                    }
+                )
+                
+                # Track creation only once per unique offering
+                if created:
+                    results['course_offerings_created'] += 1
+                    results['debug_info'].append(f"Created new CourseOffering: {course.course_number} {section_number} for {term.code}")
+                else:
+                    results['debug_info'].append(f"Found existing CourseOffering: {course.course_number} {section_number} for {term.code}")
+                
+                # Add timeslot to course offering (many-to-many relationship)
+                if timeslot:
+                    course_offering.time_slots.add(timeslot)
+                    results['debug_info'].append(f"Added timeslot {parsed_weekday} {start_time}-{end_time} to CourseOffering {course.course_number}")
+            
+            elif item_type in ['lab', 'tutorial', 'seminar']:
+                # Create SharedSession (get existing or create new)
+                shared_session, created = SharedSession.objects.get_or_create(
+                    session_type=item_type,
+                    course=course,
+                    section_number=section_number,
+                    academic_term=term,
+                    defaults={
+                        'student': None  # Will be assigned later when TAs are allocated
+                    }
+                )
+                
+                # Track creation only once per unique session
+                if created:
+                    results['shared_sessions_created'] += 1
+                    results['debug_info'].append(f"Created new SharedSession: {item_type} {course.course_number} {section_number} for {term.code}")
+                else:
+                    results['debug_info'].append(f"Found existing SharedSession: {item_type} {course.course_number} {section_number} for {term.code}")
+                
+                # Add timeslot to shared session (many-to-many relationship)
+                if timeslot:
+                    shared_session.time_slots.add(timeslot)
+                    results['debug_info'].append(f"Added timeslot {parsed_weekday} {start_time}-{end_time} to SharedSession {item_type} {course.course_number}")
+        
+        except Exception as e:
+            results['errors'].append(f"Row {results['processed_rows']}: {str(e)}")
+            results['skipped_rows'] += 1
+    
+    return results
+
+
+# Sample CSV Download View
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def download_sample_csv(request):
+    """
+    Download sample CSV file for bulk import.
+    Shows the expected format and column headers for bulk importing courses.
+    
+    Returns a CSV file with sample data demonstrating:
+    - Required column headers
+    - Different item types (lecture, lab, tutorial, seminar)
+    - Multiple scheduling entries for multi-day courses
+    - Different term types and numbers
+    - Proper date/time formatting
+    """
+    try:
+        # Get the path to the sample CSV file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        sample_csv_path = os.path.join(current_dir, 'sample_bulk_import.csv')
+        
+        # Check if the sample file exists
+        if not os.path.exists(sample_csv_path):
+            return Response(
+                {'error': 'Sample CSV file not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Read the sample CSV file
+        with open(sample_csv_path, 'r', encoding='utf-8') as file:
+            csv_content = file.read()
+        
+        # Create HTTP response with CSV content
+        response = HttpResponse(csv_content, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="sample_bulk_import.csv"'
+        
+        return response
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Failed to retrieve sample CSV: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
 # API Root View
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -1700,6 +2320,27 @@ def api_root(request, format=None):
                     'methods': ['GET'],
                     'description': 'Get instructor requests by academic term (term_id parameter required)'
                 }
+            },
+            'bulk_import': {
+                'upload': {
+                    'url': '/api/course-term-service/bulk-import/',
+                    'methods': ['POST'],
+                    'description': 'Bulk import data from CSV or Excel files (Admin/Scheduler only)',
+                    'permissions': 'Admin/Scheduler only',
+                    'content_type': 'multipart/form-data',
+                    'parsers': ['MultiPartParser', 'FormParser'],
+                    'supported_formats': ['.csv', '.xlsx'],
+                    'max_file_size': '25MB',
+                    'note': 'Upload file using form-data with key "file". DRF parsers handle multipart content.'
+                },
+                'sample': {
+                    'url': '/api/course-term-service/sample-csv/',
+                    'methods': ['GET'],
+                    'description': 'Download sample CSV file showing expected format for bulk import',
+                    'permissions': 'Public',
+                    'content_type': 'text/csv',
+                    'note': 'Returns a sample CSV file with proper column headers and example data'
+                }
             }
         },
         'features': {
@@ -1891,6 +2532,29 @@ def api_root(request, format=None):
                     'instructor_id': 1,
                     'course_offering_id': 1,
                     'request_description': ['Need additional TA support', 'Require specific lab equipment']
+                }
+            },
+            'bulk_import': {
+                'url': 'POST /api/course-term-service/bulk-import/',
+                'content_type': 'multipart/form-data',
+                'parsers': ['MultiPartParser', 'FormParser'],
+                'body': 'Upload file using form-data with key "file"',
+                'supported_formats': ['.csv', '.xlsx'],
+                'max_file_size': '25MB',
+                'example_response': {
+                    'message': 'File uploaded and validated successfully',
+                    'file_info': {
+                        'name': 'sample.csv',
+                        'size': '2.45KB',
+                        'type': 'text/csv',
+                        'extension': '.csv'
+                    },
+                    'debug_info': {
+                        'content_type': 'multipart/form-data',
+                        'method': 'POST',
+                        'files_keys': ['file']
+                    },
+                    'status': 'validated'
                 }
             }
         },
