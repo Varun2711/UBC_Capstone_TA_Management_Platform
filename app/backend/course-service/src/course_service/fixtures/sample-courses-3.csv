@@ -1,26 +1,35 @@
 Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
-2025,winter,1,Computer Science,COSC 311,Computer Graphics,Introduction to computer graphics programming with OpenGL,lecture,001,Monday,10:00,11:30
-2025,winter,1,Computer Science,COSC 311,Computer Graphics,Introduction to computer graphics programming with OpenGL,lecture,001,Wednesday,10:00,11:30
-2025,winter,1,Computer Science,COSC 311,Computer Graphics,Introduction to computer graphics programming with OpenGL,lecture,001,Friday,10:00,11:30
-2025,winter,1,Computer Science,COSC 311,Computer Graphics Lab,Computer graphics programming laboratory,lab,L01,Tuesday,14:00,17:00
-2025,winter,1,Computer Science,COSC 314,Software Engineering,Principles of software engineering and project management,lecture,001,Tuesday,11:00,12:30
-2025,winter,1,Computer Science,COSC 314,Software Engineering,Principles of software engineering and project management,lecture,001,Thursday,11:00,12:30
-2025,winter,2,Computer Science,COSC 341,Human-Computer Interaction,Design and evaluation of user interfaces,lecture,001,Monday,13:00,14:30
-2025,winter,2,Computer Science,COSC 341,Human-Computer Interaction,Design and evaluation of user interfaces,lecture,001,Wednesday,13:00,14:30
-2025,winter,1,Computer Science,COSC 360,Theory of Computation,Formal languages automata and computational complexity,lecture,001,Monday,15:00,16:30
-2025,winter,1,Computer Science,COSC 360,Theory of Computation,Formal languages automata and computational complexity,lecture,001,Wednesday,15:00,16:30
-2025,winter,2,Computer Science,COSC 404,Database Systems Implementation,Advanced database concepts and implementation,lecture,001,Tuesday,09:00,10:30
-2025,winter,2,Computer Science,COSC 404,Database Systems Implementation,Advanced database concepts and implementation,lecture,001,Thursday,09:00,10:30
-2025,winter,2,Computer Science,COSC 404,Database Systems Implementation Lab,Advanced database laboratory work,lab,L01,Friday,14:00,17:00
-2025,winter,1,Mathematics,MATH 316,Rings and Fields,Abstract algebra: rings fields and Galois theory,lecture,001,Monday,11:00,12:30
-2025,winter,1,Mathematics,MATH 316,Rings and Fields,Abstract algebra: rings fields and Galois theory,lecture,001,Wednesday,11:00,12:30
-2025,winter,2,Mathematics,MATH 342,Discrete Mathematics,Logic proofs graph theory and combinatorics,lecture,001,Tuesday,10:00,11:30
-2025,winter,2,Mathematics,MATH 342,Discrete Mathematics,Logic proofs graph theory and combinatorics,lecture,001,Thursday,10:00,11:30
-2025,winter,1,Mathematics,MATH 360,Real Analysis,Rigorous treatment of limits continuity and differentiation,lecture,001,Monday,14:00,15:30
-2025,winter,1,Mathematics,MATH 360,Real Analysis,Rigorous treatment of limits continuity and differentiation,lecture,001,Wednesday,14:00,15:30
-2025,winter,2,Statistics,STAT 304,Probability and Statistics II,Advanced probability theory and statistical inference,lecture,001,Tuesday,13:00,14:30
-2025,winter,2,Statistics,STAT 304,Probability and Statistics II,Advanced probability theory and statistical inference,lecture,001,Thursday,13:00,14:30
-2025,winter,1,Statistics,STAT 401,Statistical Consulting,Applied statistics and consulting methodology,lecture,001,Friday,10:00,11:30
-2025,winter,1,Physics,PHYS 302,Thermodynamics,Classical thermodynamics and statistical mechanics,lecture,001,Monday,09:00,10:30
-2025,winter,1,Physics,PHYS 302,Thermodynamics,Classical thermodynamics and statistical mechanics,lecture,001,Wednesday,09:00,10:30
-2025,winter,2,Physics,PHYS 350,Modern Physics Laboratory,Experiments in atomic molecular and nuclear physics,lab,L01,Tuesday,14:00,17:00
+2025,winter,1,COSC,COSC 311,Computer Graphics,Introduction to computer graphics programming with OpenGL,lecture,001,Monday,10:00,11:30
+2025,winter,1,COSC,COSC 311,Computer Graphics,Introduction to computer graphics programming with OpenGL,lecture,001,Wednesday,10:00,11:30
+2025,winter,1,COSC,COSC 311,Computer Graphics,Introduction to computer graphics programming with OpenGL,lecture,001,Friday,10:00,11:30
+2025,winter,1,COSC,COSC 311,Computer Graphics Lab,Computer graphics programming laboratory,lab,L01,Tuesday,14:00,17:00
+2025,winter,1,COSC,COSC 314,Software Engineering,Principles of software engineering and project management,lecture,001,Tuesday,11:00,12:30
+2025,winter,1,COSC,COSC 314,Software Engineering,Principles of software engineering and project management,lecture,001,Thursday,11:00,12:30
+2025,winter,2,COSC,COSC 341,Human-Computer Interaction,Design and evaluation of user interfaces,lecture,001,Monday,13:00,14:30
+2025,winter,2,COSC,COSC 341,Human-Computer Interaction,Design and evaluation of user interfaces,lecture,001,Wednesday,13:00,14:30
+2025,winter,1,COSC,COSC 360,Theory of Computation,Formal languages automata and computational complexity,lecture,001,Monday,15:00,16:30
+2025,winter,1,COSC,COSC 360,Theory of Computation,Formal languages automata and computational complexity,lecture,001,Wednesday,15:00,16:30
+2025,winter,2,COSC,COSC 404,Database Systems Implementation,Advanced database concepts and implementation,lecture,001,Tuesday,09:00,10:30
+2025,winter,2,COSC,COSC 404,Database Systems Implementation,Advanced database concepts and implementation,lecture,001,Thursday,09:00,10:30
+2025,winter,2,COSC,COSC 404,Database Systems Implementation Lab,Advanced database laboratory work,lab,L01,Friday,14:00,17:00
+2025,winter,1,MATH,MATH 316,Rings and Fields,Abstract algebra: rings fields and Galois theory,lecture,001,Monday,11:00,12:30
+2025,winter,1,MATH,MATH 316,Rings and Fields,Abstract algebra: rings fields and Galois theory,lecture,001,Wednesday,11:00,12:30
+2025,winter,2,MATH,MATH 342,Discrete Mathematics,Logic proofs graph theory and combinatorics,lecture,001,Tuesday,10:00,11:30
+2025,winter,2,MATH,MATH 342,Discrete Mathematics,Logic proofs graph theory and combinatorics,lecture,001,Thursday,10:00,11:30
+2025,winter,1,MATH,MATH 360,Real Analysis,Rigorous treatment of limits continuity and differentiation,lecture,001,Monday,14:00,15:30
+2025,winter,1,MATH,MATH 360,Real Analysis,Rigorous treatment of limits continuity and differentiation,lecture,001,Wednesday,14:00,15:30
+2025,winter,2,STAT,STAT 304,Probability and Statistics II,Advanced probability theory and statistical inference,lecture,001,Tuesday,13:00,14:30
+2025,winter,2,STAT,STAT 304,Probability and Statistics II,Advanced probability theory and statistical inference,lecture,001,Thursday,13:00,14:30
+2025,winter,1,STAT,STAT 401,Statistical Consulting,Applied statistics and consulting methodology,lecture,001,Friday,10:00,11:30
+2025,winter,1,PHYS,PHYS 302,Thermodynamics,Classical thermodynamics and statistical mechanics,lecture,001,Monday,09:00,10:30
+2025,winter,1,PHYS,PHYS 302,Thermodynamics,Classical thermodynamics and statistical mechanics,lecture,001,Wednesday,09:00,10:30
+2025,winter,2,PHYS,PHYS 350,Modern Physics Laboratory,Experiments in atomic molecular and nuclear physics,lab,L01,Tuesday,14:00,17:00
+2025,winter,1,ASTR,ASTR 310,Stellar Astrophysics,Structure and evolution of stars,lecture,001,Tuesday,15:00,16:30
+2025,winter,1,ASTR,ASTR 310,Stellar Astrophysics,Structure and evolution of stars,lecture,001,Thursday,15:00,16:30
+2025,winter,2,ASTR,ASTR 320,Galactic Astronomy,Structure and dynamics of the Milky Way galaxy,lecture,001,Monday,16:00,17:30
+2025,winter,2,ASTR,ASTR 320,Galactic Astronomy,Structure and dynamics of the Milky Way galaxy,lecture,001,Wednesday,16:00,17:30
+2025,winter,1,DATA,DATA 301,Machine Learning,Introduction to supervised and unsupervised learning algorithms,lecture,001,Tuesday,08:00,09:30
+2025,winter,1,DATA,DATA 301,Machine Learning,Introduction to supervised and unsupervised learning algorithms,lecture,001,Thursday,08:00,09:30
+2025,winter,1,DATA,DATA 301,Machine Learning Lab,Hands-on machine learning programming laboratory,lab,L01,Friday,13:00,16:00
+2025,winter,2,DATA,DATA 350,Data Visualization,Principles and techniques for effective data visualization,lecture,001,Monday,12:00,13:30
+2025,winter,2,DATA,DATA 350,Data Visualization,Principles and techniques for effective data visualization,lecture,001,Wednesday,12:00,13:30
