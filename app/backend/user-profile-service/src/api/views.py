@@ -539,7 +539,7 @@ class CreateInstructorView(generics.CreateAPIView):
                     department_mapping = {
                         'cosc': 'Computer Science',
                         'math': 'Mathematics',
-                        'phy': 'Physics',
+                        'phys': 'Physics',
                         'data': 'Data Science',
                         'stat': 'Statistics',
                         'astr': 'Astronomy'
@@ -634,7 +634,7 @@ class CreateSchedulerView(generics.CreateAPIView):
                 department_mapping = {
                     'cosc': 'Computer Science',
                     'math': 'Mathematics',
-                    'phy': 'Physics',
+                    'phys': 'Physics',
                     'data': 'Data Science',
                     'stat': 'Statistics',
                     'astr': 'Astronomy'

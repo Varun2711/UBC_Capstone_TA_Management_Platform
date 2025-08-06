@@ -399,7 +399,7 @@ class CreateInstructorSerializer(serializers.Serializer):
     DEPARTMENT_CHOICES = [
         ('astr', 'Astronomy'),
         ('math', 'Mathematics'),
-        ('phy', 'Physics'),
+        ('phys', 'Physics'),
         ('data', 'Data Science'),
         ('stat', 'Statistics'), 
         ('cosc', 'Computer Science'),
@@ -427,7 +427,7 @@ class CreateSchedulerSerializer(serializers.Serializer):
     DEPARTMENT_CHOICES = [
         ('astr', 'Astronomy'),
         ('math', 'Mathematics'),
-        ('phy', 'Physics'),
+        ('phys', 'Physics'),
         ('data', 'Data Science'),
         ('stat', 'Statistics'), 
         ('cosc', 'Computer Science'),
