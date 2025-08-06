@@ -113,7 +113,9 @@ export const getSystemHealth = async () => {
       { name: 'User Profile Service', url: `${API_URL}/api/profile/` },
       { name: 'Notification Service', url: `${API_URL}/api/notifications/` },
       { name: 'Allocations Service', url: `${API_URL}/api/allocations/` },
-      { name: 'Auth Service', url: `${API_URL}/api/auth/` }
+      { name: 'Auth Service', url: `${API_URL}/api/auth/` },
+      { name: 'Applications JobPostings Service', url: `${API_URL}/api/ajp/` },
+      { name: 'Course Service', url: `${API_URL}/api/course-term-service/` },
     ];
     
     const serviceChecks = await Promise.allSettled(
