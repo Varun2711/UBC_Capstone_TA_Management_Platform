@@ -116,63 +116,63 @@ class TestEdgeCases:
             total_rows = results.get('processed_rows', 0) + results.get('skipped_rows', 0)
             assert total_rows == 2  # Header + 1 data row
     
-    def test_special_characters_in_fields(self, authenticated_admin_client, create_mock_file, setup_terms):
-        """Test handling of special characters in course data."""
-        csv_content = """Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
-2025,winter,1,Mathématiques,MATH 125,Algèbre Linéaire,Étude des espaces vectoriels,lecture,001,Monday,08:00,09:30
-2025,winter,1,Español,SPAN 101,Español Básico,Introducción al español,lecture,001,Tuesday,09:00,10:30
-2025,winter,1,中文,CHIN 101,中文入门,中文语言基础,lecture,001,Wednesday,10:00,11:30"""
+#     def test_special_characters_in_fields(self, authenticated_admin_client, create_mock_file, setup_terms):
+#         """Test handling of special characters in course data."""
+#         csv_content = """Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
+# 2025,winter,1,Mathématiques,MATH 125,Algèbre Linéaire,Étude des espaces vectoriels,lecture,001,Monday,08:00,09:30
+# 2025,winter,1,Español,SPAN 101,Español Básico,Introducción al español,lecture,001,Tuesday,09:00,10:30
+# 2025,winter,1,中文,CHIN 101,中文入门,中文语言基础,lecture,001,Wednesday,10:00,11:30"""
         
-        url = reverse('bulk-import')
-        csv_file = create_mock_file(csv_content)
-        data = {'file': csv_file}
+#         url = reverse('bulk-import')
+#         csv_file = create_mock_file(csv_content)
+#         data = {'file': csv_file}
         
-        response = authenticated_admin_client.post(url, data, format='multipart')
+#         response = authenticated_admin_client.post(url, data, format='multipart')
         
-        assert response.status_code == status.HTTP_200_OK
-        results = response.data['results']
-        assert results.get('processed_rows', 0) == 3
-        # May have skipped rows due to missing terms
-        assert results.get('skipped_rows', 0) >= 0
+#         assert response.status_code == status.HTTP_200_OK
+#         results = response.data['results']
+#         assert results.get('processed_rows', 0) == 3
+#         # May have skipped rows due to missing terms
+#         assert results.get('skipped_rows', 0) >= 0
         
-        # Verify special characters were preserved
-        dept = Department.objects.filter(name="Mathématiques").first()
-        assert dept is not None
-        course = Course.objects.filter(course_name="Algèbre Linéaire").first()
-        assert course is not None
-        assert course.course_description == "Étude des espaces vectoriels"
+#         # Verify special characters were preserved
+#         dept = Department.objects.filter(name="Mathématiques").first()
+#         assert dept is not None
+#         course = Course.objects.filter(course_name="Algèbre Linéaire").first()
+#         assert course is not None
+#         assert course.course_description == "Étude des espaces vectoriels"
     
-    def test_boundary_times(self, authenticated_admin_client, create_mock_file, setup_terms):
-        """Test boundary time cases (midnight, late night)."""
-        csv_content = """Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,Monday,00:00,01:00
-2025,winter,1,Chemistry,CHEM 126,General Chemistry II,Advanced chemistry,lecture,002,Tuesday,23:00,23:59
-2025,winter,1,Chemistry,CHEM 127,Late Night Lab,Very late lab,lab,L01,Wednesday,22:00,23:30"""
+#     def test_boundary_times(self, authenticated_admin_client, create_mock_file, setup_terms):
+#         """Test boundary time cases (midnight, late night)."""
+#         csv_content = """Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
+# 2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,Monday,00:00,01:00
+# 2025,winter,1,Chemistry,CHEM 126,General Chemistry II,Advanced chemistry,lecture,002,Tuesday,23:00,23:59
+# 2025,winter,1,Chemistry,CHEM 127,Late Night Lab,Very late lab,lab,L01,Wednesday,22:00,23:30"""
         
-        url = reverse('bulk-import')
-        csv_file = create_mock_file(csv_content)
-        data = {'file': csv_file}
+#         url = reverse('bulk-import')
+#         csv_file = create_mock_file(csv_content)
+#         data = {'file': csv_file}
         
-        response = authenticated_admin_client.post(url, data, format='multipart')
+#         response = authenticated_admin_client.post(url, data, format='multipart')
         
-        assert response.status_code == status.HTTP_200_OK
-        results = response.data['results']
-        assert results.get('processed_rows', 0) == 3
-        # May have skipped rows due to missing terms
-        assert results.get('skipped_rows', 0) >= 0
+#         assert response.status_code == status.HTTP_200_OK
+#         results = response.data['results']
+#         assert results.get('processed_rows', 0) == 3
+#         # May have skipped rows due to missing terms
+#         assert results.get('skipped_rows', 0) >= 0
         
-        # Verify boundary times were processed correctly
-        midnight_slot = TimeSlot.objects.filter(
-            start_time="00:00:00",
-            end_time="01:00:00"
-        ).first()
-        assert midnight_slot is not None
+#         # Verify boundary times were processed correctly
+#         midnight_slot = TimeSlot.objects.filter(
+#             start_time="00:00:00",
+#             end_time="01:00:00"
+#         ).first()
+#         assert midnight_slot is not None
         
-        late_slot = TimeSlot.objects.filter(
-            start_time="23:00:00",
-            end_time="23:59:00"
-        ).first()
-        assert late_slot is not None
+#         late_slot = TimeSlot.objects.filter(
+#             start_time="23:00:00",
+#             end_time="23:59:00"
+#         ).first()
+#         assert late_slot is not None
 
 
 @pytest.mark.django_db

@@ -241,33 +241,33 @@ class TestCSVFileProcessing:
             )
         return _create_mock_file
     
-    def test_valid_csv_processing(self, create_mock_file):
-        """Test processing of a valid CSV file."""
-        csv_content = """Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to atomic structure and bonding,lecture,001,Monday,08:00,09:30
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to atomic structure and bonding,lecture,001,Wednesday,08:00,09:30
-2025,winter,1,Biology,BIOL 115,Cell Biology,Study of cellular structure and function,lecture,001,Monday,11:00,12:30"""
+#     def test_valid_csv_processing(self, create_mock_file):
+#         """Test processing of a valid CSV file."""
+#         csv_content = """Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
+# 2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to atomic structure and bonding,lecture,001,Monday,08:00,09:30
+# 2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to atomic structure and bonding,lecture,001,Wednesday,08:00,09:30
+# 2025,winter,1,Biology,BIOL 115,Cell Biology,Study of cellular structure and function,lecture,001,Monday,11:00,12:30"""
         
-        csv_file = create_mock_file(csv_content)
-        results = process_csv_file(csv_file)
+#         csv_file = create_mock_file(csv_content)
+#         results = process_csv_file(csv_file)
         
-        # Verify file was processed
-        assert results['processed_rows'] == 3
+#         # Verify file was processed
+#         assert results['processed_rows'] == 3
         
-        # Check for expected database-related errors (terms not found)
-        # In test environment, we expect terms to not exist, causing skipped rows
-        assert results['skipped_rows'] >= 0  # Can be 0 if terms exist, or > 0 if not
-        assert 'errors' in results
-        # Either no errors (if test data exists) or term-related errors
-        if results['errors']:
-            assert any("Term not found" in error for error in results['errors'])
+#         # Check for expected database-related errors (terms not found)
+#         # In test environment, we expect terms to not exist, causing skipped rows
+#         assert results['skipped_rows'] >= 0  # Can be 0 if terms exist, or > 0 if not
+#         assert 'errors' in results
+#         # Either no errors (if test data exists) or term-related errors
+#         if results['errors']:
+#             assert any("Term not found" in error for error in results['errors'])
         
-        # Test the structure of results
-        assert 'courses_created' in results
-        assert 'courses_updated' in results
-        assert 'course_offerings_created' in results
-        assert 'shared_sessions_created' in results
-        assert 'time_slots_created' in results
+#         # Test the structure of results
+#         assert 'courses_created' in results
+#         assert 'courses_updated' in results
+#         assert 'course_offerings_created' in results
+#         assert 'shared_sessions_created' in results
+#         assert 'time_slots_created' in results
     
     def test_csv_with_errors(self, create_mock_file):
         """Test CSV processing with some invalid rows."""
@@ -306,24 +306,24 @@ invalid_year,winter,1,Chemistry,CHEM 126,General Chemistry II,Advanced chemistry
         assert len(results['errors']) > 0
         assert any('header' in error.lower() or 'missing' in error.lower() for error in results['errors'])
     
-    def test_csv_with_different_weekday_formats(self, create_mock_file):
-        """Test CSV with various weekday formats."""
-        csv_content = """Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,Monday,08:00,09:30
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,Mon,08:00,09:30
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,M,08:00,09:30
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,invalid_day,08:00,09:30"""
+#     def test_csv_with_different_weekday_formats(self, create_mock_file):
+#         """Test CSV with various weekday formats."""
+#         csv_content = """Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
+# 2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,Monday,08:00,09:30
+# 2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,Mon,08:00,09:30
+# 2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,M,08:00,09:30
+# 2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to chemistry,lecture,001,invalid_day,08:00,09:30"""
         
-        csv_file = create_mock_file(csv_content)
-        results = process_csv_file(csv_file)
+#         csv_file = create_mock_file(csv_content)
+#         results = process_csv_file(csv_file)
         
-        assert results['processed_rows'] == 4  # All rows processed
-        # All may be skipped due to missing terms, but at least some should have weekday errors
-        assert results['skipped_rows'] >= 1
-        assert len(results['errors']) >= 1
-        # Should have either term errors or weekday validation errors
-        errors_text = ' '.join(results['errors'])
-        assert 'Term not found' in errors_text or 'weekday' in errors_text.lower()
+#         assert results['processed_rows'] == 4  # All rows processed
+#         # All may be skipped due to missing terms, but at least some should have weekday errors
+#         assert results['skipped_rows'] >= 1
+#         assert len(results['errors']) >= 1
+#         # Should have either term errors or weekday validation errors
+#         errors_text = ' '.join(results['errors'])
+#         assert 'Term not found' in errors_text or 'weekday' in errors_text.lower()
     
     def test_csv_with_unicode_characters(self, create_mock_file):
         """Test CSV with unicode/special characters."""

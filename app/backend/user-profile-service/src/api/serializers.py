@@ -134,140 +134,64 @@ class UpdateStudentProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'first_name', 'last_name', 'email', 'student_profile', 
-            'student_number', 'phone', 'year_standing', 'expected_graduation',  # ✅ Add these
-            'program', 'study_level'  # ✅ Add these
+            'student_number', 'phone', 'year_standing', 'expected_graduation', 
+            'program', 'study_level'  #
         ]
+
+class UpdateStudentSerializer(serializers.ModelSerializer):
+    """Serializer for updating student records in admin panel"""
+    first_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    last_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    
+    class Meta:
+        model = Student
+        fields = ['name', 'email', 'student_number', 'department', 'phone', 'program', 'year_standing', 'study_level', 'expected_graduation', 'first_name', 'last_name']
+        read_only_fields = ['is_active']
+        
+    def validate_email(self, value):
+        """Ensure email is not already in use by another student"""
+        instance = self.instance
+        if Student.objects.exclude(pk=instance.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+    
+    def validate_student_number(self, value):
+        """Ensure student number is not already in use by another student"""
+        instance = self.instance
+        if Student.objects.exclude(pk=instance.pk).filter(student_number=value).exists():
+            raise serializers.ValidationError("This student number is already in use.")
+        return value
     
     def update(self, instance, validated_data):
-    # Extract nested and Student model data
-        profile_data = validated_data.pop('student_profile', None)
-        student_number = validated_data.pop('student_number', None)
-        phone = validated_data.pop('phone', None)
-
-        year_standing = validated_data.pop('year_standing', None)
-        expected_graduation = validated_data.pop('expected_graduation', None)
+        # Handle first_name and last_name combination
+        first_name = validated_data.pop('first_name', None)
+        last_name = validated_data.pop('last_name', None)
         
-        #talk to Reyhan about this line and the one on line 166
-        study_level = validated_data.pop('study_level', None)  # Add this near your other pops
-        program = validated_data.pop('program', None)  # Add this near your other pops
-
-        print(f"After extraction:")
-        print(f"student_number: {student_number}")
-        print(f"phone: {phone}")
-        print(f"profile_data: {profile_data}")
-        print(f"remaining validated_data: {validated_data}")
-        
-        # Store old email before updating
-        old_email = instance.email
-        
-        # Update User fields (first_name, last_name, email)
-        instance.first_name = validated_data.get('first_name', instance.first_name)
-        instance.last_name = validated_data.get('last_name', instance.last_name)
-        new_email = validated_data.get('email', instance.email)
-        instance.email = new_email
-        instance.username = new_email  # Keep username and email synchronized
-
-        print(f"Updated User fields:")
-        print(f"first_name: {instance.first_name}")
-        print(f"last_name: {instance.last_name}")
-        print(f"email: {instance.email} (was: {old_email})")
-        print(f"username: {instance.username}")
-        
-        instance.save()
-        
-        # Update Student model - handle email change
-        try:
-            # Try to find student by old email first, then new email
-            student = None
-            if old_email != new_email:
-                try:
-                    student = Student.objects.get(email=old_email)
-                    print(f"Found student with old email: {old_email}")
-                except Student.DoesNotExist:
-                    pass
+        # If both first_name and last_name are provided, combine them into name
+        if first_name and last_name:
+            validated_data['name'] = f"{first_name} {last_name}"
+        elif first_name:
+            # If only first_name, keep existing last name
+            existing_name_parts = instance.name.split(' ', 1)
+            last_name_part = existing_name_parts[1] if len(existing_name_parts) > 1 else ''
+            validated_data['name'] = f"{first_name} {last_name_part}".strip()
+        elif last_name:
+            # If only last_name, keep existing first name
+            existing_name_parts = instance.name.split(' ', 1)
+            first_name_part = existing_name_parts[0] if existing_name_parts else ''
+            validated_data['name'] = f"{first_name_part} {last_name}".strip()
             
-            if not student:
-                student = Student.objects.get(email=new_email)
-                print(f"Found student with new email: {new_email}")
-            
-            print(f"Found student: {student}")
-            
-            old_student_number = student.student_number
-            old_phone = student.phone
-            
-            # Update all fields including email
-            if new_email != old_email:
-                student.email = new_email
-                print(f"Updated student email from {old_email} to {new_email}")
-            
-            if student_number is not None:
-                student.student_number = student_number
-                print(f"Updated student_number from {old_student_number} to {student_number}")
-            if phone is not None:
-                student.phone = phone
-                print(f"Updated phone from {old_phone} to {phone}")
-            if year_standing is not None:
-                student.year_standing = year_standing
-                print(f"Updated year_standing to {year_standing}")
-            if expected_graduation is not None:
-                student.expected_graduation = expected_graduation
-                print(f"Updated expected_graduation to {expected_graduation}")
-            if study_level is not None:
-                student.study_level = study_level
-                print(f"Updated study_level to {study_level}")
-                
-            if program is not None:
-                student.program = program
-                print(f"Updated program to {program}")
-
-            student.save()
-            print(f"Student saved successfully")
-            
-        except Student.DoesNotExist:
-            print(f"Student with email {old_email} or {new_email} does not exist, creating new one")
-            new_student = Student.objects.create(
-                email=new_email,  # Use new email
-                name=f"{instance.first_name} {instance.last_name}",
-                student_number=student_number or '',
-                phone=phone or '',
-                study_level='Undergraduate'
-            )
-            print(f"Created new student: {new_student}")
-        except Exception as e:
-            print(f"Error updating Student: {e}")
-        
-        # Rest of your StudentProfile update code remains the same...
-        if profile_data:
-            try:
-                student_profile = None
-                if hasattr(instance, 'student_profile'):
-                    student_profile = instance.student_profile
-                elif hasattr(instance, 'studentprofile'):
-                    student_profile = instance.studentprofile
-                else:
-                    student_profile = StudentProfile.objects.get(user=instance)
-                
-                if student_profile:
-                    print(f"Updating StudentProfile: {profile_data}")
-                    for attr, value in profile_data.items():
-                        old_value = getattr(student_profile, attr, None)
-                        setattr(student_profile, attr, value)
-                        print(f"Updated {attr} from {old_value} to {value}")
-                    student_profile.save()
-                    print(f"StudentProfile saved successfully")
-            except StudentProfile.DoesNotExist:
-                print(f"Creating new StudentProfile: {profile_data}")
-                StudentProfile.objects.create(user=instance, **profile_data)
-        
-        print(f"=== END BACKEND DEBUG ===")
-        return instance
+        return super().update(instance, validated_data)
     
 class UpdateInstructorSerializer(serializers.ModelSerializer):
     """Serializer for updating instructor profiles"""
+    first_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    last_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    
     class Meta:
         model = Instructor
-        fields = ['name', 'email', 'department', 'is_active']
-        read_only_fields = ['employee_number', 'department', 'is_active']
+        fields = ['name', 'email', 'department', 'employee_number', 'first_name', 'last_name']
+        read_only_fields = ['is_active']
         
     def validate_email(self, value):
         """Ensure email is not already in use by another instructor"""
@@ -275,14 +199,45 @@ class UpdateInstructorSerializer(serializers.ModelSerializer):
         if Instructor.objects.exclude(pk=instance.pk).filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
+    
+    def validate_employee_number(self, value):
+        """Ensure employee number is not already in use by another instructor"""
+        instance = self.instance
+        if Instructor.objects.exclude(pk=instance.pk).filter(employee_number=value).exists():
+            raise serializers.ValidationError("This employee number is already in use.")
+        return value
+    
+    def update(self, instance, validated_data):
+        # Handle first_name and last_name combination
+        first_name = validated_data.pop('first_name', None)
+        last_name = validated_data.pop('last_name', None)
+        
+        # If both first_name and last_name are provided, combine them into name
+        if first_name and last_name:
+            validated_data['name'] = f"{first_name} {last_name}"
+        elif first_name:
+            # If only first_name, keep existing last name
+            existing_name_parts = instance.name.split(' ', 1)
+            last_name_part = existing_name_parts[1] if len(existing_name_parts) > 1 else ''
+            validated_data['name'] = f"{first_name} {last_name_part}".strip()
+        elif last_name:
+            # If only last_name, keep existing first name
+            existing_name_parts = instance.name.split(' ', 1)
+            first_name_part = existing_name_parts[0] if existing_name_parts else ''
+            validated_data['name'] = f"{first_name_part} {last_name}".strip()
+            
+        return super().update(instance, validated_data)
 
 
 class UpdateTASchedulerSerializer(serializers.ModelSerializer):
     """Serializer for updating TA scheduler profiles"""
+    first_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    last_name = serializers.CharField(max_length=50, required=False, write_only=True)
+    
     class Meta:
         model = TAScheduler
-        fields = ['name', 'email']
-        read_only_fields = ['employee_number', 'department', 'is_active']
+        fields = ['name', 'email', 'department', 'employee_number', 'first_name', 'last_name']
+        read_only_fields = ['is_active']
         
     def validate_email(self, value):
         """Ensure email is not already in use by another scheduler"""
@@ -290,20 +245,55 @@ class UpdateTASchedulerSerializer(serializers.ModelSerializer):
         if TAScheduler.objects.exclude(pk=instance.pk).filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
+    
+    def validate_employee_number(self, value):
+        """Ensure employee number is not already in use by another scheduler"""
+        instance = self.instance
+        if TAScheduler.objects.exclude(pk=instance.pk).filter(employee_number=value).exists():
+            raise serializers.ValidationError("This employee number is already in use.")
+        return value
+    
+    def update(self, instance, validated_data):
+        # Handle first_name and last_name combination
+        first_name = validated_data.pop('first_name', None)
+        last_name = validated_data.pop('last_name', None)
+        
+        # If both first_name and last_name are provided, combine them into name
+        if first_name and last_name:
+            validated_data['name'] = f"{first_name} {last_name}"
+        elif first_name:
+            # If only first_name, keep existing last name
+            existing_name_parts = instance.name.split(' ', 1)
+            last_name_part = existing_name_parts[1] if len(existing_name_parts) > 1 else ''
+            validated_data['name'] = f"{first_name} {last_name_part}".strip()
+        elif last_name:
+            # If only last_name, keep existing first name
+            existing_name_parts = instance.name.split(' ', 1)
+            first_name_part = existing_name_parts[0] if existing_name_parts else ''
+            validated_data['name'] = f"{first_name_part} {last_name}".strip()
+            
+        return super().update(instance, validated_data)
 
 
 class UpdateAdminSerializer(serializers.ModelSerializer):
     """Serializer for updating admin profiles"""
     class Meta:
         model = Admin
-        fields = ['name', 'email']
-        read_only_fields = ['employee_number', 'is_active', 'created_at']
+        fields = ['name', 'email', 'employee_number']
+        read_only_fields = ['is_active', 'created_at']
         
     def validate_email(self, value):
         """Ensure email is not already in use by another admin"""
         instance = self.instance
         if Admin.objects.exclude(pk=instance.pk).filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
+        return value
+    
+    def validate_employee_number(self, value):
+        """Ensure employee number is not already in use by another admin"""
+        instance = self.instance
+        if Admin.objects.exclude(pk=instance.pk).filter(employee_number=value).exists():
+            raise serializers.ValidationError("This employee number is already in use.")
         return value
 
 class StudentExperienceSerializer(serializers.ModelSerializer):
@@ -409,7 +399,7 @@ class CreateInstructorSerializer(serializers.Serializer):
     DEPARTMENT_CHOICES = [
         ('astr', 'Astronomy'),
         ('math', 'Mathematics'),
-        ('phy', 'Physics'),
+        ('phys', 'Physics'),
         ('data', 'Data Science'),
         ('stat', 'Statistics'), 
         ('cosc', 'Computer Science'),
@@ -437,7 +427,7 @@ class CreateSchedulerSerializer(serializers.Serializer):
     DEPARTMENT_CHOICES = [
         ('astr', 'Astronomy'),
         ('math', 'Mathematics'),
-        ('phy', 'Physics'),
+        ('phys', 'Physics'),
         ('data', 'Data Science'),
         ('stat', 'Statistics'), 
         ('cosc', 'Computer Science'),
@@ -463,8 +453,9 @@ class CreateSchedulerSerializer(serializers.Serializer):
     
     # Adding serializer for admin accounts 
 class CreateAdminSerializer(serializers.Serializer):
-    first_name = serializers.CharField(max_length=30)
-    last_name = serializers.CharField(max_length=30)
+    name = serializers.CharField(max_length=100)
+    first_name = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=30, required=False, allow_blank=True)
     email = serializers.EmailField()
     employee_number = serializers.CharField(max_length=20)
     
