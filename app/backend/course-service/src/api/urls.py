@@ -17,6 +17,12 @@ urlpatterns = [
     # Debug endpoint
     path('debug-auth/', views.debug_auth, name='debug-auth'),
     
+    # Bulk import endpoint
+    path('bulk-import/', views.bulk_import, name='bulk-import'),
+    
+    # Sample CSV download endpoint
+    path('sample-csv/', views.download_sample_csv, name='sample-csv'),
+    
     # Include all router URLs
     path('', include(router.urls)),
 ]

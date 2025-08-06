@@ -7,6 +7,7 @@ import {
   CheckCircle,
   UserCheck,
   MoreVerticalIcon,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getProfile } from "@/logic/scheduler-profile"; // Ensure this path is correct for your project
@@ -65,6 +66,11 @@ const navigationItems = [
     url: "/ta-coordinator-allocation",
     icon: CheckCircle,
   },
+  {
+    title: "Assignments",
+    url: "/assignment-management",
+    icon: Users,
+  }
 ];
 
 export function AppSidebar({ activePage, ...props }) {

@@ -234,7 +234,7 @@ class CourseOffering(models.Model):
         related_name='course_offerings',
         help_text="Time slots when this course offering meets"
     )
-
+    final_notification_sent_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the final allocation notice was sent to the instructor")
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -296,6 +296,7 @@ class SharedSession(models.Model):
         help_text="Time slots when this lab section meets"
     )
 
+    final_notification_sent_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the final allocation notice was sent to the instructor")
     is_active = models.BooleanField(default=True)
 
     class Meta:

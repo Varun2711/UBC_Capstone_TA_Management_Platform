@@ -183,13 +183,7 @@ const AddedOffersTab = ({
       return null;
     }
   };
-  /*
-  return (
-    <div className="space-y-4">
-      {offers.length === 0 && (
-        <p className="text-muted-foreground">No offers have been added yet.</p>
-      )}
-    */
+  
   return (
     <div className="space-y-4">
       <Card>

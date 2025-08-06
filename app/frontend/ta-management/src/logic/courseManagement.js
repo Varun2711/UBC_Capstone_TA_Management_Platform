@@ -1,15 +1,15 @@
 import axios from "axios";
 
 // API URLs
-const COURSE_TERM_API_URL = 'http://localhost:8080/api/course-term-service';
-const PROFILE_API_URL = 'http://localhost:8080/api/profile';
+const COURSE_TERM_API_URL = "http://localhost:8080/api/course-term-service";
+const PROFILE_API_URL = "http://localhost:8080/api/profile";
 
 // Helper function to get the auth token from session storage
 const getAuthHeaders = () => {
-  if (typeof window !== 'undefined') {
-    const token = sessionStorage.getItem('accessToken');
+  if (typeof window !== "undefined") {
+    const token = sessionStorage.getItem("accessToken");
     if (token) {
-      return { 'Authorization': `Bearer ${token}` };
+      return { Authorization: `Bearer ${token}` };
     }
   }
   return {};
@@ -24,32 +24,36 @@ const getAuthHeaders = () => {
  */
 export const parseTermCode = (termCode) => {
   if (!termCode) return null;
-  
+
   // Match pattern like "W2025 Term 2" or "S2024 Both Terms"
-  const match = termCode.match(/^([WS])(\d{4})\s+(Term\s+(\d+)|Both\s+Terms)$/i);
-  
+  const match = termCode.match(
+    /^([WS])(\d{4})\s+(Term\s+(\d+)|Both\s+Terms)$/i
+  );
+
   if (!match) return null;
-  
+
   const seasonCode = match[1].toUpperCase();
   const year = parseInt(match[2]);
   const termPart = match[3];
-  
+
   let term;
-  if (termPart.toLowerCase().includes('both')) {
-    term = 'Both';
+  if (termPart.toLowerCase().includes("both")) {
+    term = "Both";
   } else {
     const termMatch = termPart.match(/Term\s+(\d+)/);
-    term = termMatch ? termMatch[1] : '1';
+    term = termMatch ? termMatch[1] : "1";
   }
-  
-  const season = seasonCode === 'W' ? 'Winter' : 'Summer';
-  
+
+  const season = seasonCode === "W" ? "Winter" : "Summer";
+
   return {
     season,
     seasonCode,
     year,
     term,
-    fullTerm: `${season} ${year} ${term === 'Both' ? 'Both Terms' : `Term ${term}`}`
+    fullTerm: `${season} ${year} ${
+      term === "Both" ? "Both Terms" : `Term ${term}`
+    }`,
   };
 };
 
@@ -61,7 +65,7 @@ export const parseTermCode = (termCode) => {
  * @returns {string} - Term code like "W2025 Term 2"
  */
 export const createTermCode = (seasonCode, year, term) => {
-  const termPart = term === 'Both' ? 'Both Terms' : `Term ${term}`;
+  const termPart = term === "Both" ? "Both Terms" : `Term ${term}`;
   return `${seasonCode}${year} ${termPart}`;
 };
 
@@ -71,9 +75,12 @@ export const createTermCode = (seasonCode, year, term) => {
  * Fetches all courses with full details including offerings and shared sessions
  */
 export const getAllCoursesFullDetails = async () => {
-  const response = await axios.get(`${COURSE_TERM_API_URL}/courses/all_full_details/`, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.get(
+    `${COURSE_TERM_API_URL}/courses/all_full_details/`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -81,9 +88,12 @@ export const getAllCoursesFullDetails = async () => {
  * Fetches a specific course by ID
  */
 export const getCourseById = async (courseId) => {
-  const response = await axios.get(`${COURSE_TERM_API_URL}/courses/${courseId}/`, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.get(
+    `${COURSE_TERM_API_URL}/courses/${courseId}/`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -91,16 +101,20 @@ export const getCourseById = async (courseId) => {
  * Creates a new course
  */
 export const createCourse = async (courseData) => {
-  const response = await axios.post(`${COURSE_TERM_API_URL}/courses/`, {
-    course_number: courseData.code,
-    course_name: courseData.title,
-    department: courseData.departmentId,
-    course_description: courseData.description,
-    course_level: courseData.level || "100",
-    is_active: true
-  }, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.post(
+    `${COURSE_TERM_API_URL}/courses/`,
+    {
+      course_number: courseData.code,
+      course_name: courseData.title,
+      department: courseData.departmentId,
+      course_description: courseData.description,
+      course_level: courseData.level || "100",
+      is_active: true,
+    },
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -108,16 +122,21 @@ export const createCourse = async (courseData) => {
  * Updates an existing course
  */
 export const updateCourse = async (courseId, courseData) => {
-  const response = await axios.put(`${COURSE_TERM_API_URL}/courses/${courseId}/`, {
-    course_number: courseData.code,
-    course_name: courseData.title,
-    department: courseData.departmentId,
-    course_description: courseData.description,
-    course_level: courseData.level || "100",
-    is_active: courseData.is_active !== undefined ? courseData.is_active : true
-  }, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.put(
+    `${COURSE_TERM_API_URL}/courses/${courseId}/`,
+    {
+      course_number: courseData.code,
+      course_name: courseData.title,
+      department: courseData.departmentId,
+      course_description: courseData.description,
+      course_level: courseData.level || "100",
+      is_active:
+        courseData.is_active !== undefined ? courseData.is_active : true,
+    },
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -125,9 +144,12 @@ export const updateCourse = async (courseId, courseData) => {
  * Deletes a course
  */
 export const deleteCourse = async (courseId) => {
-  const response = await axios.delete(`${COURSE_TERM_API_URL}/courses/${courseId}/`, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.delete(
+    `${COURSE_TERM_API_URL}/courses/${courseId}/`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -137,15 +159,19 @@ export const deleteCourse = async (courseId) => {
  * Creates a new course offering
  */
 export const createCourseOffering = async (offeringData) => {
-  const response = await axios.post(`${COURSE_TERM_API_URL}/course-offerings/`, {
-    course_id: offeringData.courseId,
-    section_number: offeringData.section,
-    term_id: offeringData.termId,
-    instructor_id: offeringData.instructorId,
-    time_slots: offeringData.time_slots || []
-  }, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.post(
+    `${COURSE_TERM_API_URL}/course-offerings/`,
+    {
+      course_id: offeringData.courseId,
+      section_number: offeringData.section,
+      term_id: offeringData.termId,
+      instructor_id: offeringData.instructorId,
+      time_slots: offeringData.time_slots || [],
+    },
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -153,15 +179,19 @@ export const createCourseOffering = async (offeringData) => {
  * Updates an existing course offering
  */
 export const updateCourseOffering = async (offeringId, offeringData) => {
-  const response = await axios.put(`${COURSE_TERM_API_URL}/course-offerings/${offeringId}/`, {
-    course_id: offeringData.courseId,
-    section_number: offeringData.section,
-    term_id: offeringData.termId,
-    instructor_id: offeringData.instructorId,
-    time_slots: offeringData.time_slots || []
-  }, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.put(
+    `${COURSE_TERM_API_URL}/course-offerings/${offeringId}/`,
+    {
+      course_id: offeringData.courseId,
+      section_number: offeringData.section,
+      term_id: offeringData.termId,
+      instructor_id: offeringData.instructorId,
+      time_slots: offeringData.time_slots || [],
+    },
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -169,9 +199,12 @@ export const updateCourseOffering = async (offeringId, offeringData) => {
  * Deletes a course offering
  */
 export const deleteCourseOffering = async (offeringId) => {
-  const response = await axios.delete(`${COURSE_TERM_API_URL}/course-offerings/${offeringId}/`, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.delete(
+    `${COURSE_TERM_API_URL}/course-offerings/${offeringId}/`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -181,15 +214,19 @@ export const deleteCourseOffering = async (offeringId) => {
  * Creates a new shared session (lab/tutorial)
  */
 export const createSharedSession = async (sessionData) => {
-  const response = await axios.post(`${COURSE_TERM_API_URL}/shared-sessions/`, {
-    session_type: sessionData.sessionType,
-    course_id: sessionData.courseId,           // Changed from 'course'
-    section_number: sessionData.section,
-    academic_term_id: sessionData.termId,     // Changed from 'academic_term'
-    time_slots: sessionData.timeSlots || []
-  }, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.post(
+    `${COURSE_TERM_API_URL}/shared-sessions/`,
+    {
+      session_type: sessionData.sessionType,
+      course_id: sessionData.courseId, // Changed from 'course'
+      section_number: sessionData.section,
+      academic_term_id: sessionData.termId, // Changed from 'academic_term'
+      time_slots: sessionData.timeSlots || [],
+    },
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -197,15 +234,19 @@ export const createSharedSession = async (sessionData) => {
  * Updates an existing shared session
  */
 export const updateSharedSession = async (sessionId, sessionData) => {
-  const response = await axios.put(`${COURSE_TERM_API_URL}/shared-sessions/${sessionId}/`, {
-    session_type: sessionData.sessionType,
-    course_id: sessionData.courseId,
-    section_number: sessionData.section,
-    academic_term_id: sessionData.termId,
-    time_slots: sessionData.timeSlots || []
-  }, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.put(
+    `${COURSE_TERM_API_URL}/shared-sessions/${sessionId}/`,
+    {
+      session_type: sessionData.sessionType,
+      course_id: sessionData.courseId,
+      section_number: sessionData.section,
+      academic_term_id: sessionData.termId,
+      time_slots: sessionData.timeSlots || [],
+    },
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -213,9 +254,12 @@ export const updateSharedSession = async (sessionId, sessionData) => {
  * Deletes a shared session
  */
 export const deleteSharedSession = async (sessionId) => {
-  const response = await axios.delete(`${COURSE_TERM_API_URL}/shared-sessions/${sessionId}/`, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.delete(
+    `${COURSE_TERM_API_URL}/shared-sessions/${sessionId}/`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -226,7 +270,7 @@ export const deleteSharedSession = async (sessionId) => {
  */
 export const getTerms = async () => {
   const response = await axios.get(`${COURSE_TERM_API_URL}/terms/`, {
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
   return response.data.results || [];
 };
@@ -235,9 +279,12 @@ export const getTerms = async () => {
  * Fetches active terms
  */
 export const getActiveTerms = async () => {
-  const response = await axios.get(`${COURSE_TERM_API_URL}/terms/?is_active=true`, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.get(
+    `${COURSE_TERM_API_URL}/terms/?is_active=true`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data.results || [];
 };
 
@@ -248,7 +295,7 @@ export const getActiveTerms = async () => {
  */
 export const getDepartments = async () => {
   const response = await axios.get(`${PROFILE_API_URL}/departments/`, {
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
   return response.data;
 };
@@ -260,7 +307,7 @@ export const getDepartments = async () => {
  */
 export const getInstructors = async () => {
   const response = await axios.get(`${PROFILE_API_URL}/instructors/`, {
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
   return response.data;
 };
@@ -271,8 +318,8 @@ export const getInstructors = async () => {
  * Extracts course level from course code (e.g., "COSC 111" -> "100")
  */
 const extractLevelFromCode = (code) => {
-  if (!code) return "100"
-  
+  if (!code) return "100";
+
   const match = code.match(/(\d+)/);
   if (match) {
     const number = match[1];
@@ -287,12 +334,12 @@ const extractLevelFromCode = (code) => {
 export const mapCourseData = (backendCourse, instructors = []) => {
   // Create instructor lookup map
   const instructorMap = new Map();
-  instructors.forEach(instructor => {
+  instructors.forEach((instructor) => {
     instructorMap.set(instructor.id, instructor.name);
     instructorMap.set(String(instructor.id), instructor.name);
     instructorMap.set(Number(instructor.id), instructor.name);
   });
-  
+
   return {
     id: backendCourse.id,
     code: backendCourse.code,
@@ -301,12 +348,13 @@ export const mapCourseData = (backendCourse, instructors = []) => {
     departmentId: backendCourse.departmentId,
     description: backendCourse.description,
     level: extractLevelFromCode(backendCourse.code),
-    offerings: (backendCourse.offerings || []).map(offering => {
-      const instructorName = instructorMap.get(offering.instructor_id) ||
-                            instructorMap.get(String(offering.instructor_id)) ||
-                            instructorMap.get(Number(offering.instructor_id)) ||
-                            'Unassigned';
-      
+    offerings: (backendCourse.offerings || []).map((offering) => {
+      const instructorName =
+        instructorMap.get(offering.instructor_id) ||
+        instructorMap.get(String(offering.instructor_id)) ||
+        instructorMap.get(Number(offering.instructor_id)) ||
+        "Unassigned";
+
       const termData = parseTermCode(offering.term);
       return {
         id: offering.id,
@@ -322,11 +370,11 @@ export const mapCourseData = (backendCourse, instructors = []) => {
         // Add time slots handling
         time_slots: offering.time_slots || [],
         timeSlots: offering.time_slots || [], // For compatibility
-        time_increments: offering.time_increments || []
+        time_increments: offering.time_increments || [],
       };
     }),
     // The backend already returns sharedSessions grouped by term - just use it directly!
-    sharedSessions: backendCourse.sharedSessions || {}
+    sharedSessions: backendCourse.sharedSessions || {},
   };
 };
 
@@ -334,9 +382,9 @@ export const mapCourseData = (backendCourse, instructors = []) => {
  * Maps terms data to frontend format for simplified dropdown
  */
 export const mapTermsForDropdown = (terms) => {
-  return terms.map(term => {
+  return terms.map((term) => {
     const parsedTerm = parseTermCode(term.code);
-    
+
     // Extract year from multiple possible sources
     let year = null;
     if (parsedTerm) {
@@ -347,7 +395,9 @@ export const mapTermsForDropdown = (terms) => {
       year = term.year;
     } else {
       // Try to extract year from any string field
-      const yearMatch = (term.code || term.term_code || term.name || '').match(/(\d{4})/);
+      const yearMatch = (term.code || term.term_code || term.name || "").match(
+        /(\d{4})/
+      );
       year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
     }
 
@@ -355,7 +405,7 @@ export const mapTermsForDropdown = (terms) => {
     let label = term.description || term.code;
     if (parsedTerm) {
       label = `${parsedTerm.season} Term ${parsedTerm.term}`;
-      if (parsedTerm.term === 'Both') {
+      if (parsedTerm.term === "Both") {
         label = `${parsedTerm.season} Both Terms`;
       }
     }
@@ -367,7 +417,7 @@ export const mapTermsForDropdown = (terms) => {
       year: year,
       parsedData: parsedTerm,
       // Keep original term data for debugging
-      _original: term
+      _original: term,
     };
   });
 };
@@ -376,27 +426,47 @@ export const mapTermsForDropdown = (terms) => {
  * Maps instructors for dropdown with enhanced search capability
  */
 export const mapInstructorsForDropdown = (instructors, departments) => {
-  const departmentMap = new Map(departments.map(dept => [dept.id, dept.name]));
-  
-  return instructors.map(instructor => ({
+  const departmentMap = new Map(
+    departments.map((dept) => [dept.id, dept.name])
+  );
+
+  return instructors.map((instructor) => ({
     id: instructor.id,
-    name: instructor.name || `${instructor.first_name || ''} ${instructor.last_name || ''}`.trim(),
+    name:
+      instructor.name ||
+      `${instructor.first_name || ""} ${instructor.last_name || ""}`.trim(),
     email: instructor.email,
-    department: departmentMap.get(instructor.department) || instructor.department_name || 'Unknown',
+    department:
+      departmentMap.get(instructor.department) ||
+      instructor.department_name ||
+      "Unknown",
     departmentId: instructor.department,
     // Additional fields for search
-    searchableText: `${instructor.name || `${instructor.first_name || ''} ${instructor.last_name || ''}`.trim()} ${instructor.email} ${departmentMap.get(instructor.department) || instructor.department_name || ''}`
+    searchableText: `${
+      instructor.name ||
+      `${instructor.first_name || ""} ${instructor.last_name || ""}`.trim()
+    } ${instructor.email} ${
+      departmentMap.get(instructor.department) ||
+      instructor.department_name ||
+      ""
+    }`,
   }));
 };
 
 /**
  * Updated course offering submission handler
  */
-export const handleOfferingSubmission = async (courseId, offeringData, terms, isEdit = false, offeringId = null) => {
+export const handleOfferingSubmission = async (
+  courseId,
+  offeringData,
+  terms,
+  isEdit = false,
+  offeringId = null
+) => {
   try {
     // Find the term details from the term code
-    const selectedTerm = terms.find(term => term.value === offeringData.term);
-    
+    const selectedTerm = terms.find((term) => term.value === offeringData.term);
+
     const submitData = {
       courseId: courseId,
       section: offeringData.section,
@@ -405,7 +475,7 @@ export const handleOfferingSubmission = async (courseId, offeringData, terms, is
       // Add time_slots to the submission data
       time_slots: offeringData.time_slots || [],
       // Add year for additional context
-      academicYear: offeringData.year
+      academicYear: offeringData.year,
     };
 
     if (isEdit && offeringId) {
@@ -422,9 +492,12 @@ export const handleOfferingSubmission = async (courseId, offeringData, terms, is
  * Fetches only active terms (Updated to use the existing getActiveTerms function)
  */
 export const getActiveTermsForDropdowns = async () => {
-  const response = await axios.get(`${COURSE_TERM_API_URL}/terms/?is_active=true`, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.get(
+    `${COURSE_TERM_API_URL}/terms/?is_active=true`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data.results || [];
 };
 
@@ -433,5 +506,62 @@ export const getActiveTermsForDropdowns = async () => {
  */
 export const getFilteredActiveTerms = async () => {
   const allTerms = await getTerms();
-  return allTerms.filter(term => term.is_active === true);
+  return allTerms.filter((term) => term.is_active === true);
+};
+
+/**
+ * Bulk import courses from a CSV file
+ * @param {File} file - The CSV file containing course data
+ * @returns {object} - Response containing import results
+ */
+export const bulkImportCourses = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await axios.post(
+    `${COURSE_TERM_API_URL}/bulk-import/`,
+    formData,
+    {
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data;
+};
+
+/**
+ * Download sample CSV file for bulk import
+ * @returns {void} - Triggers browser download of sample CSV file
+ */
+export const downloadSampleCSV = async () => {
+  try {
+    const response = await axios.get(`${COURSE_TERM_API_URL}/sample-csv/`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+      responseType: "blob", // Important for file download
+    });
+
+    // Create blob link to download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+
+    // Set filename for download
+    link.setAttribute("download", "sample_bulk_import.csv");
+
+    // Append to body, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // Clean up the URL object
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error downloading sample CSV:", error);
+    throw error;
+  }
 };
