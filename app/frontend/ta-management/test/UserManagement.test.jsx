@@ -186,11 +186,11 @@ describe("UserManagement", () => {
       })
     })
   })
-
   describe("User Actions", () => {
     it("handles user deactivation", async () => {
       // Mock window.confirm
       window.confirm = vi.fn(() => true)
+
 
       // Mock successful deactivation response
       fetch.mockImplementation((url, options) => {
@@ -248,6 +248,7 @@ describe("UserManagement", () => {
       // Should handle the error gracefully
       await waitFor(() => {
         expect(fetch).toHaveBeenCalled()
+
       })
     })
 

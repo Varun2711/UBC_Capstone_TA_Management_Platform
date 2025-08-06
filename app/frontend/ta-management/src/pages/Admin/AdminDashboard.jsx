@@ -19,9 +19,11 @@ import {
   Settings,
   GraduationCap,
   Activity,
+  Server,
+  Eye,
+  Calendar,
   Mail,
   Database,
-  Server,
   BarChart3,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -53,6 +55,69 @@ import {
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
 import { getAdminDashboard, getNotificationStats, getSystemHealth } from "@/logic/admin"
 
+// Mock data for system statistics
+const mockSystemStats = {
+  system_health: 98.5,
+  active_sessions: 147,
+  database_size: "2.4 GB",
+  server_uptime: "15 days, 7 hours",
+  total_requests_today: 8924,
+  average_response_time: "120ms"
+}
+
+const mockAuditLogs = [
+  {
+    id: 1,
+    timestamp: "2024-01-29 14:30:25",
+    user: "admin@school.edu",
+    action: "User Created",
+    details: "Created new instructor account for John Smith",
+    severity: "info"
+  },
+  {
+    id: 2,
+    timestamp: "2024-01-29 13:45:12",
+    user: "scheduler@school.edu",
+    action: "Schedule Modified",
+    details: "Updated CS101 class schedule",
+    severity: "info"
+  },
+  {
+    id: 3,
+    timestamp: "2024-01-29 12:20:08",
+    user: "system",
+    action: "Security Alert",
+    details: "Multiple failed login attempts detected",
+    severity: "warning"
+  },
+  {
+    id: 4,
+    timestamp: "2024-01-29 11:15:44",
+    user: "admin@school.edu",
+    action: "Permission Changed",
+    details: "Updated role permissions for scheduler group",
+    severity: "info"
+  },
+  {
+    id: 5,
+    timestamp: "2024-01-29 10:30:17",
+    user: "instructor@school.edu",
+    action: "Grade Submitted",
+    details: "Submitted final grades for MATH202",
+    severity: "info"
+  }
+]
+
+const mockActivityData = [
+  { day: "Mon", users: 120, sessions: 89 },
+  { day: "Tue", users: 145, sessions: 102 },
+  { day: "Wed", users: 132, sessions: 95 },
+  { day: "Thu", users: 168, sessions: 118 },
+  { day: "Fri", users: 187, sessions: 134 },
+  { day: "Sat", users: 89, sessions: 62 },
+  { day: "Sun", users: 76, sessions: 48 }
+]
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [notificationStats, setNotificationStats] = useState(null);
@@ -63,6 +128,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+
         setLoading(true);
         
         // Fetch all dashboard data concurrently
@@ -202,6 +268,15 @@ export default function AdminDashboard() {
       case 'positive': return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'negative': return <AlertTriangle className="w-4 h-4 text-red-600" />;
       default: return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getSeverityColor = (severity) => {
+    switch (severity) {
+      case 'info': return 'bg-blue-100 text-blue-800';
+      case 'warning': return 'bg-yellow-100 text-yellow-800';
+      case 'error': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 

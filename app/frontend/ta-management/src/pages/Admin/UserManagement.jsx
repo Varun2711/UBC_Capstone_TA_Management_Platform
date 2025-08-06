@@ -77,8 +77,6 @@ const getAuthHeaders = () => {
     'Content-Type': 'application/json'
   }
 }
-
-// API Functions
 const apiRequest = async (url, options = {}) => {
   try {
     const response = await fetch(url, {
@@ -96,10 +94,10 @@ const apiRequest = async (url, options = {}) => {
     return data
   } catch (error) {
     console.error(`API Request failed for ${url}:`, error)
+
     throw error
   }
 }
-
 const getAllUsers = async (userType = '') => {
   const queryParam = userType ? `?user_type=${userType}` : ''
   const data = await apiRequest(`${PROFILE_API}/users/${queryParam}`)
@@ -219,7 +217,6 @@ export default function UserManagement() {
     employee_number: '',
     department: ''
   })
-
   // Load initial data
   useEffect(() => {
     loadInitialData()
@@ -269,14 +266,12 @@ export default function UserManagement() {
     if (roleFilter !== 'all') {
       filtered = filtered.filter(user => user.type === roleFilter)
     }
-
     // Filter by status
     if (statusFilter !== 'all') {
       const isActive = statusFilter === 'active'
       filtered = filtered.filter(user => user.is_active === isActive)
     }
 
-    // Filter by search term
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(user =>
@@ -288,6 +283,7 @@ export default function UserManagement() {
 
     setFilteredUsers(filtered)
   }
+
 
   const resetFormData = () => {
     setFormData({
@@ -405,6 +401,7 @@ export default function UserManagement() {
       setLoading(false)
     }
   }
+
 
   const handleUserAction = async (user, action) => {
     const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate'
@@ -578,7 +575,6 @@ export default function UserManagement() {
       </SidebarProvider>
     )
   }
-
   return (
     <SidebarProvider>
       <AdminSidebar activePage="User Management" />
@@ -692,6 +688,7 @@ export default function UserManagement() {
               </div>
 
               {/* Users Table */}
+
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -811,11 +808,14 @@ export default function UserManagement() {
               <DialogDescription>
                 Add a new {createType === 'instructor' ? 'instructor' : 
                           createType === 'scheduler' ? 'TA scheduler' : 'admin'} to the system
+
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4">
+
               {/* User Type Selection */}
+
               <div className="flex space-x-2 mb-4">
                 <Button
                   type="button"
@@ -1128,6 +1128,7 @@ export default function UserManagement() {
             </div>
             <DialogFooter>
               <Button onClick={() => setShowSuccessDialog(false)}>Done</Button>
+
             </DialogFooter>
           </DialogContent>
         </Dialog>

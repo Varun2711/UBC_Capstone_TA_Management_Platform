@@ -288,6 +288,46 @@ export const getActiveTerms = async () => {
   return response.data.results || [];
 };
 
+/**
+ * Creates a new term
+ */
+export const createTerm = async (termData) => {
+  const response = await axios.post(`${COURSE_TERM_API_URL}/terms/`, termData, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+/**
+ * Updates an existing term
+ */
+export const updateTerm = async (termId, termData) => {
+  const response = await axios.put(`${COURSE_TERM_API_URL}/terms/${termId}/`, termData, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+/**
+ * Deletes a term
+ */
+export const deleteTerm = async (termId) => {
+  const response = await axios.delete(`${COURSE_TERM_API_URL}/terms/${termId}/`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+/**
+ * Fetches a specific term by ID
+ */
+export const getTermById = async (termId) => {
+  const response = await axios.get(`${COURSE_TERM_API_URL}/terms/${termId}/`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
 // --- Department Functions ---
 
 /**
