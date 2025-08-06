@@ -24,42 +24,21 @@
     "model": "myapp.department",
     "pk": 4,
     "fields": {
-      "name": "Chemistry"
+      "name": "Data Science"
     }
   },
   {
     "model": "myapp.department",
     "pk": 5,
     "fields": {
-      "name": "Biology"
+      "name": "Statistics"
     }
   },
   {
     "model": "myapp.department",
     "pk": 6,
     "fields": {
-      "name": "Engineering"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 7,
-    "fields": {
-      "name": "Psychology"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 8,
-    "fields": {
-      "name": "English"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 9,
-    "fields": {
-      "name": "CMPS"
+      "name": "Astronomy"
     }
   },
   {
@@ -72,7 +51,7 @@
       "program": "Computer Science",
       "year_standing": 3,
       "study_level": "Graduate",
-      "department": 6,
+      "department": 1,
       "sin": "123456789",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "sarah.johnson@student.ubc.ca",
@@ -116,7 +95,7 @@
       "name": "Naman Arora",
       "email": "naman.arora@gmail.com",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
-      "department": 6,
+      "department": 1,
       "is_active": true
     }
   },
@@ -130,62 +109,6 @@
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "created_at": "2024-07-01T12:00:00Z",
       "is_active": true
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 1,
-    "fields": {
-      "name": "Computer Science"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 2,
-    "fields": {
-      "name": "Mathematics"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 3,
-    "fields": {
-      "name": "Physics"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 4,
-    "fields": {
-      "name": "Chemistry"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 5,
-    "fields": {
-      "name": "Biology"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 6,
-    "fields": {
-      "name": "Engineering"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 7,
-    "fields": {
-      "name": "Psychology"
-    }
-  },
-  {
-    "model": "myapp.department",
-    "pk": 8,
-    "fields": {
-      "name": "English"
     }
   },
   {
@@ -565,7 +488,7 @@
     "fields": {
       "employee_number": "EMP1008",
       "name": "Dr. Mark Taylor",
-      "department": 6,
+      "department": 1,
       "email": "mark.taylor@university.edu",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "is_active": true
@@ -577,7 +500,7 @@
     "fields": {
       "employee_number": "EMP1009",
       "name": "Dr. Anna Garcia",
-      "department": 7,
+      "department": 1,
       "email": "anna.garcia@university.edu",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "is_active": true
@@ -589,7 +512,7 @@
     "fields": {
       "employee_number": "EMP1010",
       "name": "Prof. James Miller",
-      "department": 8,
+      "department": 1,
       "email": "james.miller@university.edu",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "is_active": true
@@ -787,7 +710,7 @@
       "program": "Psychology",
       "year_standing": 4,
       "study_level": "BA",
-      "department": 7,
+      "department": 1,
       "sin": "987654329",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "rachel.adams@student.ubc.ca",
@@ -809,6 +732,20 @@
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "kevin.zhang@student.ubc.ca",
       "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 11,
+    "fields": {
+      "email": "aads@gmail.com",
+      "name": "aads shajs",
+      "student_number": "20241024",
+      "program": "computer science",
+      "year_standing": 4,
+      "study_level": "graduate",
+      "department": 1,
+      "phone": "+1-250-555-0242"
     }
   },
   {
@@ -1075,7 +1012,7 @@
       "phone": "+1-250-555-0109",
       "program": "Engineering",
       "year_standing": 3,
-      "study_level": "Undergraduate",
+      "study_level": "BSc",
       "department": 6,
       "sin": "987654328",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -1092,8 +1029,8 @@
       "phone": "+1-250-555-0110",
       "program": "Psychology",
       "year_standing": 4,
-      "study_level": "Undergraduate",
-      "department": 7,
+      "study_level": "BA",
+      "department": 1,
       "sin": "987654329",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
       "email": "rachel.adams@student.ubc.ca",
@@ -1109,7 +1046,7 @@
       "phone": "+1-250-555-0111",
       "program": "Mathematics",
       "year_standing": 1,
-      "study_level": "Undergraduate",
+      "study_level": "BSc",
       "department": 2,
       "sin": "987654330",
       "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
@@ -1127,6 +1064,967 @@
       "program": "computer science",
       "year_standing": 4,
       "study_level": "graduate",
+      "department": 1,
+      "phone": "+1-250-555-0242"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 1,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440001",
+      "day": "monday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 2,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440002",
+      "day": "monday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 3,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440003",
+      "day": "monday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 4,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440004",
+      "day": "tuesday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 5,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440005",
+      "day": "tuesday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 6,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440006",
+      "day": "tuesday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 7,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440007",
+      "day": "wednesday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 8,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440008",
+      "day": "wednesday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 9,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440009",
+      "day": "wednesday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 10,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440010",
+      "day": "thursday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 11,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440011",
+      "day": "thursday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 12,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440012",
+      "day": "thursday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 13,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440013",
+      "day": "friday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 14,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440014",
+      "day": "friday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 15,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440015",
+      "day": "friday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 16,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440016",
+      "day": "monday",
+      "start_time": "14:00:00",
+      "end_time": "16:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 17,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440017",
+      "day": "wednesday",
+      "start_time": "14:00:00",
+      "end_time": "16:00:00"
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 3,
+    "fields": {
+      "student_number": "20241004",
+      "name": "Emily Wilson",
+      "phone": "+1-250-555-0104",
+      "program": "Computer Science",
+      "year_standing": 2,
+      "study_level": "Undergraduate",
+      "department": 1,
+      "sin": "987654323",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "emily.wilson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 4,
+    "fields": {
+      "student_number": "20241005",
+      "name": "David Kim",
+      "phone": "+1-250-555-0105",
+      "program": "Mathematics",
+      "year_standing": 3,
+      "study_level": "Undergraduate",
+      "department": 2,
+      "sin": "987654324",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "david.kim@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 5,
+    "fields": {
+      "student_number": "20241006",
+      "name": "Lisa Chen",
+      "phone": "+1-250-555-0106",
+      "program": "Physics",
+      "year_standing": 4,
+      "study_level": "Undergraduate",
+      "department": 3,
+      "sin": "987654325",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "lisa.chen@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 6,
+    "fields": {
+      "student_number": "20241007",
+      "name": "Michael Rodriguez",
+      "phone": "+1-250-555-0107",
+      "program": "Computer Science",
+      "year_standing": 1,
+      "study_level": "Undergraduate",
+      "department": 1,
+      "sin": "987654326",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "michael.rodriguez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 7,
+    "fields": {
+      "student_number": "20241008",
+      "name": "Jennifer Thompson",
+      "phone": "+1-250-555-0108",
+      "program": "Biology",
+      "year_standing": 2,
+      "study_level": "Undergraduate",
+      "department": 5,
+      "sin": "987654327",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "jennifer.thompson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 8,
+    "fields": {
+      "student_number": "20241009",
+      "name": "Alex Martinez",
+      "phone": "+1-250-555-0109",
+      "program": "Engineering",
+      "year_standing": 3,
+      "study_level": "BSc",
+      "department": 6,
+      "sin": "987654328",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "alex.martinez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 9,
+    "fields": {
+      "student_number": "20241010",
+      "name": "Rachel Adams",
+      "phone": "+1-250-555-0110",
+      "program": "Psychology",
+      "year_standing": 4,
+      "study_level": "BA",
+      "department": 1,
+      "sin": "987654329",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "rachel.adams@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 10,
+    "fields": {
+      "student_number": "20241011",
+      "name": "Kevin Zhang",
+      "phone": "+1-250-555-0111",
+      "program": "Mathematics",
+      "year_standing": 1,
+      "study_level": "BSc",
+      "department": 2,
+      "sin": "987654330",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "kevin.zhang@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 11,
+    "fields": {
+      "email": "aads@gmail.com",
+      "name": "aads shajs",
+      "student_number": "20241024",
+      "program": "computer science",
+      "year_standing": 4,
+      "study_level": "graduate",
+      "department": 1,
+      "phone": "+1-250-555-0242"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 1,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440001",
+      "day": "monday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 2,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440002",
+      "day": "monday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 3,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440003",
+      "day": "monday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 4,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440004",
+      "day": "tuesday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 5,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440005",
+      "day": "tuesday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 6,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440006",
+      "day": "tuesday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 7,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440007",
+      "day": "wednesday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 8,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440008",
+      "day": "wednesday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 9,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440009",
+      "day": "wednesday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 10,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440010",
+      "day": "thursday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 11,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440011",
+      "day": "thursday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 12,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440012",
+      "day": "thursday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 13,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440013",
+      "day": "friday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 14,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440014",
+      "day": "friday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 15,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440015",
+      "day": "friday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 16,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440016",
+      "day": "monday",
+      "start_time": "14:00:00",
+      "end_time": "16:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 17,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440017",
+      "day": "wednesday",
+      "start_time": "14:00:00",
+      "end_time": "16:00:00"
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 3,
+    "fields": {
+      "student_number": "20241004",
+      "name": "Emily Wilson",
+      "phone": "+1-250-555-0104",
+      "program": "Computer Science",
+      "year_standing": 2,
+      "study_level": "Undergraduate",
+      "department": 1,
+      "sin": "987654323",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "emily.wilson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 4,
+    "fields": {
+      "student_number": "20241005",
+      "name": "David Kim",
+      "phone": "+1-250-555-0105",
+      "program": "Mathematics",
+      "year_standing": 3,
+      "study_level": "Undergraduate",
+      "department": 2,
+      "sin": "987654324",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "david.kim@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 5,
+    "fields": {
+      "student_number": "20241006",
+      "name": "Lisa Chen",
+      "phone": "+1-250-555-0106",
+      "program": "Physics",
+      "year_standing": 4,
+      "study_level": "Undergraduate",
+      "department": 3,
+      "sin": "987654325",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "lisa.chen@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 6,
+    "fields": {
+      "student_number": "20241007",
+      "name": "Michael Rodriguez",
+      "phone": "+1-250-555-0107",
+      "program": "Computer Science",
+      "year_standing": 1,
+      "study_level": "Undergraduate",
+      "department": 1,
+      "sin": "987654326",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "michael.rodriguez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 7,
+    "fields": {
+      "student_number": "20241008",
+      "name": "Jennifer Thompson",
+      "phone": "+1-250-555-0108",
+      "program": "Biology",
+      "year_standing": 2,
+      "study_level": "Undergraduate",
+      "department": 5,
+      "sin": "987654327",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "jennifer.thompson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 8,
+    "fields": {
+      "student_number": "20241009",
+      "name": "Alex Martinez",
+      "phone": "+1-250-555-0109",
+      "program": "Engineering",
+      "year_standing": 3,
+      "study_level": "BSc",
+      "department": 6,
+      "sin": "987654328",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "alex.martinez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 9,
+    "fields": {
+      "student_number": "20241010",
+      "name": "Rachel Adams",
+      "phone": "+1-250-555-0110",
+      "program": "Psychology",
+      "year_standing": 4,
+      "study_level": "BA",
+      "department": 1,
+      "sin": "987654329",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "rachel.adams@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 10,
+    "fields": {
+      "student_number": "20241011",
+      "name": "Kevin Zhang",
+      "phone": "+1-250-555-0111",
+      "program": "Mathematics",
+      "year_standing": 1,
+      "study_level": "BSc",
+      "department": 2,
+      "sin": "987654330",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "kevin.zhang@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 11,
+    "fields": {
+      "email": "aads@gmail.com",
+      "name": "aads shajs",
+      "student_number": "20241024",
+      "program": "computer science",
+      "year_standing": 4,
+      "study_level": "graduate",
+      "department": 1,
+      "phone": "+1-250-555-0242"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 1,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440001",
+      "day": "monday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 2,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440002",
+      "day": "monday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 3,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440003",
+      "day": "monday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 4,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440004",
+      "day": "tuesday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 5,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440005",
+      "day": "tuesday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 6,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440006",
+      "day": "tuesday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 7,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440007",
+      "day": "wednesday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 8,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440008",
+      "day": "wednesday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 9,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440009",
+      "day": "wednesday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 10,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440010",
+      "day": "thursday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 11,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440011",
+      "day": "thursday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 12,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440012",
+      "day": "thursday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 13,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440013",
+      "day": "friday",
+      "start_time": "08:00:00",
+      "end_time": "09:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 14,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440014",
+      "day": "friday",
+      "start_time": "09:00:00",
+      "end_time": "10:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 15,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440015",
+      "day": "friday",
+      "start_time": "10:00:00",
+      "end_time": "11:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 16,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440016",
+      "day": "monday",
+      "start_time": "14:00:00",
+      "end_time": "16:00:00"
+    }
+  },
+  {
+    "model": "myapp.timeslot",
+    "pk": 17,
+    "fields": {
+      "slot_id": "550e8400-e29b-41d4-a716-446655440017",
+      "day": "wednesday",
+      "start_time": "14:00:00",
+      "end_time": "16:00:00"
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 3,
+    "fields": {
+      "student_number": "20241004",
+      "name": "Emily Wilson",
+      "phone": "+1-250-555-0104",
+      "program": "Computer Science",
+      "year_standing": 2,
+      "study_level": "Undergraduate",
+      "department": 1,
+      "sin": "987654323",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "emily.wilson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 4,
+    "fields": {
+      "student_number": "20241005",
+      "name": "David Kim",
+      "phone": "+1-250-555-0105",
+      "program": "Mathematics",
+      "year_standing": 3,
+      "study_level": "Undergraduate",
+      "department": 2,
+      "sin": "987654324",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "david.kim@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 5,
+    "fields": {
+      "student_number": "20241006",
+      "name": "Lisa Chen",
+      "phone": "+1-250-555-0106",
+      "program": "Physics",
+      "year_standing": 4,
+      "study_level": "Undergraduate",
+      "department": 3,
+      "sin": "987654325",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "lisa.chen@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 6,
+    "fields": {
+      "student_number": "20241007",
+      "name": "Michael Rodriguez",
+      "phone": "+1-250-555-0107",
+      "program": "Computer Science",
+      "year_standing": 1,
+      "study_level": "Undergraduate",
+      "department": 1,
+      "sin": "987654326",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "michael.rodriguez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 7,
+    "fields": {
+      "student_number": "20241008",
+      "name": "Jennifer Thompson",
+      "phone": "+1-250-555-0108",
+      "program": "Biology",
+      "year_standing": 2,
+      "study_level": "Undergraduate",
+      "department": 5,
+      "sin": "987654327",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "jennifer.thompson@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 8,
+    "fields": {
+      "student_number": "20241009",
+      "name": "Alex Martinez",
+      "phone": "+1-250-555-0109",
+      "program": "Engineering",
+      "year_standing": 3,
+      "study_level": "BSc",
+      "department": 6,
+      "sin": "987654328",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "alex.martinez@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 9,
+    "fields": {
+      "student_number": "20241010",
+      "name": "Rachel Adams",
+      "phone": "+1-250-555-0110",
+      "program": "Psychology",
+      "year_standing": 4,
+      "study_level": "BA",
+      "department": 1,
+      "sin": "987654329",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "rachel.adams@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 10,
+    "fields": {
+      "student_number": "20241011",
+      "name": "Kevin Zhang",
+      "phone": "+1-250-555-0111",
+      "program": "Mathematics",
+      "year_standing": 1,
+      "study_level": "BSc",
+      "department": 2,
+      "sin": "987654330",
+      "password": "pbkdf2_sha256$1000000$toxlLGS8XozE59LxQ3knSU$Yl5fdXr6kFfcduGikl4QvSIOl2syPiot8hxNjU9f950=",
+      "email": "kevin.zhang@student.ubc.ca",
+      "is_active": true
+    }
+  },
+  {
+    "model": "myapp.student",
+    "pk": 11,
+    "fields": {
+      "email": "aads@gmail.com",
+      "name": "aads shajs",
+      "student_number": "20241024",
+      "program": "computer science",
+      "year_standing": 4,
+      "study_level": "graduate",
+      "department": 1,
       "phone": "+1-250-555-0242"
     }
   },

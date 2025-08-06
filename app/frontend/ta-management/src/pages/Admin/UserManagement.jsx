@@ -5,10 +5,8 @@ import {
   Users,
   UserPlus,
   Search,
-  Download,
   MoreHorizontal,
   Edit,
-  Trash2,
   Eye,
   Shield,
   GraduationCap,
@@ -16,7 +14,11 @@ import {
   User,
   ChevronUp,
   UserX,
-  Building
+  UserCheck,
+  Building,
+  AlertCircle,
+  Loader2,
+  CheckCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,6 +54,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AdminSidebar } from "../../components/admin-dashboard-sidebar"
 
 // API Configuration
@@ -74,299 +77,445 @@ const getAuthHeaders = () => {
     'Content-Type': 'application/json'
   }
 }
-
-// API Functions
-const getAllUsers = async (userType = '') => {
+const apiRequest = async (url, options = {}) => {
   try {
-    // Use the correct API endpoint with proper prefix
-    const url = `${PROFILE_API}/users/${userType ? `?user_type=${userType}` : ''}`
-    console.log('Fetching users from:', url) // Debug log
-    
     const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
+      ...options
     })
     
-    // Check if response is ok
+    const data = await response.json()
+    
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('API Error Response:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      console.error(`API Error for ${url}:`, { status: response.status, data })
+      throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`)
     }
     
-    const data = await response.json()
     return data
   } catch (error) {
-    console.error('Error in getAllUsers:', error)
+    console.error(`API Request failed for ${url}:`, error)
+
     throw error
   }
 }
+const getAllUsers = async (userType = '') => {
+  const queryParam = userType ? `?user_type=${userType}` : ''
+  const data = await apiRequest(`${PROFILE_API}/users/${queryParam}`)
+  return data
+}
 
-const createInstructor = async (instructorData) => {
+const getDepartments = async () => {
   try {
-    const response = await fetch(`${ADMIN_API}/create-instructor/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(instructorData)
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Create Instructor Error:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    return data
+    const data = await apiRequest(`${PROFILE_API}/departments/`)
+    return Array.isArray(data) ? data : []
   } catch (error) {
-    console.error('Error in createInstructor:', error)
-    throw error
+    console.error('Error fetching departments:', error)
+    return []
   }
 }
 
-const createScheduler = async (schedulerData) => {
-  try {
-    const response = await fetch(`${ADMIN_API}/create-scheduler/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(schedulerData)
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Create Scheduler Error:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('Error in createScheduler:', error)
-    throw error
+const createUser = async (userData, userType) => {
+  const endpoints = {
+    instructor: `${ADMIN_API}/create-instructor/`,
+    scheduler: `${ADMIN_API}/create-scheduler/`,
+    admin: `${ADMIN_API}/create-admin/`
   }
+  
+  const data = await apiRequest(endpoints[userType], {
+    method: 'POST',
+    body: JSON.stringify(userData)
+  })
+  return data
 }
 
 const updateUser = async (updateData) => {
-  try {
-    const response = await fetch(`${ADMIN_API}/user-management/`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(updateData)
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Update User Error:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('Error in updateUser:', error)
-    throw error
+  const data = await apiRequest(`${ADMIN_API}/user-management/`, {
+    method: 'PATCH',
+    body: JSON.stringify(updateData)
+  })
+  return data
+}
+
+// Department mapping functions - matching scheduler dashboard approach
+function getDepartmentFromCourseName(course_info) {
+  if (!course_info) return 'Other';
+  const firstWord = course_info.split(' ')[0].toUpperCase();
+  
+  // Map variations to standard department names - only supported departments
+  const departmentMap = {
+    'COSC': 'Computer Science',
+    'MATH': 'Mathematics', 
+    'MATHS': 'Mathematics',
+    'STAT': 'Statistics',
+    'PHYS': 'Physics',
+    'PHY': 'Physics', // Also support PHY as variation
+    'DATA': 'Data Science',
+    'ASTR': 'Astronomy'
+  };
+  
+  return departmentMap[firstWord] || 'Other';
+}
+
+// Function to get standard department name from various formats
+function getStandardDepartmentName(departmentInput) {
+  if (!departmentInput) return 'Other';
+  
+  // If it's already a standard name, return it - only supported departments
+  const standardNames = [
+    'Computer Science', 'Mathematics', 'Statistics', 'Physics', 
+    'Data Science', 'Astronomy'
+  ];
+  
+  if (standardNames.includes(departmentInput)) {
+    return departmentInput;
   }
+  
+  // Try to parse it as a course name
+  return getDepartmentFromCourseName(departmentInput);
+}
+
+// Department code mappings for backend API calls - only include supported departments
+const DEPARTMENT_MAPPINGS = {
+  'Computer Science': 'cosc',
+  'Mathematics': 'math',
+  'Physics': 'phy',
+  'Data Science': 'data',
+  'Statistics': 'stat',
+  'Astronomy': 'astr'
+}
+
+const getDepartmentCode = (departmentName) => {
+  return DEPARTMENT_MAPPINGS[departmentName] || null
 }
 
 export default function UserManagement() {
+  // State management
   const [users, setUsers] = useState([])
   const [filteredUsers, setFilteredUsers] = useState([])
+  const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  
+  // Dialog states
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showViewEditDialog, setShowViewEditDialog] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [isEditMode, setIsEditMode] = useState(false)
   const [createType, setCreateType] = useState('instructor')
+  const [createdUserData, setCreatedUserData] = useState(null)
+  
+  // Form data
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
+    name: '',
     email: '',
     employee_number: '',
     department: ''
   })
-
-  const departments = [
-    { code: 'cosc', name: 'Computer Science' },
-    { code: 'math', name: 'Mathematics' },
-    { code: 'phy', name: 'Physics' },
-    { code: 'astr', name: 'Astronomy' },
-    { code: 'data', name: 'Data Science' },
-    { code: 'stat', name: 'Statistics' }
-  ]
-
-  // Load users on component mount
+  // Load initial data
   useEffect(() => {
-    fetchUsers()
+    loadInitialData()
   }, [])
 
-  // Filter users when search term or filters change
+  // Filter users when dependencies change
   useEffect(() => {
     filterUsers()
   }, [users, searchQuery, roleFilter, statusFilter])
 
-  const fetchUsers = async () => {
+  const loadInitialData = async () => {
+    setLoading(true)
+    setError('')
+    
     try {
-      setLoading(true)
-      const response = await getAllUsers()
-      if (response.success) {
-        setUsers(response.data.users)
+      const [usersData, departmentsData] = await Promise.all([
+        getAllUsers(),
+        getDepartments()
+      ])
+      
+      if (usersData.success) {
+        // Process users to standardize department names
+        const processedUsers = (usersData.data.users || []).map(user => ({
+          ...user,
+          department: user.department ? getStandardDepartmentName(user.department) : 'Other'
+        }));
+        setUsers(processedUsers)
       } else {
-        setError('Failed to fetch users')
+        throw new Error(usersData.message || 'Failed to fetch users')
       }
+      
+      // Remove the filtering logic and just set the departments from the API
+      setDepartments(departmentsData || [])
+      
     } catch (err) {
-      setError('Error fetching users: ' + (err.message || 'Unknown error'))
+      setError(err.message || 'Failed to load data')
+      console.error('Error loading initial data:', err)
     } finally {
       setLoading(false)
     }
   }
 
   const filterUsers = () => {
-    let filtered = users
+    let filtered = [...users]
 
     // Filter by role
     if (roleFilter !== 'all') {
       filtered = filtered.filter(user => user.type === roleFilter)
     }
-
     // Filter by status
     if (statusFilter !== 'all') {
       const isActive = statusFilter === 'active'
       filtered = filtered.filter(user => user.is_active === isActive)
     }
 
-    // Filter by search term
-    if (searchQuery) {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
       filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.id.toString().toLowerCase().includes(searchQuery.toLowerCase())
+        user.name?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query) ||
+        user.id?.toString().toLowerCase().includes(query)
       )
     }
 
     setFilteredUsers(filtered)
   }
 
+
+  const resetFormData = () => {
+    setFormData({
+      first_name: '',
+      last_name: '',
+      name: '',
+      email: '',
+      employee_number: '',
+      department: ''
+    })
+  }
+
+  const validateCreateForm = () => {
+    if (createType === 'admin') {
+      return formData.name && formData.email && formData.employee_number
+    } else {
+      return formData.first_name && formData.last_name && formData.email && 
+             formData.employee_number && formData.department
+    }
+  }
+
   const handleCreateUser = async () => {
+    if (!validateCreateForm()) {
+      setError('Please fill in all required fields')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
     try {
-      // Basic validation
-      if (!formData.first_name || !formData.last_name || !formData.email || !formData.employee_number || !formData.department) {
-        alert('Please fill in all fields')
-        return
-      }
-
-      setLoading(true)
+      let userData = { ...formData }
       
-      let response
-      if (createType === 'instructor') {
-        response = await createInstructor(formData)
-      } else {
-        response = await createScheduler(formData)
+      if (createType !== 'admin') {
+        // Convert department ID to department code for backend
+        const selectedDept = departments.find(d => d.id.toString() === formData.department)
+        if (!selectedDept) {
+          throw new Error('Please select a valid department')
+        }
+        
+        const departmentCode = getDepartmentCode(selectedDept.name)
+        if (!departmentCode) {
+          throw new Error(`Department "${selectedDept.name}" is not supported`)
+        }
+        
+        userData.department = departmentCode
       }
 
+      const response = await createUser(userData, createType)
+      
       if (response.success) {
         setShowCreateForm(false)
-        setFormData({
-          first_name: '',
-          last_name: '',
-          email: '',
-          employee_number: '',
-          department: ''
+        resetFormData()
+        
+        // Set up success dialog data
+        const userTypeLabel = createType === 'instructor' ? 'Instructor' : 
+                             createType === 'scheduler' ? 'TA Scheduler' : 'Admin'
+        setCreatedUserData({
+          name: createType === 'admin' ? formData.name : `${formData.first_name} ${formData.last_name}`,
+          email: formData.email,
+          userType: userTypeLabel
         })
-        fetchUsers() // Refresh the user list
-        alert(`${createType === 'instructor' ? 'Instructor' : 'TA Scheduler'} created successfully!\nTemporary password: ${response.data.temporary_password}`)
+        setShowSuccessDialog(true)
+        
+        await loadInitialData() // Refresh user list
       } else {
-        alert('Error creating user: ' + response.message)
+        throw new Error(response.message || 'Failed to create user')
       }
     } catch (err) {
-      alert('Error creating user: ' + (err.message || 'Unknown error'))
+      console.error('Error creating user:', err)
+      setError(err.message || 'Failed to create user')
     } finally {
       setLoading(false)
     }
   }
 
-  const handlePromoteToCoordinator = async (user) => {
-    if (user.type !== 'instructor') {
-      alert('Only instructors can be promoted to TA coordinators')
+  const handleEditUser = async () => {
+    if (!selectedUser) return
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const updateData = {
+        action: 'modify',
+        user_type: selectedUser.type,
+        user_id: selectedUser.id,
+        update_data: {
+          email: formData.email,
+          employee_number: formData.employee_number,
+          ...(selectedUser.type === 'admin' 
+            ? { name: formData.name }
+            : { 
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                department: formData.department ? parseInt(formData.department) : null
+              }
+          )
+        }
+      }
+
+      const response = await updateUser(updateData)
+      
+      if (response.success) {
+        setShowViewEditDialog(false)
+        await loadInitialData() // Refresh user list
+        alert('User updated successfully!')
+      } else {
+        throw new Error(response.message || 'Failed to update user')
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to update user')
+      console.error('Error updating user:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
+  const handleUserAction = async (user, action) => {
+    const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate'
+    
+    // Check if trying to deactivate the last admin
+    if (action === 'deactivate' && user.type === 'admin') {
+      const activeAdmins = users.filter(u => u.type === 'admin' && u.is_active)
+      if (activeAdmins.length <= 1) {
+        alert('Cannot deactivate the last active admin. At least one admin must remain active.')
+        return
+      }
+    }
+    
+    if (!window.confirm(`Are you sure you want to ${actionText} ${user.name}?`)) {
       return
     }
 
-    try {
-      // Create a scheduler record with the same details as the instructor
-      const schedulerData = {
-        first_name: user.name.split(' ')[0],
-        last_name: user.name.split(' ').slice(1).join(' '),
-        email: user.email,
-        employee_number: user.id,
-        department: getDepartmentCode(user.department)
-      }
+    setLoading(true)
+    setError('')
 
-      const response = await createScheduler(schedulerData)
+    try {
+      const response = await updateUser({
+        action,
+        user_type: user.type,
+        user_id: user.id
+      })
+
       if (response.success) {
-        alert(`${user.name} has been promoted to TA Coordinator!`)
-        fetchUsers()
+        await loadInitialData() // Refresh user list
+        alert(`${user.name} has been ${actionText}d successfully`)
       } else {
-        alert('Error promoting user: ' + response.message)
+        throw new Error(response.message || `Failed to ${actionText} user`)
       }
     } catch (err) {
-      alert('Error promoting user: ' + (err.message || 'Unknown error'))
+      setError(err.message || `Failed to ${actionText} user`)
+      console.error(`Error ${actionText}ing user:`, err)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleDeactivateUser = async (user) => {
-    if (window.confirm(`Are you sure you want to deactivate ${user.name}?`)) {
-      try {
-        const response = await updateUser({
-          action: 'deactivate',
-          user_type: user.type,
-          user_id: user.id
-        })
+  const openViewDialog = (user) => {
+    setSelectedUser(user)
+    
+    // Split the user name into first and last name if individual fields aren't available
+    const nameParts = splitUserName(user.name)
+    
+    setFormData({
+      first_name: user.first_name || nameParts.first_name,
+      last_name: user.last_name || nameParts.last_name,
+      name: user.name || '',
+      email: user.email || '',
+      employee_number: user.id?.toString() || '',
+      department: user.department ? getDepartmentIdFromName(user.department) : ''
+    })
+    setIsEditMode(false)
+    setShowViewEditDialog(true)
+  }
 
-        if (response.success) {
-          alert(`${user.name} has been deactivated`)
-          fetchUsers()
-        } else {
-          alert('Error deactivating user: ' + response.message)
-        }
-      } catch (err) {
-        alert('Error deactivating user: ' + (err.message || 'Unknown error'))
-      }
+  const openEditDialog = (user) => {
+    setSelectedUser(user)
+    
+    // Split the user name into first and last name if individual fields aren't available
+    const nameParts = splitUserName(user.name)
+    
+    setFormData({
+      first_name: user.first_name || nameParts.first_name,
+      last_name: user.last_name || nameParts.last_name,
+      name: user.name || '',
+      email: user.email || '',
+      employee_number: user.id?.toString() || '',
+      department: user.department ? getDepartmentIdFromName(user.department) : ''
+    })
+    setIsEditMode(true)
+    setShowViewEditDialog(true)
+  }
+
+  // Helper functions
+  const splitUserName = (fullName) => {
+    if (!fullName) return { first_name: '', last_name: '' }
+    const nameParts = fullName.trim().split(' ')
+    if (nameParts.length === 1) {
+      return { first_name: nameParts[0], last_name: '' }
+    }
+    return {
+      first_name: nameParts[0],
+      last_name: nameParts.slice(1).join(' ')
     }
   }
 
-  const getDepartmentCode = (departmentName) => {
-    const dept = departments.find(d => d.name === departmentName)
-    return dept ? dept.code : 'cosc'
+  const getDepartmentIdFromName = (departmentName) => {
+    const standardName = getStandardDepartmentName(departmentName)
+    const dept = departments.find(d => d.name === standardName)
+    return dept ? dept.id.toString() : ''
   }
 
   const getRoleIcon = (role) => {
-    switch (role) {
-      case 'admin':
-        return <Shield className="h-4 w-4 text-red-600" />
-      case 'instructor':
-        return <User className="h-4 w-4 text-purple-600" />
-      case 'scheduler':
-        return <Calendar className="h-4 w-4 text-blue-600" />
-      case 'student':
-        return <GraduationCap className="h-4 w-4 text-green-600" />
-      default:
-        return <User className="h-4 w-4 text-gray-400" />
+    const icons = {
+      admin: <Shield className="h-4 w-4 text-red-600" />,
+      instructor: <User className="h-4 w-4 text-purple-600" />,
+      scheduler: <Calendar className="h-4 w-4 text-blue-600" />,
+      student: <GraduationCap className="h-4 w-4 text-green-600" />
     }
+    return icons[role] || <User className="h-4 w-4 text-gray-400" />
   }
 
   const getRoleBadgeVariant = (role) => {
-    switch (role) {
-      case 'admin':
-        return 'destructive'
-      case 'instructor':
-        return 'default'
-      case 'scheduler':
-        return 'secondary'
-      case 'student':
-        return 'outline'
-      default:
-        return 'outline'
+    const variants = {
+      admin: 'destructive',
+      instructor: 'default',
+      scheduler: 'secondary',
+      student: 'outline'
     }
+    return variants[role] || 'outline'
   }
 
   const getRoleLabel = (type) => {
@@ -418,7 +567,7 @@ export default function UserManagement() {
         <SidebarInset>
           <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
               <p className="text-gray-600">Loading users...</p>
             </div>
           </div>
@@ -426,7 +575,6 @@ export default function UserManagement() {
       </SidebarProvider>
     )
   }
-
   return (
     <SidebarProvider>
       <AdminSidebar activePage="User Management" />
@@ -438,7 +586,7 @@ export default function UserManagement() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
+                <BreadcrumbLink href="/admin-dashboard">Admin</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -448,7 +596,10 @@ export default function UserManagement() {
           </Breadcrumb>
 
           <div className="ml-auto flex items-center space-x-4">
-            <Button onClick={() => setShowCreateForm(true)}>
+            <Button onClick={() => {
+              resetFormData(); // Reset form data first
+              setShowCreateForm(true);
+            }} disabled={loading}>
               <UserPlus className="h-4 w-4 mr-2" />
               Create User
             </Button>
@@ -468,11 +619,10 @@ export default function UserManagement() {
 
           {/* Error Message */}
           {error && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="pt-6">
-                <p className="text-red-800">{error}</p>
-              </CardContent>
-            </Card>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           {/* User Stats */}
@@ -499,12 +649,6 @@ export default function UserManagement() {
                   <CardTitle>All Users</CardTitle>
                   <CardDescription>Manage and monitor all system users</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -516,9 +660,10 @@ export default function UserManagement() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
+                    disabled={loading}
                   />
                 </div>
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <Select value={roleFilter} onValueChange={setRoleFilter} disabled={loading}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by role" />
                   </SelectTrigger>
@@ -530,7 +675,7 @@ export default function UserManagement() {
                     <SelectItem value="admin">Admins</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={setStatusFilter} disabled={loading}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
@@ -543,120 +688,141 @@ export default function UserManagement() {
               </div>
 
               {/* Users Table */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={`${user.type}-${user.id}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
-                              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                            <div className="text-xs text-muted-foreground">ID: {user.id}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getRoleIcon(user.type)}
-                          <Badge variant={getRoleBadgeVariant(user.type)}>{getRoleLabel(user.type)}</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Building className="h-4 w-4 text-muted-foreground" />
-                          <span>{user.department || 'N/A'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                          {user.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit User
-                            </DropdownMenuItem>
-                            {user.type === 'instructor' && user.is_active && (
-                              <DropdownMenuItem onClick={() => handlePromoteToCoordinator(user)}>
-                                <ChevronUp className="mr-2 h-4 w-4" />
-                                Promote to TA Coordinator
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            {user.is_active && user.type !== 'admin' && (
-                              <DropdownMenuItem 
-                                className="text-red-600"
-                                onClick={() => handleDeactivateUser(user)}
-                              >
-                                <UserX className="mr-2 h-4 w-4" />
-                                Deactivate User
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
 
-              {filteredUsers.length === 0 && !loading && (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No users found matching your criteria</p>
-                </div>
-              )}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={`${user.type}-${user.id}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>
+                                {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'UN'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{user.name || 'Unknown'}</div>
+                              <div className="text-sm text-muted-foreground">{user.email || 'No email'}</div>
+                              <div className="text-xs text-muted-foreground">ID: {user.id || 'N/A'}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getRoleIcon(user.type)}
+                            <Badge variant={getRoleBadgeVariant(user.type)}>{getRoleLabel(user.type)}</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <Building className="h-4 w-4 text-muted-foreground" />
+                            <span>{user.department || 'N/A'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={loading}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => openViewDialog(user)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit User
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {user.is_active ? (
+                                <DropdownMenuItem 
+                                  className="text-red-600"
+                                  onClick={() => handleUserAction(user, 'deactivate')}
+                                  disabled={user.type === 'admin' && users.filter(u => u.type === 'admin' && u.is_active).length <= 1}
+                                >
+                                  <UserX className="mr-2 h-4 w-4" />
+                                  {user.type === 'admin' && users.filter(u => u.type === 'admin' && u.is_active).length <= 1 
+                                    ? 'Cannot deactivate last admin' 
+                                    : 'Deactivate User'}
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem 
+                                  className="text-green-600"
+                                  onClick={() => handleUserAction(user, 'reactivate')}
+                                >
+                                  <UserCheck className="mr-2 h-4 w-4" />
+                                  Reactivate User
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {filteredUsers.length === 0 && !loading && (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No users found matching your criteria</p>
+                  </div>
+                )}
+
+                {loading && (
+                  <div className="text-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto mb-2" />
+                    <p className="text-gray-500">Loading...</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </main>
-
         {/* Create User Dialog */}
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>
-                Create New {createType === 'instructor' ? 'Instructor' : 'TA Scheduler'}
+                Create New {createType === 'instructor' ? 'Instructor' : 
+                           createType === 'scheduler' ? 'TA Scheduler' : 'Admin'}
               </DialogTitle>
               <DialogDescription>
-                Add a new {createType === 'instructor' ? 'instructor' : 'TA scheduler'} to the system
+                Add a new {createType === 'instructor' ? 'instructor' : 
+                          createType === 'scheduler' ? 'TA scheduler' : 'admin'} to the system
+
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4">
+
+              {/* User Type Selection */}
+
               <div className="flex space-x-2 mb-4">
                 <Button
                   type="button"
                   variant={createType === 'instructor' ? 'default' : 'outline'}
                   onClick={() => setCreateType('instructor')}
                   size="sm"
+                  disabled={loading}
                 >
                   Instructor
                 </Button>
@@ -665,80 +831,304 @@ export default function UserManagement() {
                   variant={createType === 'scheduler' ? 'default' : 'outline'}
                   onClick={() => setCreateType('scheduler')}
                   size="sm"
+                  disabled={loading}
                 >
                   TA Scheduler
                 </Button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name</Label>
-                  <Input
-                    id="first_name"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                    placeholder="Enter first name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name</Label>
-                  <Input
-                    id="last_name"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                    placeholder="Enter last name"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="Enter email address"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="employee_number">Employee Number</Label>
-                <Input
-                  id="employee_number"
-                  value={formData.employee_number}
-                  onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
-                  placeholder="Enter employee number"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select 
-                  value={formData.department} 
-                  onValueChange={(value) => setFormData({...formData, department: value})}
+                <Button
+                  type="button"
+                  variant={createType === 'admin' ? 'default' : 'outline'}
+                  onClick={() => setCreateType('admin')}
+                  size="sm"
+                  disabled={loading}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.code} value={dept.code}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  Admin
+                </Button>
               </div>
+
+              {/* Form Fields */}
+              {createType === 'admin' ? (
+                // Admin form fields
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      placeholder="Enter full name"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="Enter email address"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="employee_number">Employee Number</Label>
+                    <Input
+                      id="employee_number"
+                      value={formData.employee_number}
+                      onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
+                      placeholder="Enter employee number"
+                      disabled={loading}
+                    />
+                  </div>
+                </>
+              ) : (
+                // Instructor/Scheduler form fields
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">First Name</Label>
+                      <Input
+                        id="first_name"
+                        value={formData.first_name}
+                        onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                        placeholder="Enter first name"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">Last Name</Label>
+                      <Input
+                        id="last_name"
+                        value={formData.last_name}
+                        onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                        placeholder="Enter last name"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="Enter email address"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="employee_number">Employee Number</Label>
+                    <Input
+                      id="employee_number"
+                      value={formData.employee_number}
+                      onChange={(e) => setFormData({...formData, employee_number: e.target.value})}
+                      placeholder="Enter employee number"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Select 
+                      value={formData.department} 
+                      onValueChange={(value) => setFormData({...formData, department: value})}
+                      disabled={loading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={departments.length === 0 ? "No departments available" : "Select department"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            No supported departments found
+                          </SelectItem>
+                        ) : (
+                          departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id.toString()}>
+                              {dept.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowCreateForm(false)
+                  resetFormData()
+                  setError('')
+                }}
+                disabled={loading}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleCreateUser} disabled={loading}>
-                {loading ? 'Creating...' : 'Create User'}
+              <Button onClick={handleCreateUser} disabled={loading || !validateCreateForm()}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create User'
+                )}
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* View/Edit User Dialog */}
+        <Dialog open={showViewEditDialog} onOpenChange={setShowViewEditDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                {isEditMode ? "Edit User" : "User Details"}
+              </DialogTitle>
+              <DialogDescription>
+                {isEditMode ? "Update user information below" : "User information (read-only)"}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Name Fields */}
+              {selectedUser?.type === 'admin' ? (
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input
+                    value={formData.name}
+                    disabled={!isEditMode || loading}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>First Name</Label>
+                    <Input
+                      value={formData.first_name}
+                      disabled={!isEditMode || loading}
+                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last Name</Label>
+                    <Input
+                      value={formData.last_name}
+                      disabled={!isEditMode || loading}
+                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  value={formData.email}
+                  disabled={!isEditMode || loading}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              {/* Employee Number */}
+              <div className="space-y-2">
+                <Label>Employee Number</Label>
+                <Input
+                  value={formData.employee_number}
+                  disabled={!isEditMode || loading}
+                  onChange={(e) => setFormData({ ...formData, employee_number: e.target.value })}
+                />
+              </div>
+
+              {/* Department (not for admin) */}
+              {selectedUser?.type !== 'admin' && (
+                <div className="space-y-2">
+                  <Label>Department</Label>
+                  <Select
+                    value={formData.department}
+                    onValueChange={(value) => setFormData({ ...formData, department: value })}
+                    disabled={!isEditMode || loading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={departments.length === 0 ? "No departments available" : "Select department"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.length === 0 ? (
+                        <SelectItem value="" disabled>
+                          No supported departments found
+                        </SelectItem>
+                      ) : (
+                        departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id.toString()}>
+                            {dept.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowViewEditDialog(false)
+                  setError('')
+                }}
+                disabled={loading}
+              >
+                Close
+              </Button>
+              {isEditMode && (
+                <Button onClick={handleEditUser} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Success Dialog */}
+        <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <CheckCircle className="h-6 w-6 mr-2 text-green-500" />
+                {createdUserData?.userType} Added
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>
+                <strong>{createdUserData?.name}</strong> has been successfully added as a {createdUserData?.userType?.toLowerCase()}.
+              </p>
+              <p className="mt-2 text-muted-foreground">
+                An email with their account details and a temporary password has been sent to <strong>{createdUserData?.email}</strong>.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setShowSuccessDialog(false)}>Done</Button>
+
             </DialogFooter>
           </DialogContent>
         </Dialog>

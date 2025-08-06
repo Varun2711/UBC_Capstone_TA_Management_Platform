@@ -1,31 +1,35 @@
 Session year,Term type,term number,department,course number,course name,course description,item_type,section number,weekday,time start,time end
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to atomic structure and bonding,lecture,001,Monday,08:00,09:30
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to atomic structure and bonding,lecture,001,Wednesday,08:00,09:30
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I,Introduction to atomic structure and bonding,lecture,001,Friday,08:00,09:30
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I Lab,Hands-on experiments in general chemistry,lab,L01,Tuesday,14:00,17:00
-2025,winter,1,Chemistry,CHEM 125,General Chemistry I Tutorial,Problem-solving sessions for general chemistry,tutorial,T01,Thursday,10:00,11:00
-2025,winter,2,Chemistry,CHEM 126,General Chemistry II,Advanced topics in general chemistry,lecture,001,Tuesday,09:00,10:30
-2025,winter,2,Chemistry,CHEM 126,General Chemistry II,Advanced topics in general chemistry,lecture,001,Wednesday,09:00,10:30
-2025,winter,2,Chemistry,CHEM 126,General Chemistry II,Advanced topics in general chemistry,lecture,001,Thursday,09:00,10:30
-2025,winter,2,Chemistry,CHEM 126,General Chemistry II Lab,Advanced chemistry laboratory work,lab,L01,Friday,13:00,16:00
-2025,winter,1,Biology,BIOL 115,Cell Biology,Study of cellular structure and function,lecture,001,Monday,11:00,12:30
-2025,winter,1,Biology,BIOL 115,Cell Biology,Study of cellular structure and function,lecture,001,Wednesday,11:00,12:30
-2025,winter,1,Biology,BIOL 115,Cell Biology,Study of cellular structure and function,lecture,001,Friday,11:00,12:30
-2025,winter,1,Biology,BIOL 115,Cell Biology Lab,Microscopy and cell culture techniques,lab,L01,Tuesday,09:00,12:00
-2025,winter,1,Biology,BIOL 115,Cell Biology Tutorial,Discussion of cellular processes,tutorial,T01,Thursday,15:00,16:00
-2025,winter,2,Engineering,ENGR 140,Engineering Design,Introduction to engineering problem solving,lecture,001,Tuesday,13:00,14:30
-2025,winter,2,Engineering,ENGR 140,Engineering Design,Introduction to engineering problem solving,lecture,001,Wednesday,13:00,14:30
-2025,winter,2,Engineering,ENGR 140,Engineering Design,Introduction to engineering problem solving,lecture,001,Thursday,13:00,14:30
-2025,winter,2,Engineering,ENGR 140,Engineering Design Lab,Hands-on design projects,lab,L01,Friday,09:00,12:00
-2025,winter,1,Psychology,PSYC 105,Introduction to Psychology,Overview of psychological principles,lecture,001,Monday,14:00,15:30
-2025,winter,1,Psychology,PSYC 105,Introduction to Psychology,Overview of psychological principles,lecture,001,Wednesday,14:00,15:30
-2025,winter,1,Psychology,PSYC 105,Introduction to Psychology,Overview of psychological principles,lecture,001,Friday,14:00,15:30
-2025,winter,1,Psychology,PSYC 105,Introduction to Psychology Seminar,Discussion of psychological concepts,seminar,S01,Tuesday,16:00,17:30
-2026,summer,1,Psychology,PSYC 205,Research Methods in Psychology,Statistical methods for psychology research,lecture,001,Tuesday,10:00,11:30
-2026,summer,1,Psychology,PSYC 205,Research Methods in Psychology,Statistical methods for psychology research,lecture,001,Wednesday,10:00,11:30
-2026,summer,1,Psychology,PSYC 205,Research Methods in Psychology,Statistical methods for psychology research,lecture,001,Thursday,10:00,11:30
-2026,summer,1,Psychology,PSYC 205,Research Methods Lab,Data analysis and statistics practice,lab,L01,Friday,14:00,17:00
-2025,winter,2,English,ENGL 115,Academic Writing,Advanced composition and rhetoric,lecture,001,Monday,10:00,11:30
-2025,winter,2,English,ENGL 115,Academic Writing,Advanced composition and rhetoric,lecture,001,Wednesday,10:00,11:30
-2025,winter,2,English,ENGL 115,Academic Writing,Advanced composition and rhetoric,lecture,001,Friday,10:00,11:30
-2025,winter,2,English,ENGL 115,Academic Writing Tutorial,Writing workshop and peer review,tutorial,T01,Tuesday,13:00,14:30
+2025,winter,1,COSC,COSC 125,Introduction to Computer Science,Fundamentals of computer science and programming,lecture,001,Monday,08:00,09:30
+2025,winter,1,COSC,COSC 125,Introduction to Computer Science,Fundamentals of computer science and programming,lecture,001,Wednesday,08:00,09:30
+2025,winter,1,COSC,COSC 125,Introduction to Computer Science,Fundamentals of computer science and programming,lecture,001,Friday,08:00,09:30
+2025,winter,1,COSC,COSC 125,Introduction to Computer Science Lab,Hands-on programming exercises,lab,L01,Tuesday,14:00,17:00
+2025,winter,1,COSC,COSC 125,Introduction to Computer Science Tutorial,Problem-solving and debugging sessions,tutorial,T01,Thursday,10:00,11:00
+2025,winter,2,COSC,COSC 126,Advanced Programming,Object-oriented programming and design patterns,lecture,001,Tuesday,09:00,10:30
+2025,winter,2,COSC,COSC 126,Advanced Programming,Object-oriented programming and design patterns,lecture,001,Wednesday,09:00,10:30
+2025,winter,2,COSC,COSC 126,Advanced Programming,Object-oriented programming and design patterns,lecture,001,Thursday,09:00,10:30
+2025,winter,2,COSC,COSC 126,Advanced Programming Lab,Advanced programming projects,lab,L01,Friday,13:00,16:00
+2025,winter,1,DATA,DATA 115,Introduction to Data Analysis,Study of data collection and statistical analysis,lecture,001,Monday,11:00,12:30
+2025,winter,1,DATA,DATA 115,Introduction to Data Analysis,Study of data collection and statistical analysis,lecture,001,Wednesday,11:00,12:30
+2025,winter,1,DATA,DATA 115,Introduction to Data Analysis,Study of data collection and statistical analysis,lecture,001,Friday,11:00,12:30
+2025,winter,1,DATA,DATA 115,Introduction to Data Analysis Lab,Data visualization and analysis tools,lab,L01,Tuesday,09:00,12:00
+2025,winter,1,DATA,DATA 115,Introduction to Data Analysis Tutorial,Discussion of data science methods,tutorial,T01,Thursday,15:00,16:00
+2025,winter,2,MATH,MATH 140,Linear Algebra,Introduction to vectors matrices and linear systems,lecture,001,Tuesday,13:00,14:30
+2025,winter,2,MATH,MATH 140,Linear Algebra,Introduction to vectors matrices and linear systems,lecture,001,Wednesday,13:00,14:30
+2025,winter,2,MATH,MATH 140,Linear Algebra,Introduction to vectors matrices and linear systems,lecture,001,Thursday,13:00,14:30
+2025,winter,2,MATH,MATH 140,Linear Algebra Tutorial,Problem-solving in linear algebra,tutorial,T01,Friday,09:00,10:00
+2025,winter,1,STAT,STAT 105,Introduction to Statistical Thinking,Overview of statistical concepts and methods,lecture,001,Monday,14:00,15:30
+2025,winter,1,STAT,STAT 105,Introduction to Statistical Thinking,Overview of statistical concepts and methods,lecture,001,Wednesday,14:00,15:30
+2025,winter,1,STAT,STAT 105,Introduction to Statistical Thinking,Overview of statistical concepts and methods,lecture,001,Friday,14:00,15:30
+2025,winter,1,STAT,STAT 105,Introduction to Statistical Thinking Seminar,Discussion of statistical applications,seminar,S01,Tuesday,16:00,17:30
+2026,summer,1,STAT,STAT 205,Applied Statistical Methods,Statistical methods for data analysis and research,lecture,001,Tuesday,10:00,11:30
+2026,summer,1,STAT,STAT 205,Applied Statistical Methods,Statistical methods for data analysis and research,lecture,001,Wednesday,10:00,11:30
+2026,summer,1,STAT,STAT 205,Applied Statistical Methods,Statistical methods for data analysis and research,lecture,001,Thursday,10:00,11:30
+2026,summer,1,STAT,STAT 205,Applied Statistical Methods Lab,Statistical software and data analysis practice,lab,L01,Friday,14:00,17:00
+2025,winter,2,PHYS,PHYS 115,Introductory Physics,Mechanics waves and thermodynamics,lecture,001,Monday,10:00,11:30
+2025,winter,2,PHYS,PHYS 115,Introductory Physics,Mechanics waves and thermodynamics,lecture,001,Wednesday,10:00,11:30
+2025,winter,2,PHYS,PHYS 115,Introductory Physics,Mechanics waves and thermodynamics,lecture,001,Friday,10:00,11:30
+2025,winter,2,PHYS,PHYS 115,Introductory Physics Tutorial,Physics problem-solving and concepts,tutorial,T01,Tuesday,13:00,14:30
+2025,winter,1,ASTR,ASTR 150,Introduction to the Universe,Survey of astronomy from solar system to cosmology,lecture,001,Monday,12:00,13:30
+2025,winter,1,ASTR,ASTR 150,Introduction to the Universe,Survey of astronomy from solar system to cosmology,lecture,001,Wednesday,12:00,13:30
+2025,winter,1,ASTR,ASTR 150,Introduction to the Universe,Survey of astronomy from solar system to cosmology,lecture,001,Friday,12:00,13:30
+2025,winter,1,ASTR,ASTR 150,Introduction to the Universe Lab,Telescope observations and astronomical measurements,lab,L01,Thursday,19:00,22:00

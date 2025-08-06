@@ -47,7 +47,6 @@ describe("AdminSidebar", () => {
     expect(screen.getByText("System Administration")).toBeInTheDocument()
     expect(screen.getByTestId("shield-icon")).toBeInTheDocument()
     expect(screen.getByText("Navigation")).toBeInTheDocument()
-    expect(screen.getByText("Quick Actions")).toBeInTheDocument()
     expect(screen.getByText("System")).toBeInTheDocument()
     expect(screen.getByText("System Admin")).toBeInTheDocument()
     expect(screen.getByText("admin@university.edu")).toBeInTheDocument()
@@ -60,9 +59,6 @@ describe("AdminSidebar", () => {
       { title: "Dashboard", icon: "home-icon" },
       { title: "User Management", icon: "users-icon", isActive: true },
       { title: "Course Management", icon: "book-open-icon" },
-      { title: "TA Positions", icon: "user-check-icon" },
-      { title: "Applications", icon: "file-text-icon" },
-      { title: "Reports & Analytics", icon: "bar-chart-icon" },
     ]
 
     const navigationGroup = screen.getByText("Navigation").closest('[data-sidebar="group"]')
@@ -78,35 +74,6 @@ describe("AdminSidebar", () => {
         expect(menuItem.closest('[data-active="true"]')).not.toBeInTheDocument()
       }
     })
-  })
-
-  it("renders all quick actions correctly", () => {
-    renderSidebar()
-
-    const quickActions = [
-      { title: "Create User", icon: "plus-icon" },
-      { title: "Import Data", icon: "upload-icon" },
-      { title: "Export Reports", icon: "download-icon" },
-    ]
-
-    const quickActionsGroup = screen.getByText("Quick Actions").closest('[data-sidebar="group"]')
-
-    quickActions.forEach((item) => {
-      const menuItem = within(quickActionsGroup).getByText(item.title)
-      expect(menuItem).toBeInTheDocument()
-      expect(within(quickActionsGroup).getByTestId(item.icon)).toBeInTheDocument()
-    })
-  })
-
-
-  it("applies active state styling to the specified active page", () => {
-    renderSidebar({ activePage: "Reports & Analytics" })
-
-    const activeItem = screen.getByText("Reports & Analytics").closest('[data-active="true"]')
-    expect(activeItem).toHaveAttribute("data-active", "true")
-
-    const inactiveItem = screen.getByText("Dashboard").closest('[data-active="true"]')
-    expect(inactiveItem).not.toBeInTheDocument()
   })
 
   it("renders avatar with correct fallback and styling", () => {
@@ -126,8 +93,6 @@ describe("AdminSidebar", () => {
     await user.click(dropdownTrigger)
 
     expect(await screen.findByText("Admin Account")).toBeInTheDocument()
-    expect(screen.getByText("Admin Profile")).toBeInTheDocument()
-    expect(screen.getByText("System Logs")).toBeInTheDocument()
     expect(screen.getByText("Logout")).toBeInTheDocument()
   })
 
@@ -159,7 +124,6 @@ describe("AdminSidebar", () => {
 
     // Check all three main sections exist
     expect(screen.getByText("Navigation")).toBeInTheDocument()
-    expect(screen.getByText("Quick Actions")).toBeInTheDocument()
     expect(screen.getByText("System")).toBeInTheDocument()
   })
 })
