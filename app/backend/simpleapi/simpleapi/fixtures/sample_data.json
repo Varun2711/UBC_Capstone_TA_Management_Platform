@@ -338,7 +338,7 @@
       "course_number": "COSC 121",
       "course_name": "Computer Programming II",
       "department": 1,
-      "course_description": "Object-oriented programming concepts",
+      "course_description": "Object-oriented programming with classes, inheritance, polymorphism, and exception handling using Java or C++.",
       "course_level": "100",
       "is_active": true
     }
@@ -350,7 +350,7 @@
       "course_number": "COSC 211",
       "course_name": "Machine Architecture",
       "department": 1,
-      "course_description": "Computer systems and assembly language",
+      "course_description": "Computer organization, assembly language programming, processor design, and memory systems.",
       "course_level": "200",
       "is_active": true
     }
@@ -362,7 +362,7 @@
       "course_number": "COSC 310",
       "course_name": "Software Engineering",
       "department": 1,
-      "course_description": "Software development methodologies",
+      "course_description": "Software lifecycle, requirements analysis, design patterns, testing methodologies, and project management.",
       "course_level": "300",
       "is_active": true
     }
@@ -374,7 +374,7 @@
       "course_number": "COSC 320",
       "course_name": "Data Structures and Algorithms",
       "department": 1,
-      "course_description": "Advanced data structures and algorithmic analysis",
+      "course_description": "Advanced data structures, graph algorithms, dynamic programming, and computational complexity analysis.",
       "course_level": "300",
       "is_active": true
     }
@@ -386,7 +386,7 @@
       "course_number": "COSC 404",
       "course_name": "Database Systems",
       "department": 1,
-      "course_description": "Database design and implementation",
+      "course_description": "Relational database design, SQL, normalization, transactions, indexing, and distributed databases.",
       "course_level": "400",
       "is_active": true
     }
@@ -398,7 +398,7 @@
       "course_number": "COSC 499",
       "course_name": "Capstone Project",
       "department": 1,
-      "course_description": "Final year capstone project",
+      "course_description": "Team-based software development project integrating knowledge from previous courses with industry practices.",
       "course_level": "400",
       "is_active": true
     }
@@ -410,7 +410,7 @@
       "course_number": "MATH 100",
       "course_name": "Differential Calculus",
       "department": 2,
-      "course_description": "Limits, derivatives, and applications",
+      "course_description": "Limits, continuity, derivatives, optimization problems, and applications to physical sciences.",
       "course_level": "100",
       "is_active": true
     }
@@ -422,7 +422,7 @@
       "course_number": "MATH 101",
       "course_name": "Integral Calculus",
       "department": 2,
-      "course_description": "Integration and its applications",
+      "course_description": "Antiderivatives, definite integrals, applications to area, volume, and differential equations.",
       "course_level": "100",
       "is_active": true
     }
@@ -434,7 +434,7 @@
       "course_number": "MATH 200",
       "course_name": "Multivariable Calculus",
       "department": 2,
-      "course_description": "Calculus of several variables",
+      "course_description": "Partial derivatives, multiple integrals, vector calculus, and applications in three dimensions.",
       "course_level": "200",
       "is_active": true
     }
@@ -446,7 +446,7 @@
       "course_number": "MATH 221",
       "course_name": "Matrix Algebra",
       "department": 2,
-      "course_description": "Linear algebra and matrix operations",
+      "course_description": "Vector spaces, linear transformations, eigenvalues, eigenvectors, and applications to systems.",
       "course_level": "200",
       "is_active": true
     }
@@ -458,7 +458,7 @@
       "course_number": "PHYS 111",
       "course_name": "General Physics I",
       "department": 3,
-      "course_description": "Mechanics and thermodynamics",
+      "course_description": "Classical mechanics, oscillations, waves, thermodynamics, and kinetic theory with laboratory work.",
       "course_level": "100",
       "is_active": true
     }
@@ -470,7 +470,7 @@
       "course_number": "PHYS 112",
       "course_name": "General Physics II",
       "department": 3,
-      "course_description": "Electricity and magnetism",
+      "course_description": "Electrostatics, magnetism, electromagnetic induction, AC circuits, and geometric optics.",
       "course_level": "100",
       "is_active": true
     }
@@ -1310,6 +1310,22 @@
       "instructor": 3,
       "academic_term": 2,
       "section_number": "002",
+      "time_slots": [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002"
+      ]
+    }
+  },
+  {
+    "model": "myapp.courseoffering",
+    "pk": 15,
+    "fields": {
+      "course_offering_id": "550e8400-e29b-41d4-a716-446655440115",
+      "course": 4,
+      "instructor": 2,
+      "academic_term": 2,
+      "section_number": "101",
+      "is_active": false,
       "time_slots": [
         "550e8400-e29b-41d4-a716-446655440001",
         "550e8400-e29b-41d4-a716-446655440002"

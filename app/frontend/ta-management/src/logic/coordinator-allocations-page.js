@@ -17,15 +17,18 @@ const getAuthHeaders = () => {
 };
 
 export const fetchCourses = async () => {
-  const response = await fetch(`${API_URL}/course-term-service/courses/`, {
-    headers: getAuthHeaders()
-  });
+  const response = await fetch(
+    'http://localhost:8080/api/course-term-service/courses/?is_active=true',
+    {
+      headers: getAuthHeaders()
+    }
+  );
   if (!response.ok) throw new Error("Failed to fetch courses");
   return response.json();
 };
 
 export const fetchOfferingsForCourse = async (courseId) => {
-  const response = await fetch(`${API_URL}/course-term-service/courses/${courseId}/offerings/`, {
+  const response = await fetch(`${API_URL}/course-term-service/course-offerings/by_course/?course_id=${courseId}&is_active=true`, {
     headers: getAuthHeaders()
   });
   if (!response.ok) throw new Error("Failed to fetch offerings for course of course id: ", courseId);
@@ -33,7 +36,7 @@ export const fetchOfferingsForCourse = async (courseId) => {
 };
 
 export const fetchSharedSessionsForCourse = async (courseId) => {
-  const response = await fetch(`${API_URL}/course-term-service/shared-sessions/by_course/?course_id=${courseId}`, {
+  const response = await fetch(`${API_URL}/course-term-service/shared-sessions/by_course/?course_id=${courseId}&is_active=true`, {
     headers: getAuthHeaders()
   });
   if (!response.ok) throw new Error("Failed to fetch shared sessions for course of course id: ", courseId);

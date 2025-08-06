@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
   Bell,
   BookOpen,
@@ -970,22 +970,32 @@ export default function TAAllocationPage() {
     setSearchTermForCourse("");
   };
 
-  const termCodeOptions = [
-    { value: "", label: "Select Term" },
-    { value: "S2025", label: "S2025" },
-    { value: "W2025 Term 1", label: "W2025 Term 1" },
-    { value: "W2025 Term 2", label: "W2025 Term 2" },
-  ];
+  const disciplineOptions = useMemo(() => {
+    if (!courses || courses.length === 0) {
+      return [{ value: "", label: "Select Discipline" }];
+    }
+    const disciplines = new Set(
+      courses.map(course => course.course_number.split(" ")[0])
+    );
+    return [
+      { value: "", label: "Select Discipline" },
+      ...Array.from(disciplines).sort().map(d => ({ value: d, label: d }))
+    ];
+  }, [courses]);
 
-  const disciplineOptions = [
-    { value: "", label: "Select Discipline" },
-    { value: "ASTR", label: "ASTR" },
-    { value: "COSC", label: "COSC" },
-    { value: "DATA", label: "DATA" },
-    { value: "MATH", label: "MATH" },
-    { value: "PHYS", label: "PHYS" },
-    { value: "STAT", label: "STAT" },
-  ];
+  const termCodeOptions = useMemo(() => {
+    if (!courseOfferings || Object.keys(courseOfferings).length === 0) {
+      return [{ value: "", label: "Select Term" }];
+    }
+    const allOfferings = Object.values(courseOfferings).flat();
+    const terms = new Set(
+      allOfferings.map(offering => offering.term_info)
+    );
+    return [
+      { value: "", label: "Select Term" },
+      ...Array.from(terms).sort().map(t => ({ value: t, label: t }))
+    ];
+  }, [courseOfferings]);
 
   const getCourseData = async (courseId) => {
     // Avoid re-fetching if both offerings and sessions are already loaded
@@ -997,6 +1007,8 @@ export default function TAAllocationPage() {
         fetchOfferingsForCourse(courseId),
         fetchSharedSessionsForCourse(courseId),
       ]);
+
+      console.log(`Fetched offerings for course ${courseId}:`, offerings);
 
       // Update state for both
       setCourseOfferings((prev) => ({ ...prev, [courseId]: offerings }));
@@ -1134,16 +1146,16 @@ export default function TAAllocationPage() {
           console.log("offer item in fetchOfferSlotTimes: ", item);
 
           try {
-            if (item.course_offering_id || item.course_offering_id !== null) {
-              const details = await fetchCourseOfferingDetails(item.course_offering_id);
-              return item?.time_slot || [];
+            if (item.course_offering_id) {
+              // The time_slot is already in the offer_item, no need to fetch details again
+              return item.time_slot ? [item.time_slot] : [];
             } else if (item.shared_session_id) {
-              const details = await fetchSharedSessionDetails(item.shared_session_id);
-              return details?.time_slots_info || [];
+              // The time_slots_info should be part of the offer_item for shared sessions
+              return item.time_slots_info || [];
             }
             return [];
           } catch (error) {
-            console.error("Failed to fetch offer item slot info:", error);
+            console.error("Failed to process offer item slot info:", error);
             return [];
           }
         })

@@ -834,46 +834,53 @@ class CourseOfferingViewSet(viewsets.ModelViewSet):
         """
         course_id = request.query_params.get('course_id')
         if not course_id:
-            return Response(
-                {'error': 'course_id parameter is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': 'course_id parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            course_id = int(course_id)
-            offerings = self.queryset.filter(course_id=course_id)
-            serializer = self.get_serializer(offerings, many=True)
-            return Response(serializer.data)
-        except ValueError:
-            return Response(
-                {'error': 'Invalid course_id format'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Start with the base queryset for this viewset
+        queryset = self.get_queryset().filter(course_id=course_id)
+        
+        # Apply filters from the request, including 'is_active'
+        filtered_queryset = self.filter_queryset(queryset)
+        
+        serializer = self.get_serializer(filtered_queryset, many=True)
+        return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
     def by_instructor(self, request):
         """
         Get course offerings by instructor.
-        Usage: /course-offerings/by_instructor/?instructor_id=1
+        Usage: /course-offerings/by_instructor/?instructor_id=1&is_active=true
         Note: Instructors can only view their own offerings
         """
         instructor_id = request.query_params.get('instructor_id')
+        is_active = request.query_params.get('is_active')
+        
         if not instructor_id:
             return Response(
-                {'error': 'instructor_id parameter is required'}, 
+                {"error": "instructor_id parameter is required"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         try:
             instructor_id = int(instructor_id)
-            offerings = self.queryset.filter(instructor_id=instructor_id)
-            serializer = self.get_serializer(offerings, many=True)
-            return Response(serializer.data)
         except ValueError:
             return Response(
-                {'error': 'Invalid instructor_id format'}, 
+                {"error": "instructor_id must be a valid integer"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        # Base queryset
+        course_offerings = self.queryset.filter(instructor_id=instructor_id)
+        
+        # Filter by active status if specified
+        if is_active and is_active.lower() == 'true':
+            course_offerings = course_offerings.filter(
+                is_active=True,
+                course__is_active=True  # Also filter by course active status
+            )
+        
+        serializer = self.get_serializer(course_offerings, many=True)
+        return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
     def by_year(self, request):
@@ -1069,21 +1076,16 @@ class SharedSessionViewSet(viewsets.ModelViewSet):
         """
         course_id = request.query_params.get('course_id')
         if not course_id:
-            return Response(
-                {'error': 'course_id parameter is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': 'course_id parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            course_id = int(course_id)
-            sessions = self.queryset.filter(course_id=course_id)
-            serializer = self.get_serializer(sessions, many=True)
-            return Response(serializer.data)
-        except ValueError:
-            return Response(
-                {'error': 'Invalid course_id format'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Start with the base queryset for this viewset
+        queryset = self.get_queryset().filter(course_id=course_id)
+        
+        # Apply filters from the request, including 'is_active'
+        filtered_queryset = self.filter_queryset(queryset)
+        
+        serializer = self.get_serializer(filtered_queryset, many=True)
+        return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
     def by_session_type(self, request):

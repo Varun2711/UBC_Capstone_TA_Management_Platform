@@ -1,19 +1,19 @@
 import axios from "axios";
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = "http://localhost:8080/api";
 
 // Helper function to get the auth token from session storage
 const getAuthHeaders = () => {
   // Check if we are in a browser environment
-  if (typeof window !== 'undefined') {
-    const token = sessionStorage.getItem('accessToken');
+  if (typeof window !== "undefined") {
+    const token = sessionStorage.getItem("accessToken");
     if (token) {
       return {
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       };
     }
   }
-  
+
   // If not in a browser, or if no token is found, return empty headers.
   return {};
 };
@@ -40,18 +40,18 @@ const getCurrentDateInUTC = () => {
 const parseTermInfo = (termInfo) => {
   const regex = /^([WS])(\d{4})\s+(.+)$/;
   const match = termInfo.match(regex);
-  
+
   if (!match) {
     return { year: new Date().getFullYear(), term: termInfo };
   }
-  
+
   const [, seasonCode, yearStr, termPart] = match;
   const year = parseInt(yearStr, 10);
-  const season = seasonCode === 'W' ? 'Winter' : 'Summer';
-  
+  const season = seasonCode === "W" ? "Winter" : "Summer";
+
   return {
     year,
-    term: `${season} ${termPart}`
+    term: `${season} ${termPart}`,
   };
 };
 
@@ -61,14 +61,14 @@ const parseTermInfo = (termInfo) => {
  * @returns {object} - { courseCode: string, courseTitle: string }
  */
 const parseCourseInfo = (courseInfo) => {
-  const parts = courseInfo.split(' ');
+  const parts = courseInfo.split(" ");
   if (parts.length < 3) {
-    return { courseCode: courseInfo, courseTitle: '' };
+    return { courseCode: courseInfo, courseTitle: "" };
   }
-  
+
   const courseCode = `${parts[0]} ${parts[1]}`;
-  const courseTitle = parts.slice(2).join(' ');
-  
+  const courseTitle = parts.slice(2).join(" ");
+
   return { courseCode, courseTitle };
 };
 
@@ -80,8 +80,10 @@ const parseCourseInfo = (courseInfo) => {
  */
 const transformCourseOffering = (courseOffering, existingRequest = null) => {
   const { year, term } = parseTermInfo(courseOffering.term_info);
-  const { courseCode, courseTitle } = parseCourseInfo(courseOffering.course_info);
-  
+  const { courseCode, courseTitle } = parseCourseInfo(
+    courseOffering.course_info
+  );
+
   return {
     id: courseOffering.course_offering_id,
     courseCode,
@@ -94,8 +96,8 @@ const transformCourseOffering = (courseOffering, existingRequest = null) => {
     submittedAt: existingRequest?.request_date || null,
     requestId: existingRequest?.request_id || null,
     requirements: {
-      generalRequirements: existingRequest?.request_description || []
-    }
+      generalRequirements: existingRequest?.request_description || [],
+    },
   };
 };
 
@@ -104,7 +106,7 @@ const transformCourseOffering = (courseOffering, existingRequest = null) => {
  */
 export const getInstructorProfile = async () => {
   const response = await axios.get(`${API_URL}/profile/me/`, {
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
   return response.data;
 };
@@ -113,9 +115,12 @@ export const getInstructorProfile = async () => {
  * Get all course offerings
  */
 export const getAllCourseOfferings = async () => {
-  const response = await axios.get(`${API_URL}/course-term-service/course-offerings/`, {
-    headers: getAuthHeaders()
-  });
+  const response = await axios.get(
+    `${API_URL}/course-term-service/course-offerings/?is_active=true`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data.results;
 };
 
@@ -123,10 +128,13 @@ export const getAllCourseOfferings = async () => {
  * Get instructor requests by instructor ID
  */
 export const getInstructorRequests = async (instructorId) => {
-  const response = await axios.get(`${API_URL}/course-term-service/instructor-requests/by_instructor/`, {
-    params: { instructor_id: instructorId },
-    headers: getAuthHeaders()
-  });
+  const response = await axios.get(
+    `${API_URL}/course-term-service/instructor-requests/by_instructor/`,
+    {
+      params: { instructor_id: instructorId },
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 
@@ -138,33 +146,33 @@ export const getInstructorCourseOfferings = async () => {
     // Get instructor profile
     const profile = await getInstructorProfile();
     const instructorId = profile.id;
-    
+
     // Get all course offerings and instructor requests in parallel
     const [allCourseOfferings, instructorRequests] = await Promise.all([
       getAllCourseOfferings(),
-      getInstructorRequests(instructorId)
+      getInstructorRequests(instructorId),
     ]);
-    
+
     // Filter course offerings for this instructor
     const instructorCourseOfferings = allCourseOfferings.filter(
-      offering => offering.instructor_id_read === instructorId
+      (offering) => offering.instructor_id_read === instructorId
     );
-    
+
     // Create a map of requests by course offering ID
     const requestsMap = new Map();
-    instructorRequests.forEach(request => {
+    instructorRequests.forEach((request) => {
       requestsMap.set(request.course_offering_id, request);
     });
-    
+
     // Transform course offerings to frontend format
-    const transformedCourses = instructorCourseOfferings.map(offering => {
+    const transformedCourses = instructorCourseOfferings.map((offering) => {
       const existingRequest = requestsMap.get(offering.course_offering_id);
       return transformCourseOffering(offering, existingRequest);
     });
-    
+
     return transformedCourses;
   } catch (error) {
-    console.error('Error fetching instructor course offerings:', error);
+    console.error("Error fetching instructor course offerings:", error);
     throw error;
   }
 };
@@ -177,21 +185,25 @@ export const submitTARequirements = async (courseOfferingId, requirements) => {
     // Get instructor profile for instructor ID
     const profile = await getInstructorProfile();
     const instructorId = profile.id;
-    
+
     const requestData = {
       instructor_id: instructorId,
       course_offering_id: courseOfferingId,
       request_date: getCurrentDateInUTC(), // Current date in UTC timezone
       request_description: requirements
     };
-    
-    const response = await axios.post(`${API_URL}/course-term-service/instructor-requests/`, requestData, {
-      headers: getAuthHeaders()
-    });
-    
+
+    const response = await axios.post(
+      `${API_URL}/course-term-service/instructor-requests/`,
+      requestData,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
     return response.data;
   } catch (error) {
-    console.error('Error submitting TA requirements:', error);
+    console.error("Error submitting TA requirements:", error);
     throw error;
   }
 };
@@ -199,26 +211,34 @@ export const submitTARequirements = async (courseOfferingId, requirements) => {
 /**
  * Update TA requirements for a course offering
  */
-export const updateTARequirements = async (requestId, courseOfferingId, requirements) => {
+export const updateTARequirements = async (
+  requestId,
+  courseOfferingId,
+  requirements
+) => {
   try {
     // Get instructor profile for instructor ID
     const profile = await getInstructorProfile();
     const instructorId = profile.id;
-    
+
     const requestData = {
       instructor_id: instructorId,
       course_offering_id: courseOfferingId,
       request_date: getCurrentDateInUTC(), // Current date in UTC timezone
       request_description: requirements
     };
-    
-    const response = await axios.patch(`${API_URL}/course-term-service/instructor-requests/${requestId}/`, requestData, {
-      headers: getAuthHeaders()
-    });
-    
+
+    const response = await axios.patch(
+      `${API_URL}/course-term-service/instructor-requests/${requestId}/`,
+      requestData,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
     return response.data;
   } catch (error) {
-    console.error('Error updating TA requirements:', error);
+    console.error("Error updating TA requirements:", error);
     throw error;
   }
 };
