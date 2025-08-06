@@ -89,6 +89,7 @@ const apiRequest = async (url, options = {}) => {
     const data = await response.json()
     
     if (!response.ok) {
+      console.error(`API Error for ${url}:`, { status: response.status, data })
       throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`)
     }
     
@@ -142,18 +143,16 @@ function getDepartmentFromCourseName(course_info) {
   if (!course_info) return 'Other';
   const firstWord = course_info.split(' ')[0].toUpperCase();
   
-  // Map variations to standard department names
+  // Map variations to standard department names - only supported departments
   const departmentMap = {
     'COSC': 'Computer Science',
     'MATH': 'Mathematics', 
     'MATHS': 'Mathematics',
     'STAT': 'Statistics',
     'PHYS': 'Physics',
+    'PHY': 'Physics', // Also support PHY as variation
     'DATA': 'Data Science',
-    'PSYO': 'Psychology',
-    'BIOL': 'Biology',
-    'CHEM': 'Chemistry',
-    'ENGR': 'Engineering',
+    'ASTR': 'Astronomy'
   };
   
   return departmentMap[firstWord] || 'Other';
@@ -163,10 +162,10 @@ function getDepartmentFromCourseName(course_info) {
 function getStandardDepartmentName(departmentInput) {
   if (!departmentInput) return 'Other';
   
-  // If it's already a standard name, return it
+  // If it's already a standard name, return it - only supported departments
   const standardNames = [
     'Computer Science', 'Mathematics', 'Statistics', 'Physics', 
-    'Data Science', 'Psychology', 'Biology', 'Chemistry', 'Engineering'
+    'Data Science', 'Astronomy'
   ];
   
   if (standardNames.includes(departmentInput)) {
@@ -177,17 +176,14 @@ function getStandardDepartmentName(departmentInput) {
   return getDepartmentFromCourseName(departmentInput);
 }
 
-// Department code mappings for backend API calls
+// Department code mappings for backend API calls - only include supported departments
 const DEPARTMENT_MAPPINGS = {
   'Computer Science': 'cosc',
   'Mathematics': 'math',
   'Physics': 'phy',
   'Data Science': 'data',
   'Statistics': 'stat',
-  'Psychology': 'psyo',
-  'Biology': 'biol',
-  'Chemistry': 'chem',
-  'Engineering': 'engr'
+  'Astronomy': 'astr'
 }
 
 const getDepartmentCode = (departmentName) => {
@@ -255,23 +251,8 @@ export default function UserManagement() {
         throw new Error(usersData.message || 'Failed to fetch users')
       }
       
-      // Filter departments to only supported ones and standardize names
-      const supportedDepartments = departmentsData
-        .map(dept => ({
-          ...dept,
-          name: getStandardDepartmentName(dept.name)
-        }))
-        .filter(dept => Object.keys(DEPARTMENT_MAPPINGS).includes(dept.name))
-        // Remove duplicates that might occur after standardization
-        .reduce((unique, dept) => {
-          const exists = unique.find(u => u.name === dept.name);
-          if (!exists) {
-            unique.push(dept);
-          }
-          return unique;
-        }, []);
-      
-      setDepartments(supportedDepartments)
+      // Remove the filtering logic and just set the departments from the API
+      setDepartments(departmentsData || [])
       
     } catch (err) {
       setError(err.message || 'Failed to load data')
@@ -376,8 +357,8 @@ export default function UserManagement() {
         throw new Error(response.message || 'Failed to create user')
       }
     } catch (err) {
-      setError(err.message || 'Failed to create user')
       console.error('Error creating user:', err)
+      setError(err.message || 'Failed to create user')
     } finally {
       setLoading(false)
     }
@@ -428,6 +409,15 @@ export default function UserManagement() {
   const handleUserAction = async (user, action) => {
     const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate'
     
+    // Check if trying to deactivate the last admin
+    if (action === 'deactivate' && user.type === 'admin') {
+      const activeAdmins = users.filter(u => u.type === 'admin' && u.is_active)
+      if (activeAdmins.length <= 1) {
+        alert('Cannot deactivate the last active admin. At least one admin must remain active.')
+        return
+      }
+    }
+    
     if (!window.confirm(`Are you sure you want to ${actionText} ${user.name}?`)) {
       return
     }
@@ -458,9 +448,13 @@ export default function UserManagement() {
 
   const openViewDialog = (user) => {
     setSelectedUser(user)
+    
+    // Split the user name into first and last name if individual fields aren't available
+    const nameParts = splitUserName(user.name)
+    
     setFormData({
-      first_name: user.first_name || '',
-      last_name: user.last_name || '',
+      first_name: user.first_name || nameParts.first_name,
+      last_name: user.last_name || nameParts.last_name,
       name: user.name || '',
       email: user.email || '',
       employee_number: user.id?.toString() || '',
@@ -472,9 +466,13 @@ export default function UserManagement() {
 
   const openEditDialog = (user) => {
     setSelectedUser(user)
+    
+    // Split the user name into first and last name if individual fields aren't available
+    const nameParts = splitUserName(user.name)
+    
     setFormData({
-      first_name: user.first_name || '',
-      last_name: user.last_name || '',
+      first_name: user.first_name || nameParts.first_name,
+      last_name: user.last_name || nameParts.last_name,
       name: user.name || '',
       email: user.email || '',
       employee_number: user.id?.toString() || '',
@@ -485,6 +483,18 @@ export default function UserManagement() {
   }
 
   // Helper functions
+  const splitUserName = (fullName) => {
+    if (!fullName) return { first_name: '', last_name: '' }
+    const nameParts = fullName.trim().split(' ')
+    if (nameParts.length === 1) {
+      return { first_name: nameParts[0], last_name: '' }
+    }
+    return {
+      first_name: nameParts[0],
+      last_name: nameParts.slice(1).join(' ')
+    }
+  }
+
   const getDepartmentIdFromName = (departmentName) => {
     const standardName = getStandardDepartmentName(departmentName)
     const dept = departments.find(d => d.name === standardName)
@@ -580,7 +590,7 @@ export default function UserManagement() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
+                <BreadcrumbLink href="/admin-dashboard">Admin</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -590,7 +600,10 @@ export default function UserManagement() {
           </Breadcrumb>
 
           <div className="ml-auto flex items-center space-x-4">
-            <Button onClick={() => setShowCreateForm(true)} disabled={loading}>
+            <Button onClick={() => {
+              resetFormData(); // Reset form data first
+              setShowCreateForm(true);
+            }} disabled={loading}>
               <UserPlus className="h-4 w-4 mr-2" />
               Create User
             </Button>
@@ -746,9 +759,12 @@ export default function UserManagement() {
                                 <DropdownMenuItem 
                                   className="text-red-600"
                                   onClick={() => handleUserAction(user, 'deactivate')}
+                                  disabled={user.type === 'admin' && users.filter(u => u.type === 'admin' && u.is_active).length <= 1}
                                 >
                                   <UserX className="mr-2 h-4 w-4" />
-                                  Deactivate User
+                                  {user.type === 'admin' && users.filter(u => u.type === 'admin' && u.is_active).length <= 1 
+                                    ? 'Cannot deactivate last admin' 
+                                    : 'Deactivate User'}
                                 </DropdownMenuItem>
                               ) : (
                                 <DropdownMenuItem 

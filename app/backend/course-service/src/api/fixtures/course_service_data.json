@@ -24,35 +24,21 @@
     "model": "course_api.department",
     "pk": 4,
     "fields": {
-      "name": "Chemistry"
+      "name": "Data Science"
     }
   },
   {
     "model": "course_api.department",
     "pk": 5,
     "fields": {
-      "name": "Biology"
+      "name": "Statistics"
     }
   },
   {
     "model": "course_api.department",
     "pk": 6,
     "fields": {
-      "name": "Engineering"
-    }
-  },
-  {
-    "model": "course_api.department",
-    "pk": 7,
-    "fields": {
-      "name": "Psychology"
-    }
-  },
-  {
-    "model": "course_api.department",
-    "pk": 8,
-    "fields": {
-      "name": "English"
+      "name": "Astronomy"
     }
   },
   {
@@ -157,7 +143,7 @@
     "fields": {
       "employee_number": "EMP1009",
       "name": "Dr. Anna Garcia",
-      "department": 7,
+      "department": 1,
       "email": "anna.garcia@university.edu",
       "password": "hashed_password_here",
       "is_active": true
@@ -169,7 +155,7 @@
     "fields": {
       "employee_number": "EMP1010",
       "name": "Prof. James Miller",
-      "department": 8,
+      "department": 2,
       "email": "james.miller@university.edu",
       "password": "hashed_password_here",
       "is_active": true
