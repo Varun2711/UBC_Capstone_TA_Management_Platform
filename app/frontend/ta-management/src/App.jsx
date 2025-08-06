@@ -32,6 +32,7 @@ import MyCourses from "./pages/Instructor_MyCourses";
 import StudentOffers from "./pages/StudentOffersPage";
 import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
+import SchedulerAssignmentPage from "./pages/Scheduler/Scheduler_AssignmentPage";
 import AdminCourseManagement from "./pages/Admin/CourseManagement";
 import ViewStudentSchedule from "./pages/Student/Student_Schedule";
 import MyApplications from "./pages/Student/MyApplications";
@@ -195,6 +196,15 @@ function App() {
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
             <InstructorRequirements />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/assignment-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <SchedulerAssignmentPage />
           </ProtectedRoute>
         }
       />
