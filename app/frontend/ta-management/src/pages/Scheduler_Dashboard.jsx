@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BookOpen,
   UserCheck,
@@ -31,39 +31,205 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "../components/scheduler-sidebar";
+import { getApplications, getCourses, getCourseOfferings, getSharedSessions, getAssignments, getShortlistedApplicants, getOffers, getPendingOffers, getAcceptedOffers, getRejectedOffers } from "@/logic/scheduler-dashboard"
+//import { getCourseOfferings, getSharedSessions } from "@/logic/instructorManagement";
+
+/**
+ * Fetches course offerings, shared sessions, and assignments, then calculates
+ * the total time slots available and subtracts those used in assignments.
+ *
+ * @returns {Promise<number>} The number of available time slots.
+ */
+
+async function calculateAvailableTimeSlots() {
+  try {
+    const [courseOfferings, sharedSessions, assignments] = await Promise.all([
+      getCourseOfferings(),
+      getSharedSessions(),
+      getAssignments(),
+    ]);
+
+    // Initialize department tracking
+    const departmentSlots = {
+      'Computer Science': { total: 0, assigned: 0, available: 0 },
+      'Mathematics': { total: 0, assigned: 0, available: 0 },
+      'Statistics': { total: 0, assigned: 0, available: 0 },
+      'Physics': { total: 0, assigned: 0, available: 0 },
+      'Data Science': { total: 0, assigned: 0, available: 0 },
+      'Psychology': { total: 0, assigned: 0, available: 0 },
+      'Biology': { total: 0, assigned: 0, available: 0 },
+      'Chemistry': { total: 0, assigned: 0, available: 0 },
+      'Engineering': { total: 0, assigned: 0, available: 0 }
+    };
+
+    // 1. Track all available offering-slot and session-slot combinations
+    const allAvailableSlotCombinations = new Set();
+    const slotToDepartmentMap = new Map();
+
+    // Process course offerings
+    courseOfferings.results.forEach(offering => {
+      const department = getDepartmentFromCourseName(offering.course_info);
+      offering.time_slots_info.forEach(slot => {
+        const uniqueKey = `offering-${offering.course_offering_id}-${slot.slot_id}`;
+        if (!allAvailableSlotCombinations.has(uniqueKey)) {
+          allAvailableSlotCombinations.add(uniqueKey);
+          slotToDepartmentMap.set(uniqueKey, department);
+          if (departmentSlots[department]) {
+            departmentSlots[department].total++;
+          }
+        }
+      });
+    });
+
+    // Process shared sessions
+    sharedSessions.results.forEach(session => {
+      const department = getDepartmentFromCourseName(session.course_info);
+      session.time_slots_info.forEach(slot => {
+        const uniqueKey = `session-${session.shared_session_id}-${slot.slot_id}`;
+        if (!allAvailableSlotCombinations.has(uniqueKey)) {
+          allAvailableSlotCombinations.add(uniqueKey);
+          slotToDepartmentMap.set(uniqueKey, department);
+          if (departmentSlots[department]) {
+            departmentSlots[department].total++;
+          }
+        }
+      });
+    });
+
+    // 2. Track assigned slot combinations
+    const assignedSlotCombinations = new Set();
+
+    assignments.forEach(assignment => {
+      // An assignment is for ONE course offering OR ONE shared session.
+      // We need to find the ID of that specific offering/session.
+      const assignedOfferingId = assignment.course_offering?.course_offering_id;
+      const assignedSessionId = assignment.shared_session?.shared_session_id;
+
+      if (assignment.offer_details && assignment.offer_details.offer_items) {
+        // Now, find the specific offer_item that matches the assignment's target
+        // and has a time_slot.
+        const matchingOfferItem = assignment.offer_details.offer_items.find(item => {
+          // The item must match the assignment's offering/session AND have a time slot.
+          return (item.course_offering_id === assignedOfferingId || item.shared_session_id === assignedSessionId) && item.time_slot;
+        });
+
+        if (matchingOfferItem) {
+          const timeSlots = Array.isArray(matchingOfferItem.time_slot)
+            ? matchingOfferItem.time_slot
+            : [matchingOfferItem.time_slot];
+
+          timeSlots.forEach(slot => {
+            const idToMatch = assignedOfferingId || assignedSessionId;
+            const idType = assignedOfferingId ? 'offering' : 'session';
+            const uniqueKey = `${idType}-${idToMatch}-${slot.slot_id}`;
+
+            // Check if the slot combination is valid and exists in our master list.
+            if (allAvailableSlotCombinations.has(uniqueKey)) {
+              // Add the key to our set of assigned slots.
+              // The Set automatically handles duplicates, so we don't need an extra if-check here.
+              assignedSlotCombinations.add(uniqueKey);
+
+              // **FIX:** We must increment the department's assigned count
+              // every time we find a valid assigned slot in an assignment,
+              // as the total count is what matters for the department breakdown.
+              const department = slotToDepartmentMap.get(uniqueKey);
+              if (department && departmentSlots[department]) {
+                departmentSlots[department].assigned++;
+              }
+            }
+          });
+        }
+      }
+    });
+
+    // Calculate available slots for each department using the now-correct assigned count
+    Object.keys(departmentSlots).forEach(dept => {
+      departmentSlots[dept].available = departmentSlots[dept].total - departmentSlots[dept].assigned;
+    });
+
+    // **FIX:** Calculate the total by summing the departmental `available` counts.
+    // This ensures the main stat card is consistent with the department breakdown.
+    const totalAvailable = Object.values(departmentSlots).reduce(
+      (sum, deptData) => sum + deptData.available,
+      0
+    );
+    console.log("printing totalAvailable: ", totalAvailable);
+    return {
+      totalAvailable: totalAvailable,
+      byDepartment: departmentSlots
+    };
+
+  } catch (error) {
+    console.error("An error occurred in calculateAvailableTimeSlots:", error);
+    // Return a default state on error to prevent crashes
+    return { totalAvailable: 0, byDepartment: {} };
+  }
+}
+
+function getDepartmentFromCourseName(course_info) {
+  if (!course_info) return 'OTHER';
+  const firstWord = course_info.split(' ')[0].toUpperCase();
+  
+  // Map variations to standard department names
+  const departmentMap = {
+    'COSC': 'Computer Science',
+    'MATH': 'Mathematics', 
+    'MATHS': 'Mathematics',
+    'STAT': 'Statistics',
+    'PHYS': 'Physics',
+    'DATA': 'Data Science',
+    'PSYO': 'Psychology',
+    'BIOL': 'Biology',
+    'CHEM': 'Chemistry',
+    'ENGR': 'Engineering',
+  };
+  
+  return departmentMap[firstWord] || 'Other';
+}
+
 
 export default function TASchedulerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCourseCount, setActiveCourseCount] = useState(0);
+  const [applicationCount, setApplicationCount] = useState(0);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [loadingApplications, setLoadingApplications] = useState(true);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState(true);
+  const [loadingTimeSlots, setLoadingTimeSlots] = useState(true);
+  const [departmentSlots, setDepartmentSlots] = useState({});
+  const [error, setError] = useState(null);
+
+  // Add new state for application status
+  const [applicationStatus, setApplicationStatus] = useState({
+    pendingReview: 0,
+    shortlisted: 0,
+    offersSent: 0,
+    accepted: 0
+  });
+  const [loadingApplicationStatus, setLoadingApplicationStatus] = useState(true);
 
   // Mock data for demonstration
   const stats = [
     {
       title: "Active Courses",
-      value: "24",
+      value: activeCourseCount,
       change: "+3 from last term",
       icon: BookOpen,
       color: "text-blue-600",
     },
     {
-      title: "TA Positions",
-      value: "48",
+      title: "Available time slots",
+      value: availableTimeSlots,
       change: "+12 new positions",
       icon: UserCheck,
       color: "text-green-600",
     },
     {
       title: "Applications",
-      value: "156",
+      value: applicationCount,
       change: "+23 this week",
       icon: FileText,
       color: "text-purple-600",
-    },
-    {
-      title: "Appointments",
-      value: "42",
-      change: "87% filled",
-      icon: CheckCircle,
-      color: "text-orange-600",
     },
   ];
 
@@ -88,6 +254,69 @@ export default function TASchedulerDashboard() {
     },
   ];
 
+  // Update your useEffect to handle the new return structure
+useEffect(() => {
+  const fetchAllData = async () => {
+    try {
+      setLoadingCourses(true);
+      setLoadingApplications(true);
+      setLoadingTimeSlots(true);
+      setLoadingApplicationStatus(true);
+
+      // Fetch courses and applications
+      const [courses, applications, slotsData, shortlistedApplicants, pendingOffers, acceptedOffers, rejectedOffers] = await Promise.all([
+        getCourses(),
+        getApplications(),
+        calculateAvailableTimeSlots(),
+        getShortlistedApplicants(),
+        getPendingOffers(),
+        getAcceptedOffers(),
+        getRejectedOffers()
+      ]);
+      
+      console.log("availableSlots: ", slotsData);
+      console.log("shortlistedApplicants: ", shortlistedApplicants);
+      console.log("pendingOffers: ", pendingOffers);
+      console.log("acceptedOffers: ", acceptedOffers);
+      console.log("rejectedOffers: ", rejectedOffers);
+
+      // Update all states
+      const activeCourses = courses.results.filter(course => course.is_active);
+      setActiveCourseCount(activeCourses.length);
+      setApplicationCount(applications.length);
+      setAvailableTimeSlots(slotsData.totalAvailable); // Use totalAvailable
+      setDepartmentSlots(slotsData.byDepartment); // Store department data
+
+      // Set application status data
+      setApplicationStatus({
+        shortlisted: shortlistedApplicants.length,
+        offersSent: pendingOffers.length,
+        accepted: acceptedOffers.length,
+        rejected: rejectedOffers.length
+      });
+
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+      setError(err);
+    } finally {
+      setLoadingCourses(false);
+      setLoadingApplications(false);
+      setLoadingTimeSlots(false);
+      setLoadingApplicationStatus(false);
+    } 
+  };
+
+  fetchAllData();
+}, []);
+  
+  if (loadingCourses || loadingApplications || loadingTimeSlots || loadingApplicationStatus) {
+    return <div>Loading data...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar activePage="Dashboard" />
@@ -105,17 +334,6 @@ export default function TASchedulerDashboard() {
           </Breadcrumb>
 
           <div className="ml-auto flex items-center space-x-4">
-            {/* Search
-            <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search courses, students..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-64"
-              />
-            </div> */}
-
             {/* Notifications */}
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
@@ -128,7 +346,7 @@ export default function TASchedulerDashboard() {
           {/* Welcome Section */}
           <div className="flex flex-col space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-              Welcome back, Admin
+              Welcome back, TA Coordinator
             </h1>
             <p className="text-muted-foreground">
               Here's what's happening with your TA scheduling system today.
@@ -147,45 +365,48 @@ export default function TASchedulerDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground">{stat.change}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* Upcoming Tasks */}
+            {/* Application Status */}
             <Card className="col-span-full md:col-span-1">
               <CardHeader>
-                <CardTitle>Upcoming Tasks</CardTitle>
-                <CardDescription>
-                  Items that need your attention
-                </CardDescription>
+                <CardTitle>Application Status</CardTitle>
+                <CardDescription>Current application pipeline</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {upcomingTasks.map((task, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 pr-2">
-                          <p className="text-sm font-medium text-gray-900">
-                            {task.task}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {task.dueDate}
-                          </p>
-                        </div>
-                        <Badge
-                          variant={
-                            task.priority === "high"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                          className="flex-shrink-0"
-                        >
-                          {task.count}
-                        </Badge>
+                  {[
+                    { 
+                      status: "Shortlisted", 
+                      count: applicationStatus.shortlisted, 
+                      color: "bg-blue-500" 
+                    },
+                    { 
+                      status: "Offers Sent", 
+                      count: applicationStatus.offersSent, 
+                      color: "bg-purple-500" 
+                    },
+                    { 
+                      status: "Accepted", 
+                      count: applicationStatus.accepted, 
+                      color: "bg-green-500" 
+                    },
+                    { 
+                      status: "Rejected", 
+                      count: applicationStatus.rejected, 
+                      color: "bg-yellow-500" 
+                    },
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${item.color}`} />
+                        <span className="text-sm">{item.status}</span>
                       </div>
+                      <Badge variant="outline">{item.count}</Badge>
                     </div>
                   ))}
                 </div>
@@ -197,87 +418,33 @@ export default function TASchedulerDashboard() {
               <CardHeader>
                 <CardTitle>Department Overview</CardTitle>
                 <CardDescription>
-                  TA distribution and workload by department
+                  Available time slots by department
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {[
-                    {
-                      dept: "Computer Science",
-                      tas: 18,
-                      positions: 22,
-                      percentage: 82,
-                    },
-                    {
-                      dept: "Mathematics",
-                      tas: 12,
-                      positions: 15,
-                      percentage: 80,
-                    },
-                    { dept: "Physics", tas: 8, positions: 10, percentage: 80 },
-                    {
-                      dept: "Engineering",
-                      tas: 4,
-                      positions: 6,
-                      percentage: 67,
-                    },
-                  ].map((dept, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{dept.dept}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {dept.tas} of {dept.positions} positions filled
-                          </p>
+                  {Object.entries(departmentSlots).map(([deptName, data]) => {
+                    const percentage = data.total > 0 ? 100 - Math.round((data.available / data.total) * 100) : 0;
+                    return (
+                      <div key={deptName} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">{deptName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {data.total - data.available} of {data.total} slots assigned
+                            </p>
+                          </div>
+                          <Badge variant="outline">{percentage}%</Badge>
                         </div>
-                        <Badge variant="outline">{dept.percentage}%</Badge>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${dept.percentage}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-1">
-            {/* System Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle>System Status & Management Tools</CardTitle>
-                <CardDescription>
-                  Current system information and quick management access
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium">System Information</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Application Period</span>
-                        <Badge variant="secondary">Open</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Current Term</span>
-                        <span className="text-sm font-medium">Fall 2024</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Active Users</span>
-                        <span className="text-sm font-medium">127</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Data Last Updated</span>
-                        <span className="text-sm text-gray-500">2 min ago</span>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

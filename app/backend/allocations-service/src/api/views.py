@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
     # Add this import at the top
 from .models import (
-    Offer, Assignment, Student, TAScheduler, Application, ApplicationShortList,
-    CourseOffering, SharedSession, Course, OfferItem, AssignmentModification 
+    Offer, Assignment, Student, TAScheduler, Instructor, Application, ApplicationShortList,
+    CourseOffering, SharedSession, Course, OfferItem, AssignmentModification, TimeSlot
 )
-from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer, AssignmentModificationSerializer
+from .serializers import OfferSerializer, AssignmentSerializer, ShortlistedApplicantSerializer, AssignmentModificationSerializer, StudentSerializer
 
 # Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
@@ -248,14 +248,36 @@ class OfferViewSet(viewsets.ModelViewSet):
             
         except Exception as e:
             logger.error(f"Error getting coordinator email for offer {offer.offer_id}: {str(e)}")
-            return 'ta-coordinator@ubc.ca'        
+            return 'ta-coordinator@ubc.ca'    
+
+    # Add this temporary method to OfferViewSet in views.py
+    @action(detail=False, methods=['post'])
+    def debug_create_offer(self, request):
+        """Temporary debug method to see what's being received"""
+        import json
+        
+        print(f"Request data type: {type(request.data)}")
+        print(f"Request data: {request.data}")
+        print(f"Request body: {request.body}")
+        
+        try:
+            if hasattr(request, 'data'):
+                print(f"request.data content: {json.dumps(request.data, default=str, indent=2)}")
+        except Exception as e:
+            print(f"Error serializing request.data: {e}")
+        
+        return Response({
+            'data_type': str(type(request.data)),
+            'data_content': str(request.data),
+            'body_content': request.body.decode('utf-8') if request.body else None
+        })    
         
     # Update the create_offer method in OfferViewSet
     @action(detail=False, methods=['post'])
     def create_offer(self, request):
         """
-        Create a new DRAFT multi-item offer for a shortlisted student.
-        This does NOT accept a deadline and does NOT send a notification.
+        Create a new DRAFT multi-item offer or update an existing one for a shortlisted student.
+        This endpoint handles both creation of a new draft and appending items to an existing draft.
         """
         from django.utils import timezone
         
@@ -263,30 +285,9 @@ class OfferViewSet(viewsets.ModelViewSet):
         offer_items = request.data.get('offer_items', [])
         notes = request.data.get('notes', '')
         
-        # Backward compatibility: single item offer
-        course_offering_id = request.data.get('course_offering_id')
-        shared_session_id = request.data.get('shared_session_id')
-        
-        # If no offer_items provided, create from single item (backward compatibility)
-        if not offer_items and (course_offering_id or shared_session_id):
-            if course_offering_id and shared_session_id:
-                return Response(
-                    {'error': 'Provide either course_offering_id OR shared_session_id, not both'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            if course_offering_id:
-                offer_items = [{
-                    'item_type': 'course_offering',
-                    'course_offering_id': course_offering_id
-                }]
-            elif shared_session_id:
-                offer_items = [{
-                    'item_type': 'shared_session',
-                    'shared_session_id': shared_session_id
-                }]
-        
-        # Validate offer_items
+        if not application_id:
+            return Response({'error': 'application_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         if not offer_items or not isinstance(offer_items, list):
             return Response(
                 {'error': 'offer_items must be a non-empty list'},
@@ -295,196 +296,140 @@ class OfferViewSet(viewsets.ModelViewSet):
         
         # Check authentication
         if not hasattr(request, 'auth') or not request.auth:
-            return Response(
-                {'error': 'Authentication required'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
         
         user_type = request.auth.payload.get('user_type', None)
         user_id = request.auth.payload.get('sub', None)
         
         if user_type not in ['scheduler', 'admin']:
-            return Response(
-                {'error': 'Only schedulers and admins can create offers'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({'error': 'Only schedulers and admins can create offers'}, status=status.HTTP_403_FORBIDDEN)
         
         try:
-            # Verify the application is shortlisted
-            shortlisted_app = ApplicationShortList.objects.select_related(
-                'application__student'
-            ).get(application_id=application_id)
-            
+            shortlisted_app = ApplicationShortList.objects.select_related('application__student').get(application_id=application_id)
             application = shortlisted_app.application
             student = application.student
             
-            # Validate and process offer items
-            total_hours = 0
-            validated_items = []
-            offer_courses = set()
-            offer_terms = set()
-            
-            for item_data in offer_items:
-                item_type = item_data.get('item_type')
-                
-                if item_type == 'course_offering':
-                    course_offering_id = item_data.get('course_offering_id')
-                    try:
-                        course_offering = CourseOffering.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
-                            course_offering_id=course_offering_id
-                        )
-                        
-                        # Calculate hours automatically from time slots
-                        temp_offer_item = OfferItem(
-                            item_type='course_offering',
-                            course_offering=course_offering
-                        )
-                        calculated_hours = temp_offer_item.weekly_hours
-                        
-                        validated_items.append({
-                            'type': 'course_offering',
-                            'object': course_offering,
-                            'hours': calculated_hours,
-                            'course': course_offering.course,
-                            'term': course_offering.academic_term
-                        })
-                        
-                        offer_courses.add(course_offering.course)
-                        offer_terms.add(course_offering.academic_term)
-                        total_hours += calculated_hours
-                        
-                    except CourseOffering.DoesNotExist:
-                        return Response(
-                            {'error': f'Course offering {course_offering_id} not found'},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
-                
-                elif item_type == 'shared_session':
-                    shared_session_id = item_data.get('shared_session_id')
-                    try:
-                        shared_session = SharedSession.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
-                            shared_session_id=shared_session_id
-                        )
-                        
-                        # Calculate hours automatically from time slots
-                        temp_offer_item = OfferItem(
-                            item_type='shared_session',
-                            shared_session=shared_session
-                        )
-                        calculated_hours = temp_offer_item.weekly_hours
-                        
-                        validated_items.append({
-                            'type': 'shared_session',
-                            'object': shared_session,
-                            'hours': calculated_hours,  # ← Now calculated from time slots
-                            'course': shared_session.course,
-                            'term': shared_session.academic_term
-                        })
-                        
-                        offer_courses.add(shared_session.course)
-                        offer_terms.add(shared_session.academic_term)
-                        total_hours += calculated_hours
-                        
-                    except SharedSession.DoesNotExist:
-                        return Response(
-                            {'error': f'Shared session {shared_session_id} not found'},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
-                
-                else:
-                    return Response(
-                        {'error': f'Invalid item_type: {item_type}. Must be "course_offering" or "shared_session"'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            
-            # Check if student would exceed their maximum hours
-            current_allocation = self.calculate_student_allocation(student)
-            try:
-                max_hours = int(application.workload) if application.workload else 12
-                max_hours = min(max_hours, 12)
-            except (ValueError, TypeError):
-                max_hours = 12
-
-            if current_allocation['total_hours'] + total_hours > max_hours:
-                return Response(
-                    {
-                        'error': f'This offer would exceed student\'s maximum hours. '
-                                f'Current: {current_allocation["total_hours"]}, '
-                                f'Max: {max_hours}, '
-                                f'Requested: {total_hours}'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Get scheduler
+            # --- MODIFIED LOGIC: Find or Create the Draft Offer ---
             scheduler = self.get_scheduler_from_jwt(user_type, user_id)
             if not scheduler:
-                return Response(
-                    {'error': f'Scheduler not found for user_id: {user_id}'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+                return Response({'error': 'Scheduler not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            offer, created = Offer.objects.get_or_create(
+                student=student,
+                status='draft',
+                defaults={
+                    'application': application,
+                    'role': 'ta',
+                    'created_by': scheduler,
+                    'notes': notes,
+                }
+            )
+
+            # --- VALIDATE NEW ITEMS AND WORKLOAD ---
+            total_new_hours = 0
+            validated_new_items = []
             
-            # Create multi-item offer with 'draft' status
-            with transaction.atomic():
-                offer, created = Offer.objects.get_or_create(
-                    student=student,
-                    status='draft',
-                    defaults={
-                        'application': application,  # The application that starts the draft
-                        'created_by': scheduler,
-                        'notes': notes,
-                        'role': 'ta' # Assuming default role
-                    }
+            # Group items to handle shared sessions correctly
+            grouped_items = {}
+            for item_data in offer_items:
+                item_type = item_data.get('item_type')
+                if item_type == 'course_offering':
+                    section_id = f"course_{item_data.get('course_offering_id')}_{item_data.get('time_slot')['day']}_{item_data.get('time_slot')['start_time']}"
+                elif item_type == 'shared_session':
+                    section_id = f"session_{item_data.get('shared_session_id')}"
+                else:
+                    continue
+                if section_id not in grouped_items:
+                    grouped_items[section_id] = item_data
+
+            for item_data in grouped_items.values():
+                # (This re-uses the validation logic from your original function)
+                item_type = item_data.get('item_type')
+                time_slot_details = item_data.get('time_slot')
+
+                if not time_slot_details: continue # Skip if no time slot
+
+                time_slot, _ = TimeSlot.objects.get_or_create(
+                    day=time_slot_details['day'].lower(),
+                    start_time=time_slot_details['start_time'],
+                    end_time=time_slot_details['end_time']
                 )
                 
-                if created:
-                    message = 'New draft offer created successfully.'
-                    response_status = status.HTTP_201_CREATED
-                else:
-                    # If the draft already existed, append notes if new notes are provided
-                    if notes:
-                        offer.notes = f"{offer.notes}\n---\n{notes}" if offer.notes else notes
-                        offer.save(update_fields=['notes'])
-                    message = 'Items added to existing draft offer.'
-                    response_status = status.HTTP_200_OK
+                if item_type == 'course_offering':
+                    course_offering = CourseOffering.objects.get(course_offering_id=item_data.get('course_offering_id'))
+                    temp_item = OfferItem(item_type='course_offering', course_offering=course_offering, time_slot=time_slot)
+                    validated_new_items.append({'type': 'course_offering', 'object': course_offering, 'time_slot': time_slot})
+                    total_new_hours += temp_item.weekly_hours
+                
+                elif item_type == 'shared_session':
+                    shared_session = SharedSession.objects.get(shared_session_id=item_data.get('shared_session_id'))
+                    temp_item = OfferItem(item_type='shared_session', shared_session=shared_session)
+                    validated_new_items.append({'type': 'shared_session', 'object': shared_session, 'time_slot': None})
+                    total_new_hours += temp_item.weekly_hours
 
-                # Create and add new offer items to the (possibly existing) offer
-                for item_data in validated_items:
-                    # Prevent adding duplicate items to the same offer
-                    if item_data['type'] == 'course_offering':
-                        if offer.offer_items.filter(course_offering=item_data['object']).exists():
-                            continue  # Skip if this item is already in the offer
-                        offer_item = OfferItem.objects.create(
-                            item_type='course_offering',
-                            course_offering=item_data['object']
-                        )
-                    else:  # shared_session
-                        if offer.offer_items.filter(shared_session=item_data['object']).exists():
-                            continue  # Skip if this item is already in the offer
-                        offer_item = OfferItem.objects.create(
-                            item_type='shared_session',
-                            shared_session=item_data['object']
-                        )
-                    offer.offer_items.add(offer_item)
+            # Check student workload
+            current_allocation = self.calculate_student_allocation(student)
+            max_hours = int(application.workload) if application.workload and str(application.workload).isdigit() else 12
             
-            # Return response with all data
+            # If offer existed, its hours are already in current_allocation. We only check the additional hours.
+            hours_to_check = total_new_hours
+            if not created:
+                # To avoid double counting, we need a more careful check.
+                # Let's calculate the hours of items we are about to add that are not already in the offer.
+                hours_being_added = 0
+                for item_data in validated_new_items:
+                    if item_data['type'] == 'course_offering':
+                        if not offer.offer_items.filter(course_offering=item_data['object'], time_slot=item_data['time_slot']).exists():
+                            hours_being_added += OfferItem(item_type='course_offering', course_offering=item_data['object'], time_slot=item_data['time_slot']).weekly_hours
+                    elif item_data['type'] == 'shared_session':
+                        if not offer.offer_items.filter(shared_session=item_data['object']).exists():
+                            hours_being_added += OfferItem(item_type='shared_session', shared_session=item_data['object']).weekly_hours
+                hours_to_check = hours_being_added
+
+            if current_allocation['total_hours'] + hours_to_check > max_hours:
+                return Response({
+                    'error': f'Adding {hours_to_check} hours would exceed student maximum of {max_hours} hours. Current: {current_allocation["total_hours"]} hours.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # --- ATOMICALLY ADD NEW ITEMS ---
+            with transaction.atomic():
+                for item_data in validated_new_items:
+                    if item_data['type'] == 'course_offering':
+                        # Add item only if it doesn't already exist
+                        if not offer.offer_items.filter(course_offering=item_data['object'], time_slot=item_data['time_slot']).exists():
+                            offer_item = OfferItem.objects.create(
+                                item_type='course_offering',
+                                course_offering=item_data['object'],
+                                time_slot=item_data['time_slot']
+                            )
+                            offer.offer_items.add(offer_item)
+                    elif item_data['type'] == 'shared_session':
+                        # Add item only if it doesn't already exist
+                        if not offer.offer_items.filter(shared_session=item_data['object']).exists():
+                            offer_item = OfferItem.objects.create(
+                                item_type='shared_session',
+                                shared_session=item_data['object'],
+                                time_slot=None
+                            )
+                            offer.offer_items.add(offer_item)
+            
             serializer = self.get_serializer(offer)
+            message = 'Draft offer updated successfully' if not created else 'Draft offer created successfully'
+            http_status = status.HTTP_200_OK if not created else status.HTTP_201_CREATED
+
             return Response({
                 'success': True,
                 'message': message,
                 'offer': serializer.data
-            }, status=response_status)
+            }, status=http_status)
             
         except ApplicationShortList.DoesNotExist:
-            return Response(
-                {'error': 'Application not found in shortlist'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'error': 'Application not found in shortlist'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             logger.error(f"Error in create_offer: {str(e)}")
             return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': f'Internal server error: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
     @action(detail=False, methods=['post'])
@@ -666,15 +611,23 @@ class OfferViewSet(viewsets.ModelViewSet):
     def _create_assignments_from_offer(self, offer, assigned_by):
         """Helper method to create assignments from offer items"""
         for offer_item in offer.offer_items.all():
+            # For shared sessions, the assignment is for the whole session, not a single time slot.
+            # The weekly_hours property on Assignment will calculate from the shared_session's time_slots.
+            # For course offerings, we assign the specific time slot.
+            assignment_time_slot = None
+            if offer_item.item_type == 'course_offering':
+                assignment_time_slot = offer_item.time_slot
+
             Assignment.objects.create(
                 offer=offer,
                 student=offer.student,
                 course=offer_item.course,
                 course_offering=offer_item.course_offering,
                 shared_session=offer_item.shared_session,
+                time_slot=assignment_time_slot, # <-- Add this line
                 role='ta',
                 assigned_by=assigned_by,
-                notes=f"Created from offer {offer.offer_id}"
+                notes=f"Auto-assigned from accepted offer {offer.offer_id} - {offer_item.item_type} ({offer_item.weekly_hours}h/week)"
             )
 
     def get_scheduler_from_jwt(self, user_type, user_id):
@@ -762,9 +715,9 @@ class OfferViewSet(viewsets.ModelViewSet):
         response_deadline_str = request.data.get('response_deadline')
         notes = request.data.get('notes', offer.notes)
         
-        if not offer_items or not isinstance(offer_items, list):
+        if offer_items is None or not isinstance(offer_items, list):
             return Response(
-                {'error': 'offer_items must be a non-empty list'},
+                {'error': 'offer_items must be a list (can be empty)'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -793,74 +746,97 @@ class OfferViewSet(viewsets.ModelViewSet):
             
             for item_data in offer_items:
                 item_type = item_data.get('item_type')
-                
+            
                 if item_type == 'course_offering':
                     course_offering_id = item_data.get('course_offering_id')
+                    time_slot_details = item_data.get('time_slot')
+                    
+                    if not course_offering_id:
+                        return Response({'error': 'course_offering_id required for course_offering items'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # ✅ FOR COURSE OFFERINGS: Handle specific time slot
+                    if not time_slot_details or not isinstance(time_slot_details, dict):
+                        return Response({'error': 'time_slot is required for course_offering items'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Validate time slot format
+                    required_time_fields = ['day', 'start_time', 'end_time']
+                    for field in required_time_fields:
+                        if field not in time_slot_details:
+                            return Response({'error': f'time_slot must include {field}'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Get or create time slot
                     try:
-                        course_offering = CourseOffering.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
-                            course_offering_id=course_offering_id
+                        time_slot, created = TimeSlot.objects.get_or_create(
+                            day=time_slot_details['day'],
+                            start_time=time_slot_details['start_time'],
+                            end_time=time_slot_details['end_time']
                         )
+                    except Exception as e:
+                        return Response({'error': f'Invalid time slot data: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    try:
+                        course_offering = CourseOffering.objects.get(course_offering_id=course_offering_id)
+                        course = course_offering.course
+                        term = course_offering.academic_term
                         
-                        temp_offer_item = OfferItem(
-                            item_type='course_offering',
-                            course_offering=course_offering
-                        )
-                        calculated_hours = temp_offer_item.weekly_hours
+                        # Calculate hours for THIS specific time slot only
+                        duration = time_slot.duration
+                        item_hours = duration.total_seconds() / 3600 if duration else 3.0
+                        total_hours += item_hours
                         
                         validated_items.append({
-                            'type': 'course_offering',
-                            'object': course_offering,
-                            'hours': calculated_hours,
-                            'course': course_offering.course,
-                            'term': course_offering.academic_term
+                            'item_type': 'course_offering',
+                            'course_offering': course_offering,
+                            'time_slot': time_slot,
+                            'course': course,
+                            'hours': item_hours
                         })
                         
-                        offer_courses.add(course_offering.course)
-                        offer_terms.add(course_offering.academic_term)
-                        total_hours += calculated_hours
+                        offer_courses.add(course)
+                        offer_terms.add(term)
                         
                     except CourseOffering.DoesNotExist:
-                        return Response(
-                            {'error': f'Course offering {course_offering_id} not found'},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+                        return Response({'error': f'Course offering {course_offering_id} not found'}, status=status.HTTP_400_BAD_REQUEST)
                 
                 elif item_type == 'shared_session':
                     shared_session_id = item_data.get('shared_session_id')
+                    
+                    if not shared_session_id:
+                        return Response({'error': 'shared_session_id required for shared_session items'}, status=status.HTTP_400_BAD_REQUEST)
+                    
                     try:
-                        shared_session = SharedSession.objects.select_related('course', 'academic_term').prefetch_related('time_slots').get(
-                            shared_session_id=shared_session_id
-                        )
+                        shared_session = SharedSession.objects.get(shared_session_id=shared_session_id)
+                        course = shared_session.course
+                        term = shared_session.academic_term
                         
-                        temp_offer_item = OfferItem(
-                            item_type='shared_session',
-                            shared_session=shared_session
-                        )
-                        calculated_hours = temp_offer_item.weekly_hours
+                        # ✅ FOR SHARED SESSIONS: Use ALL time slots (no specific time slot selection)
+                        # Calculate total hours from all time slots of the shared session
+                        session_time_slots = shared_session.time_slots.all()
+                        session_hours = 0
+                        for slot in session_time_slots:
+                            if slot.duration:
+                                session_hours += slot.duration.total_seconds() / 3600
+                            else:
+                                session_hours += 1.5  # fallback
+                        
+                        total_hours += session_hours
                         
                         validated_items.append({
-                            'type': 'shared_session',
-                            'object': shared_session,
-                            'hours': calculated_hours,
-                            'course': shared_session.course,
-                            'term': shared_session.academic_term
+                            'item_type': 'shared_session',
+                            'shared_session': shared_session,
+                            'time_slot': None,  # ✅ No specific time slot for shared sessions
+                            'course': course,
+                            'hours': session_hours
                         })
                         
-                        offer_courses.add(shared_session.course)
-                        offer_terms.add(shared_session.academic_term)
-                        total_hours += calculated_hours
+                        offer_courses.add(course)
+                        offer_terms.add(term)
                         
                     except SharedSession.DoesNotExist:
-                        return Response(
-                            {'error': f'Shared session {shared_session_id} not found'},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+                        return Response({'error': f'Shared session {shared_session_id} not found'}, status=status.HTTP_400_BAD_REQUEST)
                 
                 else:
-                    return Response(
-                        {'error': f'Invalid item_type: {item_type}. Must be "course_offering" or "shared_session"'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    return Response({'error': f'Invalid item_type: {item_type}'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Check if student would exceed their maximum hours (excluding current offer)
             student = offer.student
@@ -898,15 +874,17 @@ class OfferViewSet(viewsets.ModelViewSet):
                 
                 # Create and add new offer items
                 for item_data in validated_items:
-                    if item_data['type'] == 'course_offering':
+                    if item_data['item_type'] == 'course_offering':
                         offer_item = OfferItem.objects.create(
                             item_type='course_offering',
-                            course_offering=item_data['object']
+                            course_offering=item_data['course_offering'],
+                            time_slot=item_data['time_slot']  # ✅ Add the specific time slot
                         )
                     else:  # shared_session
                         offer_item = OfferItem.objects.create(
                             item_type='shared_session',
-                            shared_session=item_data['object']
+                            shared_session=item_data['shared_session'],
+                            time_slot=None  # ✅ No specific time slot for shared sessions
                         )
                     
                     offer.offer_items.add(offer_item)
@@ -1097,6 +1075,7 @@ class OfferViewSet(viewsets.ModelViewSet):
                         course=offer_item.course,
                         course_offering=offer_item.course_offering,
                         shared_session=offer_item.shared_session,
+                        time_slot=offer_item.time_slot, # Add this line
                         role='ta',
                         assigned_by=offer.created_by,
                         notes=f"Auto-assigned from accepted offer {offer.offer_id} - {offer_item.item_type} ({offer_item.weekly_hours}h/week)"
@@ -1227,14 +1206,66 @@ class AssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = AssignmentSerializer
     permission_classes = [IsSchedulerOrAdmin]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    # *** REMOVE: 'required_hours' from filterset_fields ***
-    filterset_fields = ['is_active', 'course_offering', 'role']  # ← Removed 'required_hours'
+    filterset_fields = ['is_active', 'course_offering', 'role']
     search_fields = ['student__name', 'course_offering__course__course_number']
     ordering_fields = ['assigned_date']
     ordering = ['-assigned_date']
     
+    def get_permissions(self):
+        """
+        - Students can view their own assignments
+        - Instructors can view assignments for their courses  
+        - Schedulers/Admins can manage all assignments
+        """
+        if self.action in ['list', 'retrieve', 'my_assignments', 'by_instructor', 'tas_by_offering']:
+            return [IsAuthenticatedUser()]  # All authenticated users can view (filtered by get_queryset)
+        elif self.action in ['create', 'update', 'partial_update', 'destroy', 'active_assignments', 'assigned_students', 'by_student']:
+            return [IsSchedulerOrAdmin()]  # Only schedulers/admins can modify or access special views
+        return [IsAuthenticatedUser()]
+    
     def get_queryset(self):
-        return Assignment.objects.select_related('student', 'offer', 'assigned_by').all()
+        """Filter assignments based on user role using your existing auth pattern"""
+        queryset = Assignment.objects.select_related('student', 'offer', 'assigned_by').all()
+        
+        # Use your existing auth pattern from other ViewSets
+        if not hasattr(self.request, 'auth') or not self.request.auth:
+            return queryset.none()
+        
+        user_type = self.request.auth.payload.get('user_type', None)
+        user_id = self.request.auth.payload.get('sub', None)
+        
+        if user_type == 'student' and user_id:
+            # Students see only their own assignments
+            student_model_id = self.get_student_model_id(user_id)
+            if student_model_id:
+                return queryset.filter(student_id=student_model_id)
+            return queryset.none()
+            
+        elif user_type == 'instructor' and user_id:
+            # Instructors see assignments for courses they teach
+            from .models import Instructor
+            try:
+                instructor = Instructor.objects.get(employee_number=user_id)
+                return queryset.filter(
+                    course_offering__instructor_id=instructor.id,
+                    is_active=True
+                )
+            except Instructor.DoesNotExist:
+                return queryset.none()
+        
+        elif user_type in ['scheduler', 'admin']:
+            # Schedulers and admins see all assignments
+            return queryset
+        
+        return queryset.none()
+    
+    def get_student_model_id(self, user_id):
+        """Use the same pattern as OfferViewSet"""
+        try:
+            student = Student.objects.get(student_number=user_id)
+            return student.id
+        except Student.DoesNotExist:
+            return None
     
     @action(detail=False, methods=['get'])
     def active_assignments(self, request):
@@ -1243,138 +1274,421 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(active_assignments, many=True)
         return Response(serializer.data)
     
-class CourseAllocationActionsViewSet(viewsets.ViewSet):
-    """
-    Actions related to finalizing allocations for a course.
-    """
-    @action(detail=True, methods=['post'], url_path='finalize-allocations', permission_classes=[IsSchedulerOrAdmin])
-    def finalize_allocations(self, request, pk=None):
-        """
-        Finalizes all allocations for a course offering and sends a 
-        consolidated notification to the instructor.
-        """
-        try:
-            course_offering = CourseOffering.objects.get(pk=pk)
-        except CourseOffering.DoesNotExist:
-            return Response({'error': 'Course offering not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        # 1. Gather all active assignments for this course offering
-        active_assignments = Assignment.objects.filter(
-            course_offering=course_offering, 
+    @action(detail=False, methods=['get'])
+    def my_assignments(self, request):
+        """Get current student's assignments with detailed information"""
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user_type = request.auth.payload.get('user_type', None)
+        user_id = request.auth.payload.get('sub', None)
+        
+        if user_type != 'student':
+            return Response({'error': 'Only students can access this endpoint'}, status=status.HTTP_403_FORBIDDEN)
+        
+        student_model_id = self.get_student_model_id(user_id)
+        if not student_model_id:
+            return Response({'error': 'Student profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get student's active assignments
+        assignments = Assignment.objects.filter(
+            student_id=student_model_id,
             is_active=True
-        ).select_related('student', 'course', 'course_offering__academic_term')
-
-        if not active_assignments.exists():
-            return Response({'message': 'No active assignments to notify for.'}, status=status.HTTP_200_OK)
-
-        # 2. Prepare the allocation details for the notification
-        allocation_details = []
-        for assignment in active_assignments:
-            allocation_details.append({
-                'ta_name': assignment.student.name,
-                'student_number': assignment.student.student_number,
-                'hours': assignment.weekly_hours
-            })
-            
-        # 3. Get instructor and course details
-        instructor = course_offering.instructor
-        if not instructor or not instructor.email:
-            return Response({'error': 'Instructor email not found for this course.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 4. Construct the payload for the notification service
-        notification_payload = {
-            'instructor_email': instructor.email,
-            'instructor_name': instructor.name,
-            'course_code': course_offering.course.course_number,
-            'course_name': course_offering.course.course_name,
-            'term': course_offering.academic_term.term_type, 
-            'allocations': allocation_details
-        }
-
-        # 5. Call the existing notification service endpoint
-        try:
-            notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
-            response = requests.post(notification_url, json=notification_payload, timeout=15)
-            
-            if response.status_code != 200:
-                logger.error(f"Failed to send final allocation notice. Status: {response.status_code}, Body: {response.text}")
-                return Response({'error': 'Failed to trigger notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error calling notification service for final allocation: {e}")
-            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        ).select_related('course', 'course_offering', 'shared_session')
+        
+        # Calculate total hours using the property method
+        total_hours = sum(assignment.weekly_hours for assignment in assignments)
+        
+        serializer = self.get_serializer(assignments, many=True)
+        
         return Response({
-            'message': 'Final allocation notice has been sent to the instructor.',
-            'instructor': instructor.name,
-            'assignments_count': len(active_assignments)
+            'assignments': serializer.data,
+            'summary': {
+                'total_assignments': assignments.count(),
+                'total_weekly_hours': round(total_hours, 1),
+                'courses': list(set([assignment.course.course_number for assignment in assignments if assignment.course]))
+            }
+        })
+    
+    @action(detail=False, methods=['get'], url_path='assigned_students')
+    def assigned_students(self, request):
+        """
+        Get a list of all students with at least one active assignment.
+        Accessible only by Schedulers and Admins.
+        """
+        # Get IDs of students with active assignments
+        assigned_student_ids = Assignment.objects.filter(is_active=True).values_list('student_id', flat=True).distinct()
+
+        # Get student objects
+        students = Student.objects.filter(id__in=assigned_student_ids).order_by('name')
+
+        # Serialize the student data
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='by_student')
+    def by_student(self, request):
+        """
+        Get all assignments for a specific student by their student number.
+        Accessible only by Schedulers and Admins.
+        Usage: /api/allocations/assignments/by_student/?student_number=20241004
+        """
+        student_number = request.query_params.get('student_number')
+
+        if not student_number:
+            return Response(
+                {'error': 'Please provide a student_number.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        assignments = Assignment.objects.filter(
+            student__student_number=student_number
+        ).select_related(
+            'student', 'course', 'course_offering', 'shared_session'
+        )
+
+        if not assignments.exists():
+            return Response(
+                {'message': 'No assignments found for the specified student.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.get_serializer(assignments, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def by_instructor(self, request):
+        """Get assignments for courses taught by the current instructor"""
+        if not hasattr(request, 'auth') or not request.auth:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user_type = request.auth.payload.get('user_type', None)
+        user_id = request.auth.payload.get('sub', None)
+        
+        if user_type != 'instructor':
+            return Response({'error': 'Only instructors can access this endpoint'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get instructor using same pattern as other services
+        from .models import Instructor
+        try:
+            instructor = Instructor.objects.get(employee_number=user_id)
+        except Instructor.DoesNotExist:
+            return Response({'error': 'Instructor profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get assignments for instructor's courses
+        assignments = Assignment.objects.filter(
+            course_offering__instructor_id=instructor.id,
+            is_active=True
+        ).select_related('student', 'course', 'course_offering')
+        
+        # Group by course offering
+        course_assignments = {}
+        for assignment in assignments:
+            course_key = f"{assignment.course.course_number} {assignment.course_offering.section_number}"
+            if course_key not in course_assignments:
+                course_assignments[course_key] = {
+                    'course_offering_id': str(assignment.course_offering.course_offering_id),
+                    'course_number': assignment.course.course_number,
+                    'course_name': assignment.course.course_name,
+                    'section_number': assignment.course_offering.section_number,
+                    'tas': []
+                }
+            
+            course_assignments[course_key]['tas'].append({
+                'assignment_id': assignment.assignment_id,
+                'student_name': assignment.student.name,
+                'student_number': assignment.student.student_number,
+                'weekly_hours': assignment.weekly_hours,
+                'assigned_date': assignment.assigned_date
+            })
+        
+        return Response({
+            'course_assignments': list(course_assignments.values()),
+            'total_courses': len(course_assignments),
+            'total_tas': assignments.count()
         })
 
-class SharedSessionAllocationActionsViewSet(viewsets.ViewSet):
-    """
-    Actions related to finalizing allocations for a shared session.
-    """
-    @action(detail=True, methods=['post'], url_path='finalize-allocations', permission_classes=[IsSchedulerOrAdmin])
-    def finalize_allocations(self, request, pk=None):
-        """
-        Finalizes all allocations for a shared session and sends a 
-        consolidated notification to the instructor.
-        """
-        try:
-            shared_session = SharedSession.objects.get(pk=pk)
-        except SharedSession.DoesNotExist:
-            return Response({'error': 'Shared session not found'}, status=status.HTTP_404_NOT_FOUND)
+    @action(detail=False, methods=['get'])
+    def tas_by_offering(self, request):
+        """Get TAs assigned to a specific course offering or shared session"""
+        course_offering_id = request.query_params.get('course_offering_id')
+        shared_session_id = request.query_params.get('shared_session_id')
+        
+        if not course_offering_id and not shared_session_id:
+            return Response(
+                {'error': 'Must provide either course_offering_id or shared_session_id'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if course_offering_id and shared_session_id:
+            return Response(
+                {'error': 'Provide either course_offering_id OR shared_session_id, not both'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Query assignments based on the offering type
+        if course_offering_id:
+            assignments = Assignment.objects.filter(
+                course_offering_id=course_offering_id,
+                is_active=True
+            ).select_related('student', 'time_slot')
+        else:
+            assignments = Assignment.objects.filter(
+                shared_session_id=shared_session_id,
+                is_active=True
+            ).select_related('student', 'time_slot')
+        
+        # Format the response with TA details
+        ta_list = []
+        for assignment in assignments:
+            time_slot_details = None
+            if assignment.time_slot:
+                time_slot_details = {
+                    'day': assignment.time_slot.get_day_display(),
+                    'start_time': assignment.time_slot.start_time.strftime('%H:%M'),
+                    'end_time': assignment.time_slot.end_time.strftime('%H:%M'),
+                }
 
-        # 1. Gather all active assignments for this shared session
-        active_assignments = Assignment.objects.filter(
-            shared_session=shared_session, 
-            is_active=True
-        ).select_related('student', 'course', 'shared_session__academic_term')
+            ta_list.append({
+                'assignment_id': assignment.assignment_id,
+                'student_name': assignment.student.name,
+                'student_number': assignment.student.student_number,
+                'role': assignment.role,
+                'assigned_date': assignment.assigned_date,
+                'weekly_hours': assignment.weekly_hours,
+                'time_slot': time_slot_details
+            })
+        
+        return Response({
+            'offering_type': 'course_offering' if course_offering_id else 'shared_session',
+            'offering_id': course_offering_id or shared_session_id,
+            'assigned_tas': ta_list,
+            'total_tas': len(ta_list)
+        })
+
+class CourseAllocationActionsViewSet(viewsets.ViewSet):
+    permission_classes = [IsSchedulerOrAdmin]
+
+    @action(detail=True, methods=['post'], url_path='finalize-allocations')
+    def finalize_allocations(self, request, pk=None):
+        course_offering = get_object_or_404(CourseOffering, pk=pk)
+        active_assignments = Assignment.objects.filter(course_offering=course_offering, is_active=True)
 
         if not active_assignments.exists():
-            return Response({'message': 'No active assignments to notify for.'}, status=status.HTTP_200_OK)
+            return Response({'error': 'No active assignments for this course offering.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Prepare the allocation details for the notification
-        allocation_details = []
-        for assignment in active_assignments:
-            allocation_details.append({
-                'ta_name': assignment.student.name,
-                'student_number': assignment.student.student_number,
-                'hours': assignment.weekly_hours
-            })
-            
-        # 3. Get instructor and course details
-        instructor = shared_session.instructor
-        if not instructor or not instructor.email:
-            return Response({'error': 'Instructor email not found for this shared session.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not course_offering.instructor or not course_offering.instructor.email:
+            return Response({'error': 'Instructor not assigned or instructor email is missing.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 4. Construct the payload for the notification service
         notification_payload = {
-            'instructor_email': instructor.email,
-            'instructor_name': instructor.name,
-            'course_code': f"{shared_session.course.course_number} ({shared_session.session_type})",
-            'course_name': shared_session.course.course_name,
-            'term': shared_session.academic_term.term_type, 
-            'allocations': allocation_details
+            'instructor_email': course_offering.instructor.email,
+            'instructor_name': course_offering.instructor.name,
+            'course_code': course_offering.course.course_number,
+            'course_name': course_offering.course.course_name,
+            'term': course_offering.academic_term.code,
+            'allocations': [{
+                'ta_name': a.student.name,
+                'student_number': a.student.student_number,
+                'hours': a.weekly_hours
+            } for a in active_assignments]
         }
 
-        # 5. Call the existing notification service endpoint
         try:
             notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
             response = requests.post(notification_url, json=notification_payload, timeout=15)
             
-            if response.status_code != 200:
-                logger.error(f"Failed to send final allocation notice. Status: {response.status_code}, Body: {response.text}")
-                return Response({'error': 'Failed to trigger notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            if response.status_code == 200:
+                course_offering.final_notification_sent_at = timezone.now()
+                course_offering.save(update_fields=['final_notification_sent_at'])
+                return Response({'message': 'Final allocations notification sent successfully.'}, status=status.HTTP_200_OK)
+            else:
+                logger.error(f"Notification service failed for course offering {pk}: {response.text}")
+                return Response({'error': 'Failed to send notification.', 'details': response.text}, status=response.status_code)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error calling notification service for final allocation: {e}")
-            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error calling notification service for course offering {pk}: {e}")
+            return Response({'error': 'Could not connect to notification service.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class SharedSessionAllocationActionsViewSet(viewsets.ViewSet):
+    permission_classes = [IsSchedulerOrAdmin]
+
+    @action(detail=True, methods=['post'], url_path='finalize-allocations')
+    def finalize_allocations(self, request, pk=None):
+        shared_session = get_object_or_404(SharedSession, pk=pk)
+        active_assignments = Assignment.objects.filter(shared_session=shared_session, is_active=True)
+
+        if not active_assignments.exists():
+            return Response({'error': 'No active assignments for this shared session.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Find instructors from parent course offerings
+        instructors = Instructor.objects.filter(
+            course_offerings__course=shared_session.course,
+            course_offerings__academic_term=shared_session.academic_term
+        ).distinct()
+
+        if not instructors.exists():
+            return Response({'error': 'No instructors found for the parent course in this term.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payload_template = {
+            'course_code': f"{shared_session.course.course_number} ({shared_session.get_session_type_display()})",
+            'course_name': shared_session.course.course_name,
+            'term': shared_session.academic_term.code,
+            'allocations': [{
+                'ta_name': a.student.name,
+                'student_number': a.student.student_number,
+                'hours': a.weekly_hours
+            } for a in active_assignments]
+        }
+
+        errors = []
+        success_count = 0
+        for instructor in instructors:
+            if not instructor.email:
+                continue
+            
+            payload = payload_template.copy()
+            payload['instructor_email'] = instructor.email
+            payload['instructor_name'] = instructor.name
+
+            try:
+                notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
+                response = requests.post(notification_url, json=payload, timeout=15)
+                if response.status_code == 200:
+                    success_count += 1
+                else:
+                    errors.append(f"Failed for {instructor.name}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                errors.append(f"Failed for {instructor.name}: {str(e)}")
+
+        if success_count > 0:
+            shared_session.final_notification_sent_at = timezone.now()
+            shared_session.save(update_fields=['final_notification_sent_at'])
+            return Response({
+                'message': f'{success_count} notifications sent successfully.',
+                'errors': errors
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Failed to send any notifications.', 'details': errors}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# --- ADD THIS NEW VIEWSET ---
+class GlobalAllocationActionsViewSet(viewsets.ViewSet):
+    """
+    Actions for finalizing all allocations across the system.
+    """
+    permission_classes = [IsSchedulerOrAdmin]
+
+    def _send_notification(self, payload):
+        """Helper to call the notification service."""
+        try:
+            notification_url = 'http://nginx/api/notifications/send_final_allocation_notice/'
+            response = requests.post(notification_url, json=payload, timeout=15)
+            if response.status_code != 200:
+                logger.error(f"Notification service failed for instructor {payload.get('instructor_email')}: {response.text}")
+                return False
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error calling notification service: {e}")
+            return False
+
+    @action(detail=False, methods=['post'], url_path='finalize-all')
+    def finalize_all_allocations(self, request):
+        """
+        Finds all course offerings and shared sessions with active, un-notified
+        assignments and sends a final notification to each instructor.
+        """
+        notifications_sent = 0
+        errors = []
+
+        # --- Process Course Offerings ---
+        unnotified_offerings = CourseOffering.objects.filter(
+            final_notification_sent_at__isnull=True,
+            assignment__is_active=True
+        ).distinct()
+
+        for offering in unnotified_offerings:
+            if not offering.instructor or not offering.instructor.email:
+                continue
+            
+            active_assignments = Assignment.objects.filter(course_offering=offering, is_active=True)
+            if not active_assignments.exists():
+                continue
+
+            payload = {
+                'instructor_email': offering.instructor.email,
+                'instructor_name': offering.instructor.name,
+                'course_code': offering.course.course_number,
+                'course_name': offering.course.course_name,
+                'term': offering.academic_term.code,
+                'allocations': [{
+                    'ta_name': a.student.name,
+                    'student_number': a.student.student_number,
+                    'hours': a.weekly_hours
+                } for a in active_assignments]
+            }
+
+            if self._send_notification(payload):
+                offering.final_notification_sent_at = timezone.now()
+                offering.save(update_fields=['final_notification_sent_at'])
+                notifications_sent += 1
+            else:
+                errors.append(f"Course Offering: {offering.course.course_number}")
+
+        # --- Process Shared Sessions ---
+        unnotified_sessions = SharedSession.objects.filter(
+            final_notification_sent_at__isnull=True,
+            assignment__is_active=True
+        ).select_related('course', 'academic_term').distinct()
+
+        for session in unnotified_sessions:
+            active_assignments = Assignment.objects.filter(shared_session=session, is_active=True)
+            if not active_assignments.exists():
+                continue
+
+            instructors = Instructor.objects.filter(
+                course_offerings__course=session.course,
+                course_offerings__academic_term=session.academic_term
+            ).distinct()
+
+            if not instructors.exists():
+                errors.append(f"Shared Session: {session.course.course_number} {session.section_number} - No instructor found.")
+                continue
+
+            payload_template = {
+                'course_code': f"{session.course.course_number} ({session.get_session_type_display()})",
+                'course_name': session.course.course_name,
+                'term': session.academic_term.code,
+                'allocations': [{
+                    'ta_name': a.student.name,
+                    'student_number': a.student.student_number,
+                    'hours': a.weekly_hours
+                } for a in active_assignments]
+            }
+
+            all_sent = True
+            sent_to_instructors = 0
+            for instructor in instructors:
+                if not instructor.email:
+                    continue
+                
+                payload = payload_template.copy()
+                payload['instructor_email'] = instructor.email
+                payload['instructor_name'] = instructor.name
+                
+                if self._send_notification(payload):
+                    sent_to_instructors += 1
+                else:
+                    all_sent = False
+                    errors.append(f"Shared Session: {session.course.course_number} {session.section_number} - Failed for {instructor.name}")
+
+            if all_sent and sent_to_instructors > 0:
+                session.final_notification_sent_at = timezone.now()
+                session.save(update_fields=['final_notification_sent_at'])
+                notifications_sent += sent_to_instructors
 
         return Response({
-            'message': 'Final allocation notice has been sent to the instructor.',
-            'instructor': instructor.name,
-            'assignments_count': len(active_assignments)
+            'message': f'Finalization process completed. {notifications_sent} new notifications sent.',
+            'notifications_sent': notifications_sent,
+            'errors': errors
         })
     
 # Root API View
@@ -1405,6 +1719,11 @@ def api_root(request):
             # Assignments Management
             'assignments': '/api/allocations/assignments/',
             'active_assignments': '/api/allocations/assignments/active_assignments/',
+            'assigned_students': '/api/allocations/assignments/assigned_students/', # For schedulers/admins
+            'my_assignments': '/api/allocations/assignments/my_assignments/',  #  For students
+            'by_instructor': '/api/allocations/assignments/by_instructor/',  # ← For instructors
+            'by_student': '/api/allocations/assignments/by_student/{student_number}',  # ← For schedulers/admins
+            'tas_by_offering': '/api/allocations/assignments/tas_by_offering/',
 
             # Assignment Modifications
             'create_modification': '/api/allocations/offers/create_modification/', 
@@ -1414,14 +1733,16 @@ def api_root(request):
             # Allocation Finalization
             'finalize_course_allocations': '/api/allocations/course-offerings/{course_offering_id}/finalize-allocations/', # this is the button scheduler or admin can click to send notif to instructor
             'finalize_session_allocations': '/api/allocations/shared-sessions/{shared_session_id}/finalize-allocations/',
+            'finalize_all_allocations': '/api/allocations/allocations-actions/finalize-all/',
                 
             # Service Info
             'service_info': '/api/allocations/',
-         },
+        },
         'authentication': 'Required for all endpoints except root',
         'permissions': {
-            'schedulers': 'Can create offers, view all offers, manage assignments',
-            'students': 'Can view own offers, respond to offers',
+            'schedulers': 'Can create offers, view all offers, manage assignments, view all student assignments',
+            'students': 'Can view own offers, respond to offers, view own assignments',  # ← Updated
+            'instructors': 'Can view assignments for their courses',  # ← instructors can view assignments
             'admins': 'Full access to all endpoints'
         },
         'offer_lifecycle': {

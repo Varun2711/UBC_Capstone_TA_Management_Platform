@@ -121,8 +121,8 @@ describe("CreateAccount3", () => {
 
     // Fill out email and mismatching passwords
     await user.type(emailInput, "john@example.com")
-    await user.type(passwordInput, "password123")
-    await user.type(confirmPasswordInput, "password456")
+    await user.type(passwordInput, "ValidPass1!")
+    await user.type(confirmPasswordInput, "DifferentPass1!")
 
     // Click done button to submit form
     await user.click(doneButton)
@@ -134,10 +134,12 @@ describe("CreateAccount3", () => {
   })
 
   // Test successful account creation flow with valid data (mock the API calls)
-   it("completes account creation when form is valid", async () => {
+  it("completes account creation when form is valid", async () => {
     // configure your two sequential post calls
     axios.post
-      .mockResolvedValueOnce({ data: { message: "Account created successfully" } }) // register call
+      .mockResolvedValueOnce({
+        data: { message: "Account created successfully" },
+      }) // register call
       .mockResolvedValueOnce({ data: { access: "mock-token" } }) // login call
     axios.patch.mockResolvedValue({ data: {} }) // profile update call
 
@@ -149,10 +151,11 @@ describe("CreateAccount3", () => {
     const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
     const doneButton = screen.getByRole("button", { name: /done/i })
 
-    // Fill out email and matching passwords
+    // Fill out email and matching, valid passwords
+    const validPassword = "Password123!"
     await user.type(emailInput, "john@example.com")
-    await user.type(passwordInput, "password123")
-    await user.type(confirmPasswordInput, "password123")
+    await user.type(passwordInput, validPassword)
+    await user.type(confirmPasswordInput, validPassword)
 
     // Submit the form
     await user.click(doneButton)
@@ -172,11 +175,11 @@ describe("CreateAccount3", () => {
         student_number: "12345678",
         name: "John Doe",
         email: "john@example.com",
-        password: "password123",
+        password: "Password123!", // Corrected password value
         study_level: "Bachelor of Science",
         program: "Computer Science",
         minor: "",
-        year_degree_start: 2021 // ✅ FIX: Now expects 2021 instead of 2022
+        year_degree_start: 2021
       })
     )
     
@@ -185,7 +188,7 @@ describe("CreateAccount3", () => {
       "http://localhost:8080/api/auth/login/",
       {
         email: "john@example.com",
-        password: "password123"
+        password: "Password123!" // Corrected password value
       }
     )
 

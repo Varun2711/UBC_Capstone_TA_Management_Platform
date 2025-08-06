@@ -1,15 +1,34 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor, within, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AppSidebar } from "@/components/scheduler-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-// Import the mocked functions after setting up mocks
-import { getProfile } from "@/logic/scheduler-profile";
-import { logout } from "@/logic/auth";
 
-// --- MOCKS ---
+// --- BROWSER ENVIRONMENT MOCKS ---
+// Mock browser APIs that might be accessed
+Object.defineProperty(window, 'sessionStorage', {
+  value: {
+    getItem: vi.fn(() => 'mock-token'),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  },
+  writable: true,
+});
+
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  },
+  writable: true,
+});
+
+// --- COMPONENT MOCKS ---
 
 // Mock the profile logic module
 vi.mock("@/logic/scheduler-profile", () => ({
@@ -40,7 +59,12 @@ vi.mock("lucide-react", () => ({
   CheckCircle: () => <svg data-testid="check-circle-icon" />,
   Calendar: () => <svg data-testid="calendar-icon" />,
   MoreVerticalIcon: () => <svg data-testid="more-vertical-icon" />,
+  Users: () => <svg data-testid="users-icon" />,
 }));
+
+// Import the mocked functions after setting up mocks
+import { getProfile } from "@/logic/scheduler-profile";
+import { logout } from "@/logic/auth";
 
 // --- TEST SETUP ---
 
@@ -63,8 +87,19 @@ describe("AppSidebar", () => {
   beforeEach(() => {
     // Reset mocks before each test to ensure isolation
     vi.clearAllMocks();
+    
+    // Reset window mocks
+    window.sessionStorage.getItem.mockReturnValue('mock-token');
+    
     // Default mock implementation for a successful data fetch
     getProfile.mockResolvedValue(mockUser);
+  });
+
+  afterEach(() => {
+    // Clean up after each test
+    cleanup();
+    vi.clearAllTimers();
+    vi.clearAllMocks();
   });
 
   // --- TESTS ---
@@ -79,8 +114,12 @@ describe("AppSidebar", () => {
     expect(screen.getByText("Loading...")).toBeInTheDocument();
 
     // Wait for the asynchronous operation to complete and the UI to update
-    // `findBy` queries are async and perfect for this purpose
-    await screen.findByText("Jane Doe");
+    await waitFor(
+      () => {
+        expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     // Assert that the loading text is gone and user data is now displayed
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -89,8 +128,15 @@ describe("AppSidebar", () => {
 
   it("should display the correct avatar fallback from user initials", async () => {
     renderSidebar();
+    
     // Wait for the user data to be loaded before checking for the avatar
-    await screen.findByText("Jane Doe");
+    await waitFor(
+      () => {
+        expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+    
     expect(screen.getByText("JD")).toBeInTheDocument();
   });
 
@@ -98,7 +144,12 @@ describe("AppSidebar", () => {
     renderSidebar({ activePage: "Course Management" });
 
     // Wait for loading to finish before interacting
-    await screen.findByText("Jane Doe");
+    await waitFor(
+      () => {
+        expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     const navItems = [
       "Dashboard",
@@ -107,6 +158,7 @@ describe("AppSidebar", () => {
       "Application Management",
       "Allocations",
     ];
+    
     navItems.forEach((item) => {
       expect(screen.getByText(item)).toBeInTheDocument();
     });
@@ -124,7 +176,12 @@ describe("AppSidebar", () => {
     renderSidebar();
 
     // Wait for loading to finish
-    await screen.findByText("Jane Doe");
+    await waitFor(
+      () => {
+        expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     // Click and assert navigation for each item
     await user.click(screen.getByText("Dashboard"));
@@ -139,15 +196,21 @@ describe("AppSidebar", () => {
     renderSidebar();
 
     // Wait for the component to be ready
-    await screen.findByText("Jane Doe");
+    await waitFor(
+      () => {
+        expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     const dropdownTrigger = screen.getByLabelText("account menu");
     await user.click(dropdownTrigger);
 
     // Find and click the profile menu item
-    const profileButton = await screen.findByRole("menuitem", {
-      name: /my profile/i,
-    });
+    const profileButton = await waitFor(
+      () => screen.getByRole("menuitem", { name: /my profile/i }),
+      { timeout: 5000 }
+    );
     await user.click(profileButton);
 
     expect(mockNavigate).toHaveBeenCalledWith("/user-profile-scheduler");
@@ -157,14 +220,20 @@ describe("AppSidebar", () => {
     const user = userEvent.setup();
     renderSidebar();
 
-    await screen.findByText("Jane Doe");
+    await waitFor(
+      () => {
+        expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     const dropdownTrigger = screen.getByLabelText("account menu");
     await user.click(dropdownTrigger);
 
-    const logoutButton = await screen.findByRole("menuitem", {
-      name: /logout/i,
-    });
+    const logoutButton = await waitFor(
+      () => screen.getByRole("menuitem", { name: /logout/i }),
+      { timeout: 5000 }
+    );
     await user.click(logoutButton);
 
     // Assert that our mocked logout function was called with the navigate function
@@ -177,10 +246,13 @@ describe("AppSidebar", () => {
     renderSidebar();
 
     // Wait for the loading to complete (the `finally` block in the component)
-    // The dropdown trigger becomes enabled after loading, making it a good element to wait for.
-    await waitFor(() => {
-      expect(screen.getByLabelText("account menu")).not.toBeDisabled();
-    });
+    await waitFor(
+      () => {
+        const accountMenu = screen.getByLabelText("account menu");
+        expect(accountMenu).not.toBeDisabled();
+      },
+      { timeout: 5000 }
+    );
 
     // After a failed API call, the user is null, so it should still show "Loading..."
     expect(screen.getByText("Loading...")).toBeInTheDocument();

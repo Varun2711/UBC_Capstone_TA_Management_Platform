@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import JsonResponse, HttpRequest
+from django.http import JsonResponse, HttpRequest, HttpResponseForbidden, HttpResponse
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework import viewsets, status, serializers
 from rest_framework.response import Response
@@ -14,11 +14,53 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from django.utils.crypto import salted_hmac, constant_time_compare
+import os
+from datetime import datetime
+
 # Import shared auth utilities
 from auth_utils.permissions import IsAdminUser, IsSchedulerUser, IsStudentUser
 
+#Import the download utility
+from .utils.download_links import generate_signed_url
+
+
 # Define a combined permission for schedulers or admins
 IsSchedulerOrAdmin = IsSchedulerUser | IsAdminUser
+IsSchedulerOrStudent = IsStudentUser | IsSchedulerUser
+IsStudentOrSchedulerOrAdmin = IsStudentUser | IsSchedulerUser | IsAdminUser
+
+def debug_host_view(request):
+    return JsonResponse({
+        "host": request.get_host(),
+        "META.HTTP_HOST": request.META.get("HTTP_HOST"),
+        "META.SERVER_NAME": request.META.get("SERVER_NAME"),
+    })
+
+
+#ensure secure document downloads
+def secure_document_download(request):
+    path = request.GET.get("path")
+    exp = request.GET.get("exp")
+    sig = request.GET.get("sig")
+
+    if not (path and exp and sig):
+        return HttpResponseForbidden("Missing parameters.")
+
+    expected = salted_hmac("nginx-download", f"{path}:{exp}", secret=settings.SECRET_KEY).hexdigest()
+    if not constant_time_compare(sig, expected):
+        return HttpResponseForbidden("Invalid signature.")
+
+    if int(exp) < int(datetime.utcnow().timestamp()):
+        return HttpResponseForbidden("URL expired.")
+
+    response = HttpResponse()
+    response["Content-Type"] = "application/octet-stream"
+    response["Content-Disposition"] = f'attachment; filename="{os.path.basename(path)}"'
+    response["X-Accel-Redirect"] = f"/protected-documents/{path}"
+    return response
 
 class JobPostingFilter(django_filters.FilterSet):
     term = django_filters.NumberFilter()
@@ -48,15 +90,24 @@ class JobPostingViewSet(viewsets.ModelViewSet):
      # Add default ordering - most recent posts first, then by ID for consistency
     ordering = ['-post_date', '-posting_id']
     
-    #override global default to only return non-archived jobs
-    #def get_queryset(self):    
-       # return JobPosting.objects.exclude(status='archived')
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        - Schedulers/Admins can create, update, and destroy.
+        - Anyone can view postings.
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            #print("DEBUG - We return Scheduler of Admin")
+            return [IsSchedulerOrAdmin()]  
+        #print("DEBUG - We return Any")    
+        return [AllowAny()]
+
     
     def perform_create(self, serializer):       
         if not serializer.validated_data.get('created_by'):
             # Try to get from authenticated user first
-            if hasattr(self.request.user, 'tascheduler'):
-                serializer.save(created_by=self.request.user.tascheduler)
+            if hasattr(self.request.user, 'scheduler'):
+                serializer.save(created_by=self.request.user.scheduler)
             else:                
                 serializer.save(created_by=None)
                 
@@ -66,31 +117,21 @@ class JobPostingViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):       
         serializer.save()
 
-    def get_permissions(self):
-        """
-        Define permissions for different actions.
-        - Schedulers/Admins can create, update, and destroy.
-        - Anyone can view postings.
-        """
-        if self.action in ['create', 'update', 'partial_update']:
-            return [IsSchedulerOrAdmin()]
-        elif self.action == 'destroy':
-            # Prevent deletion, but still require auth
-            return [IsSchedulerOrAdmin()]
-        return [AllowAny()]
-
-    def get_queryset(self):
-        """
-        Filter queryset to only show open job postings to unauthenticated users.
-        """
+    
+    def get_queryset(self):        
         queryset = super().get_queryset()
         user_type, _ = self.get_user_info(self.request)
-        
-        # If user is not authenticated, only show open postings
+
+        #print("DEBUG", self.request.user, user_type)
+
         if not user_type:
-            queryset = queryset.filter(status='open')
-        
-        return JobPosting.objects.exclude(status='archived')
+            return queryset.filter(status='open')
+
+        if user_type == 'student':
+            return queryset.exclude(status__in=['archived', 'draft'])
+
+        return queryset.exclude(status='archived')
+
 
     def get_user_info(self, request):
         user_type = getattr(request, 'user_type', None)
@@ -144,7 +185,8 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().filter(term_id=term_id)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
+    
+   
 class ApplicationFilter(django_filters.FilterSet):  
     status = django_filters.CharFilter()
     positionType = django_filters.CharFilter()
@@ -188,11 +230,13 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         - Students can create/view/update their own applications.
         - Schedulers/Admins can view any application.
         """
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student', 'submit_with_responses']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'by_student', 'submit_with_responses', 'myapplications', 'myapplications_short']:
             return [IsStudentUser()]
-        elif self.action in ['list', 'retrieve', 'by_posting', 'by_id']:
-            return [IsSchedulerOrAdmin()]
-        return [IsAuthenticated()]
+        elif self.action == 'by_id':
+            return [IsSchedulerOrStudent()]
+        elif self.action in ['list', 'retrieve', 'by_posting', 'count_by_posting']:
+            return [IsSchedulerOrAdmin()]        
+        return [IsAuthenticated() ]
 
     def get_queryset(self):
         """
@@ -239,9 +283,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             else:
                 raise serializers.ValidationError("Could not find a matching student record for this user.")
         else:
-            raise serializers.ValidationError("Only students can create applications.")
-        
-
+            raise serializers.ValidationError("Only students can create applications.")        
 
     def update(self, request, *args, **kwargs):   
             
@@ -272,7 +314,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     
         return Response(serializer.data)
 
-
+    @csrf_exempt
     @action(detail=False, methods=['post'], permission_classes=[IsStudentUser])
     def submit_with_responses(self, request):
         """Submit application with dynamic form responses in one call"""
@@ -299,19 +341,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                         {"error": "Only students can submit applications"}, 
                         status=status.HTTP_403_FORBIDDEN
                 )            
-            # Get the student model ID
-                # student_model_id = self.get_student_model_id(user_id)
-                # if not student_model_id:
-                #     return Response(
-                #     {"error": "Could not find matching student record"}, 
-                #     status=status.HTTP_404_NOT_FOUND
-                # )
-            
-                # # Override the student_id in application_data with the authenticated user's student ID
-                # application_data['student_id'] = student_model_id
-
-                # Create the application
-                #application_serializer = ApplicationSerializer(data=application_data)
+         
                 application_serializer = ApplicationSerializer(data=raw_application)
 
                 if not application_serializer.is_valid():
@@ -422,12 +452,66 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(applications, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
+    @action(detail=False, methods=['get'], permission_classes=[IsStudentUser])
+    def myapplications(self, request):
+              
+        user_type, user_id = self.get_user_info(request)
+
+        if user_type != 'student':            
+            return Response(
+                {"detail": "Only students can access this endpoint."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get the student model ID from the authenticated user
+        student_model_id = self.get_student_model_id(user_id)
+
+        if not student_model_id:
+            return Response(
+                {"detail": "Could not find student record for authenticated user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Filter applications for this student, ordered by most recent first
+        applications = Application.objects.filter(
+            student_id=student_model_id
+        ).order_by('-applied_at', '-application_id')
+
+        # Apply any query filters if provided
+        filterset = self.filterset_class(request.GET, queryset=applications)
+        if filterset.is_valid():
+            applications = filterset.qs
+
+        # Paginate if needed
+        page = self.paginate_queryset(applications)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(applications, many=True)
+        return Response(serializer.data)
+
+
+    
+    @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)', permission_classes=[IsSchedulerOrAdmin])  
     def by_posting(self, request, posting_id=None):
-        """Get all applications for a specific job posting."""
+        """Get all applications for a specific job posting. Only accessible by schedulers and admins."""
         applications = self.get_queryset().filter(posting_id=posting_id)
         serializer = self.get_serializer(applications, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path=r'count-by-posting/(?P<posting_id>\d+)', permission_classes=[IsSchedulerOrAdmin])  # New endpoint
+    def count_by_posting(self, request, posting_id=None):
+        """Get count of applications for a specific job posting. Only accessible by schedulers and admins."""
+        count = self.get_queryset().filter(posting_id=posting_id).count()
+        return Response({
+            'posting_id': posting_id,
+            'application_count': count
+        })
+        
+
+       
+
     
     @action(detail=False, methods=['get'], url_path=r'by-id/(?P<application_id>\d+)')    
     def by_id(self, request, application_id=None):
@@ -441,6 +525,39 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 {"detail": "Application not found or you do not have permission to view it."}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+
+    @action(detail=False, methods=['get'], url_path='myapplications-short', permission_classes=[IsStudentUser])
+    def myapplications_short(self, request):      
+
+        user_type, user_id = self.get_user_info(request)
+
+        if user_type != 'student':            
+            return Response(
+                {"detail": "Only students can access this endpoint."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get the student model ID from the authenticated user
+        student_model_id = self.get_student_model_id(user_id)
+
+        if not student_model_id:
+            return Response(
+                {"detail": "Could not find student record for authenticated user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Filter applications for this student, ordered by most recent first
+        # Use select_related to optimize database queries
+        applications = Application.objects.select_related(
+            'posting', 'posting__department', 'posting__term'
+        ).filter(
+            student_id=student_model_id
+        ).order_by('-applied_at', '-application_id') 
+
+        # Use the short serializer instead of the full one
+        serializer = ApplicationShortSerializer(applications, many=True)
+        return Response(serializer.data)
 
 
 
@@ -636,39 +753,208 @@ class ApplicationShortListViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id']
     ordering = ['-id']  # Most recent shortlists first
     
-    def perform_create(self, serializer):
-        """Set created_by to current user if not provided"""
-        if hasattr(self.request.user, 'tascheduler') and not serializer.validated_data.get('created_by'):
-            serializer.save(created_by=self.request.user.tascheduler)
-        else:
+    def get_permissions(self):
+        """
+        Define permissions for different actions.
+        Only TA Schedulers can access shortlist functionality.
+        """
+        # All actions require scheduler permissions
+        return [IsSchedulerUser()]
+    
+    def get_queryset(self):
+        """
+        Filter shortlists based on user role and permissions.
+        TA Schedulers can see all shortlists.
+        """
+        user_type, user_id = self.get_user_info(self.request)
+        
+        if user_type == 'scheduler':
+            # TA Schedulers can see all shortlists
+            return ApplicationShortList.objects.all()
+        
+        # If somehow a non-scheduler gets through, return empty queryset
+        return ApplicationShortList.objects.none()
+    
+    def get_user_info(self, request):
+        """Get user type and ID from request"""
+        user_type = getattr(request, 'user_type', None)
+        user_id = getattr(request, 'user_id', None)
+        return user_type, user_id
+    
+    def get_scheduler_model_id(self, user_id):
+        """Get the TAScheduler model ID from the authenticated user ID"""
+        try:
+            user = User.objects.get(id=user_id)
+            scheduler = TAScheduler.objects.get(email=user.email)
+            return scheduler.id
+        except (User.DoesNotExist, TAScheduler.DoesNotExist):
+            return None
+    
+    def perform_create(self, serializer):       
+        user_type, user_id = self.get_user_info(self.request)
+        
+        if user_type == 'scheduler' and user_id:
+            scheduler_model_id = self.get_scheduler_model_id(user_id)            
+            if scheduler_model_id:
+                serializer.save(created_by_id=scheduler_model_id)           
+        elif user_type =='scheduler':
+            # Just save it without the scheduler ID
             serializer.save()
     
-    @action(detail=False, methods=['get'], url_path=r'by-scheduler/(?P<scheduler_id>\d+)')
+    @action(detail=False, methods=['get'], url_path=r'by-scheduler/(?P<scheduler_id>\d+)', permission_classes=[IsSchedulerUser])
     def by_scheduler(self, request, scheduler_id=None):
         """Get all shortlisted applications by a specific TA scheduler"""
-        shortlists = self.queryset.filter(created_by_id=scheduler_id)
+        # Ensure only schedulers can access this
+        user_type, user_id = self.get_user_info(request)
+        
+        if user_type != 'scheduler':
+            return Response(
+                {"detail": "Only TA Schedulers can access shortlist data."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        shortlists = self.get_queryset().filter(created_by_id=scheduler_id)
         serializer = self.get_serializer(shortlists, many=True)
         return Response(serializer.data)
     
-    # @action(detail=False, methods=['get'], url_path=r'by-posting/(?P<posting_id>\d+)')
-    # def by_posting(self, request, posting_id=None):
-    #     """Get all shortlisted applications for a specific job posting"""
-    #     shortlists = self.queryset.filter(application__posting__posting_id=posting_id)
-    #     serializer = self.get_serializer(shortlists, many=True)
-    #     return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)')
+    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)', permission_classes=[IsSchedulerUser])
     def by_application(self, request, application_id=None):
         """Get shortlisted application data by application id"""
-        shortlists = self.queryset.filter(application_id=application_id)
-        serializer = self.get_serializer(shortlists, many=True)  # Fixed: many=True
+        user_type, user_id = self.get_user_info(request)
+        
+        if user_type != 'scheduler':
+            return Response(
+                {"detail": "Only TA Schedulers can access shortlist data."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        shortlists = self.get_queryset().filter(application_id=application_id)
+        serializer = self.get_serializer(shortlists, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)/exists')
+    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)/exists', permission_classes=[IsSchedulerUser])
     def application_shortlisted(self, request, application_id=None):
         """Check if application is shortlisted"""
-        exists = self.queryset.filter(application_id=application_id).exists()
+        user_type, user_id = self.get_user_info(request)
+        
+        if user_type != 'scheduler':
+            return Response(
+                {"detail": "Only TA Schedulers can access shortlist data."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        exists = self.get_queryset().filter(application_id=application_id).exists()
         return Response({'shortlisted': exists})
+
+
+class DocumentViewSet(viewsets.ModelViewSet):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer   
+
+    def get_permissions(self):
+        """Apply custom permission logic."""        
+        print(f"DEBUG: get_permissions called for action: {self.action}")
+        if self.action in ['list', 'retrieve', 'by_application']: 
+            print("DEBUG: Returning AllowAny permission for testing")
+            return [IsStudentOrSchedulerOrAdmin()] #get_queryset finetunes this further
+        elif self.action in ['create','destroy', 'update', 'partial_update']:
+            print("DEBUG: Returning IsStudentUser permission")
+            return [IsStudentUser()]       #only student users can create application documents or remove them 
+        print("DEBUG: Returning default permissions")
+        return super().get_permissions()
+
+    def get_queryset(self):
+        """Restrict access based on user role."""
+        user_type, user_id = self.get_user_info(self.request)
+
+        if user_type in ['scheduler', 'admin']:
+            return Document.objects.all()
+
+        if user_type == 'student' and user_id:
+            student_model_id = self.get_student_model_id(user_id)
+            return Document.objects.filter(student_id=student_model_id)
+
+        return Document.objects.none()
+
+    def perform_create(self, serializer):
+        """Auto-attach the student to the uploaded document if applicable."""
+        user_type, user_id = self.get_user_info(self.request)
+
+        if user_type == 'student' and user_id:
+            student_model_id = self.get_student_model_id(user_id)
+            if student_model_id:
+                serializer.save(student_id=student_model_id)
+            else:
+                raise serializers.ValidationError("No matching student record found.")
+        else:
+            serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        """Ensure students can only delete their own documents."""
+        instance = self.get_object()
+        user_type, user_id = self.get_user_info(request)
+
+        if user_type == 'student':
+            student_model_id = self.get_student_model_id(user_id)
+            if instance.student_id != student_model_id:
+                return Response(
+                    {"detail": "You are not authorized to delete this document."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        return super().destroy(request, *args, **kwargs)
+
+    def get_user_info(self, request):
+        user_type = getattr(request, 'user_type', None)
+        user_id = getattr(request, 'user_id', None)
+        return user_type, user_id
+
+    def get_student_model_id(self, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            student = Student.objects.get(email=user.email)
+            return student.id
+        except (User.DoesNotExist, Student.DoesNotExist):
+            return None
+        
+    @action(detail=True, methods=['get'])
+    def signed_download_url(self, request, pk=None):
+        document = self.get_object()
+        path = document.file.name
+        signed_url = generate_signed_url(path)  # signed url to return to nginx
+        return Response({'url': signed_url})
+    
+    @action(detail=False, methods=['get'], url_path=r'by-application/(?P<application_id>\d+)')
+    def by_application(self, request, application_id=None):        
+        user_type, user_id = self.get_user_info(request)
+
+        # Get the base queryset (already filtered by permissions)
+        queryset = self.get_queryset()
+
+        # Filter by application ID
+        documents = queryset.filter(application_id=application_id)
+
+        # Additional security check for students - ensure they can only see documents from their own applications
+        if user_type == 'student' and user_id:
+            student_model_id = self.get_student_model_id(user_id)
+            if student_model_id:
+                # Verify the application belongs to this student
+                print(f"Authenticated student_model_id: {student_model_id}")
+                try:
+                    from .models import Application
+                    application = Application.objects.get(
+                        application_id=application_id,
+                        student_id=student_model_id
+                    )
+                    print("Application is owned by this student.")
+                except Application.DoesNotExist:
+                    print("Application does not belong to this student.")
+                    return Response(
+                        {"detail": "Application not found or you do not have permission to view its documents."},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+        serializer = self.get_serializer(documents, many=True)
+        return Response(serializer.data)
 
 
         
@@ -679,16 +965,76 @@ def api_root(request):
     return JsonResponse({
         'status': 'Applications & Job Postings Service is running',
         'service_scope': 'Job postings and application management',
+        'version': '1.0',
+        
         'public_endpoints': {
+            'api_root': '/api/ajp/',
+            
+            # Job Postings - Public endpoints
             'job_postings': '/api/ajp/jobpostings/',
             'open_jobs': '/api/ajp/jobpostings/open/',
             'active_jobs': '/api/ajp/jobpostings/active/',
             'jobs_by_term': '/api/ajp/jobpostings/by-term/{term_id}/',
         },
-        'authenticated_endpoints': {
-            'applications': '/api/ajp/applications/',
-            'apps_by_student': '/api/ajp/applications/by-student/{student_id}/',
-            'apps_by_posting': '/api/ajp/applications/by-posting/{posting_id}/',
-            'app_by_id': '/api/ajp/applications/by-id/{application_id}/',
+        
+        'student_endpoints': {
+            'description': 'Endpoints available to authenticated students',
+            
+            # Application endpoints for students
+            'my_applications': '/api/ajp/applications/myapplications/',
+            'submit_application': '/api/ajp/applications/',
+            'submit_with_responses': '/api/ajp/applications/submit_with_responses/',
+            'update_application_status': '/api/ajp/applications/{id}/',  # PATCH only
+            'my_applications_by_id': '/api/ajp/applications/by-student/{student_id}/',
+            'my_applications_short': '/api/ajp/applications/myapplications-short/', 
+            'application_documents': '/api/ajp/documents/by-application/{application_id}/' 
+        },
+        
+        'scheduler_endpoints': {
+            'description': 'Endpoints available to TA Schedulers',
+            
+            # Job Posting Management
+            'create_job_posting': '/api/ajp/jobpostings/',
+            'update_job_posting': '/api/ajp/jobpostings/{id}/',
+            'archive_job_posting': '/api/ajp/jobpostings/{id}/',  # DELETE (archives)
+            'count_by_posting': '/api/ajp/count-by-posting/{id}',
+            
+            # Application Management
+            'all_applications': '/api/ajp/applications/',
+            'applications_by_posting': '/api/ajp/applications/by-posting/{posting_id}/',
+            'application_by_id': '/api/ajp/applications/by-id/{application_id}/',
+            
+            # Form Template Management
+            'form_templates': '/api/ajp/form-templates/',
+            'create_form_template': '/api/ajp/form-templates/',
+            'duplicate_template': '/api/ajp/form-templates/{id}/duplicate/',
+            'disable_template': '/api/ajp/form-templates/{id}/',  # DELETE (disables)
+            
+            # Form Section Management
+            'form_sections': '/api/ajp/form-sections/',
+            'create_form_section': '/api/ajp/form-sections/',
+            
+            # Form Question Management
+            'form_questions': '/api/ajp/form-questions/',
+            'bulk_create_questions': '/api/ajp/form-questions/bulk_create/',
+            'reorder_questions': '/api/ajp/form-questions/reorder/',
+            
+            # Application Response Management
+            'application_responses': '/api/ajp/application-responses/',
+            
+            # Shortlist Management - NEW SECTION
+            'application_shortlists': '/api/ajp/application-shortlists/',
+            'create_shortlist': '/api/ajp/application-shortlists/',
+            'shortlists_by_scheduler': '/api/ajp/application-shortlists/by-scheduler/{scheduler_id}/',
+            'shortlists_by_application': '/api/ajp/application-shortlists/by-application/{application_id}/',
+            'check_if_shortlisted': '/api/ajp/application-shortlists/by-application/{application_id}/exists/',
+        },        
+       
+        'authentication_notes': {
+            'public': 'No authentication required',
+            'student': 'Requires student authentication token',
+            'scheduler': 'Requires TA Scheduler authentication token',
+            'admin': 'Requires admin authentication token'
         }
     })
+

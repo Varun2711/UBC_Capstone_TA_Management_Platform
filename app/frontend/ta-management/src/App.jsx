@@ -18,9 +18,11 @@ import { LandingPage } from "./pages/LandingPage";
 import CreateAccount1 from "./pages/CreateAccount1";
 import CreateAccount2 from "./pages/CreateAccount2";
 import CreateAccount3 from "./pages/CreateAccount3";
-import ForgotPassword from "./pages/ForgotPassword";
+import ResetPasswordController, {
+  RESET_PASSWORD_STEPS,
+} from "./pages/ResetPassword/ResetPasswordController";
 import UserProfile from "./pages/profile-page-scheduler";
-import TaCoordinatorAllocationPage from "./pages/TaCoordinatorAllocationPage";
+import TaCoordinatorAllocationPage from "./pages/Scheduler/TaCoordinatorAllocationPage";
 import ViewJobPostings from "./pages/Student/Student_ViewJobPostings";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import ManageApplications from "./pages/Scheduler/Scheduler_ManageApplications";
@@ -28,7 +30,14 @@ import ViewStudentApplication from "./pages/Scheduler/Scheduler_ViewApplication"
 import InstructorProfile from "./pages/Instructor/instructor-profile";
 import JobPostingManagerPage from "./pages/Scheduler/Scheduler-job-posting-management";
 import MyCourses from "./pages/Instructor_MyCourses";
+import StudentOffers from "./pages/StudentOffersPage";
+import CourseDetails from "./pages/Instructor/CourseDetails";
 import InstructorTARequirements from "./pages/Instructor/instructor-ta-requirements";
+import SchedulerAssignmentPage from "./pages/Scheduler/Scheduler_AssignmentPage";
+import AdminCourseManagement from "./pages/Admin/CourseManagement";
+import ViewStudentSchedule from "./pages/Student/Student_Schedule";
+import MyApplications from "./pages/Student/MyApplications";
+import ApplicationDetail from "./pages/Student/ApplicationDetail";
 
 function App() {
   return (
@@ -43,7 +52,7 @@ function App() {
       <Route path="/create-account/step1" element={<CreateAccount1 />} />
       <Route path="/create-account/step2" element={<CreateAccount2 />} />
       <Route path="/create-account/step3" element={<CreateAccount3 />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPasswordController />} />
 
       {/* Accessible to: student ---------------- */}
       <Route
@@ -82,6 +91,24 @@ function App() {
         }
       />
 
+      <Route
+        path="/student-offers"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <StudentOffers />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/schedule"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ViewStudentSchedule />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Accessible to: instructor -------------- */}
       <Route
         path="/instructor-dashboard"
@@ -110,7 +137,7 @@ function App() {
         }
       />
 
-<Route
+      <Route
         path="/ta-requirements"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
@@ -119,7 +146,14 @@ function App() {
         }
       />
 
-
+      <Route
+        path="/course-details/:courseId/:term"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.instructor]}>
+            <CourseDetails />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Accessible to: scheduler --------------- */}
       <Route
@@ -168,6 +202,15 @@ function App() {
       />
 
       <Route
+        path="/assignment-management"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
+            <SchedulerAssignmentPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/manage-applications"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.scheduler]}>
@@ -203,13 +246,14 @@ function App() {
         }
       />
       <Route
-        path="/system-settings"
+        path="/admin-course-management"
         element={
           <ProtectedRoute authorizedRoles={[USER_TYPES.admin]}>
-            <SystemSettings />
+            <AdminCourseManagement />
           </ProtectedRoute>
         }
-      />  
+      />
+
       <Route
         path="/manage-templates"
         element={
@@ -219,6 +263,23 @@ function App() {
         }
       />
 
+      <Route
+        path="/my-applications"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <MyApplications />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-applications/detail/:applicationId"
+        element={
+          <ProtectedRoute authorizedRoles={[USER_TYPES.student]}>
+            <ApplicationDetail />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Add more routes if needed */}
     </Routes>

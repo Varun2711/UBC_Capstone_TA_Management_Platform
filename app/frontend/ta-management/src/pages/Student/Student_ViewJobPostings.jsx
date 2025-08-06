@@ -9,11 +9,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Calendar, MapPin, Clock, Users } from "lucide-react";
+import {
+  Bell,
+  Calendar,
+  MapPin,
+  Clock,
+  Users,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from "lucide-react";
 import axios from "axios";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/student-dashboard-sidebar";
-import { getProfile } from "@/logic/student-profile";
+import { fetchAppBarProfile } from "@/logic/student-applications";
+import { fetchStudentApplications } from "@/logic/student-view-applications";
 
 const instance = axios.create({
   baseURL: "http://localhost:8080/api",
@@ -22,25 +32,45 @@ const instance = axios.create({
 export default function ViewJobPostings() {
   const navigate = useNavigate();
   const [jobPostings, setJobPostings] = useState([]);
-  //const [applications, SetApplications] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userData, setUserData] = useState();
 
+  const getAuthHeaders = () => {
+    const token = sessionStorage.getItem("accessToken");
+    if (!token) {
+      // console.warn("Access token not found in sessionStorage");
+      return {};
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
+  //helper function which checks if the post is more than 7 days past deadline
+  const isMoreThan7DaysExpired = (deadlineDate) => {
+    const currentDate = new Date();
+    const deadline = new Date(deadlineDate);
+    const daysDifference = (currentDate - deadline) / (1000 * 60 * 60 * 24);
+    return daysDifference > 7;
+  };
+
   useEffect(() => {
     const fetchJobPostings = async () => {
       try {
-        // Fetch only open/active job postings
-        const response = await instance.get("/ajp/jobpostings/", {
-          params: {
-            status: "open", // Only show open positions
-          },
+        // Fetch all job postings (not just open ones) so we can show closed ones too
+        const headers = getAuthHeaders();
+        const response = await instance.get("/ajp/jobpostings/", { headers });
+
+        const filteredPostings = response.data.filter((posting) => {
+          return !isMoreThan7DaysExpired(posting.deadline_date);
         });
-        setJobPostings(response.data);
-        //console.log(response.data);
+
+        setJobPostings(filteredPostings);
       } catch (err) {
         setError("Failed to load job postings");
-        console.error("Error fetching job postings:", err);
+        // console.error("Error fetching job postings:", err);
       } finally {
         setLoading(false);
       }
@@ -48,20 +78,74 @@ export default function ViewJobPostings() {
 
     const fetchUserData = async () => {
       try {
-        const profile = await getProfile();
+        const profile = await fetchAppBarProfile();
         setUserData(profile);
-        console.log("User Profile:", profile);
+        // console.log("User Profile:", profile);
       } catch (err) {
         console.error("Error fetching user profile:", err);
       }
     };
 
+    const fetchApplications = async () => {
+      try {
+        const userApplications = await fetchStudentApplications();
+        setApplications(userApplications);
+        // console.log("User Applications:", userApplications);
+      } catch (err) {
+        console.error("Error fetching user applications:", err);
+        // Don't set error here as applications might not exist yet
+      }
+    };
+
     fetchJobPostings();
     fetchUserData();
+    fetchApplications();
   }, []);
+
+  // Helper function to check if user has already applied to a job
+  const hasAppliedToJob = (postingId) => {
+    const existingApp = applications.find((app) => {
+      return String(app.posting_id) === String(postingId);
+    });
+    return existingApp;
+  };
+
+  // Helper function to check if deadline has passed
+  const isDeadlinePassed = (deadlineDate) => {
+    const currentDate = new Date();
+    const deadline = new Date(deadlineDate);
+    return currentDate > deadline;
+  };
+
+  // Helper function to determine if posting is closed
+  const isPostingClosed = (posting) => {
+    return (
+      posting.status === "closed" || isDeadlinePassed(posting.deadline_date)
+    );
+  };
+
+  // Helper function to get posting status info
+  const getPostingStatusInfo = (posting) => {
+    const existingApplication = hasAppliedToJob(posting.posting_id);
+    const deadlinePassed = isDeadlinePassed(posting.deadline_date);
+    const statusClosed = posting.status === "closed";
+    const isClosed = isPostingClosed(posting);
+
+    return {
+      existingApplication,
+      deadlinePassed,
+      statusClosed,
+      isClosed,
+      canApply: !isClosed && !existingApplication,
+    };
+  };
 
   const handleApply = (postingId) => {
     navigate(`/apply/jobposting/${postingId}`);
+  };
+
+  const handleViewApplication = (applicationId) => {
+    navigate(`/my-applications/detail/${applicationId}`);
   };
 
   const formatDate = (dateString) => {
@@ -98,7 +182,7 @@ export default function ViewJobPostings() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar
-          name={`${userData.first_name} ${userData.last_Name || ""}`}
+          name={`${userData.name}`}
           email={userData.email}
           avatar={userData.avatar}
         />
@@ -143,106 +227,155 @@ export default function ViewJobPostings() {
                   </Card>
                 ) : (
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
-                    {jobPostings.map((posting) => (
-                      <Card
-                        key={posting.posting_id}
-                        className="hover:shadow-lg transition-shadow"
-                      >
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-xl mb-2">
-                                {posting.title ||
-                                  `TA Position - ${posting.department?.name}`}
-                              </CardTitle>
-                              <CardDescription className="text-base">
-                                {posting.department?.name}
-                              </CardDescription>
-                            </div>
-                            <Badge
-                              variant={
-                                posting.status === "open"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className="ml-2"
+                    {Array.isArray(jobPostings)
+                      ? jobPostings.map((posting) => {
+                          const statusInfo = getPostingStatusInfo(posting);
+
+                          return (
+                            <Card
+                              key={posting.posting_id}
+                              className={`hover:shadow-lg transition-shadow ${
+                                statusInfo.isClosed ? "opacity-75" : ""
+                              }`}
                             >
-                              {posting.status}
-                            </Badge>
-                          </div>
-                        </CardHeader>
+                              <CardHeader>
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <CardTitle className="text-xl mb-2">
+                                      {posting.title ||
+                                        `TA Position - ${posting.department?.name}`}
+                                    </CardTitle>
+                                    <CardDescription className="text-base mb-3">
+                                      {posting.department?.name}
+                                    </CardDescription>
+                                  </div>
 
-                        <CardContent>
-                          {/* Description */}
-                          {posting.description && (
-                            <p className="text-gray-600 mb-4 line-clamp-3">
-                              {posting.description}
-                            </p>
-                          )}
+                                  <div className="flex items-center gap-2 ml-2">
+                                    {/* Main status badge */}
+                                    {statusInfo.existingApplication ? (
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-green-50 text-green-700 border-green-200"
+                                      >
+                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                        Application Submitted
+                                      </Badge>
+                                    ) : statusInfo.isClosed ? (
+                                      <Badge
+                                        variant="secondary"
+                                        className="bg-red-50 text-red-700 border-red-200"
+                                      >
+                                        <XCircle className="h-3 w-3 mr-1" />
+                                        Closed
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="default">
+                                        {posting.status}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardHeader>
 
-                          {/* Job Details */}
-                          <div className="space-y-2 mb-4">
-                            {posting.term && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Calendar className="h-4 w-4 mr-2" />
-                                <span>Term: {posting.term.description}</span>
-                              </div>
-                            )}
+                              <CardContent>
+                                {/* Description */}
+                                {posting.description && (
+                                  <p className="text-gray-600 mb-4 line-clamp-3">
+                                    {posting.description}
+                                  </p>
+                                )}
 
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Clock className="h-4 w-4 mr-2" />
-                              <span>
-                                Posted: {formatDate(posting.post_date)}
-                              </span>
-                            </div>
+                                {/* Job Details */}
+                                <div className="space-y-2 mb-4">
+                                  {posting.term && (
+                                    <div className="flex items-center text-sm text-gray-600">
+                                      <Calendar className="h-4 w-4 mr-2" />
+                                      <span>
+                                        Term: {posting.term.description}
+                                      </span>
+                                    </div>
+                                  )}
 
-                            <div className="flex items-center text-sm text-gray-600">
-                              <MapPin className="h-4 w-4 mr-2" />
-                              <span>
-                                Deadline: {formatDate(posting.deadline_date)}
-                              </span>
-                            </div>
-                          </div>
+                                  <div className="flex items-center text-sm text-gray-600">
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    <span>
+                                      Posted: {formatDate(posting.post_date)}
+                                    </span>
+                                  </div>
 
-                          {/* Requirements */}
-                          {posting.requirements && (
-                            <div className="mb-4">
-                              <h4 className="font-medium text-gray-900 mb-2">
-                                Requirements:
-                              </h4>
-                              <p className="text-sm text-gray-600 line-clamp-2">
-                                {posting.requirements}
-                              </p>
-                            </div>
-                          )}
+                                  <div
+                                    className={`flex items-center text-sm ${
+                                      statusInfo.deadlinePassed
+                                        ? "text-red-600"
+                                        : "text-gray-600"
+                                    }`}
+                                  >
+                                    <MapPin className="h-4 w-4 mr-2" />
+                                    <span>
+                                      Deadline:{" "}
+                                      {formatDate(posting.deadline_date)}
+                                      {statusInfo.deadlinePassed && (
+                                        <span className="ml-1 font-medium">
+                                          (Passed)
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
 
-                          {/* Apply Button */}
-                          <div className="flex justify-end pt-4 border-t">
-                            {/* <span className="text-sm text-gray-500">
-                      ID: #{posting.posting_id}
-                    </span> */}
-                            <Button
-                              onClick={() => handleApply(posting.posting_id)}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              Apply Now
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                                {/* Requirements */}
+                                {posting.requirements && (
+                                  <div className="mb-4">
+                                    <h4 className="font-medium text-gray-900 mb-2">
+                                      Requirements:
+                                    </h4>
+                                    <p className="text-sm text-gray-600 line-clamp-2">
+                                      {posting.requirements}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Apply/View Application Section */}
+                                <div className="flex justify-end pt-4 border-t">
+                                  {statusInfo.existingApplication ? (
+                                    <Button
+                                      variant="outline"
+                                      onClick={() =>
+                                        handleViewApplication(
+                                          statusInfo.existingApplication
+                                            .application_id
+                                        )
+                                      }
+                                      className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                                    >
+                                      View Application
+                                    </Button>
+                                  ) : statusInfo.canApply ? (
+                                    <Button
+                                      onClick={() =>
+                                        handleApply(posting.posting_id)
+                                      }
+                                      className="bg-blue-600 hover:bg-blue-700"
+                                    >
+                                      Apply Now
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      disabled
+                                      variant="outline"
+                                      className="opacity-50 cursor-not-allowed"
+                                    >
+                                      Application Closed
+                                    </Button>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })
+                      : null}
                   </div>
                 )}
-
-                {/* Back to Dashboard */}
-                <div className="mt-8 text-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/student-dashboard")}
-                  >
-                    Back to Dashboard
-                  </Button>
-                </div>
               </div>
             </div>
           </main>

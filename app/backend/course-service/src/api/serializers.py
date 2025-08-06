@@ -229,13 +229,14 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
     """
     # Nested serialization for related objects
     course_info = serializers.StringRelatedField(source='course', read_only=True)
+    course_description = serializers.CharField(source='course.course_description', read_only=True)
     course_id = serializers.PrimaryKeyRelatedField(
         source='course',
-        queryset=Course.objects.all(),
-        write_only=True
+        queryset=Course.objects.all()
     )
     
     term_info = serializers.StringRelatedField(source='academic_term', read_only=True)
+    academic_term = serializers.IntegerField(source='academic_term.id', read_only=True)  # Add read-only academic_term id
     term_id = serializers.PrimaryKeyRelatedField(
         source='academic_term',
         queryset=Term.objects.all(),
@@ -270,19 +271,21 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
         fields = [
             'course_offering_id',
             'course_info',
+            'course_description',
             'course_id',
             'section_number',
             'term_info',
+            'academic_term',   # Add read-only academic_term id
             'term_id',
             'instructor_info',
-            'instructor_id_read',  # Add this to fields
+            'instructor_id_read',
             'instructor_id',
             'time_slots_info',
             'time_slot_ids',
             'time_slots',
             'is_active'
         ]
-        read_only_fields = ['course_offering_id', 'course_info', 'term_info', 'instructor_info', 'instructor_id_read', 'time_slots_info']  # Add instructor_id_read here
+        read_only_fields = ['course_offering_id', 'course_info', 'course_description', 'term_info', 'academic_term', 'instructor_info', 'instructor_id_read', 'time_slots_info']
     
     def validate_section_number(self, value):
         """
@@ -591,6 +594,9 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
         allow_null=True
     )
     
+    # Override request_date to make it optional with default
+    request_date = serializers.DateField(required=False, allow_null=True)
+    
     class Meta:
         model = InstructorRequest
         fields = [
@@ -650,12 +656,31 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
     
     def validate_request_date(self, value):
         """
-        Validate that request date is not in the past.
+        Validate that request date is not in the past (allows current date).
         """
         from django.utils import timezone
-        if value and value < timezone.now().date():
+        
+        # If no value provided (None or empty), default to today
+        if value is None:
+            return timezone.now().date()
+            
+        # Allow today's date and future dates, reject only past dates
+        today = timezone.now().date()
+        if value < today:
             raise serializers.ValidationError("Request date cannot be in the past.")
         return value
+
+    def to_internal_value(self, data):
+        """
+        Override to set default value for request_date if not provided.
+        """
+        # If request_date is not provided, set it to today's date
+        if 'request_date' not in data or data.get('request_date') is None:
+            from django.utils import timezone
+            data = data.copy() if hasattr(data, 'copy') else dict(data)
+            data['request_date'] = timezone.now().date().isoformat()
+        
+        return super().to_internal_value(data)
 
 
 # Student Serializer

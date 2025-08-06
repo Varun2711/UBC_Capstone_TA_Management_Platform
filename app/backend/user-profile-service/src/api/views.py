@@ -10,6 +10,8 @@ from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from utils.password_utils import generate_secure_password
 from django.http import Http404
+import requests
+import os
 
 # Import shared auth utilities
 from auth_utils.decorators import admin_required, scheduler_required, authenticated_required, student_required
@@ -452,22 +454,23 @@ def find_user(request):
                 "user": serializer.data,
                 "type": found_type
             }))
+        else:
+            # If searching by email and not found, exit immediately
+            return Response(error_response("User not found"), status=status.HTTP_404_NOT_FOUND)
     
     # Search by student number
     if student_number:
-        user = get_user_by_id(student_number, 'student')
-        if user:
-            if user_type and user_type != 'student':
-                return Response(
-                    error_response(f"User found but is student, not {user_type}"),
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
+        try:
+            user = Student.objects.get(student_number=student_number)
+            # ... (rest of the success logic is fine)
             log_user_activity('student', student_number, 'profile_searched')
             return Response(success_response({
                 "user": StudentSerializer(user).data,
                 "type": "student"
             }))
+        except Student.DoesNotExist:
+            # If searching by student_number and not found, exit immediately
+            return Response(error_response("User not found"), status=status.HTTP_404_NOT_FOUND)
     
     # Search by employee number
     if employee_number:
@@ -501,6 +504,7 @@ def find_user(request):
                     "type": "admin"
                 }))
     
+    # If we reach here, it means a specific search was attempted and failed, or no valid param was given.
     # No parameters provided
     if not email and not student_number and not employee_number:
         return Response(
@@ -508,7 +512,7 @@ def find_user(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # User not found
+    # User not found (this is now a fallback)
     return Response(
         error_response("User not found"),
         status=status.HTTP_404_NOT_FOUND
@@ -527,66 +531,44 @@ class CreateInstructorView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             try:
-                # Check if instructor with this employee number already exists
-                if Instructor.objects.filter(employee_number=serializer.validated_data['employee_number']).exists():
-                    return Response(
-                        error_response("Instructor with this employee number already exists"),
-                        status=status.HTTP_400_BAD_REQUEST
+                with transaction.atomic():
+                    department_name = serializer.validated_data['department']
+                    department = Department.objects.get(name__iexact=department_name)
+                    
+                    password = generate_secure_password()
+                    hashed_password = make_password(password)
+                    
+                    instructor = Instructor.objects.create(
+                        name=f"{serializer.validated_data['first_name']} {serializer.validated_data['last_name']}",
+                        email=serializer.validated_data['email'],
+                        employee_number=serializer.validated_data['employee_number'],
+                        department=department,
+                        password=hashed_password,
+                        is_active=True
                     )
-                
-                # Check if email is already in use
-                if Instructor.objects.filter(email=serializer.validated_data['email']).exists():
-                    return Response(
-                        error_response("Email already in use"),
-                        status=status.HTTP_400_BAD_REQUEST
+                    
+                    log_user_activity(request.user_id, 'ADMIN_CREATE_INSTRUCTOR', instructor.employee_number)
+                    
+                    # Send notification email
+                    send_account_creation_email(
+                        email=instructor.email,
+                        name=instructor.name,
+                        temporary_password=password,
+                        user_type='instructor'
                     )
-                
-                # Get department object
-                print(f"DEBUG: Looking for department: {serializer.validated_data['department']}")
-                department_code = serializer.validated_data['department']
-                department_name_map = {
-                    'astr': 'Astronomy',
-                    'math': 'Mathematics',
-                    'phy': 'Physics',
-                    'data': 'Data Science',
-                    'stat': 'Statistics',
-                    'cosc': 'Computer Science'
-                }
-                department_name = department_name_map.get(department_code)
-                if not department_name:
+                    
+                    response_data = {
+                        "id": instructor.employee_number,
+                        "name": instructor.name,
+                        "department": instructor.department.name,
+                        "email": instructor.email,
+                        "created_by": request.user_id
+                    }
+                    
                     return Response(
-                        error_response("Invalid department code"),
-                        status=status.HTTP_400_BAD_REQUEST
+                        success_response(response_data, "Instructor created successfully. A notification has been sent to their email."),
+                        status=status.HTTP_201_CREATED
                     )
-                department = Department.objects.get(name__iexact=department_name)
-                
-                # Generate secure temporary password
-                temp_password = generate_secure_password()
-                
-                # Create instructor
-                instructor = Instructor.objects.create(
-                    employee_number=serializer.validated_data['employee_number'],
-                    name=f"{serializer.validated_data['first_name']} {serializer.validated_data['last_name']}",
-                    email=serializer.validated_data['email'],
-                    department=department, 
-                    password=temp_password
-                )
-                
-                # Return response with temporary password for admin to share
-                response_data = InstructorSerializer(instructor).data
-                response_data['temporary_password'] = temp_password
-                
-                user_type = request.auth.payload.get('user_type', 'unknown')
-                log_user_activity(user_type, request.user.email, f'created_instructor_{instructor.employee_number}')
-                
-                return Response(
-                    success_response(
-                        response_data, 
-                        "Instructor created successfully. Please share the temporary password with the instructor."
-                    ),
-                    status=status.HTTP_201_CREATED
-                )
-                
             except Department.DoesNotExist:
                 return Response(
                     error_response("Department not found"),
@@ -594,7 +576,7 @@ class CreateInstructorView(generics.CreateAPIView):
                 )
             except Exception as e:
                 return Response(
-                    error_response(f"Error creating instructor: {str(e)}"),
+                    error_response(f"Failed to create instructor: {str(e)}"),
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         
@@ -827,21 +809,15 @@ def create_admin(request):
         with transaction.atomic():
             required_fields = ['name', 'email', 'employee_number']
             for field in required_fields:
-                if not request.data.get(field):
-                    return Response(
-                        error_response(f"{field} is required"),
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                if field not in request.data:
+                    return Response(error_response(f"{field} is required"), status=status.HTTP_400_BAD_REQUEST)
             
             if Admin.objects.filter(email=request.data.get('email')).exists():
-                return Response(
-                    error_response("Admin with this email already exists"),
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response(error_response("Admin with this email already exists"), status=status.HTTP_400_BAD_REQUEST)
             
             password = generate_secure_password()
             hashed_password = make_password(password)
-            
+
             admin = Admin.objects.create(
                 name=request.data.get('name'),
                 email=request.data.get('email'),
@@ -850,14 +826,25 @@ def create_admin(request):
                 is_active=True
             )
             
-            log_user_activity('admin', request.user_id, f'created_admin_{admin.employee_number}')
+            log_user_activity(request.user_id, 'ADMIN_CREATE_ADMIN', admin.employee_number)
+
+            # Send notification email
+            send_account_creation_email(
+                email=admin.email,
+                name=admin.name,
+                temporary_password=password,
+                user_type='admin'
+            )
+
+            response_data = {
+                "id": admin.employee_number,
+                "name": admin.name,
+                "email": admin.email,
+                "created_by": request.user_id
+            }
             
             return Response(
-                success_response({
-                    "admin_id": admin.employee_number,
-                    "temporary_password": password,
-                    "created_by": request.user_id
-                }, "Admin created successfully"),
+                success_response(response_data, "Admin created successfully. A notification has been sent to their email."),
                 status=status.HTTP_201_CREATED
             )
             
@@ -969,100 +956,74 @@ def admin_dashboard(request):
 @scheduler_required
 def scheduler_create_instructor(request):
     """TA Scheduler can create instructors in any department"""
-    try:
-        with transaction.atomic():
-            # Validate the data
-            serializer = SchedulerInstructorSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(
-                    error_response("Invalid data", serializer.errors),
-                    status=status.HTTP_400_BAD_REQUEST
+    serializer = SchedulerInstructorSerializer(data=request.data)
+    if serializer.is_valid():
+        try:
+            with transaction.atomic():
+                # Get the TA Scheduler who is making the request
+                scheduler = get_object_or_404(TAScheduler, employee_number=request.user_id)
+                
+                # Extract validated data
+                employee_number = serializer.validated_data['employee_number']
+                email = serializer.validated_data['email']
+                department_name = serializer.validated_data['department']
+
+                # Check for uniqueness
+                if Instructor.objects.filter(employee_number=employee_number).exists():
+                    return Response(error_response("Instructor with this employee number already exists"), status=status.HTTP_400_BAD_REQUEST)
+                if Instructor.objects.filter(email=email).exists():
+                    return Response(error_response("Instructor with this email already exists"), status=status.HTTP_400_BAD_REQUEST)
+
+                # Get department
+                department = get_object_or_404(Department, name=department_name)
+                
+                # Generate password
+                password = generate_secure_password()
+                hashed_password = make_password(password)
+                
+                # Create instructor in the specified department
+                instructor = Instructor.objects.create(
+                    name=serializer.validated_data['name'],
+                    email=email,
+                    employee_number=employee_number,
+                    department=department,
+                    password=hashed_password,
+                    is_active=True
                 )
-            
-            # Get the department from the request data
-            department_name = serializer.validated_data.get('department')
-            if not department_name:
-                return Response(
-                    error_response("Department is required"),
-                    status=status.HTTP_400_BAD_REQUEST
+                
+                # Log the activity
+                log_user_activity(request.user_id, 'SCHEDULER_CREATE_INSTRUCTOR', instructor.employee_number)
+                
+                # Send notification email
+                send_account_creation_email(
+                    email=instructor.email,
+                    name=instructor.name,
+                    temporary_password=password,
+                    user_type='instructor'
                 )
-            
-            # Validate the department exists
-            try:
-                department = Department.objects.get(name__iexact=department_name)
-            except Department.DoesNotExist:
+
+                # Return response in the format you requested
+                response_data = {
+                    "id": instructor.employee_number,
+                    "name": instructor.name,
+                    "department": instructor.department.name,
+                    "email": instructor.email,
+                    "created_by": request.user_id
+                }
+                
                 return Response(
-                    error_response("Department not found"),
-                    status=status.HTTP_400_BAD_REQUEST
+                    success_response(response_data, "Instructor created successfully. A notification has been sent to their email."),
+                    status=status.HTTP_201_CREATED
                 )
+                
+        except TAScheduler.DoesNotExist:
+            return Response(error_response("Scheduler profile not found."), status=status.HTTP_404_NOT_FOUND)
+        except Department.DoesNotExist:
+            return Response(error_response("Department not found."), status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(error_response(f"An unexpected error occurred: {str(e)}"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            # Check if instructor already exists
-            if Instructor.objects.filter(email=serializer.validated_data['email']).exists():
-                return Response(
-                    error_response("Instructor with this email already exists"),
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Generate employee number if not provided
-            employee_number = serializer.validated_data.get('employee_number')
-            if not employee_number:
-                # Generate a unique employee number
-                import random
-                import string
-                while True:
-                    employee_number = ''.join(random.choices(string.digits, k=8))
-                    if not Instructor.objects.filter(employee_number=employee_number).exists():
-                        break
-            
-            # Check if employee number already exists
-            if Instructor.objects.filter(employee_number=employee_number).exists():
-                return Response(
-                    error_response("Instructor with this employee number already exists"),
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Generate secure password
-            password = generate_secure_password()
-            hashed_password = make_password(password)
-            
-            # Create instructor in the specified department
-            instructor = Instructor.objects.create(
-                name=serializer.validated_data['name'],
-                email=serializer.validated_data['email'],
-                employee_number=employee_number,
-                department=department,  # Use the department provided in the request
-                password=hashed_password,
-                is_active=True
-            )
-            
-            # Log the activity
-            log_user_activity(request.user_id, 'SCHEDULER_CREATE_INSTRUCTOR', instructor.employee_number)
-            
-            # Return response in the format you requested
-            response_data = {
-                "id": instructor.employee_number,
-                "name": instructor.name,
-                "department": instructor.department.name,
-                "email": instructor.email,
-                "temporary_password": password,
-                "created_by": request.user_id
-            }
-            
-            return Response(
-                success_response(response_data, "Instructor created successfully"),
-                status=status.HTTP_201_CREATED
-            )
-            
-    except TAScheduler.DoesNotExist:
-        return Response(
-            error_response("TA Scheduler not found"),
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            error_response(f"Failed to create instructor: {str(e)}"),
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    return Response(error_response(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT', 'PATCH'])
 @scheduler_required
@@ -1154,6 +1115,28 @@ def scheduler_delete_instructor(request, instructor_id):
             error_response(f"Failed to delete instructor: {str(e)}"),
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    
+def send_account_creation_email(email, name, temporary_password, user_type):
+    """Helper function to call the notification service via nginx"""
+    # Route through nginx, which will forward to the notification service
+    notification_url = "http://nginx/api/notifications/send_account_creation_email/"
+    
+    payload = {
+        "email": email,
+        "name": name,
+        "temporary_password": temporary_password,
+        "user_type": user_type
+    }
+    
+    try:
+        response = requests.post(notification_url, json=payload, timeout=10)
+        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+        print(f"Successfully requested account creation email for {email}")
+        return True
+    except requests.exceptions.RequestException as e:
+        # In a production environment, you would use a more robust logging solution
+        print(f"Failed to send account creation email request to notification service for {email}: {e}")
+        return False
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
