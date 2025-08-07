@@ -63,7 +63,7 @@ const systemItems = [
   {
     title: "System Settings",
     icon: Settings,
-    url: "#",
+    url: "/system-settings",
   },
 ]
 

@@ -144,7 +144,6 @@ export const getSystemHealth = async () => {
     };
   }
 };
-
 // Get a list of all users 
 export const getAllUsers = async (userType = "") => {
   try {

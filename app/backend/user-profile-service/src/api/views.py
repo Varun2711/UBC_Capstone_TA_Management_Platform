@@ -722,13 +722,17 @@ class UserManagementView(generics.GenericAPIView):
         
         if action == 'deactivate':
             return self.deactivate_user(request)
+
         elif action == 'reactivate':
             return self.reactivate_user(request)
+
         elif action == 'modify':
             return self.modify_user(request)
         else:
             return Response(
+
                 error_response("Invalid action. Use 'deactivate', 'reactivate', or 'modify'"),
+
                 status=status.HTTP_400_BAD_REQUEST
             )
     
