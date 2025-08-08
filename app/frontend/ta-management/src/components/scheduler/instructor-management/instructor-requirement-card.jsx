@@ -138,6 +138,15 @@ export function InstructorRequirementsCard({
                                   <Badge variant="outline" className="text-xs">
                                     {offering.term} {offering.year}
                                   </Badge>
+                                  {offering.requirements.hasRequest ? (
+                                    <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+                                      Submitted
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
+                                      Pending
+                                    </Badge>
+                                  )}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{offering.courseTitle}</p>
                               </div>
@@ -145,7 +154,12 @@ export function InstructorRequirementsCard({
 
                             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                               <Calendar className="h-4 w-4" />
-                              <span>Submitted: {formatDate(offering.requirements.submittedAt)}</span>
+                              <span>
+                                {offering.requirements.hasRequest 
+                                  ? `Submitted: ${formatDate(offering.requirements.submittedAt)}`
+                                  : "Not submitted"
+                                }
+                              </span>
                             </div>
                           </div>
                         </CardHeader>
@@ -157,14 +171,21 @@ export function InstructorRequirementsCard({
                             <Separator />
                             <div className="space-y-2">
                               <h5 className="font-medium text-sm">Requirements</h5>
-                              <ul className="space-y-1">
-                                {offering.requirements.generalRequirements.map((req, idx) => (
-                                  <li key={idx} className="text-sm text-muted-foreground flex items-start">
-                                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                                    {req}
-                                  </li>
-                                ))}
-                              </ul>
+                              {offering.requirements.hasRequest ? (
+                                <ul className="space-y-1">
+                                  {offering.requirements.generalRequirements.map((req, idx) => (
+                                    <li key={idx} className="text-sm text-muted-foreground flex items-start">
+                                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                      {req}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <div className="text-center py-4 text-muted-foreground">
+                                  <p className="text-sm">No requirements submitted yet</p>
+                                  <p className="text-xs mt-1">The instructor hasn't submitted TA requirements for this course.</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </CardContent>

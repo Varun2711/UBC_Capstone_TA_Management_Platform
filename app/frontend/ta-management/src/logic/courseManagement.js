@@ -370,8 +370,14 @@ const extractLevelFromCode = (code) => {
 
 /**
  * Maps backend course data to frontend format with instructor names resolved
+ * Now filters out inactive courses, offerings, and shared sessions
  */
 export const mapCourseData = (backendCourse, instructors = []) => {
+  // Skip inactive courses entirely
+  if (!backendCourse.is_active) {
+    return null;
+  }
+
   // Create instructor lookup map
   const instructorMap = new Map();
   instructors.forEach((instructor) => {
@@ -380,15 +386,10 @@ export const mapCourseData = (backendCourse, instructors = []) => {
     instructorMap.set(Number(instructor.id), instructor.name);
   });
 
-  return {
-    id: backendCourse.id,
-    code: backendCourse.code,
-    title: backendCourse.title,
-    department: backendCourse.department,
-    departmentId: backendCourse.departmentId,
-    description: backendCourse.description,
-    level: extractLevelFromCode(backendCourse.code),
-    offerings: (backendCourse.offerings || []).map((offering) => {
+  // Filter offerings to only include active ones
+  const activeOfferings = (backendCourse.offerings || [])
+    .filter((offering) => offering.is_active)
+    .map((offering) => {
       const instructorName =
         instructorMap.get(offering.instructor_id) ||
         instructorMap.get(String(offering.instructor_id)) ||
@@ -407,14 +408,50 @@ export const mapCourseData = (backendCourse, instructors = []) => {
         section: offering.section,
         displaySection: `${backendCourse.code}-${offering.section}`,
         requirements: offering.requirements,
-        // Add time slots handling
         time_slots: offering.time_slots || [],
-        timeSlots: offering.time_slots || [], // For compatibility
+        timeSlots: offering.time_slots || [],
         time_increments: offering.time_increments || [],
+        is_active: offering.is_active, // Keep the is_active field for reference
       };
-    }),
-    // The backend already returns sharedSessions grouped by term - just use it directly!
-    sharedSessions: backendCourse.sharedSessions || {},
+    });
+
+  // Filter shared sessions to only include active ones
+  const activeSharedSessions = {};
+  if (backendCourse.sharedSessions) {
+    Object.entries(backendCourse.sharedSessions).forEach(([termKey, termSessions]) => {
+      const filteredTermSessions = {
+        labs: [],
+        tutorials: [],
+        seminars: [],
+        workshops: []
+      };
+
+      // Filter each session type for active sessions only
+      Object.entries(termSessions).forEach(([sessionType, sessions]) => {
+        if (Array.isArray(sessions)) {
+          filteredTermSessions[sessionType] = sessions.filter(session => session.is_active);
+        }
+      });
+
+      // Only include the term if it has any active sessions
+      const hasActiveSessions = Object.values(filteredTermSessions).some(sessions => sessions.length > 0);
+      if (hasActiveSessions) {
+        activeSharedSessions[termKey] = filteredTermSessions;
+      }
+    });
+  }
+
+  return {
+    id: backendCourse.id,
+    code: backendCourse.code,
+    title: backendCourse.title,
+    department: backendCourse.department,
+    departmentId: backendCourse.departmentId,
+    description: backendCourse.description,
+    level: extractLevelFromCode(backendCourse.code),
+    is_active: backendCourse.is_active, // Keep the is_active field for reference
+    offerings: activeOfferings,
+    sharedSessions: activeSharedSessions,
   };
 };
 

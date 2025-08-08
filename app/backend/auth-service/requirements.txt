@@ -9,3 +9,5 @@ sqlparse==0.5.3
 tzdata==2025.2
 setuptools
 requests
+pytest==7.4.3
+pytest-django==4.7.0

@@ -304,170 +304,138 @@ export const transformAssignmentsToCalendarEvents = async (assignments) => {
   }
 
   const events = [];
+  const seenEvents = new Set(); // To prevent creating duplicate events
 
-  for (const assignment of assignments) {
-    // console.log("Processing assignment:", assignment.assignment_id);
+  for (const assignmentGroup of assignments) {
+    // Get term dates for the entire group
+    const termDates = await getTermDatesFromAssignment(assignmentGroup);
+    const startRange = new Date(termDates.termStartDate);
+    const endRange = new Date(termDates.termEndDate);
 
-    // Get term dates from assignment_term (now async)
-    const termDates = await getTermDatesFromAssignment(assignment);
+    // Check if this is a full-year assignment to handle breaks
+    const termCode = assignmentGroup.assignment_term?.code || "";
+    const isBothTerms = termCode.toLowerCase().includes("both terms");
 
-    // Get time slots from the assignment directly - handle both grouped and single assignments
-    let timeSlots = [];
+    // An assignment group can have multiple individual assignments (e.g., 1 lecture + 2 labs)
+    const individualAssignments =
+      assignmentGroup.grouped_assignments &&
+      assignmentGroup.grouped_assignments.length > 0
+        ? assignmentGroup.grouped_assignments
+        : [assignmentGroup];
 
-    if (
-      assignment.grouped_assignments &&
-      assignment.grouped_assignments.length > 0
-    ) {
-      // For grouped assignments, process each assignment separately but consolidate their time slots
-      assignment.grouped_assignments.forEach((groupedAssignment) => {
-        // Use consolidateTimeSlots to merge consecutive slots for each assignment
-        const consolidatedSlots = consolidateTimeSlots(groupedAssignment);
+    for (const individualAssignment of individualAssignments) {
+      // Consolidate time slots for this specific assignment (e.g., merge 8-9am and 9-10am)
+      const timeSlots = consolidateTimeSlots(individualAssignment);
 
-        timeSlots.push(...consolidatedSlots);
-      });
-    } else {
-      // For single assignments, consolidate their time slots
-      timeSlots = consolidateTimeSlots(assignment);
-      //console.log("Consolidated slots for single assignment:", timeSlots);
-    }
+      // Process each time slot to create calendar events
+      timeSlots.forEach((timeSlot) => {
+        if (
+          !timeSlot ||
+          !(timeSlot.day || timeSlot.day_code) ||
+          !timeSlot.start_time ||
+          !timeSlot.end_time
+        ) {
+          console.warn("Invalid time slot data:", timeSlot);
+          return; // Skip invalid slot
+        }
 
-    // Process each consolidated time slot for this assignment
-    timeSlots.forEach((timeSlot, slotIndex) => {
-      //console.log("Processing time slot:", timeSlot);
-
-      if (
-        timeSlot &&
-        (timeSlot.day || timeSlot.day_code) &&
-        timeSlot.start_time &&
-        timeSlot.end_time
-      ) {
-        // Map day names to numbers (0 = Sunday, 1 = Monday, etc.)
         const dayMap = {
-          sunday: 0,
-          monday: 1,
-          tuesday: 2,
-          wednesday: 3,
-          thursday: 4,
-          friday: 5,
-          saturday: 6,
+          sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+          thursday: 4, friday: 5, saturday: 6,
         };
-
         const dayCode = (timeSlot.day_code || timeSlot.day || "").toLowerCase();
         const dayNumber = dayMap[dayCode];
 
-        if (dayNumber !== undefined) {
-          // Parse start and end times - handle both HH:MM and HH:MM:SS formats
-          const startTimeParts = timeSlot.start_time.split(":").map(Number);
-          const endTimeParts = timeSlot.end_time.split(":").map(Number);
+        if (dayNumber === undefined) {
+          console.warn("Invalid day code:", dayCode);
+          return;
+        }
 
-          const startHour = startTimeParts[0];
-          const startMinute = startTimeParts[1] || 0;
-          const endHour = endTimeParts[0];
-          const endMinute = endTimeParts[1] || 0;
+        const startTimeParts = timeSlot.start_time.split(":").map(Number);
+        const endTimeParts = timeSlot.end_time.split(":").map(Number);
+        const startHour = startTimeParts[0];
+        const startMinute = startTimeParts[1] || 0;
+        const endHour = endTimeParts[0];
+        const endMinute = endTimeParts[1] || 0;
 
-          // Determine course information from assignment
-          let courseInfo = "";
-          let sessionType = "";
+        // --- FIX: Determine course info and session type from the INDIVIDUAL assignment ---
+        let courseInfo = "";
+        let sessionType = "";
 
-          if (assignment.course_offering) {
-            courseInfo = `${assignment.course.course_number} - ${assignment.course_offering.section_number}`;
-            sessionType = "Course";
-          } else if (assignment.shared_session) {
-            courseInfo = `${assignment.course.course_number} - ${assignment.shared_session.section_number}`;
-            sessionType = assignment.shared_session.section_number.startsWith(
-              "L"
-            )
-              ? "Lab"
-              : "Tutorial";
-          } else {
-            // For grouped assignments, use the course info from the main assignment
-            courseInfo = `${assignment.course.course_number}`;
-            sessionType = "Mixed";
-          }
+        if (individualAssignment.course_offering) {
+          courseInfo = `${individualAssignment.course.course_number} ${individualAssignment.course_offering.section_number}`;
+          sessionType = "Lecture";
+        } else if (individualAssignment.shared_session) {
+          courseInfo = `${individualAssignment.course.course_number} ${individualAssignment.shared_session.section_number}`;
+          const type = individualAssignment.shared_session.session_type; // 'lab' or 'tutorial'
+          sessionType = type ? type.charAt(0).toUpperCase() + type.slice(1) : "Session";
+        } else {
+          courseInfo = `${individualAssignment.course.course_number}`;
+          sessionType = "Assignment"; // Fallback
+        }
 
-          //console.log("Course info:", courseInfo, "Session type:", sessionType);
+        // Generate recurring events for each week of the term
+        let currentDate = new Date(startRange);
+        while (currentDate.getDay() !== dayNumber && currentDate <= endRange) {
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
 
-          // Use proper term start and end dates for event generation
-          const startRange = new Date(termDates.termStartDate);
-          const endRange = new Date(termDates.termEndDate);
+        let weekCount = 0;
+        const maxWeeks = isBothTerms ? 40 : 20; // Safer upper limit for weeks
 
-          //console.log("Term range:", startRange, "to", endRange);
-
-          // Generate events for each week in the range
-          let currentDate = new Date(startRange);
-
-          // Find the first occurrence of the target day within the term
-          while (
-            currentDate.getDay() !== dayNumber &&
-            currentDate <= endRange
-          ) {
-            currentDate.setDate(currentDate.getDate() + 1);
-          }
-
-          let weekCount = 0;
-          const maxWeeks = 42; // Academic term is typically ~16-20 weeks, 26 is safe upper bound
-
-          while (currentDate <= endRange && weekCount < maxWeeks) {
-            const eventDate = new Date(currentDate);
-
-            const startTime = new Date(eventDate);
-            startTime.setHours(startHour, startMinute, 0, 0);
-
-            const endTime = new Date(eventDate);
-            endTime.setHours(endHour, endMinute, 0, 0);
-
-            // Only create events that are within the term range
-            if (eventDate >= startRange && eventDate <= endRange) {
-              // Create unique ID that accounts for consolidated slots
-              const eventId = timeSlot._consolidated
-                ? `${
-                    assignment.assignment_id
-                  }-consolidated-${slotIndex}-${eventDate.getTime()}`
-                : `${
-                    assignment.assignment_id
-                  }-${slotIndex}-${eventDate.getTime()}`;
-
-              const event = {
-                id: eventId,
-                title: `${courseInfo}`,
-                sessionType: `${sessionType}`,
-                start: startTime,
-                end: endTime,
-                resource: {
-                  assignment: assignment,
-                  timeSlot: timeSlot,
-                  hours: assignment.weekly_hours,
-                  role: assignment.role,
-                  location: timeSlot.location || "TBD",
-                  isActive: assignment.is_active,
-                  isConsolidated: timeSlot._consolidated || false,
-                  originalSlotCount: timeSlot._originalSlotCount || 1,
-                },
-              };
-
-              // console.log("Created event:", event);
-              events.push(event);
+        while (currentDate <= endRange && weekCount < maxWeeks) {
+          // Skip winter break for "Both Terms" assignments (approx. Dec 21 - Jan 4)
+          if (isBothTerms) {
+            const month = currentDate.getMonth(); // 11 = December
+            const day = currentDate.getDate();
+            if ((month === 11 && day >= 21) || (month === 0 && day <= 4)) {
+              currentDate.setDate(currentDate.getDate() + 7);
+              weekCount++;
+              continue;
             }
+          }
 
-            // Move to next week
+          const eventDate = new Date(currentDate);
+          const startTime = new Date(eventDate);
+          startTime.setHours(startHour, startMinute, 0, 0);
+          const endTime = new Date(eventDate);
+          endTime.setHours(endHour, endMinute, 0, 0);
+
+          // Deduplication check to prevent visual overlap
+          const eventKey = `${eventDate.toISOString().split("T")[0]}-${timeSlot.start_time}-${courseInfo}`;
+          if (seenEvents.has(eventKey)) {
             currentDate.setDate(currentDate.getDate() + 7);
             weekCount++;
+            continue;
           }
-        } else {
-          console.warn(
-            "Invalid day code:",
-            dayCode,
-            "for time slot:",
-            timeSlot
-          );
+          seenEvents.add(eventKey);
+
+          if (eventDate >= startRange && eventDate <= endRange) {
+            const eventId = `${individualAssignment.assignment_id}-${timeSlot.day}-${timeSlot.start_time}-${eventDate.getTime()}`;
+            events.push({
+              id: eventId,
+              title: courseInfo,
+              sessionType: sessionType,
+              start: startTime,
+              end: endTime,
+              resource: {
+                assignment: individualAssignment, // Use the specific assignment
+                timeSlot: timeSlot,
+                hours: individualAssignment.weekly_hours,
+                role: individualAssignment.role,
+                location: timeSlot.location || "TBD",
+                isActive: individualAssignment.is_active,
+              },
+            });
+          }
+
+          currentDate.setDate(currentDate.getDate() + 7);
+          weekCount++;
         }
-      } else {
-        console.warn("Invalid time slot data:", timeSlot);
-      }
-    });
+      });
+    }
   }
 
-  //console.log("Generated", events.length, "calendar events total");
   return events;
 };
 

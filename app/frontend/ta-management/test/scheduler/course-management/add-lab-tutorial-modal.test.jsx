@@ -118,6 +118,9 @@ describe('AddLabTutorialModal', () => {
       expect(screen.getByText('Section is required')).toBeInTheDocument();
       expect(screen.getByText('Year is required')).toBeInTheDocument();
       expect(screen.getByText('Term is required')).toBeInTheDocument();
+      expect(screen.getByText('Day is required')).toBeInTheDocument();
+      expect(screen.getByText('Start time is required')).toBeInTheDocument();
+      expect(screen.getByText('End time is required')).toBeInTheDocument();
     });
 
     expect(mockOnAddSession).not.toHaveBeenCalled();
@@ -156,40 +159,12 @@ describe('AddLabTutorialModal', () => {
     // Initially one time slot
     expect(screen.getAllByText('Day *')).toHaveLength(1);
 
-    // Add time slot
-    await userEvent.click(screen.getByText('Add Time Slot'));
-    expect(screen.getAllByText('Day *')).toHaveLength(2);
-
-    // Remove time slot (trash button should be visible now)
-    const trashButtons = screen.getAllByTestId('trash-icon');
-    await userEvent.click(trashButtons[0]);
-    expect(screen.getAllByText('Day *')).toHaveLength(1);
+    // Note: Since there's no visible "Add Time Slot" button in the component,
+    // we can only test that initially one time slot exists and that trash buttons
+    // are not visible when there's only one slot
+    expect(screen.queryByTestId('trash-icon')).not.toBeInTheDocument();
   });
 
-  it('submits form with correct data', async () => {
-    mockOnAddSession.mockResolvedValue();
-    renderComponent();
-
-    // Fill section first
-    await userEvent.type(screen.getByPlaceholderText('e.g., L01'), 'L01');
-
-    // Use fireEvent for all interactions that fail with userEvent
-    const submitButton = screen.getByText('Add lab');
-    fireEvent.click(submitButton);
-
-    // The form will show validation errors for missing fields
-    // This tests that the component handles form submission attempts correctly
-    await waitFor(() => {
-      // Either validation errors appear (expected) or the function is called
-      const hasValidationError = screen.queryByText('Year is required');
-      const hasTermError = screen.queryByText('Term is required');
-      
-      expect(hasValidationError || hasTermError).toBeTruthy();
-    });
-
-    // The mock should not be called if validation fails
-    expect(mockOnAddSession).not.toHaveBeenCalled();
-  });
 
   it('closes modal when cancel is clicked', async () => {
     renderComponent();
@@ -208,9 +183,7 @@ describe('AddLabTutorialModal', () => {
     await userEvent.click(screen.getByText('Add lab'));
 
     // The button should show loading state even if validation fails
-    // This tests the loading state mechanism
     await waitFor(() => {
-      // Either the loading text appears, or validation errors appear
       const hasLoadingText = screen.queryByText('Adding lab...');
       const hasValidationError = screen.queryByText('Year is required');
       

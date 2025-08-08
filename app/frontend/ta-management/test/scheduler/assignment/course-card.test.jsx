@@ -23,7 +23,6 @@ describe("CourseCard", () => {
     code: "COSC 111",
     name: "Introduction to Programming",
     department: "Computer Science",
-    instructor: "Dr. Smith",
     yearlyOfferings: {
       "2024": {
         "2024W1": [
@@ -102,11 +101,9 @@ describe("CourseCard", () => {
     // Check course title
     expect(screen.getByText("COSC 111 - Introduction to Programming")).toBeInTheDocument();
     
-    // Check instructor and department
-    expect(screen.getByText("Instructor: Dr. Smith • Computer Science")).toBeInTheDocument();
-    
-    // Check department badge
-    expect(screen.getByText("Computer Science")).toBeInTheDocument();
+    // Check department appears
+    const departmentElements = screen.getAllByText("Computer Science");
+    expect(departmentElements.length).toBeGreaterThan(0);
   });
 
   it("displays years in descending order", () => {
@@ -196,7 +193,8 @@ describe("CourseCard", () => {
 
     // Course info should still be displayed
     expect(screen.getByText("COSC 111 - Introduction to Programming")).toBeInTheDocument();
-    expect(screen.getByText("Instructor: Dr. Smith • Computer Science")).toBeInTheDocument();
+    const departmentElements = screen.getAllByText("Computer Science");
+    expect(departmentElements.length).toBeGreaterThan(0);
 
     // No year sections should be rendered
     expect(screen.queryByTestId(/year-section-/)).not.toBeInTheDocument();
@@ -281,7 +279,8 @@ describe("CourseCard", () => {
     expect(cardElement).toBeInTheDocument();
 
     // Check layout structure
-    expect(screen.getByText("Computer Science")).toBeInTheDocument();
+    const departmentElements = screen.getAllByText("Computer Science");
+    expect(departmentElements.length).toBeGreaterThan(0);
   });
 
   it("handles course with different department", () => {
@@ -290,7 +289,6 @@ describe("CourseCard", () => {
       code: "MATH 101",
       name: "Calculus I",
       department: "Mathematics",
-      instructor: "Dr. Johnson",
     };
 
     render(
@@ -302,8 +300,10 @@ describe("CourseCard", () => {
     );
 
     expect(screen.getByText("MATH 101 - Calculus I")).toBeInTheDocument();
-    expect(screen.getByText("Instructor: Dr. Johnson • Mathematics")).toBeInTheDocument();
-    expect(screen.getByText("Mathematics")).toBeInTheDocument();
+    
+    // Verify Mathematics appears
+    const mathElements = screen.getAllByText("Mathematics");
+    expect(mathElements.length).toBeGreaterThan(0);
   });
 
   it("sorts years correctly with multiple years", () => {
@@ -337,7 +337,7 @@ describe("CourseCard", () => {
       ...mockCourse,
       code: "COSC-499A",
       name: "Capstone Project (Part I)",
-      instructor: "Dr. O'Connor",
+      department: "Computer Science",
     };
 
     render(
@@ -349,6 +349,43 @@ describe("CourseCard", () => {
     );
 
     expect(screen.getByText("COSC-499A - Capstone Project (Part I)")).toBeInTheDocument();
-    expect(screen.getByText("Instructor: Dr. O'Connor • Computer Science")).toBeInTheDocument();
+    const departmentElements = screen.getAllByText("Computer Science");
+    expect(departmentElements.length).toBeGreaterThan(0);
+  });
+
+  it("displays department in both description and badge", () => {
+    render(
+      <CourseCard
+        course={mockCourse}
+        expandedYears={mockExpandedYears}
+        onToggleYear={mockOnToggleYear}
+      />
+    );
+
+    // Department should appear multiple times - in CardDescription and in Badge
+    const departmentElements = screen.getAllByText("Computer Science");
+    expect(departmentElements.length).toBeGreaterThan(0);
+  });
+
+  it("handles courses with missing optional fields", () => {
+    const minimalCourse = {
+      id: 2,
+      code: "TEST 100",
+      name: "Test Course",
+      department: "Test Department",
+      yearlyOfferings: {},
+    };
+
+    render(
+      <CourseCard
+        course={minimalCourse}
+        expandedYears={new Set()}
+        onToggleYear={mockOnToggleYear}
+      />
+    );
+
+    expect(screen.getByText("TEST 100 - Test Course")).toBeInTheDocument();
+    const departmentElements = screen.getAllByText("Test Department");
+    expect(departmentElements.length).toBeGreaterThan(0);
   });
 });

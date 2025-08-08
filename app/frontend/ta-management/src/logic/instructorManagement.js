@@ -18,15 +18,18 @@ const getAuthHeaders = () => {
 // --- Instructor/Department Functions (Profile Service) ---
 
 /**
- * Fetches all instructors.
+ * Fetches all active instructors.
  * Corresponds to: GET /api/profile/instructors/
  */
 export const getInstructors = async () => {
   const response = await axios.get(`${PROFILE_API_URL}/instructors/`, {
     headers: getAuthHeaders()
   });
-  // The response is a direct array of instructors
-  return response.data;
+  
+  // Filter to only return active instructors
+  const activeInstructors = response.data.filter(instructor => instructor.is_active === true);
+  
+  return activeInstructors;
 };
 
 /**

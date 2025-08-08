@@ -407,11 +407,12 @@ class CourseViewSet(viewsets.ModelViewSet):
         
         # Build the response data
         response_data = {
-            'id': course.id,  # Bug fix: Use course.id instead of course_number
+            'id': course.id,
             'code': course.course_number,
             'title': course.course_name,
             'department': course.department.name,
             'description': course.course_description or '',
+            'is_active': course.is_active,  # Add course is_active field
             'offerings': [],
             'sharedSessions': {}
         }
@@ -438,40 +439,41 @@ class CourseViewSet(viewsets.ModelViewSet):
                 'id': str(offering.course_offering_id),
                 'year': str(offering.academic_term.startCalendarYear),
                 'term': offering.academic_term.code,
-                'instructor_id': offering.instructor.id if offering.instructor else None,  # Give instructor id instead of name
+                'instructor_id': offering.instructor.id if offering.instructor else None,
                 'section': offering.section_number,
+                'is_active': offering.is_active,  # Add offering is_active field
                 'time_slots': time_info,
                 'time_increments': time_increments,
                 'requirements': {
-                    'specialRequirements': []  # This would need to be added to model if needed
+                    'specialRequirements': []
                 }
             }
             response_data['offerings'].append(offering_data)
         
-        # Process shared sessions, grouped by term (remove year from term parent)
+        # Process shared sessions, grouped by term
         for session in shared_sessions:
-            term_key = session.academic_term.code  # Remove year from term parent
+            term_key = session.academic_term.code
             
             # Initialize term group if not exists
             if term_key not in response_data['sharedSessions']:
                 response_data['sharedSessions'][term_key] = {
                     'labs': [],
                     'tutorials': [],
-                    'seminars': [],
+                    'seminars': []
                 }
             
             # Get time slot information
             time_slots = session.time_slots.all()
             time_info = []
             time_increments = []
-            location = "TBD"  # Location would need to be added to model if needed
+            location = "TBD"
             
             for slot in time_slots:
                 time_info.append({
                     'day': slot.get_day_display(),
                     'time': f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
                 })
-                # Add time increments from this slot
+                # Add time increments for this slot
                 time_increments.extend(slot.time_increments)
             
             # Remove duplicates and sort time increments
@@ -486,8 +488,9 @@ class CourseViewSet(viewsets.ModelViewSet):
                 'time_increments': time_increments,  # Add the 30-minute increments
                 'location': location,
                 'student_id': session.student.id if session.student else None,
-                'student_name': session.student.name if session.student else None,  # Add student name
-                'forCourse': course.id  # Change from forOfferings to forCourse with course id
+                'student_name': session.student.name if session.student else None,
+                'is_active': session.is_active,  # Add shared session is_active field
+                'forCourse': course.id
             }
             
             # Add to appropriate session type list
@@ -523,13 +526,14 @@ class CourseViewSet(viewsets.ModelViewSet):
                 'academic_term', 'student'
             ).prefetch_related('time_slots').all()
             
-            # Build the response data for this course
+            # Build the response data
             course_data = {
                 'id': course.id,
                 'code': course.course_number,
                 'title': course.course_name,
                 'department': course.department.name,
                 'description': course.course_description or '',
+                'is_active': course.is_active,  # Add course is_active field
                 'offerings': [],
                 'sharedSessions': {}
             }
@@ -546,7 +550,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                         'day': slot.get_day_display(),
                         'time': f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
                     })
-                    # Add time increments from this slot
+                    # Add time increments for this slot
                     time_increments.extend(slot.time_increments)
                 
                 # Remove duplicates and sort time increments
@@ -558,10 +562,11 @@ class CourseViewSet(viewsets.ModelViewSet):
                     'term': offering.academic_term.code,
                     'instructor_id': offering.instructor.id if offering.instructor else None,
                     'section': offering.section_number,
+                    'is_active': offering.is_active,  # Add offering is_active field
                     'time_slots': time_info,
                     'time_increments': time_increments,
                     'requirements': {
-                        'specialRequirements': []  # This would need to be added to model if needed
+                        'specialRequirements': []
                     }
                 }
                 course_data['offerings'].append(offering_data)
@@ -583,14 +588,14 @@ class CourseViewSet(viewsets.ModelViewSet):
                 time_slots = session.time_slots.all()
                 time_info = []
                 time_increments = []
-                location = "TBD"  # Location would need to be added to model if needed
+                location = "TBD"
                 
                 for slot in time_slots:
                     time_info.append({
                         'day': slot.get_day_display(),
                         'time': f"{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}"
                     })
-                    # Add time increments from this slot
+                    # Add time increments for this slot
                     time_increments.extend(slot.time_increments)
                 
                 # Remove duplicates and sort time increments
@@ -605,7 +610,8 @@ class CourseViewSet(viewsets.ModelViewSet):
                     'time_increments': time_increments,
                     'location': location,
                     'student_id': session.student.id if session.student else None,
-                    'student_name': session.student.name if session.student else None,  # Add student name
+                    'student_name': session.student.name if session.student else None,
+                    'is_active': session.is_active,  # Add shared session is_active field
                     'forCourse': course.id
                 }
                 

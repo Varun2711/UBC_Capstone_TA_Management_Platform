@@ -104,31 +104,37 @@ export default function CourseManagement() {
         setLoading(true);
         setError(null);
 
-        // Load all required data in parallel - USE ACTIVE TERMS ONLY
-        const [coursesData, departmentsData, termsData, instructorsData] =
-          await Promise.all([
-            getAllCoursesFullDetails(),
-            getDepartments(),
-            getActiveTerms(), // Changed from getTerms() to getActiveTerms()
-            getInstructors(),
-          ]);
+        const [coursesData, departmentsData, termsData, instructorsData] = await Promise.all([
+          getAllCoursesFullDetails(),
+          getDepartments(),
+          getActiveTerms(), // Only get active terms
+          getInstructors(),
+        ]);
 
-        // Map data to frontend format - pass instructors to resolve names
-        const mappedInstructors = mapInstructorsForDropdown(
-          instructorsData,
-          departmentsData
-        );
-        const mappedCourses = coursesData.map((course) =>
-          mapCourseData(course, instructorsData)
-        );
+        // Transform departments
+        const mappedDepartments = departmentsData.map((dept) => ({
+          id: dept.id,
+          name: dept.name,
+        }));
+
+        // Transform instructors
+        const mappedInstructors = mapInstructorsForDropdown(instructorsData, mappedDepartments);
+
+        // Transform courses - filter out null results (inactive courses)
+        const mappedCourses = coursesData
+          .map((course) => mapCourseData(course, instructorsData))
+          .filter(course => course !== null); // Remove inactive courses
+
+        // Transform terms
         const mappedTerms = mapTermsForDropdown(termsData);
 
         setCourses(mappedCourses);
-        setDepartments(departmentsData);
+        setDepartments(mappedDepartments);
         setTerms(mappedTerms);
         setInstructors(mappedInstructors);
       } catch (err) {
-        setError("Failed to load data. Please try again.");
+        console.error("Failed to load data:", err);
+        setError("Failed to load course data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -188,9 +194,13 @@ export default function CourseManagement() {
         getAllCoursesFullDetails(),
         getInstructors(),
       ]);
-      setCourses(
-        updatedCourses.map((course) => mapCourseData(course, instructorsData))
-      );
+      
+      // Filter out inactive courses
+      const mappedCourses = updatedCourses
+        .map((course) => mapCourseData(course, instructorsData))
+        .filter(course => course !== null);
+        
+      setCourses(mappedCourses);
     } catch (error) {
       setError("Failed to add course. Please try again.");
     }
@@ -214,9 +224,13 @@ export default function CourseManagement() {
         getAllCoursesFullDetails(),
         getInstructors(),
       ]);
-      setCourses(
-        updatedCourses.map((course) => mapCourseData(course, instructorsData))
-      );
+      
+      // Filter out inactive courses
+      const mappedCourses = updatedCourses
+        .map((course) => mapCourseData(course, instructorsData))
+        .filter(course => course !== null);
+        
+      setCourses(mappedCourses);
     } catch (error) {
       setError("Failed to update course. Please try again.");
     }
@@ -242,9 +256,13 @@ export default function CourseManagement() {
         getAllCoursesFullDetails(),
         getInstructors(),
       ]);
-      setCourses(
-        updatedCourses.map((course) => mapCourseData(course, instructorsData))
-      );
+      
+      // Filter out inactive courses
+      const mappedCourses = updatedCourses
+        .map((course) => mapCourseData(course, instructorsData))
+        .filter(course => course !== null);
+        
+      setCourses(mappedCourses);
     } catch (error) {
       setError("Failed to add offering. Please try again.");
     }
@@ -285,14 +303,18 @@ export default function CourseManagement() {
       try {
         await deleteCourseOffering(offering.id);
 
-        // Reload the courses to get the updated data
+        // Reload courses
         const [updatedCourses, instructorsData] = await Promise.all([
           getAllCoursesFullDetails(),
           getInstructors(),
         ]);
-        setCourses(
-          updatedCourses.map((course) => mapCourseData(course, instructorsData))
-        );
+        
+        // Filter out inactive courses
+        const mappedCourses = updatedCourses
+          .map((course) => mapCourseData(course, instructorsData))
+          .filter(course => course !== null);
+          
+        setCourses(mappedCourses);
       } catch (error) {
         setError("Failed to delete offering. Please try again.");
       }
@@ -308,9 +330,13 @@ export default function CourseManagement() {
         getAllCoursesFullDetails(),
         getInstructors(),
       ]);
-      setCourses(
-        updatedCourses.map((course) => mapCourseData(course, instructorsData))
-      );
+      
+      // Filter out inactive courses
+      const mappedCourses = updatedCourses
+        .map((course) => mapCourseData(course, instructorsData))
+        .filter(course => course !== null);
+        
+      setCourses(mappedCourses);
 
       // Close the modal and clear selections
       setIsEditOfferingModalOpen(false);
@@ -319,12 +345,6 @@ export default function CourseManagement() {
     } catch (error) {
       setError("Failed to update offering. Please try again.");
     }
-  };
-
-  const handleCloseEditOfferingModal = () => {
-    setIsEditOfferingModalOpen(false);
-    setSelectedOffering(null);
-    setSelectedCourse(null);
   };
 
   // Lab/Tutorial functions
@@ -352,8 +372,8 @@ export default function CourseManagement() {
         courseId: courseId,
         section: newSessionData.section,
         termId: selectedTerm?.id || newSessionData.termId,
-        studentId: null, // No TA assigned initially
-        timeSlots: newSessionData.timeSlots || [], // Include time slots
+        studentId: null,
+        timeSlots: newSessionData.timeSlots || [],
       };
 
       const createdSession = await createSharedSession(sessionData);
@@ -364,14 +384,11 @@ export default function CourseManagement() {
         getInstructors(),
       ]);
 
-      // Find the specific course that was updated
-      const updatedCourse = updatedCourses.find(
-        (course) => course.id === courseId
-      );
-
-      const mappedCourses = updatedCourses.map((course) =>
-        mapCourseData(course, instructorsData)
-      );
+      // Filter out inactive courses
+      const mappedCourses = updatedCourses
+        .map((course) => mapCourseData(course, instructorsData))
+        .filter(course => course !== null);
+        
       setCourses(mappedCourses);
     } catch (error) {
       setError("Failed to add session. Please try again.");
@@ -393,14 +410,18 @@ export default function CourseManagement() {
       try {
         await deleteCourse(courseId);
 
-        // Reload the courses to get the updated data
+        // Reload courses
         const [updatedCourses, instructorsData] = await Promise.all([
           getAllCoursesFullDetails(),
           getInstructors(),
         ]);
-        setCourses(
-          updatedCourses.map((course) => mapCourseData(course, instructorsData))
-        );
+        
+        // Filter out inactive courses
+        const mappedCourses = updatedCourses
+          .map((course) => mapCourseData(course, instructorsData))
+          .filter(course => course !== null);
+          
+        setCourses(mappedCourses);
       } catch (error) {
         setError("Failed to delete course. Please try again.");
       }
@@ -446,9 +467,11 @@ export default function CourseManagement() {
         getInstructors(),
       ]);
 
-      const mappedCourses = updatedCourses.map((course) =>
-        mapCourseData(course, instructorsData)
-      );
+      // Filter out inactive courses
+      const mappedCourses = updatedCourses
+        .map((course) => mapCourseData(course, instructorsData))
+        .filter(course => course !== null);
+        
       setCourses(mappedCourses);
     } catch (error) {
       setError("Failed to update session. Please try again.");
@@ -466,6 +489,15 @@ export default function CourseManagement() {
     }
   };
 
+
+  // Add this missing function
+  const handleCloseEditOfferingModal = () => {
+    setIsEditOfferingModalOpen(false);
+    setSelectedOffering(null);
+    setSelectedCourse(null);
+  };
+
+  
   // Handle bulk import submission
   const handleBulkImport = async () => {
     if (!selectedFile) {
@@ -482,9 +514,12 @@ export default function CourseManagement() {
         getAllCoursesFullDetails(),
         getInstructors(),
       ]);
-      const mappedCourses = coursesData.map((course) =>
-        mapCourseData(course, instructorsData)
-      );
+      
+      // Filter out inactive courses
+      const mappedCourses = coursesData
+        .map((course) => mapCourseData(course, instructorsData))
+        .filter(course => course !== null);
+        
       setCourses(mappedCourses);
 
       // Calculate total imported items
@@ -503,14 +538,10 @@ export default function CourseManagement() {
         details.push(`${result.results.courses_updated} courses updated`);
       }
       if (result.results?.course_offerings_created > 0) {
-        details.push(
-          `${result.results.course_offerings_created} offerings created`
-        );
+        details.push(`${result.results.course_offerings_created} offerings created`);
       }
       if (result.results?.shared_sessions_created > 0) {
-        details.push(
-          `${result.results.shared_sessions_created} sessions created`
-        );
+        details.push(`${result.results.shared_sessions_created} sessions created`);
       }
 
       const successMessage = `Successfully imported ${totalCreated} items${
@@ -560,10 +591,12 @@ export default function CourseManagement() {
           getAllCoursesFullDetails(),
           getInstructors(),
         ]);
-
-        const mappedCourses = updatedCourses.map((course) =>
-          mapCourseData(course, instructorsData)
-        );
+        
+        // Filter out inactive courses
+        const mappedCourses = updatedCourses
+          .map((course) => mapCourseData(course, instructorsData))
+          .filter(course => course !== null);
+          
         setCourses(mappedCourses);
       } catch (error) {
         setError("Failed to delete session. Please try again.");

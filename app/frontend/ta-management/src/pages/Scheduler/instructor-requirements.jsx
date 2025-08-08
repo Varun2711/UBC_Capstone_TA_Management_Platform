@@ -139,35 +139,44 @@ export default function InstructorRequirements() {
     if (isLoading) {
         return { filteredInstructors: [], stats: { totalInstructors: 0, visibleInstructors: 0, totalRequirements: 0, visibleRequirements: 0 }, availableYears: [], availableTerms: [] };
     }
-    const courseOfferingMap = new Map(allCourseOfferings.map(o => [o.course_offering_id, o]));
+    
+    // Create a map of requests by course offering ID for quick lookup
+    const requestsMap = new Map(allRequests.map(req => [req.course_offering_id, req]));
     const yearSet = new Set();
     const termSet = new Set();
+    
     const instructorsWithOfferings = instructors.map(instructor => {
-        const offerings = allRequests
-            .filter(req => req.instructor_id === instructor.dbId)
-            .map(req => {
-                const offeringDetails = courseOfferingMap.get(req.course_offering_id);
-                if (!offeringDetails) return null;
-                const { courseCode, courseTitle } = parseCourseInfo(offeringDetails.course_info);
-                const { year, term } = parseTermInfo(offeringDetails.term_info);
+        // Find all course offerings for this instructor
+        const instructorOfferings = allCourseOfferings
+            .filter(offering => offering.instructor_id_read === instructor.dbId)
+            .map(offering => {
+                const { courseCode, courseTitle } = parseCourseInfo(offering.course_info);
+                const { year, term } = parseTermInfo(offering.term_info);
                 yearSet.add(year);
                 termSet.add(term);
+                
+                // Check if there's a request for this course offering
+                const request = requestsMap.get(offering.course_offering_id);
+                
                 return {
-                    offeringId: req.request_id,
+                    offeringId: offering.course_offering_id,
                     courseCode,
                     courseTitle,
-                    section: offeringDetails.section_number,
+                    section: offering.section_number,
                     year,
                     term,
                     requirements: {
-                        submittedAt: req.request_date,
-                        generalRequirements: req.request_description || [],
+                        submittedAt: request?.request_date || null,
+                        generalRequirements: request?.request_description || [],
+                        hasRequest: !!request,
+                        requestId: request?.request_id || null,
                     },
                 };
-            })
-            .filter(Boolean);
-        return { ...instructor, courseOfferings: offerings };
+            });
+            
+        return { ...instructor, courseOfferings: instructorOfferings };
     });
+    
     let visibleInstructors = instructorsWithOfferings.filter(instructor => {
         const lowerCaseQuery = searchQuery.toLowerCase();
         const matchesSearch =
@@ -178,6 +187,7 @@ export default function InstructorRequirements() {
         const matchesDepartment = selectedDepartment === "all" || instructor.departmentName === selectedDepartment;
         return matchesSearch && matchesDepartment;
     });
+    
     let visibleRequirementsCount = 0;
     const finalFilteredInstructors = visibleInstructors.map(instructor => {
         const filteredOfferings = instructor.courseOfferings.filter(offering => {
@@ -188,13 +198,19 @@ export default function InstructorRequirements() {
         visibleRequirementsCount += filteredOfferings.length;
         return { ...instructor, filteredOfferings };
     });
+    
     const totalRequirements = instructorsWithOfferings.reduce((sum, inst) => sum + inst.courseOfferings.length, 0);
+    const submittedRequirements = instructorsWithOfferings.reduce((sum, inst) => 
+      sum + inst.courseOfferings.filter(offering => offering.requirements.hasRequest).length, 0
+    );
+
     return {
         filteredInstructors: finalFilteredInstructors,
         stats: {
             totalInstructors: instructors.length,
             visibleInstructors: visibleInstructors.length,
             totalRequirements,
+            submittedRequirements, // Add this new stat
             visibleRequirements: visibleRequirementsCount,
         },
         availableYears: Array.from(yearSet).sort(),
@@ -241,15 +257,18 @@ export default function InstructorRequirements() {
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Requirements</CardTitle>
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.visibleRequirements}</div>
-                            <p className="text-xs text-muted-foreground"> of {stats.totalRequirements} total requirements</p>
-                        </CardContent>
-                    </Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Course Offerings</CardTitle>
+        <FileText className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+        <div className="text-2xl font-bold">{stats.visibleRequirements}</div>
+        <p className="text-xs text-muted-foreground">
+            of {stats.totalRequirements} total offerings 
+            ({stats.submittedRequirements} with requirements)
+        </p>
+    </CardContent>
+</Card>
                 </div>
                 <RequirementsFilters
                     searchQuery={searchQuery}

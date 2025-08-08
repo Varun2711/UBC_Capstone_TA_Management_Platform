@@ -12,7 +12,7 @@ export function CourseCard({ course, expandedYears, onToggleYear }) {
               {course.code} - {course.name}
             </CardTitle>
             <CardDescription>
-              Instructor: {course.instructor} • {course.department}
+              {course.department}
             </CardDescription>
           </div>
           <div className="text-right">

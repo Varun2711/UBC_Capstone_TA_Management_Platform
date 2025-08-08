@@ -33,6 +33,7 @@ describe('InstructorRequirementsCard', () => {
     employeeNumber: '12345678',
   };
 
+  // Update the mockOfferings to reflect the new data structure where offerings without requests show hasRequest: false
   const mockOfferings = [
     {
       offeringId: 'off-001',
@@ -44,6 +45,8 @@ describe('InstructorRequirementsCard', () => {
       requirements: {
         submittedAt: '2025-05-15',
         generalRequirements: ['Knows Python', 'Good communication'],
+        hasRequest: true,
+        requestId: 'req-001',
       },
     },
     {
@@ -56,6 +59,8 @@ describe('InstructorRequirementsCard', () => {
       requirements: {
         submittedAt: '2025-05-16',
         generalRequirements: ['Data structures mastery', 'Algorithm analysis'],
+        hasRequest: true,
+        requestId: 'req-002',
       },
     },
   ];
@@ -178,6 +183,7 @@ describe('InstructorRequirementsCard', () => {
   });
 
   describe('Course Offering Expansion', () => {
+    // Update the test for expanding and showing course requirements
     it('expands and shows course requirements', async () => {
       renderComponent({ isExpanded: true });
 
@@ -196,6 +202,7 @@ describe('InstructorRequirementsCard', () => {
       expect(screen.getByText('Requirements')).toBeInTheDocument();
     });
 
+    // Update the test for collapsing course requirements
     it('collapses course requirements when clicked again', async () => {
       renderComponent({ isExpanded: true });
 
@@ -211,6 +218,7 @@ describe('InstructorRequirementsCard', () => {
       expect(screen.queryByText('Knows Python')).not.toBeInTheDocument();
     });
 
+    // Update the test for handling multiple offerings independently
     it('handles multiple offerings independently', async () => {
       renderComponent({ isExpanded: true });
 

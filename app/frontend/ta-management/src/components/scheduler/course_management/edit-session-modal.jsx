@@ -463,21 +463,10 @@ export function EditSessionModal({
 
             {/* Time Slots Section */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-md font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Session Schedule *
-                </h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addTimeSlot}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Time Slot
-                </Button>
-              </div>
+              <h4 className="text-md font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Session Schedule *
+              </h4>
 
               {timeSlots.map((slot, index) => (
                 <Card key={index} className="p-4">

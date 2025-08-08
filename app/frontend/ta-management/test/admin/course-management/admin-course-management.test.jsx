@@ -314,7 +314,7 @@ describe("AdminCourseManagement Page", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Failed to load data. Please try again.")
+        screen.getByText("Failed to load course data. Please try again.")
       ).toBeInTheDocument();
     });
 

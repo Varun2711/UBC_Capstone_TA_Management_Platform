@@ -152,27 +152,13 @@ export function LandingPage() {
 
                     {/* Call to Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
-                        {activePostings.length > 0 ? (
-                            <>
-                                <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/create-account/step1")}>
-                                    Apply Now
-                                    <ArrowRight className="ml-2 h-5 w-5" />
-                                </Button>
-                                <Button variant="outline" size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/login")}>
-                                    Login to Existing Account
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/create-account/step1")}>
+                    <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/create-account/step1")}>
                                     Create Account
                                     <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
                                 <Button variant="outline" size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/login")}>
                                     Login
                                 </Button>
-                            </>
-                        )}
                     </div>
                 </div>
             </section>

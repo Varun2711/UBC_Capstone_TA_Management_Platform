@@ -485,7 +485,6 @@ export const transformCoursesToAssignmentFormat = (coursesData, instructors = []
       code: course.code,
       name: course.title,
       department: course.department,
-      instructor: course.instructor || 'Unknown',
       yearlyOfferings: {}
     };
 

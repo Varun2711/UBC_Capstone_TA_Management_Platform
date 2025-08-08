@@ -143,8 +143,7 @@ export default function SchedulerAssignmentPage() {
     return courses.filter((course) => {
       const matchesSearch =
         course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+        course.name.toLowerCase().includes(searchTerm.toLowerCase());
 
       if (!matchesSearch) return false;
       if (selectedDepartment !== "all" && course.department !== selectedDepartment) return false;

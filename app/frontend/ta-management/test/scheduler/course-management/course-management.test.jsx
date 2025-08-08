@@ -310,8 +310,9 @@ describe("CourseManagement Page", () => {
     renderComponent();
 
     await waitFor(() => {
+      // Updated to match the actual error message from the component
       expect(
-        screen.getByText("Failed to load data. Please try again.")
+        screen.getByText("Failed to load course data. Please try again.")
       ).toBeInTheDocument();
     });
 

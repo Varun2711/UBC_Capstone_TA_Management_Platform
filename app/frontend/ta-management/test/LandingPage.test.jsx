@@ -176,8 +176,8 @@ describe('LandingPage', () => {
         })
 
         expect(screen.getByText(/2 positions? available/i)).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: /apply now/i })).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: /login to existing account/i })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /^login$/i })).toBeInTheDocument()
     })
 
     it('displays "no applications" alert when no positions are available', async () => {
@@ -271,11 +271,6 @@ describe('LandingPage', () => {
 
     it('navigates to login when login button is clicked', async () => {
         const user = userEvent.setup()
-        
-        // Mock empty data to get the "Login" button (not "Login to Existing Account")
-        const emptyData = { activePostings: [], totalPositions: 0, departments: [], terms: [] }
-        vi.mocked(landingPageLogic.transformJobPostingsData).mockReturnValue(emptyData)
-        
         renderLandingPage()
 
         await waitFor(() => {
@@ -288,27 +283,8 @@ describe('LandingPage', () => {
         expect(mockNavigate).toHaveBeenCalledWith("/login")
     })
 
-    it('navigates to login when "login to existing account" button is clicked', async () => {
-        const user = userEvent.setup()
-        renderLandingPage()
-
-        await waitFor(() => {
-            expect(screen.getByRole('button', { name: /login to existing account/i })).toBeInTheDocument()
-        })
-
-        const loginBtn = screen.getByRole('button', { name: /login to existing account/i })
-        await user.click(loginBtn)
-
-        expect(mockNavigate).toHaveBeenCalledWith("/login")
-    })
-
     it('navigates to create account when create account button is clicked', async () => {
         const user = userEvent.setup()
-        
-        // Mock empty data to get the "Create Account" button
-        const emptyData = { activePostings: [], totalPositions: 0, departments: [], terms: [] }
-        vi.mocked(landingPageLogic.transformJobPostingsData).mockReturnValue(emptyData)
-        
         renderLandingPage()
 
         await waitFor(() => {
@@ -317,20 +293,6 @@ describe('LandingPage', () => {
 
         const createAccBtn = screen.getByRole('button', { name: /create account/i })
         await user.click(createAccBtn)
-
-        expect(mockNavigate).toHaveBeenCalledWith("/create-account/step1")
-    })
-
-    it('navigates to create account when apply now button is clicked', async () => {
-        const user = userEvent.setup()
-        renderLandingPage()
-
-        await waitFor(() => {
-            expect(screen.getByRole('button', { name: /apply now/i })).toBeInTheDocument()
-        })
-
-        const applyBtn = screen.getByRole('button', { name: /apply now/i })
-        await user.click(applyBtn)
 
         expect(mockNavigate).toHaveBeenCalledWith("/create-account/step1")
     })

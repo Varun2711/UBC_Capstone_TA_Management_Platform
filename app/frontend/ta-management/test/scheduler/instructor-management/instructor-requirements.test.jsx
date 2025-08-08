@@ -95,18 +95,21 @@ const mockRequests = [
   },
 ];
 
+// Update the mock data to match the new API structure where course offerings have instructor_id_read
 const mockCourseOfferings = [
   {
     course_offering_id: 'off-001',
     course_info: 'COSC 101 Introduction to Programming',
     term_info: 'Winter 2025 Term 1',
     section_number: 'A',
+    instructor_id_read: 1, // This should match the instructor ID
   },
   {
     course_offering_id: 'off-002',
     course_info: 'MATH 201 Calculus II',
     term_info: 'Summer 2024 Term 1',
     section_number: 'B',
+    instructor_id_read: 2, // This should match the instructor ID
   },
 ];
 
