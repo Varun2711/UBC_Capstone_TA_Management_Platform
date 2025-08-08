@@ -1873,7 +1873,7 @@ def process_csv_file(uploaded_file):
         
         try:
             # Get all values from the row
-            session_year_str = row.get('Session year', '').strip()
+            session_year = row.get('Session year', '').strip()
             term_type = row.get('Term type', '').strip()
             term_number = row.get('term number', '').strip()
             department_name = row.get('department', '').strip()
