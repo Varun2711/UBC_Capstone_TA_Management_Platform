@@ -1,5 +1,17 @@
+# UBC Capstone Software Engineering Project S2025
+
+This capstone project is made by the following individuals: Varun Patel, Reyhan Reginald, Naman Arora, Adil Shaji, Ariana Rice, Shan Richards, Devstutya Pandey
+The project is a TA management platform which streamlines the hiring process and allocations of TA by university departments.
+### Technologies used:
+**Front end:** Javascript, React, React Router, Tailwindcss, vite, Vitest (testing framework)
+**Back end:** Python, Django, DRF, PostgreSQL, pytest (testing framework)
+**Devops:** Docker, Docker-compose
+  
+**Demo**: https://youtu.be/NYq7N9gSaBU
+
+
 [![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=19555336&assignment_repo_type=AssignmentRepo)
-# Project-Starter
+## Project-Starter
 
 Please use the provided folder structure for your docs (project plan, design documenation, communications log, weekly logs and final documentation), source code, tesing, etc.    You are free to organize any additional internal folder structure as required by the project.  The team **MUST** use a branching workflow and once an item is ready, do remember to issue a PR, review and merge in into the master brach.
 ```
